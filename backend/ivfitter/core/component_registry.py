@@ -90,10 +90,10 @@ def component_registry() -> list[FunctionDefinition]:
         FunctionDefinition(
             function_type="softplus_rs_modifier",
             location="series",
-            display_name="Softplus conductance modifier",
+            display_name="Softplus transport modifier",
             role="conductance_modifier_law",
             law_id="softplus_conductance_modifier",
-            law_name="Bias-dependent conductance modifier",
+            law_name="Bias-dependent main-path transport modifier",
             canonical_equation="R_eff = R_base / [1 + A softplus(u)]",
             available_forms=["conductance_modifier"],
             default_form="conductance_modifier",
@@ -108,7 +108,7 @@ def component_registry() -> list[FunctionDefinition]:
                 ParameterDefinition(name="Vs_V", default=0.5, lower=1e-9, upper=100.0, unit="V", description="Softness voltage."),
             ],
             equation_template="R_eff <- R_eff/(1 + A sp(u))",
-            help_text="A modifier applied to an existing series path. It is not an independent current branch.",
+            help_text="Advanced main-path transport modifier. It changes the effective series resistance; it is not an added current branch.",
         ),
         FunctionDefinition(
             function_type="shunt",
@@ -278,7 +278,7 @@ def component_registry() -> list[FunctionDefinition]:
                 ParameterDefinition(name="photo_gain", default=0.0, lower=-0.95, upper=1e9, unit="", description="Lumped dimensionless light-induced resistance reduction factor."),
             ],
             equation_template="V_drop = I R0/(1+photo_gain)",
-            help_text="Main-path voltage-drop term for light-modulated transport, contact, or channel resistance. It is not an extra current branch.",
+            help_text="Interpretive main-path voltage-drop term for light-modulated transport. In single-trace fitting it is usually equivalent to an effective series resistance, so use it only deliberately.",
         ),
         FunctionDefinition(
             function_type="custom",

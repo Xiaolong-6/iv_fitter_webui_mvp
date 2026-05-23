@@ -1,11 +1,12 @@
 # Changelog
 
-## v1.4.14 - Model Builder UI polish after structure cleanup
+## v1.4.15 - Expanded main-path transport functions
 
-- Added Basic/Advanced labels in the Model Builder add-function menu.
-- Added short user-facing notes that distinguish main-path voltage drops from branch current contributions.
-- Added visible duplicate-structure feedback when a selected component would duplicate the same law/form/placement/polarity.
-- Kept the fitting workflow unchanged; this is a clarity and guardrail polish pass.
+- Expanded the Model Builder main-path menu beyond Ohmic resistance and Series diode barrier.
+- Exposed advanced main-path transport forms: Softplus transport modifier, Custom transport modifier, and interpretive Photo-modulated effective main path.
+- Kept main-path terms as voltage-drop / transport-bottleneck forms, not branch-current copies.
+- Added a guard that prevents combining Photo-modulated effective main path with an ordinary Ohmic series resistance in single-trace fitting, because they are normally indistinguishable.
+- Updated equation preview and backend equation summaries for conductance-modifier main-path terms.
 
 ## v1.4.13 - Function Guide alignment for series-barrier model structure
 

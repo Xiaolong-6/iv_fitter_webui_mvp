@@ -31,6 +31,7 @@ function isPhotocurrentConstant(term: Term) { return /photocurrent_constant/i.te
 function isPhotocurrentVoltage(term: Term) { return /photocurrent_voltage_dependent/i.test(`${term.row} ${term.law} ${term.id}`); }
 function isPhotoconductive(term: Term) { return /photoconductive_branch/i.test(`${term.row} ${term.law} ${term.id}`); }
 function isPhotoMainPath(term: Term) { return /photo_modulated_main_path/i.test(`${term.row} ${term.law} ${term.id}`); }
+function isConductanceModifier(term: Term) { return term.form === "conductance_modifier" || /conductance_modifier|softplus_rs_modifier|series-path modifier/i.test(`${term.row} ${term.law} ${term.id}`); }
 function symbolFor(term: Term) {
   const safe = (term.nick || term.id).replace(/[^A-Za-z0-9]+/g, "");
   if (/^rs$/i.test(term.nick) || /^rs$/i.test(term.id)) return { r: "R_s", i: "I", v: "V_{Rs}" };
@@ -47,7 +48,8 @@ function seriesDropLatex(series: Term[]) {
   const drops = series.map((term) => {
     const s = symbolFor(term);
     if (isOhmic(term)) return `I${s.r}`;
-    if (isPhotoMainPath(term)) return `I\frac{R_0}{1+g_{ph}}`;
+    if (isPhotoMainPath(term)) return `I\\frac{R_0}{1+g_{ph}}`;
+    if (isConductanceModifier(term)) return `I R_{base}/[1 + A\\,\\operatorname{softplus}(u)]`;
     return `V_{${term.id.replace(/[^A-Za-z0-9]/g, "")}}(I)`;
   });
   return `V_j = V_{ext} - ${drops.join(" - ")}`;
@@ -86,6 +88,7 @@ function residualLatex(branches: Term[]) {
   return `F(I;V_{ext}) = I - \\left(${branches.map((b) => symbolFor(b).i).join(" + ") || "0"}\\right) = 0`;
 }
 function termMeaning(term: Term, language: Language) {
+  if (term.form === "conductance_modifier" || term.placement.includes("series_conductance_modifier")) return language === "zh" ? "主路传输调制，改变有效主路电阻" : "main-path transport modifier; changes effective series resistance";
   if (term.form === "voltage_drop" || term.placement.includes("series")) return language === "zh" ? "主路电压降，改变结点电压" : "main-path voltage drop; modifies junction voltage";
   if (term.form === "current_branch" || term.placement.includes("branch")) return language === "zh" ? "并联支路电流，加入总电流" : "parallel branch current; adds to terminal current";
   return language === "zh" ? "模型项" : "model term";

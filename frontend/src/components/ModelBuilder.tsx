@@ -54,12 +54,18 @@ function componentTitle(comp: ComponentSpec, language: Language) {
   return `${nickname(comp)} · ${law} · ${place}${pol}`;
 }
 
-function functionOptionLabel(definition: FunctionDefinition, language: Language) {
+function functionOptionLabel(definition: FunctionDefinition, language: Language, bucket?: BuilderBucket) {
   const advanced = new Set(["series_diode_barrier", "softplus_rs_modifier", "custom", "power_law", "soft_breakdown", "photocurrent_voltage_dependent"]);
-  const prefix = advanced.has(definition.function_type)
-    ? (language === "zh" ? "高级 · " : "Advanced · ")
-    : (language === "zh" ? "基础 · " : "Basic · ");
+  const interpretive = new Set(["photo_modulated_main_path"]);
+  const prefix = interpretive.has(definition.function_type)
+    ? (language === "zh" ? "解释性 · " : "Interpretive · ")
+    : advanced.has(definition.function_type)
+      ? (language === "zh" ? "高级 · " : "Advanced · ")
+      : (language === "zh" ? "基础 · " : "Basic · ");
   if (definition.function_type === "series_diode_barrier") return prefix + (language === "zh" ? "串联二极管势垒" : "Series diode barrier");
+  if (definition.function_type === "softplus_rs_modifier") return prefix + (language === "zh" ? "软开启传输调制" : "Softplus transport modifier");
+  if (definition.function_type === "photo_modulated_main_path") return prefix + (language === "zh" ? "光调制有效主路电阻" : "Photo-modulated effective main path");
+  if (definition.function_type === "custom" && bucket === "main") return prefix + (language === "zh" ? "自定义传输调制" : "Custom transport modifier");
   if (definition.law_id === "ohmic") return prefix + (language === "zh" ? "有效欧姆电阻" : "Effective Ohmic resistance");
   return prefix + definition.display_name;
 }
@@ -203,7 +209,6 @@ function userDefinitions(registry: FunctionDefinition[]) {
   const seen = new Set<string>();
   return registry.filter((definition) => {
     if (definition.function_type === "shunt") return false;
-    if (definition.function_type === "photo_modulated_main_path") return false;
     if (definition.law_id === "ohmic" && seen.has("ohmic")) return false;
     if (definition.law_id === "ohmic") seen.add("ohmic");
     return true;
@@ -225,6 +230,13 @@ function isDuplicateBlocked(model: ModelSpec, comp: ComponentSpec) {
   // A two-diode branch model is allowed only as an explicit D1/D2 role distinction.
   if (comp.function_type === "diode" && comp.evaluation_form === "current_branch") return matches.length >= 2;
   return true;
+}
+
+function isSingleTraceEquivalentMainPathBlocked(model: ModelSpec, comp: ComponentSpec) {
+  const mainTerms = model.series;
+  const isOhmicDrop = (c: ComponentSpec) => c.law_id === "ohmic" && (c.evaluation_form === "voltage_drop" || c.placement === "series_voltage_drop");
+  const isPhotoEffectiveDrop = (c: ComponentSpec) => c.function_type === "photo_modulated_main_path";
+  return (isPhotoEffectiveDrop(comp) && mainTerms.some(isOhmicDrop)) || (isOhmicDrop(comp) && mainTerms.some(isPhotoEffectiveDrop));
 }
 
 function nextNickname(model: ModelSpec, base: string) {
@@ -282,7 +294,7 @@ function AddRow(props: {
       >
         {props.definitions.map((definition) => (
           <option key={definition.function_type} value={definition.function_type}>
-            {functionOptionLabel(definition, props.language)}
+            {functionOptionLabel(definition, props.language, props.bucket)}
           </option>
         ))}
       </select>
@@ -455,7 +467,12 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
 
   function definitionsForBucket(bucket: BuilderBucket) {
     return userDefinitions(registry).filter((definition) => {
-      if (bucket === "main") return definition.allowed_placements.includes("series_voltage_drop") || definition.available_forms.includes("voltage_drop");
+      if (bucket === "main") {
+        return definition.allowed_placements.includes("series_voltage_drop")
+          || definition.allowed_placements.includes("series_conductance_modifier")
+          || definition.available_forms.includes("voltage_drop")
+          || definition.available_forms.includes("conductance_modifier");
+      }
       return definition.allowed_placements.includes("parallel_current_branch") || definition.allowed_placements.includes("junction_current_branch") || definition.available_forms.includes("current_branch");
     });
   }
@@ -475,7 +492,7 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
     const location = defaultLocationForBucket(bucket, definition, model);
     let component = createComponentInLocation(definition, location, selectedPolarity);
     component = applyNicknameToParams(component, nextNickname(model, nickname(component)));
-    if (isDuplicateBlocked(model, component)) return;
+    if (isDuplicateBlocked(model, component) || isSingleTraceEquivalentMainPathBlocked(model, component)) return;
     onChange(addComponent(model, component));
   }
 
@@ -494,9 +511,14 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
         const pendingPolarity = polarities.length ? (polarity[bucket] || definition?.default_polarity || polarities[0]) as Polarity : undefined;
         const pendingComponent = definition ? createComponentInLocation(definition, pendingLocation, pendingPolarity) : null;
         const duplicateBlocked = pendingComponent ? isDuplicateBlocked(model, pendingComponent) : false;
-        const duplicateReason = language === "zh"
-          ? "已存在相同数学形式、位置和极性的模型项；请改用不同极性/角色，或先删除重复项。"
-          : "This law/form/placement/polarity is already present. Use a different polarity/role, or remove the duplicate first.";
+        const equivalentBlocked = pendingComponent ? isSingleTraceEquivalentMainPathBlocked(model, pendingComponent) : false;
+        const duplicateReason = equivalentBlocked
+          ? (language === "zh"
+            ? "单条 I-V 中该主路项通常与已有有效串联电阻不可区分；请先删除等效项，或在未来 light/dark workflow 中使用。"
+            : "In a single I-V trace this main-path term is usually indistinguishable from the existing effective series resistance. Remove the equivalent term first, or reserve it for a future light/dark workflow.")
+          : (language === "zh"
+            ? "已存在相同数学形式、位置和极性的模型项；请改用不同极性/角色，或先删除重复项。"
+            : "This law/form/placement/polarity is already present. Use a different polarity/role, or remove the duplicate first.");
 
         return (
           <div className="model-group" key={bucket}>
@@ -517,10 +539,10 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
               }}
               onSelectPolarity={(value) => setPolarity((current) => ({ ...current, [bucket]: value }))}
               onAdd={() => addFrom(bucket)}
-              disabled={duplicateBlocked}
+              disabled={duplicateBlocked || equivalentBlocked}
               disabledReason={duplicateBlocked ? duplicateReason : undefined}
             />
-            {duplicateBlocked ? <p className="warning info duplicate-component-note">{duplicateReason}</p> : null}
+            {(duplicateBlocked || equivalentBlocked) ? <p className="warning info duplicate-component-note">{duplicateReason}</p> : null}
             {components.length === 0 && <div className="empty-line">{t(language, "noComponents")}</div>}
             {components.map(({ location, comp }) => (
               <ComponentCard

@@ -66,3 +66,38 @@ def test_duplicate_same_law_form_placement_polarity_warns():
     )
     warnings = validate_model_spec(ModelSpec(series=[r1, r2]))
     assert any(w.code == "duplicate_unidentifiable_component" for w in warnings)
+
+
+def test_registry_exposes_advanced_main_path_transport_forms():
+    registry = {item.function_type: item for item in component_registry()}
+    softplus = registry["softplus_rs_modifier"]
+    assert softplus.default_form == "conductance_modifier"
+    assert "series_conductance_modifier" in softplus.allowed_placements
+    custom = registry["custom"]
+    assert "conductance_modifier" in custom.available_forms
+    assert "series_conductance_modifier" in custom.allowed_placements
+    photo = registry["photo_modulated_main_path"]
+    assert photo.default_form == "voltage_drop"
+    assert "series_voltage_drop" in photo.allowed_placements
+
+
+def test_softplus_transport_modifier_predicts_finite_current_with_rs_baseline():
+    branch = ComponentSpec(
+        id="Rsh", location="parallel", function_type="constant_rs", law_id="ohmic",
+        evaluation_form="current_branch", placement="parallel_current_branch",
+        params={"Rs_ohm": p(1e6)}, metadata={"nickname": "Rsh"},
+    )
+    rs = ComponentSpec(
+        id="Rs", location="series", function_type="constant_rs", law_id="ohmic",
+        evaluation_form="voltage_drop", placement="series_voltage_drop",
+        params={"Rs_ohm": p(100.0)}, metadata={"nickname": "Rs"},
+    )
+    modifier = ComponentSpec(
+        id="Gmod", location="series", function_type="softplus_rs_modifier", law_id="softplus_conductance_modifier",
+        evaluation_form="conductance_modifier", placement="series_conductance_modifier", polarity="forward",
+        params={"A": p(2.0), "Vt_V": p(0.1), "Vs_V": p(0.2)}, metadata={"nickname": "Gmod"},
+    )
+    model = ModelSpec(parallel=[branch], series=[rs, modifier], temperature_K=300.0)
+    current = predict_current(np.array([-1.0, 0.0, 1.0]), model)
+    assert np.isfinite(current).all()
+    assert current[-1] > current[1]

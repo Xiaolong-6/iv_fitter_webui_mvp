@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.4.14**
+Current version: **1.4.15**
 
 > v1.4.9 importer note: HappyMeasure combined wide-v2 files now import correctly even when the UI/API passes explicit selected columns. The package includes an anonymized regression fixture under `examples/testdata/`.
 
@@ -160,3 +160,16 @@ The sample preserves the original multi-trace row count and voltage/current data
 ### Plot trace selector
 
 The Workspace **Plots** section includes a trace selector in the plot header. This lets users switch the displayed trace directly from the plot area without returning to the Data tab. Switching traces follows the same selected-trace workflow used elsewhere: the next fit/report belongs to the newly selected trace.
+
+
+### v1.4.15 main-path transport options
+
+The Model Builder main path now includes more than an Ohmic resistance and a series diode barrier. It exposes:
+
+- **Basic · Effective Ohmic resistance**
+- **Advanced · Series diode barrier**
+- **Advanced · Softplus transport modifier**
+- **Advanced · Custom transport modifier**
+- **Interpretive · Photo-modulated effective main path**
+
+Main-path terms are still voltage-drop or transport-bottleneck terms. They are not copies of branch current laws. The photo-modulated effective main-path option is intentionally guarded against simultaneous use with an ordinary Ohmic series resistance in single-trace fitting, because those two are usually mathematically indistinguishable without a light/dark or optical-power workflow.
