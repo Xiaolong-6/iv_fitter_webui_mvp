@@ -26,6 +26,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
         <section className="card warning error" role="alert">
           <h2>{this.props.label}</h2>
           <p>This panel failed to render. Other controls remain available.</p>
+          <p className="muted">Reason: {this.state.error.message.slice(0, 80)}</p>
           <button onClick={() => this.setState({ error: null })}>Retry panel</button>
         </section>
       );

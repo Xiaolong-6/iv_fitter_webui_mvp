@@ -54,7 +54,7 @@ export function WorkflowSidebar({
       {!collapsed ? <label className="language-switch"><span>{t(language, "language")}</span><select value={language} onChange={(e) => onLanguageChange(e.target.value as Language)}>
         <option value="en">{t(language, "english")}</option>
         <option value="zh">{t(language, "chinese")}</option>
-      </select></label> : <button className="language-icon" title={t(language, "language")} onClick={() => onLanguageChange(language === "en" ? "zh" : "en")}>ZH</button>}
+      </select></label> : <button className="language-icon" title={t(language, "language")} onClick={() => onLanguageChange(language === "en" ? "zh" : "en")}>{language === "en" ? "ZH" : "EN"}</button>}
       <div className="sidebar-version">
         {!collapsed && <span>{t(language, "version")}</span>}
         <strong>v{version}</strong>

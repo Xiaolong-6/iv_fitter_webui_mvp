@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.4.29 - Audit fixes, timeout, and empty-plot import shortcut
+
+### Fixed
+- Added an Import data shortcut button to the Plots empty state.
+- Added Run timeout to Fit setup run options, defaulting to 60 s.
+- Added frontend abort handling and backend cooperative fit timeout checks.
+- Clear previous fit status, report, warnings, and verdict immediately when a new run starts.
+- Made collapsed dock language toggle dynamic: English UI shows ZH, Chinese UI shows EN.
+- Added positive-parameter validation for series diode barrier `I0_A` and `n`.
+- Clarified `photo_modulated_main_path` help text as a fixed effective resistance for single-trace fitting.
+- Reused `evaluation.solve_vj` from the fitting engine to avoid duplicated junction-solver implementations.
+- Replaced tests that used private `_metrics` with the public `fit_metrics` helper.
+- Rejected non-empty deprecated `seed_scale_factors` in `FitConfig`.
+- Added request-size safeguards for imported text and fit trace point counts.
+- Aligned frontend `FitResult.reportable` typing with the backend schema.
+- Added the panel error message snippet to ErrorBoundary fallback UI.
+- Standardized Parameters table numeric display so very small/large values use scientific notation.
+
+### Tests
+- Added regression tests for plot empty-state import shortcut, collapsed language toggle, parameter formatting, and series-diode parameter validation.
+- Verified frontend build, backend tests, and compileall against the packaged tree.
+
 ## v1.4.28 - Sidebar default and language selector readability
 
 ### Fixed

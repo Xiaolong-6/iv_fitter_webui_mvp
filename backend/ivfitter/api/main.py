@@ -26,6 +26,20 @@ def _cors_origins() -> list[str]:
 
 app.add_middleware(CORSMiddleware, allow_origins=_cors_origins(), allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
+MAX_IMPORT_TEXT_CHARS = int(os.getenv("IVFITTER_MAX_IMPORT_TEXT_CHARS", "5000000"))
+MAX_FIT_POINTS = int(os.getenv("IVFITTER_MAX_FIT_POINTS", "50000"))
+
+def _check_import_size(text: str) -> None:
+    if len(text) > MAX_IMPORT_TEXT_CHARS:
+        raise HTTPException(status_code=413, detail=f"CSV text is too large ({len(text)} characters). Limit is {MAX_IMPORT_TEXT_CHARS} characters.")
+
+def _check_fit_size(request: FitRequest) -> None:
+    n_v = len(request.trace.voltage_V)
+    n_i = len(request.trace.current_A)
+    if max(n_v, n_i) > MAX_FIT_POINTS:
+        raise HTTPException(status_code=413, detail=f"Trace has too many points ({max(n_v, n_i)}). Limit is {MAX_FIT_POINTS} points.")
+
+
 class ReportResponse(BaseModel):
     markdown: str
 
@@ -59,6 +73,7 @@ def topology_preview(model: ModelSpec):
 def fit(request: FitRequest):
     """Run one local trace fit."""
     try:
+        _check_fit_size(request)
         return fit_trace(request)
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -81,6 +96,7 @@ class TextResponse(BaseModel):
 def import_csv_text_endpoint(payload: ImportCsvTextRequest):
     """Import CSV/TXT text and return TraceData plus import-quality summary."""
     try:
+        _check_import_size(payload.text)
         trace, quality = import_csv_text(payload)
         return {"trace": trace, "quality": quality}
     except (ValueError, ValidationError) as exc:
@@ -92,6 +108,7 @@ def import_csv_text_endpoint(payload: ImportCsvTextRequest):
 def import_csv_text_multi_endpoint(payload: ImportCsvTextRequest):
     """Import plain/HappyMeasure CSV text and return one or more traces."""
     try:
+        _check_import_size(payload.text)
         return {"traces": [{"trace": trace, "quality": quality} for trace, quality in import_csv_text_multi(payload)]}
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

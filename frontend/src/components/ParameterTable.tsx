@@ -1,13 +1,22 @@
 import { Fragment, useState } from "react";
 import type { FitResult, ModelSpec, ParameterSpec } from "../model/types";
-import { fmtBounds, fmtEng } from "../model/format";
+import { fmtBounds } from "../model/format";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { parameterMeaning, parameterShortAssessment } from "../model/diagnostics";
 import { updateComponent } from "../model/utils";
 
+function formatParameterNumber(v: number | undefined | null) {
+  if (v === undefined || v === null) return "";
+  if (!Number.isFinite(v)) return String(v);
+  const abs = Math.abs(v);
+  if (v === 0) return "0";
+  if (abs < 1e-3 || abs >= 1e4) return v.toExponential(3);
+  return Number(v.toPrecision(6)).toString();
+}
+
 function num(v: number | undefined | null) {
-  return v === undefined || v === null ? "" : String(v);
+  return formatParameterNumber(v);
 }
 
 function isPartialNumber(text: string) {
@@ -113,8 +122,8 @@ export function ParameterTable({
           <tr className="parameter-summary-row">
             <td title={key} onClick={() => setOpenKey(open ? null : key)}>{labelForModelParameter(model, comp.id, paramName)}</td>
             <td><DraftNumberInput value={spec.value} title={language === "zh" ? "下一次拟合的初始值" : "Initial value for next fit"} onCommit={(value) => { if (value !== null) onModelChange(updateParameter(model, location, comp.id, paramName, { value })); }} /></td>
-            <td title={fitted ? String(fitted.value) : ""}>{fitted ? `${fmtEng(fitted.value, 5)} ${fitted.unit ?? spec.unit ?? ""}` : "-"}</td>
-            <td className="desktop-detail" title={fitted?.stderr === null || fitted?.stderr === undefined ? "" : String(fitted.stderr)}>{fitted?.stderr === null || fitted?.stderr === undefined ? "-" : fmtEng(fitted.stderr, 3)}</td>
+            <td title={fitted ? String(fitted.value) : ""}>{fitted ? `${formatParameterNumber(fitted.value)} ${fitted.unit ?? spec.unit ?? ""}` : "-"}</td>
+            <td className="desktop-detail" title={fitted?.stderr === null || fitted?.stderr === undefined ? "" : String(fitted.stderr)}>{fitted?.stderr === null || fitted?.stderr === undefined ? "-" : formatParameterNumber(fitted.stderr)}</td>
             <td><DraftNumberInput value={spec.lower} placeholder="-" title={language === "zh" ? "下边界，空白表示无下限" : "Lower bound; blank means unbounded"} onCommit={(value) => onModelChange(updateParameter(model, location, comp.id, paramName, { lower: value }))} /></td>
             <td><DraftNumberInput value={spec.upper} placeholder="-" title={language === "zh" ? "上边界，空白表示无上限" : "Upper bound; blank means unbounded"} onCommit={(value) => onModelChange(updateParameter(model, location, comp.id, paramName, { upper: value }))} /></td>
             <td><label className="parameter-fit-toggle"><input type="checkbox" checked={spec.fit ?? true} onChange={(e) => onModelChange(updateParameter(model, location, comp.id, paramName, { fit: e.target.checked }))} /> {spec.fit ?? true ? t(language, "fitState") : t(language, "fixed")}</label></td>
@@ -123,7 +132,7 @@ export function ParameterTable({
           <tr className={open ? "parameter-mobile-detail open" : "parameter-mobile-detail"}>
             <td colSpan={8}>
               <div><strong>{language === "zh" ? "当前边界" : "Current bounds"}:</strong> {fmtBounds(spec.lower, spec.upper)}</div>
-              <div><strong>{t(language, "stdErr")}:</strong> {fitted?.stderr === null || fitted?.stderr === undefined ? "-" : fmtEng(fitted.stderr, 3)}</div>
+              <div><strong>{t(language, "stdErr")}:</strong> {fitted?.stderr === null || fitted?.stderr === undefined ? "-" : formatParameterNumber(fitted.stderr)}</div>
               <p title={meaning}>{short}</p>
             </td>
           </tr>

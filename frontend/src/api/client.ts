@@ -28,7 +28,7 @@ export async function getRegistry(): Promise<FunctionDefinition[]> {
 }
 export async function validateModel(model: ModelSpec): Promise<FitWarning[]> { return postJson("/api/validate-model", model); }
 export async function equations(model: ModelSpec, signal?: AbortSignal): Promise<EquationSummary> { return postJson("/api/equations", model, { signal }); }
-export async function fitTrace(trace: TraceData, model: ModelSpec, config: FitConfig): Promise<FitResult> { return postJson("/api/fit", { trace, model, config }); }
+export async function fitTrace(trace: TraceData, model: ModelSpec, config: FitConfig, signal?: AbortSignal): Promise<FitResult> { return postJson("/api/fit", { trace, model, config }, { signal }); }
 export async function exportReport(result: FitResult): Promise<{ markdown: string }> { return postJson("/api/export-report", result); }
 
 export interface ImportQualitySummary {

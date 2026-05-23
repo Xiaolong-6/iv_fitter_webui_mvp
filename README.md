@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.4.28**
+Current version: **1.4.29**
 
 
 
@@ -10,6 +10,9 @@ Current version: **1.4.28**
 
 
 
+
+
+> v1.4.29 audit/workflow note: Plots empty state now has an Import data shortcut; Run options include a 60 s default timeout with frontend abort and backend cooperative timeout; starting a run clears previous fit verdict/warnings; Parameters table uses scientific notation for extreme values; several backend/frontend audit issues were closed.
 
 > v1.4.28 navigation note: the dock/sidebar now starts collapsed by default, and the language selector dropdown uses readable light-background option colors in the dark sidebar.
 

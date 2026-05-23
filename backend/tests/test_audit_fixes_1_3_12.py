@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from ivfitter import __version__
 from ivfitter.api.main import app
 from ivfitter.components.custom import evaluate_custom_expression
-from ivfitter.core import fitting_engine
+from ivfitter.core import evaluation, fitting_engine
 from ivfitter.core.fitting_engine import _stderr
 from ivfitter.core.graph_solver import _solve_one
 from ivfitter.core.model_spec import ComponentSpec, FitRequest, FitConfig, ModelSpec, ParameterSpec, TraceData
@@ -27,7 +27,7 @@ def test_stderr_includes_residual_variance_factor():
 
 def test_junction_solver_unbracketed_root_returns_nan(monkeypatch):
     model = ModelSpec()
-    monkeypatch.setattr(fitting_engine, "_current_at_vj", lambda vj, model: -np.asarray(vj, dtype=float) + 1.0)
+    monkeypatch.setattr(evaluation, "current_at_vj", lambda vj, model: -np.asarray(vj, dtype=float) + 1.0)
     monkeypatch.setattr(fitting_engine, "_series_rs_eff", lambda vj, model: np.ones_like(vj))
     assert math.isnan(fitting_engine._solve_single_vj(0.0, model))
 

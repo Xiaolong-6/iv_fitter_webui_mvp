@@ -142,7 +142,15 @@ class FitConfig(BaseModel):
     multistart_enabled: bool = False
     seed_scale_factors: list[float] = Field(default_factory=list)
     multistart_n_seeds: int = 12
+    run_timeout_s: float = 60.0
     solver_mode: SolverMode = "legacy_composite"
+
+    @field_validator("seed_scale_factors")
+    @classmethod
+    def reject_seed_scale_factors(cls, value: list[float]) -> list[float]:
+        if value:
+            raise ValueError("seed_scale_factors is deprecated and ignored; use multistart_n_seeds instead.")
+        return value
 
 
 class FitRequest(BaseModel):

@@ -278,7 +278,7 @@ def component_registry() -> list[FunctionDefinition]:
                 ParameterDefinition(name="photo_gain", default=0.0, lower=-0.95, upper=1e9, unit="", description="Lumped dimensionless light-induced resistance reduction factor."),
             ],
             equation_template="V_drop = I R0/(1+photo_gain)",
-            help_text="Interpretive main-path voltage-drop term for light-modulated transport. In single-trace fitting it is usually equivalent to an effective series resistance, so use it only deliberately.",
+            help_text="Interpretive main-path voltage-drop term. For a single trace this is a fixed effective resistance R0/(1+photo_gain), not real-time optical or voltage modulation; use it only when that interpretation is deliberate.",
         ),
         FunctionDefinition(
             function_type="custom",

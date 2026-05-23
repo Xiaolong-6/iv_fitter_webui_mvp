@@ -24,15 +24,22 @@ function mismatchRegions(voltage: number[], measured: number[], fitted: number[]
   return regions.slice(0, 4);
 }
 
-export function PlotWorkspace({ traces, selectedTraceId, onSelectTrace, result, language }: {
+export function PlotWorkspace({ traces, selectedTraceId, onSelectTrace, onImportData, result, language }: {
   traces: TraceData[];
   selectedTraceId: string | null;
   onSelectTrace: (id: string) => void;
+  onImportData?: () => void;
   result: FitResult | null;
   language: Language;
 }) {
   const [view, setView] = useState<PlotId>("all");
-  if (!traces.length) return <section className="card plots"><h2>{t(language, "plots")}</h2><div className="warning info">{t(language, "noPlotData")}</div></section>;
+  if (!traces.length) return <section className="card plots">
+    <h2>{t(language, "plots")}</h2>
+    <div className="empty-plot-state">
+      <div className="warning info">{t(language, "noPlotData")}</div>
+      {onImportData ? <button type="button" className="primary" onClick={onImportData}>{language === "zh" ? "导入数据" : "Import data"}</button> : null}
+    </div>
+  </section>;
   const selected = traces.find((tr) => tr.trace_id === selectedTraceId) ?? traces[0];
   const fit = result?.curves;
   const showAll = view === "all";

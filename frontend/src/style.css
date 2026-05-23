@@ -1939,3 +1939,14 @@ button.running { cursor: progress; opacity: 0.85; }
   color: #0f172a;
   background: #ffffff;
 }
+
+
+/* v1.4.29 plot empty state shortcut. */
+.empty-plot-state {
+  display: grid;
+  gap: 10px;
+  align-items: start;
+}
+.empty-plot-state .primary {
+  width: fit-content;
+}

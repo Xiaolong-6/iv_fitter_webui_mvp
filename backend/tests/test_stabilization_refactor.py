@@ -129,3 +129,25 @@ def test_secondary_diode_action_is_single_use_in_model_builder():
     assert "!hasSecondaryForwardDiode(model)" in text
     assert "if (!canAddSecondaryDiode(model)) return;" in text
     assert "allDiodeCount" not in text
+
+
+def test_plot_empty_state_has_import_shortcut():
+    root = Path(__file__).resolve().parents[2]
+    text = (root / "frontend" / "src" / "components" / "PlotWorkspace.tsx").read_text(encoding="utf-8")
+    assert "onImportData" in text
+    assert "Import data" in text
+    assert "导入数据" in text
+
+
+def test_collapsed_language_icon_reflects_next_language():
+    root = Path(__file__).resolve().parents[2]
+    text = (root / "frontend" / "src" / "components" / "WorkflowSidebar.tsx").read_text(encoding="utf-8")
+    assert 'language === "en" ? "ZH" : "EN"' in text
+
+
+def test_parameter_table_uses_scientific_format_for_extreme_values():
+    root = Path(__file__).resolve().parents[2]
+    text = (root / "frontend" / "src" / "components" / "ParameterTable.tsx").read_text(encoding="utf-8")
+    assert "formatParameterNumber" in text
+    assert "toExponential(3)" in text
+    assert "abs < 1e-3 || abs >= 1e4" in text

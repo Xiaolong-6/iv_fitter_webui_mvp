@@ -68,6 +68,7 @@ export function FitConfigPanel({ config, onChange, language }: { config: FitConf
         <h3>{t(language, "runOptions")}</h3>
         <div className="setup-grid">
           <label title={t(language, "fitSpeedHelp")}><span>{t(language, "fitSpeed")}</span><select title={t(language, "fitSpeedHelp")} value={config.fit_speed} onChange={(e) => onChange({ ...config, fit_speed: e.target.value })}><option value="full">full</option><option value="quick">quick</option></select></label>
+          <NumericInput label={language === "zh" ? "运行超时 (s)" : "Run timeout (s)"} help={language === "zh" ? "超过这个时间会自动停止本次拟合。默认 60 秒。" : "Automatically stop this fit after this many seconds. Default is 60 s."} value={config.run_timeout_s ?? 60} onCommit={(v) => onChange({ ...config, run_timeout_s: Math.max(1, Math.round(v ?? 60)) })} />
           <NumericInput label={t(language, "maxEvals")} help={t(language, "maxEvalsHelp")} value={config.max_nfev} onCommit={(v) => onChange({ ...config, max_nfev: Math.max(1, Math.round(v ?? 200)) })} />
         </div>
         <label className="check-row" title={t(language, "excludePlateausHelp")}><input title={t(language, "excludePlateausHelp")} type="checkbox" checked={config.exclude_compliance} onChange={(e) => onChange({ ...config, exclude_compliance: e.target.checked })} /> {t(language, "excludePlateaus")}</label>

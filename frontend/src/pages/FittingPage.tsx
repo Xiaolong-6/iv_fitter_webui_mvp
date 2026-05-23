@@ -35,6 +35,7 @@ const initialConfig: FitConfig = {
   residual_floor_A: 1e-15,
   multistart_enabled: false,
   multistart_n_seeds: 12,
+  run_timeout_s: 60,
   solver_mode: "legacy_composite",
 };
 
@@ -57,6 +58,7 @@ function WorkspaceView(props: {
   language: Language;
   openSections: Record<string, boolean>;
   setOpenSections: (sections: Record<string, boolean>) => void;
+  setActiveView: (view: AppView) => void;
 }) {
   function toggleSection(id: string) {
     props.setOpenSections({ ...props.openSections, [id]: !props.openSections[id] });
@@ -92,7 +94,7 @@ function WorkspaceView(props: {
     <section className="plot-stack main-results-stack">
       <Section id="plots" title={t(props.language, "plots")} summary={props.result ? "diagnostic views" : "load data or run fit"}>
         <ErrorBoundary label="Plot workspace">
-          <PlotWorkspace traces={props.traces} selectedTraceId={props.selectedTraceId} onSelectTrace={props.setSelectedTraceId} result={props.result} language={props.language} />
+          <PlotWorkspace traces={props.traces} selectedTraceId={props.selectedTraceId} onSelectTrace={props.setSelectedTraceId} onImportData={() => props.setActiveView("data")} result={props.result} language={props.language} />
         </ErrorBoundary>
       </Section>
       <div className="main-result-grid">
@@ -178,6 +180,9 @@ export function FittingPage() {
   const [result, setResult] = useState<FitResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isFitting, setIsFitting] = useState(false);
+  const [fitStartedAt, setFitStartedAt] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const abortFitRef = useRef<AbortController | null>(null);
   const cancelFitRef = useRef(false);
   const [report, setReport] = useState<string>("");
   const [equationSummary, setEquationSummary] = useState<EquationSummary | null>(null);
@@ -197,6 +202,14 @@ export function FittingPage() {
   useEffect(() => {
     getRegistry().then(setRegistry).catch((e) => setError(String(e)));
   }, []);
+
+  useEffect(() => {
+    if (!isFitting || fitStartedAt === null) return;
+    const timer = window.setInterval(() => {
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - fitStartedAt) / 1000)));
+    }, 500);
+    return () => window.clearInterval(timer);
+  }, [isFitting, fitStartedAt]);
 
   useEffect(() => {
     setDismissedWarningKey("");
@@ -257,7 +270,9 @@ export function FittingPage() {
   async function runFit() {
     if (isFitting) return;
     setError(null);
+    setResult(null);
     setReport("");
+    setDismissedWarningKey("");
     setActiveView("workspace");
     if (!selectedTrace.voltage_V.length) {
       setResult(null);
@@ -265,23 +280,46 @@ export function FittingPage() {
       return;
     }
     cancelFitRef.current = false;
+    const timeoutS = Math.max(1, Number(config.run_timeout_s ?? 60));
+    const controller = new AbortController();
+    abortFitRef.current = controller;
+    setElapsedSeconds(0);
+    setFitStartedAt(Date.now());
     setIsFitting(true);
+    const timeoutId = window.setTimeout(() => {
+      cancelFitRef.current = true;
+      controller.abort();
+      setIsFitting(false);
+      setFitStartedAt(null);
+      setError(language === "zh" ? `拟合超过 ${timeoutS} 秒，已自动停止并忽略本次结果。` : `Fit exceeded ${timeoutS} s and was stopped; this run result was ignored.`);
+    }, timeoutS * 1000);
     try {
-      const fit = await fitTrace(selectedTrace, model, config);
+      const fit = await fitTrace(selectedTrace, model, { ...config, run_timeout_s: timeoutS }, controller.signal);
       if (cancelFitRef.current) return;
       setResult(fit);
       setOpenSections((current) => ({ ...current, plots: true, parameters: true }));
     } catch (e) {
-      if (!cancelFitRef.current) setError(String(e));
+      if (!cancelFitRef.current) {
+        if (e instanceof DOMException && e.name === "AbortError") {
+          setError(language === "zh" ? "拟合请求已中止。" : "Fit request was aborted.");
+        } else {
+          setError(String(e));
+        }
+      }
     } finally {
+      window.clearTimeout(timeoutId);
+      if (abortFitRef.current === controller) abortFitRef.current = null;
       if (!cancelFitRef.current) setIsFitting(false);
+      if (!cancelFitRef.current) setFitStartedAt(null);
     }
   }
 
   function stopFit() {
     cancelFitRef.current = true;
+    abortFitRef.current?.abort();
     setIsFitting(false);
-    setError(language === "zh" ? "拟合已停止。当前后端请求可能仍会完成，但结果不会再写入界面。" : "Fit stopped. The current backend request may still finish, but its result will not update the workspace.");
+    setFitStartedAt(null);
+    setError(language === "zh" ? "拟合已停止。本次结果不会写入界面。" : "Fit stopped. This run result will not update the workspace.");
   }
 
 
@@ -314,7 +352,7 @@ export function FittingPage() {
         </div>
       </div>}
       {activeView === "workspace" && result && warningDismissKey(result) !== dismissedWarningKey && <WarningSummaryBanner result={result} language={language} onClose={() => setDismissedWarningKey(warningDismissKey(result))} />}
-      {activeView === "workspace" && isFitting && <div className="fit-running-banner">{language === "zh" ? "拟合正在运行…可以点击 Stop 忽略本次结果。" : "Fit is running… use Stop to ignore this run if needed."}</div>}
+      {activeView === "workspace" && isFitting && <div className="fit-running-banner">{language === "zh" ? `拟合正在运行…已用 ${elapsedSeconds} 秒。可以点击 Stop 忽略本次结果。` : `Fit is running… ${elapsedSeconds}s elapsed. Use Stop to ignore this run if needed.`}</div>}
       {error && (isBackendConnectionError(error) ? <BackendConnectionBanner message={error} onRetry={runFit} /> : <div className="warning error">{error}</div>)}
 
       {activeView === "data" ? <DataImportWorkspace
@@ -340,6 +378,7 @@ export function FittingPage() {
         language={language}
         openSections={openSections}
         setOpenSections={setOpenSections}
+        setActiveView={setActiveView}
       /> : <UserDocumentationPage view={activeView} registry={registry} appVersion={APP_VERSION} language={language} />}
       {activeView === "workspace" && <div className="mobile-action-bar"><button className={isFitting ? "primary running" : "primary"} disabled={isFitting} onClick={runFit}>{isFitting ? (language === "zh" ? "拟合中…" : "Fitting…") : t(language, "runFit")}</button><button className="danger-soft" disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止" : "Stop"}</button></div>}
     </main>

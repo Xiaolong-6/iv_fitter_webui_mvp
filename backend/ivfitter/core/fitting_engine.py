@@ -11,6 +11,7 @@ embedding all implementation details.
 from __future__ import annotations
 
 import copy
+import time
 import numpy as np
 from scipy.optimize import least_squares
 
@@ -26,6 +27,10 @@ from .multistart import multistart_candidates
 from .reportability import reportability_from_warnings
 from .residuals import compliance_mask, select_range, weighted_residual
 from .warnings import deprecated_config_warnings, graph_solver_not_reportable_warning, photocurrent_fit_warnings
+
+class FitTimeoutError(RuntimeError):
+    """Raised when a fit exceeds the user-configured runtime budget."""
+
 
 # Backwards-compatible aliases kept for tests and downstream scripts that used
 # older private helpers directly.
@@ -46,31 +51,10 @@ def _current_at_vj(vj, model):
 
 
 def _solve_single_vj(v_ext: float, model) -> float:
-    def f(vj: float) -> float:
-        arr_vj = np.array([vj], dtype=float)
-        current = _current_at_vj(arr_vj, model)
-        drop = evaluation.series_voltage_drop(current, arr_vj, model, rs_eff_fn=_series_rs_eff)
-        return float(vj + drop[0] - v_ext)
-    span = max(10.0, abs(v_ext) + 10.0)
-    lo, hi = v_ext - span, v_ext + span
-    flo, fhi = f(lo), f(hi)
-    tries = 0
-    while flo * fhi > 0 and tries < 5:
-        span *= 2
-        lo, hi = v_ext - span, v_ext + span
-        flo, fhi = f(lo), f(hi)
-        tries += 1
-    if flo * fhi <= 0:
-        try:
-            from scipy.optimize import brentq
-            root = float(brentq(f, lo, hi, maxiter=80))
-            return root if np.isfinite(root) else float("nan")
-        except Exception:
-            return float("nan")
-    return float("nan")
+    return evaluation.solve_single_vj(v_ext, model, rs_eff_fn=_series_rs_eff)
 
 def solve_vj(voltage_v, model) -> np.ndarray:
-    return np.array([_solve_single_vj(float(v), model) for v in np.asarray(voltage_v, dtype=float)], dtype=float)
+    return evaluation.solve_vj(voltage_v, model, rs_eff_fn=_series_rs_eff)
 
 
 def predict_current(voltage_v, model, solver_mode: str = "legacy_composite") -> np.ndarray:
@@ -111,6 +95,13 @@ def fit_trace(request: FitRequest) -> FitResult:
     request = copy.deepcopy(request)
     warnings: list[FitWarning] = validate_model_spec(request.model)
     warnings.extend(deprecated_config_warnings(request.config))
+    timeout_s = float(getattr(request.config, "run_timeout_s", 60.0) or 0.0)
+    deadline = time.monotonic() + timeout_s if timeout_s > 0 else None
+
+    def check_timeout() -> None:
+        if deadline is not None and time.monotonic() > deadline:
+            raise FitTimeoutError(f"Fit exceeded run timeout of {timeout_s:g} s.")
+
     x0, lower, upper, records = _pack(request)
     v_fit, i_meas, range_mask = select_range(request)
     excluded = compliance_mask(i_meas, request.config.exclude_compliance)
@@ -123,8 +114,10 @@ def fit_trace(request: FitRequest) -> FitResult:
     message = "No free parameters; evaluated model only."
     fit_jac = None
     fit_residual_vector = None
+    timed_out = False
     if len(x0) > 0 and len(v_fit[use]) >= 3:
         def fun(x):
+            check_timeout()
             _apply_x(records, x)
             pred = predict_current(v_fit[use], request.model, request.config.solver_mode)
             if not np.all(np.isfinite(pred)):
@@ -137,6 +130,7 @@ def fit_trace(request: FitRequest) -> FitResult:
                 starts = multistart_candidates(x0, lower, upper, getattr(request.config, "multistart_n_seeds", 12))
             best = None
             for start in starts:
+                check_timeout()
                 res = least_squares(fun, start, bounds=(lower, upper), loss=request.config.loss, max_nfev=request.config.max_nfev)
                 cost = float(np.sum(res.fun**2))
                 if best is None or cost < best[0]:
@@ -151,19 +145,36 @@ def fit_trace(request: FitRequest) -> FitResult:
                 warnings.append(FitWarning(code="multistart", message=f"Multistart tried {len(starts)} seed set(s) using bounded/log-space sampling.", severity="info"))
             fit_jac = res.jac
             fit_residual_vector = res.fun
+        except FitTimeoutError as exc:
+            timed_out = True
+            success = False
+            message = str(exc)
+            warnings.append(FitWarning(code="fit_timeout", message=message, severity="error"))
         except Exception as exc:
             success = False
             message = f"Fit failed: {exc}"
             warnings.append(FitWarning(code="fit_exception", message=message, severity="error"))
     v_all = np.asarray(request.trace.voltage_V, dtype=float)
     i_all = np.asarray(request.trace.current_A, dtype=float)
-    if request.config.solver_mode == "graph_dc":
-        i_pred, branches = solve_graph_current(v_all, request.model)
-        warnings.append(graph_solver_not_reportable_warning())
+    if timed_out:
+        branches = {}
+        i_pred = np.full_like(v_all, np.nan, dtype=float)
     else:
-        vj_all = solve_vj(v_all, request.model)
-        branches = branch_currents_at_vj(vj_all, request.model)
-        i_pred = sum(branches.values(), np.zeros_like(v_all)) if branches else np.zeros_like(v_all)
+        try:
+            check_timeout()
+            if request.config.solver_mode == "graph_dc":
+                i_pred, branches = solve_graph_current(v_all, request.model)
+                warnings.append(graph_solver_not_reportable_warning())
+            else:
+                vj_all = solve_vj(v_all, request.model)
+                branches = branch_currents_at_vj(vj_all, request.model)
+                i_pred = sum(branches.values(), np.zeros_like(v_all)) if branches else np.zeros_like(v_all)
+        except FitTimeoutError as exc:
+            success = False
+            message = str(exc)
+            warnings.append(FitWarning(code="fit_timeout", message=message, severity="error"))
+            branches = {}
+            i_pred = np.full_like(v_all, np.nan, dtype=float)
     if not np.all(np.isfinite(i_pred)):
         code = "graph_solver_kcl_failed" if request.config.solver_mode == "graph_dc" else "junction_solver_failed"
         warnings.append(FitWarning(code=code, message="Model prediction produced non-finite currents; this fit is not reportable.", severity="error"))

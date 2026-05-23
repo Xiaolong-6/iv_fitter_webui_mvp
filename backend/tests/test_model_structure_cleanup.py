@@ -131,3 +131,14 @@ def test_same_role_two_diode_model_is_duplicate_error():
     )
     warnings = validate_model_spec(ModelSpec(core=[d1, d2]))
     assert any(w.code == "duplicate_unidentifiable_component" and w.severity == "error" for w in warnings)
+
+
+def test_series_diode_barrier_rejects_nonpositive_i0_and_n():
+    comp = ComponentSpec(
+        id="B1", location="series", function_type="series_diode_barrier", law_id="shockley_diode",
+        evaluation_form="voltage_drop", placement="series_voltage_drop", polarity="forward",
+        params={"I0_A": p(0.0), "n": p(0.0)}, metadata={"nickname": "B1"},
+    )
+    warnings = validate_model_spec(ModelSpec(series=[comp]))
+    assert any(w.code == "nonpositive_physical_parameter" and "I0_A" in w.message and w.severity == "error" for w in warnings)
+    assert any(w.code == "nonpositive_physical_parameter" and ".n" in w.message and w.severity == "error" for w in warnings)

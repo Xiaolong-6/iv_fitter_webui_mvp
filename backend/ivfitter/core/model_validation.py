@@ -81,7 +81,7 @@ def validate_component_against_registry(comp: ComponentSpec) -> list[FitWarning]
             warnings.append(_warn("parameter_below_lower", f"{comp.id}.{name} is below its lower bound.", "error"))
         if spec.upper is not None and spec.value > spec.upper:
             warnings.append(_warn("parameter_above_upper", f"{comp.id}.{name} is above its upper bound.", "error"))
-        if name in {"Vs_V", "Vslope_V", "w_V", "n", "Rsh_ohm"} and spec.value <= 0:
+        if name in {"I0_A", "Vs_V", "Vslope_V", "w_V", "n", "Rsh_ohm"} and spec.value <= 0:
             warnings.append(_warn("nonpositive_physical_parameter", f"{comp.id}.{name} should be positive for a physically meaningful model.", "error"))
     if comp.function_type in {"photocurrent_constant", "photocurrent_voltage_dependent", "photoconductive_branch"}:
         for name in ("Iph0_A", "Gph_S", "Aph"):
