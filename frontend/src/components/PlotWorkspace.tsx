@@ -3,17 +3,19 @@ import type { FitResult, TraceData } from "../model/types";
 import { SimpleChart } from "./SimpleChart";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
+import { plotAnomalyMessage } from "../model/diagnostics";
 
 type PlotId = "linear" | "log" | "residual" | "logResidual" | "all";
 
 function logAbs(arr: number[]) { return arr.map((x) => Math.log10(Math.max(Math.abs(x), 1e-30))); }
 
 export function PlotWorkspace({ traces, selectedTraceId, result, language }: { traces: TraceData[]; selectedTraceId: string | null; result: FitResult | null; language: Language }) {
-  const [view, setView] = useState<PlotId>("linear");
+  const [view, setView] = useState<PlotId>("all");
   if (!traces.length) return <section className="card plots"><h2>{t(language, "plots")}</h2><div className="warning info">{t(language, "noPlotData")}</div></section>;
   const selected = traces.find((tr) => tr.trace_id === selectedTraceId) ?? traces[0];
   const fit = result?.curves;
   const showAll = view === "all";
+  const anomaly = plotAnomalyMessage(result, selected, language);
   const measuredLinear = [{ x: selected.voltage_V, y: selected.current_A, label: selected.trace_id, kind: "points" as const }];
   const measuredLog = [{ x: selected.voltage_V, y: logAbs(selected.current_A), label: selected.trace_id, kind: "points" as const }];
   const residualMissing = !fit && (view === "residual" || view === "logResidual");
@@ -33,11 +35,13 @@ export function PlotWorkspace({ traces, selectedTraceId, result, language }: { t
       </select></label>
     </div>
     {residualMissing ? <div className="warning info">{t(language, "noFitResidual")}</div> : null}
+    {anomaly ? <div className="warning plot-anomaly">{anomaly}</div> : null}
     <div className={showAll ? "plot-grid" : "plot-grid single-plot"}>
       {(showAll || view === "linear") && <SimpleChart
         title={t(language, "linear")}
         yLabel={t(language, "currentA")}
         height={showAll ? 238 : 400}
+        annotation={anomaly}
         series={[
           ...measuredLinear,
           ...(fit ? [{ x: fit.voltage_V, y: fit.current_fit_A, label: `fit: ${selected.trace_id}`, kind: "line" as const }] : [])
@@ -47,6 +51,7 @@ export function PlotWorkspace({ traces, selectedTraceId, result, language }: { t
         title={t(language, "log")}
         yLabel="log10(|I|)"
         height={showAll ? 238 : 400}
+        annotation={anomaly}
         series={[
           ...measuredLog,
           ...(fit ? [{ x: fit.voltage_V, y: logAbs(fit.current_fit_A), label: `fit: ${selected.trace_id}`, kind: "line" as const }] : [])
@@ -56,12 +61,14 @@ export function PlotWorkspace({ traces, selectedTraceId, result, language }: { t
         title={t(language, "residual")}
         yLabel={t(language, "residualA")}
         height={showAll ? 220 : 400}
+        annotation={anomaly}
         series={[{ x: fit.voltage_V, y: fit.residual_A, label: `residual: ${selected.trace_id}`, kind: "points" }]}
       />}
       {(showAll || view === "logResidual") && fit && <SimpleChart
         title={t(language, "logResidual")}
         yLabel="log10(|residual|)"
         height={showAll ? 220 : 400}
+        annotation={anomaly}
         series={[{ x: fit.voltage_V, y: logAbs(fit.residual_A), label: `log residual: ${selected.trace_id}`, kind: "points" }]}
       />}
     </div>

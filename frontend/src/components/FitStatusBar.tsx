@@ -1,5 +1,8 @@
 import type { FitResult } from "../model/types";
 import { fmtEng } from "../model/format";
+import type { Language } from "../model/i18n";
+import { t } from "../model/i18n";
+import { fitQualityVerdict } from "../model/diagnostics";
 
 function percentile(sorted: number[], p: number) {
   if (!sorted.length) return 0;
@@ -37,9 +40,6 @@ function frontendQualityFailure(result: FitResult): string | null {
   return null;
 }
 
-import type { Language } from "../model/i18n";
-import { t } from "../model/i18n";
-
 export function FitStatusBar({ result, language }: { result: FitResult | null; language: Language }) {
   if (!result) return <div className="status">{t(language, "readyNoFit")}</div>;
 
@@ -52,8 +52,15 @@ export function FitStatusBar({ result, language }: { result: FitResult | null; l
   const state = passed ? t(language, "completed") : t(language, "failedQualityGate");
   const cls = passed ? "status ok" : "status bad";
   const title = frontendFailure ? `Frontend sanity check: ${frontendFailure}` : result.message;
+  const verdict = fitQualityVerdict(result, language);
 
-  return <div className={cls} title={title}>
-    {t(language, "fit")} {state} · RMSE {fmtEng(rmse, 4)} · {t(language, "warnings")} {backendWarn} · {t(language, "errors")} {errors}{frontendFailure ? " · " + t(language, "frontendSanity") : ""}
+  return <div className="fit-status-stack">
+    <div className={cls} title={title}>
+      {t(language, "fit")} {state} | RMSE {fmtEng(rmse, 4)} | {t(language, "warnings")} {backendWarn} | {t(language, "errors")} {errors}{frontendFailure ? " | " + t(language, "frontendSanity") : ""}
+    </div>
+    <div className={`fit-verdict ${verdict.severity}`}>
+      <strong>{verdict.title}</strong>
+      <span>{verdict.message}</span>
+    </div>
   </div>;
 }

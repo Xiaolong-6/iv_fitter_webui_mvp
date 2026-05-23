@@ -73,7 +73,7 @@ function WorkspaceView(props: {
         </ErrorBoundary>
         <WarningsPanel result={props.result} language={props.language} />
       </div>
-      <EquationPreview equations={props.equationSummary} language={props.language} />
+      <EquationPreview equations={props.equationSummary} model={props.model} result={props.result} language={props.language} />
       {props.report && <section className="card report-card"><h2>{t(props.language, "markdownReport")}</h2><textarea readOnly value={props.report} rows={12} /></section>}
     </section>
   </div>;

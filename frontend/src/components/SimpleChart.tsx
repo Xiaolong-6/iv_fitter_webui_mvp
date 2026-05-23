@@ -23,6 +23,7 @@ type SimpleChartProps = {
   yLabel?: string;
   height?: number;
   robustScale?: boolean;
+  annotation?: string | null;
 };
 
 function finitePairs(series: Series[]) {
@@ -82,7 +83,7 @@ function panSpan([lo, hi]: [number, number], frac: number): [number, number] {
   return [lo + d, hi + d];
 }
 
-export function SimpleChart({ title, series, yLabel, height = 248, robustScale = true }: SimpleChartProps) {
+export function SimpleChart({ title, series, yLabel, height = 248, robustScale = true, annotation }: SimpleChartProps) {
   const width = 520;
   const margin = { left: 58, right: 14, top: 30, bottom: 38 };
   const plotW = width - margin.left - margin.right;
@@ -176,6 +177,11 @@ export function SimpleChart({ title, series, yLabel, height = 248, robustScale =
       <line x1={margin.left} x2={margin.left + plotW} y1={margin.top + plotH} y2={margin.top + plotH} className="chart-axis" />
       <line x1={margin.left} x2={margin.left} y1={margin.top} y2={margin.top + plotH} className="chart-axis" />
       {yLabel && <text x={16} y={margin.top + plotH / 2} transform={`rotate(-90 16 ${margin.top + plotH / 2})`} className="chart-label">{yLabel}</text>}
+      {annotation && <g className="chart-annotation">
+        <rect x={margin.left + 12} y={margin.top + 12} width={Math.min(360, plotW - 24)} height={46} rx={8} />
+        <text x={margin.left + 24} y={margin.top + 31}>{annotation.slice(0, 86)}</text>
+        {annotation.length > 86 ? <text x={margin.left + 24} y={margin.top + 47}>{annotation.slice(86, 158)}</text> : null}
+      </g>}
 
       {series.map((s, idx) => {
         let pts = s.x.map((x, i) => [x, s.y[i]] as [number, number]).filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y) && inXRange(x));

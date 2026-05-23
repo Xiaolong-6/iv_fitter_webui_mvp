@@ -703,3 +703,78 @@ details summary { cursor: pointer; font-weight: 650; }
 .advanced-details summary { cursor: pointer; font-weight: 600; }
 .help-tip { display: inline-flex; align-items: center; justify-content: center; width: 1.15em; height: 1.15em; border-radius: 999px; border: 1px solid currentColor; font-size: .75em; margin-left: .25rem; cursor: help; opacity: .75; }
 @media (max-width: 920px) { .data-import-grid, .page-header-card { grid-template-columns: 1fr; display: block; } .page-header-card .data-actions { margin-top: 1rem; } }
+
+/* In-workspace transparency: diagnostics belong next to the confusing result. */
+.fit-status-stack {
+  display: grid;
+  gap: 6px;
+  min-width: min(720px, 100%);
+}
+.fit-verdict {
+  display: grid;
+  gap: 2px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #dbe4f0;
+  background: #f8fafc;
+  color: #334155;
+  font-size: calc(12px * var(--app-zoom));
+  line-height: 1.35;
+}
+.fit-verdict.ok { border-color: #a7f3d0; background: #ecfdf5; color: #065f46; }
+.fit-verdict.warning { border-color: #fde68a; background: #fffbeb; color: #92400e; }
+.fit-verdict.error { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+.parameter-table th:last-child,
+.parameter-table td:last-child {
+  min-width: 280px;
+  max-width: 430px;
+}
+.parameter-meaning {
+  color: #475569;
+  font-size: calc(11px * var(--app-zoom));
+  line-height: 1.35;
+}
+.plot-anomaly {
+  font-weight: 650;
+}
+.chart-annotation rect {
+  fill: rgba(255, 247, 237, 0.94);
+  stroke: #fdba74;
+}
+.chart-annotation text {
+  fill: #9a3412;
+  font-size: 11px;
+  font-weight: 700;
+}
+.current-values-card {
+  grid-column: 1 / -1;
+}
+.parameter-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.parameter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #dbe4f0;
+  border-radius: 999px;
+  background: #f8fafc;
+  padding: 4px 8px;
+  font-size: calc(12px * var(--app-zoom));
+}
+.parameter-chip span {
+  font-variant-numeric: tabular-nums;
+  color: #0f172a;
+}
+.param-row-wrap {
+  display: grid;
+  gap: 3px;
+}
+.initial-guidance {
+  margin: -1px 0 5px 88px;
+  color: #475569;
+  font-size: calc(11px * var(--app-zoom));
+  line-height: 1.35;
+}

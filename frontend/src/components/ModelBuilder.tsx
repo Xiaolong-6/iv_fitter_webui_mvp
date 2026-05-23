@@ -18,6 +18,7 @@ import {
 import { fmtEng } from "../model/format";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
+import { initialValueGuidance } from "../model/diagnostics";
 
 interface Props {
   model: ModelSpec;
@@ -212,15 +213,19 @@ function ParamRow(props: {
   onUpdate: (patch: Partial<ParameterSpec>) => void;
 }) {
   const { name, spec, language, onUpdate } = props;
+  const guidance = initialValueGuidance(name, spec, language);
   return (
-    <div className="param-row">
-      <span title={`${name}: ${t(language, "parameterNameHelp")}`}>{spec.label ?? name}</span>
-      <DraftNumberInput title={t(language, "initialHelp")} value={spec.value} onCommit={(value) => onUpdate({ value: value ?? spec.value })} />
-      <DraftNumberInput title={t(language, "lowerHelp")} value={spec.lower} placeholder="lower" onCommit={(value) => onUpdate({ lower: value })} />
-      <DraftNumberInput title={t(language, "upperHelp")} value={spec.upper} placeholder="upper" onCommit={(value) => onUpdate({ upper: value })} />
-      <label title={t(language, "fitToggleHelp")}>
-        <input type="checkbox" checked={spec.fit ?? true} onChange={(e) => onUpdate({ fit: e.target.checked })} /> {t(language, "fitState")}
-      </label>
+    <div className="param-row-wrap">
+      <div className="param-row">
+        <span title={`${name}: ${t(language, "parameterNameHelp")}`}>{spec.label ?? name}</span>
+        <DraftNumberInput title={guidance || t(language, "initialHelp")} value={spec.value} onCommit={(value) => onUpdate({ value: value ?? spec.value })} />
+        <DraftNumberInput title={t(language, "lowerHelp")} value={spec.lower} placeholder="lower" onCommit={(value) => onUpdate({ lower: value })} />
+        <DraftNumberInput title={t(language, "upperHelp")} value={spec.upper} placeholder="upper" onCommit={(value) => onUpdate({ upper: value })} />
+        <label title={t(language, "fitToggleHelp")}>
+          <input type="checkbox" checked={spec.fit ?? true} onChange={(e) => onUpdate({ fit: e.target.checked })} /> {t(language, "fitState")}
+        </label>
+      </div>
+      {guidance ? <div className="initial-guidance">{guidance}</div> : null}
     </div>
   );
 }

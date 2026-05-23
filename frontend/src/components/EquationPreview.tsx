@@ -1,8 +1,10 @@
-import type { EquationSummary } from "../model/types";
+import type { EquationSummary, FitResult, ModelSpec } from "../model/types";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
+import { fmtEng } from "../model/format";
+import { parameterValueRows } from "../model/diagnostics";
 
-interface Props { equations?: EquationSummary | null; language: Language; }
+interface Props { equations?: EquationSummary | null; model: ModelSpec; result?: FitResult | null; language: Language; }
 
 type Term = { id: string; nick: string; row: string; law: string; form: string; placement: string };
 
@@ -149,6 +151,19 @@ function SolverCard({ series, branches, language }: { series: Term[]; branches: 
     <div className="chip-row"><strong>{t(language, "branches")}</strong>{branches.map((b) => <span className="mini-chip" key={b.id}>{b.nick}</span>)}</div>
   </div>;
 }
+function CurrentValuesCard({ model, result, language }: { model: ModelSpec; result?: FitResult | null; language: Language }) {
+  const rows = parameterValueRows(model, result ?? null);
+  return <div className="equation-card current-values-card">
+    <h3>{language === "zh" ? "当前参数值" : "Current parameter values"}</h3>
+    <p className="equation-explain">{language === "zh" ? "这些数值会代入上面的公式；运行拟合后这里显示拟合值，拟合前显示初始值。" : "These values plug into the formulas above. Before fitting they are initial values; after fitting they are fitted values."}</p>
+    <div className="parameter-chip-grid">
+      {rows.map((row) => <span className="parameter-chip" key={row.key} title={row.key}>
+        <strong>{row.label}</strong>
+        <span>{fmtEng(row.value.value, 4)} {"unit" in row.value && row.value.unit ? row.value.unit : ""}</span>
+      </span>)}
+    </div>
+  </div>;
+}
 function ComponentRows({ terms, language }: { terms: Term[]; language: Language }) {
   return <div className="equation-card component-card">
     <h3>{language === "zh" ? "元件含义" : "Component meaning"}</h3>
@@ -161,7 +176,7 @@ function ComponentRows({ terms, language }: { terms: Term[]; language: Language 
   </div>;
 }
 
-export function EquationPreview({ equations, language }: Props) {
+export function EquationPreview({ equations, model, result, language }: Props) {
   if (!equations) return <section className="card equation-preview"><h2>{t(language, "equationPreview")}</h2><p className="muted">{t(language, "formulaPreviewEmpty")}</p></section>;
   const series = rowsToTerms(equations.series);
   const branches = rowsToTerms([...equations.core, ...equations.parallel]);
@@ -170,6 +185,7 @@ export function EquationPreview({ equations, language }: Props) {
     <div className="equation-layout">
       <CircuitCard series={series} branches={branches} language={language} />
       <FormulaCards series={series} branches={branches} language={language} />
+      <CurrentValuesCard model={model} result={result} language={language} />
       <SolverCard series={series} branches={branches} language={language} />
       <ComponentRows terms={terms} language={language} />
     </div>
