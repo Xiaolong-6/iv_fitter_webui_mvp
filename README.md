@@ -181,3 +181,13 @@ For audit/history:
 - Backend equation summaries are still partly string-based internally; the frontend renders model-specific formula cards from those summaries.
 - Fit-quality interpretation is improving, but users should still inspect residual plots and warnings before trusting a report.
 - Advanced model details still expose internal law/form/placement concepts when expanded.
+
+
+### v1.4.3 HappyMeasure import note
+
+IV-fitter imports HappyMeasure CSV v2 single, wide, and long exports. Voltage-source files map `Voltage_V` to voltage and `Current_A` to current. Current-source files are converted so measured `Voltage_V` becomes the IV-fitter voltage array and sourced `Current_A` becomes the current array.
+
+
+### v1.4.5 run-state note
+
+The workspace now gives visible feedback while a fit is running, exposes a Stop action to ignore an in-flight result, and permits higher app zoom levels for high-resolution displays.

@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.4.5 - Run-state feedback, Stop action, and expanded zoom
+
+- Added visible fitting-running feedback in the toolbar and workspace.
+- Added a Stop action that lets users ignore an in-flight fit result and recover the UI.
+- Expanded app zoom limits for high-resolution displays.
+
+## v1.4.3 - HappyMeasure CSV import compatibility
+
+- Improved HappyMeasure CSV v2 import for single, wide, and long exports.
+- Added current-source handling so `Current_A, Voltage_V` exports are converted into IV-fitter voltage/current arrays correctly.
+- Added tests for HappyMeasure current-source single, wide, and long files.
+
 ## v1.4.2 - LAN startup and fetch diagnostics fix
 
 - Reworked `04c_run_lan_dev.bat` so one script explicitly starts both backend and frontend in separate windows.
@@ -144,6 +156,18 @@ Focus: HappyMeasure multi-trace import, plot safety, selected-model equation tra
 - Keep legacy composite solver available for compatibility.
 
 # Changelog
+
+## v1.4.5 - Run-state feedback, Stop action, and expanded zoom
+
+- Added visible fitting-running feedback in the toolbar and workspace.
+- Added a Stop action that lets users ignore an in-flight fit result and recover the UI.
+- Expanded app zoom limits for high-resolution displays.
+
+## v1.4.3 - HappyMeasure CSV import compatibility
+
+- Improved HappyMeasure CSV v2 import for single, wide, and long exports.
+- Added current-source handling so `Current_A, Voltage_V` exports are converted into IV-fitter voltage/current arrays correctly.
+- Added tests for HappyMeasure current-source single, wide, and long files.
 
 ## v1.4.2 - LAN startup and fetch diagnostics fix
 

@@ -151,6 +151,58 @@ def _data_section_text(text: str) -> str:
     return "\n".join(ln for ln in selected if ln.strip() and not ln.strip().startswith("#"))
 
 
+
+def _norm_col_name(name: object) -> str:
+    return str(name).lower().strip().replace(" ", "_").replace("/", "_").replace("-", "_").replace("(", "").replace(")", "")
+
+
+def _mode_is_current_source(mode: object, source_col: object | None = None, measured_col: object | None = None) -> bool:
+    """Return True when HappyMeasure source_value is current and measured_value is voltage."""
+    mode_s = str(mode or "").strip().lower()
+    if mode_s in {"curr", "current", "current_source", "current-source"}:
+        return True
+    if mode_s in {"volt", "voltage", "voltage_source", "voltage-source"}:
+        return False
+    src = _norm_col_name(source_col or "")
+    meas = _norm_col_name(measured_col or "")
+    return ("current" in src or src.endswith("_a")) and ("volt" in meas or meas.endswith("_v"))
+
+
+def _build_trace_from_arrays(voltage, current, trace_id: str, *, metadata: dict | None = None) -> tuple[TraceData, ImportQualitySummary]:
+    warnings: list[str] = []
+    v = pd.to_numeric(pd.Series(voltage), errors="coerce").to_numpy(dtype=float)
+    i = pd.to_numeric(pd.Series(current), errors="coerce").to_numpy(dtype=float)
+    rows_in = int(min(len(v), len(i)))
+    v = v[:rows_in]
+    i = i[:rows_in]
+    finite = np.isfinite(v) & np.isfinite(i)
+    if finite.sum() < len(finite):
+        warnings.append(f"Dropped {int((~finite).sum())} non-finite row(s).")
+    if finite.sum() == 0:
+        raise ValueError("No finite voltage/current rows were found.")
+    v2, i2 = v[finite], i[finite]
+    if np.any(np.diff(v2) == 0):
+        warnings.append("Repeated voltage values detected; fitting is allowed but residual plots may overlap.")
+    quality = ImportQualitySummary(
+        rows_in_file=rows_in,
+        rows_imported=int(finite.sum()),
+        rows_dropped=int((~finite).sum()),
+        voltage_col=str((metadata or {}).get("voltage_col", "Voltage_V")),
+        current_col=str((metadata or {}).get("current_col", "Current_A")),
+        voltage_min_V=float(np.min(v2)),
+        voltage_max_V=float(np.max(v2)),
+        current_min_A=float(np.min(i2)),
+        current_max_A=float(np.max(i2)),
+        warnings=warnings,
+    )
+    trace = TraceData(
+        voltage_V=v2.tolist(),
+        current_A=i2.tolist(),
+        trace_id=trace_id,
+        metadata={"source": "text_upload", "quality": quality.model_dump(), **(metadata or {})},
+    )
+    return trace, quality
+
 def import_csv_text_multi(payload: ImportCsvTextRequest) -> list[tuple[TraceData, ImportQualitySummary]]:
     """Import plain or HappyMeasure single/wide/long CSV text as one or more traces."""
     comments = _metadata_lines(payload.text)
@@ -173,20 +225,41 @@ def import_csv_text_multi(payload: ImportCsvTextRequest) -> list[tuple[TraceData
     if fmt == "long-v2" or {"trace_index", "source_value", "measured_value"}.issubset(set(norm)):
         trace_col = norm.get("trace_index")
         name_col = norm.get("device_name")
+        mode_col = norm.get("mode")
         source_col = norm.get("source_value")
         measured_col = norm.get("measured_value")
         out: list[tuple[TraceData, ImportQualitySummary]] = []
         for key, group in df.groupby(trace_col, sort=False):
             name = str(group[name_col].iloc[0]) if name_col else f"Trace {key}"
-            sub = group[[source_col, measured_col]].rename(columns={source_col: "source_value", measured_col: "measured_value"})
-            sub_payload = ImportCsvTextRequest(text=sub.to_csv(index=False), trace_id=f"T{int(key):03d} {name}" if str(key).isdigit() else f"T{key} {name}", voltage_col="source_value", current_col="measured_value", delimiter=",")
-            trace, quality = import_csv_text(sub_payload)
-            trace.metadata.update({"happymeasure_schema": schema, "happymeasure_format": "long-v2", "trace_index": str(key)})
+            mode = str(group[mode_col].iloc[0]) if mode_col else ""
+            current_source = _mode_is_current_source(mode, source_col, measured_col)
+            if current_source:
+                voltage = group[measured_col]
+                current = group[source_col]
+                vcol, icol = str(measured_col), str(source_col)
+            else:
+                voltage = group[source_col]
+                current = group[measured_col]
+                vcol, icol = str(source_col), str(measured_col)
+            trace_id = f"T{int(key):03d} {name}" if str(key).isdigit() else f"T{key} {name}"
+            trace, quality = _build_trace_from_arrays(
+                voltage, current, trace_id,
+                metadata={
+                    "happymeasure_schema": schema,
+                    "happymeasure_format": "long-v2",
+                    "happymeasure_mode": mode or ("CURR" if current_source else "VOLT"),
+                    "trace_index": str(key),
+                    "voltage_col": vcol,
+                    "current_col": icol,
+                },
+            )
+            if current_source:
+                quality.warnings.append("HappyMeasure current-source trace converted to IV-fitter voltage/current arrays.")
+                trace.metadata["quality"] = quality.model_dump()
             out.append((trace, quality))
         if not out:
             raise ValueError("No HappyMeasure long-v2 traces found.")
         return out
-
     if fmt == "wide-v2" or any(str(c).startswith("T") and "[" in str(c) for c in cols):
         xcol = cols[1] if str(cols[0]).lower().strip() == "elapsed_s" and len(cols) > 2 else (payload.voltage_col or _infer_column(cols, "voltage"))
         out = []
@@ -195,11 +268,32 @@ def import_csv_text_multi(payload: ImportCsvTextRequest) -> list[tuple[TraceData
                 continue
             if not pd.to_numeric(df[icol], errors="coerce").notna().any():
                 continue
-            out.append(build_trace(xcol, icol, str(icol).replace("[", " ").replace("]", "").strip(), {"happymeasure_format": "wide-v2"}))
+            current_source = _mode_is_current_source("", xcol, icol)
+            if current_source:
+                voltage = df[icol]
+                current = df[xcol]
+                vcol, ccol = str(icol), str(xcol)
+            else:
+                voltage = df[xcol]
+                current = df[icol]
+                vcol, ccol = str(xcol), str(icol)
+            trace, quality = _build_trace_from_arrays(
+                voltage, current, str(icol).replace("[", " ").replace("]", "").strip(),
+                metadata={
+                    "happymeasure_schema": schema,
+                    "happymeasure_format": "wide-v2",
+                    "happymeasure_mode": "CURR" if current_source else "VOLT",
+                    "voltage_col": vcol,
+                    "current_col": ccol,
+                },
+            )
+            if current_source:
+                quality.warnings.append("HappyMeasure current-source wide trace converted to IV-fitter voltage/current arrays.")
+                trace.metadata["quality"] = quality.model_dump()
+            out.append((trace, quality))
         if not out:
             raise ValueError("No HappyMeasure wide-v2 measured trace columns found.")
         return out
-
     trace, quality = import_csv_text(payload)
     trace.metadata.update({"happymeasure_schema": schema, "happymeasure_format": fmt or "single-v2" if schema else "plain"})
     return [(trace, quality)]

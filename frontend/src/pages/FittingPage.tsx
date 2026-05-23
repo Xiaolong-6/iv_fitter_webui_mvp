@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import type { FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, EquationSummary } from "../model/types";
 import { equations, exportReport, fitTrace, getRegistry } from "../api/client";
@@ -17,7 +17,7 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 
-const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "1.4.0";
+const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "1.4.5";
 
 const initialModel: ModelSpec = {
   core: [{ id: "D1", location: "core", function_type: "diode", law_id: "shockley_diode", evaluation_form: "current_branch", placement: "junction_current_branch", params: { I0_A: { value: 1e-12, lower: 1e-30, upper: 1, fit: true, unit: "A", label: "I0" }, n: { value: 1.5, lower: 0.5, upper: 10, fit: true, label: "n" } }, metadata: { nickname: "D1" } }],
@@ -111,6 +111,27 @@ function WorkspaceView(props: {
   </div>;
 }
 
+
+function isBackendConnectionError(message: string | null) {
+  if (!message) return false;
+  return /failed to fetch|networkerror|load failed|backend|connection/i.test(message);
+}
+
+function BackendConnectionBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const help = "Check that the backend window is running, then open http://127.0.0.1:8000/api/health. For phone testing, also check firewall and use the LAN address printed by 04c_run_lan_dev.bat.";
+  return <div className="backend-banner" role="alert">
+    <div>
+      <strong>Backend connection problem</strong>
+      <p>IV-fitter could not reach the local fitting backend. The browser UI loaded, but fitting/import API calls are not available yet.</p>
+      <small>{message}</small>
+    </div>
+    <div className="backend-banner-actions">
+      <button className="primary" onClick={onRetry}>Retry</button>
+      <button onClick={() => window.alert(help)}>Help</button>
+    </div>
+  </div>;
+}
+
 export function FittingPage() {
   const [registry, setRegistry] = useState<FunctionDefinition[]>([]);
   const [traces, setTraces] = useState<TraceData[]>([]);
@@ -119,6 +140,8 @@ export function FittingPage() {
   const [config, setConfig] = useState<FitConfig>(initialConfig);
   const [result, setResult] = useState<FitResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isFitting, setIsFitting] = useState(false);
+  const cancelFitRef = useRef(false);
   const [report, setReport] = useState<string>("");
   const [equationSummary, setEquationSummary] = useState<EquationSummary | null>(null);
   const [zoom, setZoom] = useState(0.92);
@@ -176,7 +199,7 @@ export function FittingPage() {
       event.preventDefault();
       setZoom((current) => {
         const next = current + (event.deltaY > 0 ? -0.04 : 0.04);
-        return Math.min(1.18, Math.max(0.72, Number(next.toFixed(2))));
+        return Math.min(1.6, Math.max(0.55, Number(next.toFixed(2))));
       });
     }
     window.addEventListener("wheel", onWheel, { passive: false });
@@ -184,6 +207,7 @@ export function FittingPage() {
   }, []);
 
   async function runFit() {
+    if (isFitting) return;
     setError(null);
     setReport("");
     setActiveView("workspace");
@@ -192,13 +216,26 @@ export function FittingPage() {
       setError(t(language, "noTraceError"));
       return;
     }
+    cancelFitRef.current = false;
+    setIsFitting(true);
     try {
-      setResult(await fitTrace(selectedTrace, model, config));
+      const fit = await fitTrace(selectedTrace, model, config);
+      if (cancelFitRef.current) return;
+      setResult(fit);
       setOpenSections((current) => ({ ...current, plots: true, parameters: true, warnings: true }));
     } catch (e) {
-      setError(String(e));
+      if (!cancelFitRef.current) setError(String(e));
+    } finally {
+      if (!cancelFitRef.current) setIsFitting(false);
     }
   }
+
+  function stopFit() {
+    cancelFitRef.current = true;
+    setIsFitting(false);
+    setError(language === "zh" ? "拟合已停止。当前后端请求可能仍会完成，但结果不会再写入界面。" : "Fit stopped. The current backend request may still finish, but its result will not update the workspace.");
+  }
+
 
   async function makeReport() {
     if (!result) return;
@@ -218,17 +255,19 @@ export function FittingPage() {
       <div className="topbar">
         <FitStatusBar result={result} language={language} onCheckLogIv={() => openAndScroll("plots")} onAdjustInitials={() => openAndScroll("model")} />
         <div className="toolbar">
-          <button className="primary" onClick={runFit}>{t(language, "runFit")}</button>
-          <button disabled={!result} onClick={makeReport}>{t(language, "report")}</button>
+          <button className={isFitting ? "primary running" : "primary"} disabled={isFitting} onClick={runFit}>{isFitting ? (language === "zh" ? "拟合中…" : "Fitting…") : t(language, "runFit")}</button>
+          <button className="danger-soft" disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止" : "Stop"}</button>
+          <button disabled={!result || isFitting} onClick={makeReport}>{t(language, "report")}</button>
           <div className="zoom-control" title={t(language, "appZoomHelp")}>
-            <button onClick={() => setZoom((z) => Math.max(0.72, Number((z - 0.06).toFixed(2))))}>−</button>
+            <button onClick={() => setZoom((z) => Math.max(0.55, Number((z - 0.06).toFixed(2))))}>−</button>
             <span>{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom((z) => Math.min(1.18, Number((z + 0.06).toFixed(2))))}>+</button>
+            <button onClick={() => setZoom((z) => Math.min(1.6, Number((z + 0.06).toFixed(2))))}>+</button>
           </div>
         </div>
       </div>
 
-      {error && <div className="warning error">{error}</div>}
+      {isFitting && <div className="fit-running-banner">{language === "zh" ? "拟合正在运行…可以点击 Stop 忽略本次结果。" : "Fit is running… use Stop to ignore this run if needed."}</div>}
+      {error && (isBackendConnectionError(error) ? <BackendConnectionBanner message={error} onRetry={runFit} /> : <div className="warning error">{error}</div>)}
 
       {activeView === "data" ? <DataImportWorkspace
         traces={traces}
@@ -254,7 +293,7 @@ export function FittingPage() {
         openSections={openSections}
         setOpenSections={setOpenSections}
       /> : <UserDocumentationPage view={activeView} registry={registry} appVersion={APP_VERSION} language={language} />}
-      {activeView === "workspace" && <button className="floating-run primary" onClick={runFit}>{t(language, "runFit")}</button>}
+      {activeView === "workspace" && <div className="mobile-action-bar"><button className={isFitting ? "primary running" : "primary"} disabled={isFitting} onClick={runFit}>{isFitting ? (language === "zh" ? "拟合中…" : "Fitting…") : t(language, "runFit")}</button><button className="danger-soft" disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止" : "Stop"}</button></div>}
     </main>
   </div>;
 }

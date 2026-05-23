@@ -139,3 +139,13 @@ Important current facts:
 - `frontend/src/api/client.ts` now has a LAN-safe fallback: if `VITE_API_BASE` is absent, it derives the backend URL from the current browser hostname and port `8000`.
 - If the computer browser shows `TypeError: Failed to fetch`, check backend health first. If computer health works but phone health fails, the issue is usually Windows Firewall, wrong adapter IP, VPN, or Wi-Fi client isolation.
 - This remains a local dev helper only, not production deployment.
+
+
+### v1.4.3 HappyMeasure import note
+
+IV-fitter imports HappyMeasure CSV v2 single, wide, and long exports. Voltage-source files map `Voltage_V` to voltage and `Current_A` to current. Current-source files are converted so measured `Voltage_V` becomes the IV-fitter voltage array and sourced `Current_A` becomes the current array.
+
+
+### v1.4.5 run-state note
+
+The workspace now gives visible feedback while a fit is running, exposes a Stop action to ignore an in-flight result, and permits higher app zoom levels for high-resolution displays.
