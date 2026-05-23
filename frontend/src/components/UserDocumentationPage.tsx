@@ -1,50 +1,296 @@
+import type { ReactNode } from "react";
 import type { AppView } from "./WorkflowSidebar";
 import type { FunctionDefinition } from "../model/types";
 import type { Language } from "../model/i18n";
-import { t } from "../model/i18n";
 
-function M({ text, sub }: { text: string; sub?: string }) { return <span className="math-var">{text}{sub && <sub>{sub}</sub>}</span>; }
-function MathLine({ children }: { children: React.ReactNode }) { return <div className="math-line doc-math-line">{children}</div>; }
-function EqOhmic({ language }: { language: Language }) { return <MathLine><M text="V" /> <span>=</span> <M text="I" /><M text="R" /> <span className="math-note">{language === "zh" ? "同一个欧姆关系可写成电压降或支路电流" : "same Ohmic law can be voltage drop or branch current"}</span></MathLine>; }
+function ManualSection({ id, title, children, wide = false }: { id: string; title: string; children: ReactNode; wide?: boolean }) {
+  return <section id={id} className={wide ? "card doc-card wide-card manual-section" : "card doc-card manual-section"}>
+    <h2>{title}</h2>
+    {children}
+  </section>;
+}
 
-function UsageGuide({ language }: { language: Language }) {
-  if (language === "zh") return <div className="doc-grid">
-    <section className="card doc-card wide-card"><h2>快速开始：拟合一条 trace</h2><ol className="doc-steps"><li><strong>导入数据。</strong> 支持普通 V/I CSV，也支持 HappyMeasure 导出的单条或多条曲线文件。软件默认空白启动，避免误拟合示例数据。</li><li><strong>选择 trace。</strong> 多 trace 文件会变成下拉框中的多条 trace；当前版本一次只拟合下拉框选中的 trace。</li><li><strong>检查列和符号。</strong> 在数据卡片里确认电压列、电流列和点数。</li><li><strong>先用最小模型。</strong> 先从 D1 + Rs + Rsh 这类基本模型开始，残差说明需要时再加经验支路。</li><li><strong>设置初值和边界。</strong> 每个组件的“初值”按钮里可以设置初始值、上下界、是否参与拟合。</li><li><strong>看 warning 再报告。</strong> 绿色只代表数值质量门控通过，不代表物理模型唯一或一定正确。</li></ol></section>
-    <section className="card doc-card"><h2>HappyMeasure 多 trace 导入</h2><p>导入后每条曲线会进入同一个下拉框；当前只拟合你选中的那一条。</p><details><summary>技术细节</summary><p>兼容 single-v2、combined wide-v2、combined long-v2。</p></details></section>
-    <section className="card doc-card"><h2>当前到底拟合什么？</h2><p>只拟合下拉框当前选中的 trace。其他 trace 不进入 residual、不参与参数优化，也不会进入报告。</p></section>
-    <section className="card doc-card"><h2>安全工作流</h2><p>不要一开始启用所有分支。先缩小电压范围、拟合简单模型、看残差，再逐步扩大范围和增加组件。</p></section>
-  </div>;
-  return <div className="doc-grid">
-    <section className="card doc-card wide-card"><h2>Quick start: fitting one trace</h2><ol className="doc-steps"><li><strong>Import data.</strong> Use a plain V/I CSV or a single-/multi-trace HappyMeasure export. The app starts empty on purpose.</li><li><strong>Select the trace.</strong> Multi-trace files create one dropdown entry per trace; only the selected trace is fitted.</li><li><strong>Check sign and units.</strong> Confirm the selected voltage/current columns and point count.</li><li><strong>Choose the smallest model first.</strong> Start with D1 + Rs + Rsh, then add empirical branches only when residuals justify them.</li><li><strong>Set initials and bounds.</strong> Open Initials for each component.</li><li><strong>Run fit and read warnings.</strong> Green status is a numerical gate, not proof of model uniqueness.</li></ol></section>
-    <section className="card doc-card"><h2>HappyMeasure multi-trace import</h2><p>Imported curves appear in one dropdown. Only the selected curve is fitted.</p><details><summary>Technical details</summary><p>Compatible wrappers: single-v2, combined wide-v2, combined long-v2.</p></details></section>
-    <section className="card doc-card"><h2>What is fitted?</h2><p>Only the selected trace is fitted. Other traces are not included in residuals, optimization, or reports.</p></section>
-    <section className="card doc-card"><h2>Safe workflow</h2><p>Use a narrow voltage range and a minimal model first. Expand only after residuals and warnings are acceptable.</p></section>
+function InlineNav({ language }: { language: Language }) {
+  const items = language === "zh"
+    ? [
+      ["workflow", "工作流程"],
+      ["data", "数据导入"],
+      ["model", "模型构建"],
+      ["functions", "函数库"],
+      ["logic", "拟合逻辑"],
+      ["convergence", "收敛与诊断"],
+      ["plots", "图表"],
+      ["parameters", "参数与报告"],
+      ["troubleshooting", "排查"],
+    ]
+    : [
+      ["workflow", "Workflow"],
+      ["data", "Data"],
+      ["model", "Model"],
+      ["functions", "Functions"],
+      ["logic", "Fitting logic"],
+      ["convergence", "Convergence"],
+      ["plots", "Plots"],
+      ["parameters", "Parameters and reports"],
+      ["troubleshooting", "Troubleshooting"],
+    ];
+  return <div className="manual-toc">{items.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}</div>;
+}
+
+function RegistryGuide({ registry, language }: { registry: FunctionDefinition[]; language: Language }) {
+  const lawGroups = registry.reduce<Record<string, FunctionDefinition[]>>((acc, item) => {
+    (acc[item.law_id] ||= []).push(item);
+    return acc;
+  }, {});
+  if (!registry.length) return <p className="muted">{language === "zh" ? "函数库还没有加载。打开 Workspace 后会从后端读取可用数学关系。" : "The function registry has not loaded yet. Open Workspace to fetch the available laws from the backend."}</p>;
+
+  return <div className="manual-law-list">
+    {Object.entries(lawGroups).map(([law, items]) => {
+      const first = items[0];
+      const params = Array.from(new Set(items.flatMap((item) => item.parameters.map((p) => `${p.name}${p.unit ? ` (${p.unit})` : ""}`))));
+      const forms = Array.from(new Set(items.flatMap((item) => item.available_forms)));
+      const placements = Array.from(new Set(items.flatMap((item) => item.allowed_placements)));
+      return <article className="manual-law-card" key={law}>
+        <h3>{first.law_name}</h3>
+        <p>{first.help_text}</p>
+        <p><strong>{language === "zh" ? "典型公式" : "Canonical equation"}:</strong> <code>{first.canonical_equation}</code></p>
+        <p><strong>{language === "zh" ? "参数" : "Parameters"}:</strong> {params.join(", ")}</p>
+        <details>
+          <summary>{language === "zh" ? "高级细节" : "Advanced details"}</summary>
+          <p><strong>law_id:</strong> <code>{law}</code></p>
+          <p><strong>{language === "zh" ? "计算形式" : "Forms"}:</strong> {forms.join(" / ")}</p>
+          <p><strong>{language === "zh" ? "放置位置" : "Placements"}:</strong> {placements.join(" / ")}</p>
+          <p><strong>{language === "zh" ? "后端适配器" : "Backend adapters"}:</strong> {items.map((item) => `${item.function_type} (${item.display_name})`).join("; ")}</p>
+        </details>
+      </article>;
+    })}
   </div>;
 }
 
-function FunctionGuide({ registry, language }: { registry: FunctionDefinition[]; language: Language }) {
-  const lawGroups = registry.reduce<Record<string, FunctionDefinition[]>>((acc, item) => { (acc[item.law_id] ||= []).push(item); return acc; }, {});
-  return <div className="doc-grid">
-    <section className="card doc-card wide-card"><h2>{language === "zh" ? "函数说明：数学关系、计算形式、电路位置" : "Function guide: laws, forms, placements"}</h2><p>{language === "zh" ? "函数首先是数学关系，不天然属于串联或并联。一个组件实例再选择计算形式和电路位置。" : "A function is a mathematical law first. It is not intrinsically series or parallel; the component instance chooses form and placement."}</p><EqOhmic language={language}/><p><strong>{language === "zh" ? "例子：" : "Example:"}</strong> {language === "zh" ? "Rs 和 Rsh 都是欧姆关系。Rs 作为主路电压降；Rsh 作为结点支路电流。" : "Rs and Rsh are both Ohmic law. Rs is a main-path voltage drop; Rsh is a junction branch current."}</p></section>
-    {registry.length === 0 ? <section className="card doc-card"><p className="muted">{language === "zh" ? "函数库还没有加载。" : "Registry not loaded yet."}</p></section> : Object.entries(lawGroups).map(([law, items]) => <section className="card doc-card" key={law}><h2>{items[0].law_name}</h2><p>{items[0].help_text}</p><p><strong>{language === "zh" ? "参数：" : "Parameters:"}</strong> {Array.from(new Set(items.flatMap((i) => i.parameters.map((p) => `${p.name}${p.unit ? ` (${p.unit})` : ""}`)))).join(", ")}</p><details><summary>{language === "zh" ? "高级/开发者信息" : "Advanced / developer details"}</summary><p className="muted">law_id: <code>{law}</code></p><p><strong>{language === "zh" ? "形式：" : "Forms:"}</strong> {Array.from(new Set(items.flatMap((i) => i.available_forms))).join(" / ")}</p><p><strong>{language === "zh" ? "位置：" : "Placements:"}</strong> {Array.from(new Set(items.flatMap((i) => i.allowed_placements))).join(" / ")}</p><p><strong>{language === "zh" ? "可执行适配器：" : "Executable adapters:"}</strong> {items.map((i) => `${i.function_type} (${i.display_name})`).join("; ")}</p></details></section>)}
+function EnglishManual({ registry, appVersion }: { registry: FunctionDefinition[]; appVersion: string }) {
+  return <>
+    <div className="card doc-hero manual-hero">
+      <div>
+        <h2>User manual</h2>
+        <p className="muted">Complete operating guide for IV-fitter Web v{appVersion}. This page replaces the previous User guide, Function guide, Fitting logic, and Fit & convergence pages.</p>
+      </div>
+    </div>
+    <InlineNav language="en" />
+    <div className="doc-grid manual-grid">
+      <ManualSection id="workflow" title="1. Basic workflow" wide>
+        <ol className="doc-steps">
+          <li><strong>Import data in the Data tab.</strong> Use a plain V/I CSV, pasted two-column data, or a HappyMeasure export. The app starts empty on purpose so you do not accidentally fit demo data.</li>
+          <li><strong>Select exactly one trace.</strong> Multi-trace files stay separated. The selected trace is the only trace used for fitting, residuals, plots, and reports.</li>
+          <li><strong>Inspect the raw table first.</strong> Confirm voltage/current columns, sign convention, point count, and obvious outliers before touching the model.</li>
+          <li><strong>Start with the smallest defensible model.</strong> A common first model is D1 + Rs + Rsh. Add empirical branches only when residuals show a real missing behavior.</li>
+          <li><strong>Set initial values and bounds.</strong> Open Initials for each component. Initial values guide the optimizer; bounds define what values are physically allowed.</li>
+          <li><strong>Run fit, then read the status, warning panel, residual plots, and parameter explanations together.</strong> A numerical convergence flag is not a scientific verdict by itself.</li>
+          <li><strong>Export only after review.</strong> Check that the selected trace, model, parameters, warnings, software version, and report text match what you intend to share.</li>
+        </ol>
+      </ManualSection>
+
+      <ManualSection id="data" title="2. Data import and trace selection">
+        <p>The Data tab is the only place for loading and inspecting raw trace data. The Workspace should stay focused on modeling and fitting.</p>
+        <ul className="doc-steps">
+          <li><strong>Supported input:</strong> CSV/TXT/DAT files, pasted tables, ordinary voltage/current columns, and HappyMeasure single- or multi-trace exports.</li>
+          <li><strong>Column detection:</strong> the importer tries to identify voltage and current names. If names are ambiguous, it may fall back to numeric columns and surface a warning.</li>
+          <li><strong>Multi-trace behavior:</strong> each imported trace gets its own selector entry. Other traces remain available, but they are not silently included in the active fit.</li>
+          <li><strong>Preview table:</strong> use it to check sign, units, missing rows, repeated points, and whether the trace identity is what you expect.</li>
+        </ul>
+      </ManualSection>
+
+      <ManualSection id="model" title="3. Model Builder concepts">
+        <p>The app presents the model as <strong>Main path</strong> plus <strong>Junction branches</strong>. Internally, legacy keys such as core, series, and parallel still exist for compatibility, but the normal user mental model is path plus branches.</p>
+        <ul className="doc-steps">
+          <li><strong>Main path:</strong> elements that carry terminal current and create voltage drop before the junction. Rs belongs here.</li>
+          <li><strong>Junction branches:</strong> elements evaluated at the junction voltage that add to terminal current. A diode branch and Rsh belong here.</li>
+          <li><strong>Nickname:</strong> user-facing component name. Rs and Rsh are nicknames for Ohmic-law instances, not separate mathematical laws.</li>
+          <li><strong>Polarity:</strong> controls whether an empirical term is active in forward, reverse, or both bias directions.</li>
+          <li><strong>Initials and bounds:</strong> edit starting values, lower/upper bounds, and whether each parameter is fitted or fixed.</li>
+        </ul>
+      </ManualSection>
+
+      <ManualSection id="functions" title="4. Function guide: laws, forms, placements" wide>
+        <p>A function is a mathematical law first. It is not intrinsically series or parallel. A component instance chooses a law, an evaluation form, and a placement.</p>
+        <p><strong>Example:</strong> Ohmic law can be written as <code>V = I R</code> or <code>I = V / R</code>. Rs uses it as a main-path voltage drop; Rsh uses it as a branch current.</p>
+        <RegistryGuide registry={registry} language="en" />
+      </ManualSection>
+
+      <ManualSection id="logic" title="5. Fitting logic and equations" wide>
+        <p>For the common D1 + Rs + Rsh model, the solver uses an implicit junction-voltage relation. The main-path drop changes the voltage seen by the branch currents.</p>
+        <div className="manual-equations">
+          <code>Vj = Vext - I Rs</code>
+          <code>ID = I0 [exp(Vj / (n VT)) - 1]</code>
+          <code>IRsh = Vj / Rsh</code>
+          <code>I = ID + IRsh</code>
+        </div>
+        <p>Because <code>I</code> appears on both sides when Rs is present, the backend solves for the current that makes the residual equal to zero at each voltage point.</p>
+        <p>The experimental <code>graph_dc</code> solver assembles equations from a topology graph. Treat it as experimental and cross-check before reporting.</p>
+      </ManualSection>
+
+      <ManualSection id="convergence" title="6. Fit setup, convergence, and quality gates">
+        <p>Convergence means the optimizer found a local numerical minimum. It does not prove the model is unique, physically correct, or sufficient.</p>
+        <ol className="doc-steps">
+          <li>Apply optional voltage range limits.</li>
+          <li>Optionally exclude likely plateau or outlier points.</li>
+          <li>Pack only parameters whose Fit checkbox is enabled.</li>
+          <li>Predict current using the selected solver mode.</li>
+          <li>Compute residuals using the selected weighting and residual floor.</li>
+          <li>Optimize with bounded least-squares, optionally with multistart.</li>
+          <li>Reject non-finite, exploded, or poor-quality results before showing them as reportable.</li>
+        </ol>
+        <p><strong>Initial value rule of thumb:</strong> <code>I0</code> often spans many decades. Silicon-like junctions may start near <code>1e-12 A</code>; wide-bandgap or very low-leakage devices may need <code>1e-20 A</code> or smaller. Use residuals and multistart when uncertain.</p>
+      </ManualSection>
+
+      <ManualSection id="plots" title="7. Reading plots and residuals">
+        <ul className="doc-steps">
+          <li><strong>Linear I-V:</strong> useful for large-current behavior but can hide low-current regions.</li>
+          <li><strong>Log |I|:</strong> better for semiconductor traces spanning many orders of magnitude.</li>
+          <li><strong>Signed residual:</strong> shows where the model over- or under-predicts current.</li>
+          <li><strong>Log |residual|:</strong> reveals mismatch across voltage regions even when absolute currents vary widely.</li>
+          <li><strong>Abnormal range warning:</strong> if plotted current reaches unrealistic magnitudes, treat the result as numerical divergence until proven otherwise.</li>
+        </ul>
+      </ManualSection>
+
+      <ManualSection id="parameters" title="8. Parameters, warnings, and reports">
+        <p>The parameter table is part of the diagnosis, not just a numeric output. Read value, standard error, bounds, fit/fixed state, and the inline physical explanation together.</p>
+        <ul className="doc-steps">
+          <li><strong>n:</strong> diode ideality factor. Values near 1 often suggest diffusion current; near 2 often suggest recombination; values above 2 deserve model/data review.</li>
+          <li><strong>I0:</strong> saturation or current scale. Large or unstable values often point to initial-value, leakage, or model-structure problems.</li>
+          <li><strong>Rs:</strong> controls high-current voltage drop and forward-bias roll-off.</li>
+          <li><strong>Rsh:</strong> controls low-bias leakage. Smaller Rsh means stronger leakage.</li>
+          <li><strong>Warnings:</strong> must be reviewed before export. A green status does not erase warning context.</li>
+          <li><strong>Reports:</strong> include reproducibility metadata and should match the selected trace and current model.</li>
+        </ul>
+      </ManualSection>
+
+      <ManualSection id="troubleshooting" title="9. Troubleshooting">
+        <ul className="doc-steps">
+          <li><strong>Fit explodes:</strong> narrow the voltage range, reset initial values, enable multistart, and check whether the model has enough branches.</li>
+          <li><strong>Parameters stick to bounds:</strong> the parameter may be poorly identified, the bounds may be too tight, or the model may be missing a current path.</li>
+          <li><strong>Residuals have structure:</strong> add a physically motivated branch only after the pattern is repeatable and trace-specific artifacts are ruled out.</li>
+          <li><strong>Reverse-bias region is invisible:</strong> use log |I| and log residual plots instead of relying on linear I-V.</li>
+          <li><strong>Multi-trace confusion:</strong> confirm the selected trace dropdown before running or reporting a fit.</li>
+        </ul>
+      </ManualSection>
+    </div>
+  </>;
+}
+
+function ChineseManual({ registry, appVersion }: { registry: FunctionDefinition[]; appVersion: string }) {
+  return <>
+    <div className="card doc-hero manual-hero">
+      <div>
+        <h2>用户手册</h2>
+        <p className="muted">IV-fitter Web v{appVersion} 的完整使用说明。这里合并了原来的 User guide、Function guide、Fitting logic、Fit & convergence。</p>
+      </div>
+    </div>
+    <InlineNav language="zh" />
+    <div className="doc-grid manual-grid">
+      <ManualSection id="workflow" title="1. 基本工作流程" wide>
+        <ol className="doc-steps">
+          <li><strong>先到 Data 导入数据。</strong> 支持普通 V/I CSV、粘贴表格、TXT/DAT、HappyMeasure 单 trace 或多 trace 导出。应用默认空白启动，避免误拟合示例数据。</li>
+          <li><strong>只选择一条 trace。</strong> 多 trace 文件会保留为多个下拉选项；当前拟合、残差、图表和报告只使用选中的那一条。</li>
+          <li><strong>先检查原始表格。</strong> 确认电压/电流列、符号、点数、异常点和 trace 身份。</li>
+          <li><strong>从最小合理模型开始。</strong> 常见起点是 D1 + Rs + Rsh。只有当残差说明确实缺少行为时，再加入经验支路。</li>
+          <li><strong>设置初值和边界。</strong> 每个组件的 Initials 里可以设置初值、上下界，以及是否参与拟合。</li>
+          <li><strong>运行后一起看状态、warnings、残差图和参数解释。</strong> 数值收敛不等于物理正确。</li>
+          <li><strong>确认后再导出。</strong> 报告前检查选中 trace、模型、参数、warnings、软件版本和报告文字。</li>
+        </ol>
+      </ManualSection>
+
+      <ManualSection id="data" title="2. 数据导入和 trace 选择">
+        <p>Data 页负责导入和检查原始数据；Workspace 负责建模和拟合。</p>
+        <ul className="doc-steps">
+          <li><strong>支持格式：</strong>CSV/TXT/DAT、粘贴表格、普通 voltage/current 列，以及 HappyMeasure 单/多 trace 导出。</li>
+          <li><strong>列识别：</strong>导入器会尝试识别电压和电流列；列名不清楚时可能回退到数值列，并给出 warning。</li>
+          <li><strong>多 trace：</strong>每条 trace 保留独立身份，不会被偷偷合并到一次拟合里。</li>
+          <li><strong>预览表：</strong>用来检查符号、单位、缺失行、重复点和 trace 身份。</li>
+        </ul>
+      </ManualSection>
+
+      <ManualSection id="model" title="3. Model Builder 概念">
+        <p>用户看到的是 <strong>主路 Main path</strong> 和 <strong>结点支路 Junction branches</strong>。内部仍有 core/series/parallel 兼容字段，但普通用户不需要用这些内部分类思考。</p>
+        <ul className="doc-steps">
+          <li><strong>主路：</strong>承载端口电流并产生压降，例如 Rs。</li>
+          <li><strong>结点支路：</strong>在结点电压下产生电流并加入总电流，例如 diode 和 Rsh。</li>
+          <li><strong>Nickname：</strong>用户可读名称。Rs 和 Rsh 是 Ohmic law 的昵称，不是两个不同数学定律。</li>
+          <li><strong>Polarity：</strong>决定经验项在正向、反向或双向偏压下生效。</li>
+          <li><strong>Initials and bounds：</strong>控制优化起点、允许范围，以及参数是否固定。</li>
+        </ul>
+      </ManualSection>
+
+      <ManualSection id="functions" title="4. 函数说明：数学关系、计算形式、放置位置" wide>
+        <p>函数首先是数学关系，本身不天然属于串联或并联。组件实例再选择计算形式和电路位置。</p>
+        <p><strong>例子：</strong>Ohmic law 可写成 <code>V = I R</code> 或 <code>I = V / R</code>。Rs 把它作为主路压降；Rsh 把它作为支路电流。</p>
+        <RegistryGuide registry={registry} language="zh" />
+      </ManualSection>
+
+      <ManualSection id="logic" title="5. 拟合逻辑和方程" wide>
+        <p>对于常见 D1 + Rs + Rsh 模型，求解器使用隐式结点电压关系。主路压降会改变支路实际看到的电压。</p>
+        <div className="manual-equations">
+          <code>Vj = Vext - I Rs</code>
+          <code>ID = I0 [exp(Vj / (n VT)) - 1]</code>
+          <code>IRsh = Vj / Rsh</code>
+          <code>I = ID + IRsh</code>
+        </div>
+        <p>有 Rs 时，<code>I</code> 同时出现在等式两边，所以后端会对每个外部电压点求一个让 residual 为零的电流。</p>
+        <p><code>graph_dc</code> 会从拓扑图装配 DC 方程，目前仍是实验功能，报告前需要交叉检查。</p>
+      </ManualSection>
+
+      <ManualSection id="convergence" title="6. 拟合设置、收敛和质量门控">
+        <p>收敛只表示优化器找到当前目标函数的局部数值最小值，不证明模型唯一、必要或物理真实。</p>
+        <ol className="doc-steps">
+          <li>应用可选电压范围。</li>
+          <li>可选排除疑似平台或异常点。</li>
+          <li>只打包勾选 Fit 的自由参数。</li>
+          <li>用选定 solver 预测电流。</li>
+          <li>按 weighting 和 residual floor 计算残差。</li>
+          <li>在边界内做 least-squares 优化，可选 multistart。</li>
+          <li>最终结果还要经过有限性、爆炸值和质量门控检查，才应显示为可报告。</li>
+        </ol>
+        <p><strong>初值经验：</strong><code>I0</code> 可能跨很多数量级。普通硅结可从 <code>1e-12 A</code> 附近开始；宽禁带或极低漏电器件可能需要 <code>1e-20 A</code> 或更小。不确定时看残差并启用 multistart。</p>
+      </ManualSection>
+
+      <ManualSection id="plots" title="7. 如何读图和残差">
+        <ul className="doc-steps">
+          <li><strong>线性 I-V：</strong>适合看大电流区，但会隐藏低电流区。</li>
+          <li><strong>Log |I|：</strong>更适合跨多个数量级的半导体曲线。</li>
+          <li><strong>带符号 residual：</strong>显示模型在哪些电压区高估或低估。</li>
+          <li><strong>Log |residual|：</strong>在电流跨度很大时更容易看出失配区域。</li>
+          <li><strong>显示范围异常：</strong>如果曲线到达不现实的大电流，先按数值发散处理。</li>
+        </ul>
+      </ManualSection>
+
+      <ManualSection id="parameters" title="8. 参数、warnings 和报告">
+        <p>参数表不是单纯数值输出，而是诊断的一部分。需要同时看数值、不确定度、边界、固定/拟合状态和物理解释。</p>
+        <ul className="doc-steps">
+          <li><strong>n：</strong>理想因子。接近 1 常见于扩散主导，接近 2 常见于复合主导，大于 2 通常需要检查模型或数据。</li>
+          <li><strong>I0：</strong>饱和电流/电流尺度。过大或不稳定常指向初值、漏电或模型结构问题。</li>
+          <li><strong>Rs：</strong>控制高电流区压降和正向高偏压弯折。</li>
+          <li><strong>Rsh：</strong>控制低偏压漏电，越小表示漏电越强。</li>
+          <li><strong>Warnings：</strong>报告前必须逐条看。绿色状态不代表 warnings 可以忽略。</li>
+          <li><strong>报告：</strong>应包含复现实验所需的 trace、模型、参数和版本信息。</li>
+        </ul>
+      </ManualSection>
+
+      <ManualSection id="troubleshooting" title="9. 常见问题排查">
+        <ul className="doc-steps">
+          <li><strong>拟合爆炸：</strong>缩小电压范围，重置初值，启用 multistart，检查模型是否缺少支路。</li>
+          <li><strong>参数贴边界：</strong>可能是参数不可辨识、边界太紧，或模型缺少电流通道。</li>
+          <li><strong>残差有结构：</strong>只有在模式可重复且排除 trace 问题后，才加入有物理意义的支路。</li>
+          <li><strong>反偏段看不见：</strong>不要只看线性 I-V，用 Log |I| 和 Log residual。</li>
+          <li><strong>多 trace 混淆：</strong>运行和报告前确认下拉框选中的 trace。</li>
+        </ul>
+      </ManualSection>
+    </div>
+  </>;
+}
+
+export function UserDocumentationPage({ registry, appVersion, language = "en" }: { view?: AppView; registry: FunctionDefinition[]; appVersion: string; language?: Language }) {
+  return <div className="doc-page">
+    {language === "zh"
+      ? <ChineseManual registry={registry} appVersion={appVersion} />
+      : <EnglishManual registry={registry} appVersion={appVersion} />}
   </div>;
-}
-
-function FittingLogic({ language }: { language: Language }) {
-  return <div className="doc-grid">
-    <section className="card doc-card wide-card"><h2>{language === "zh" ? "当前模型如何变成等效电路" : "How the selected model becomes a circuit"}</h2><p>{language === "zh" ? "模型构建器里的组件会按位置分到主路或结点支路。主路项先消耗电压；结点支路在剩余电压下产生电流。" : "Model-builder components are assigned to the main path or junction branches. Main-path terms consume voltage first; branches generate current at the remaining voltage."}</p></section>
-    <section className="card doc-card wide-card"><h2>{language === "zh" ? "D1 + Rs + Rsh 的实际数学逻辑" : "Actual math for D1 + Rs + Rsh"}</h2><div className="stacked-math"><MathLine><M text="V" sub={language === "zh" ? "结点" : "junction"} /> <span>=</span> <M text="V" sub={language === "zh" ? "外部" : "external"} /> <span>−</span> <M text="I" /><M text="R" sub="s" /></MathLine><MathLine><M text="I" sub="D1" /> <span>=</span> <M text="I" sub="0" /> <span>[ exp(</span><M text="V" sub={language === "zh" ? "结点" : "junction"} /><span> / </span><M text="nV" sub="T" /><span>) − 1 ]</span></MathLine><MathLine><M text="I" sub="Rsh" /> <span>=</span> <M text="V" sub={language === "zh" ? "结点" : "junction"} /><span> / </span><M text="R" sub="sh" /></MathLine><MathLine><M text="I" sub={language === "zh" ? "端口" : "terminal"} /> <span>=</span> <M text="I" sub="D1" /> <span>+</span> <M text="I" sub="Rsh" /></MathLine></div></section>
-    <section className="card doc-card"><h2>{language === "zh" ? "Rs 和 Rsh 的区别" : "Difference between Rs and Rsh"}</h2><p>{language === "zh" ? "二者都是欧姆关系。Rs 放在主路，用电压降形式；Rsh 放在支路，用电流形式。" : "Both are Ohmic. Rs is placed in the main path and evaluated as a voltage drop; Rsh is placed in a branch and evaluated as current."}</p></section>
-    <section className="card doc-card"><h2>{language === "zh" ? "传统复合求解器 vs graph_dc" : "Legacy composite vs graph_dc"}</h2><p>{language === "zh" ? "legacy_composite 使用单结点隐式公式。graph_dc 会从图结构组装 DC 方程，目前仍是实验性功能，报告前必须交叉检查。" : "legacy_composite uses the one-junction implicit formula. graph_dc assembles DC equations from the topology graph and remains experimental."}</p></section>
-  </div>;
-}
-
-function ConvergenceGuide({ language }: { language: Language }) {
-  const steps = language === "zh" ? ["选择一条 trace：多 trace 文件只取下拉框当前选中的 trace 进入拟合。", "筛选电压范围：V min 和 V max 作用在外部电压上。", "可选排除平台/异常点：优化前移除疑似高电流平台点。", "打包自由参数：只有勾选 Fit? 的参数会变化。", "预测电流：求解器对每个外部电压点计算模型电流。", "计算残差：根据权重和 residual floor 计算目标函数。", "优化：least_squares 在上下界内寻找局部最小。", "质量门控：最终曲线、RMSE 和有限性检查通过后才显示绿色。"] : ["Select one trace: multi-trace imports are reduced to the selected trace before fitting.", "Filter voltage range: V min and V max are applied to external voltage.", "Optionally exclude plateaus/outliers before optimization.", "Pack only parameters with Fit? enabled.", "Predict current for each external voltage.", "Compute residuals using the selected weighting and residual floor.", "Optimize with least_squares inside bounds.", "Gate the final result before green success is allowed."];
-  return <div className="doc-grid"><section className="card doc-card wide-card"><h2>{language === "zh" ? "拟合与收敛：代码里的实际流程" : "Fit & convergence: actual numerical logic"}</h2><ol className="doc-steps">{steps.map((s) => <li key={s}>{s}</li>)}</ol></section><section className="card doc-card"><h2>{language === "zh" ? "为什么收敛不等于物理正确" : "Why convergence is not proof"}</h2><p>{language === "zh" ? "收敛只说明优化器找到了当前目标函数的局部最小，不证明组件唯一、必要或物理真实。" : "Convergence means a local numerical minimum was found. It does not prove uniqueness, necessity, or physical reality."}</p></section><section className="card doc-card"><h2>{language === "zh" ? "坏收敛迹象" : "Bad convergence signs"}</h2><ul className="doc-steps"><li>{language === "zh" ? "红色状态或质量门控失败。" : "Red status or failed quality gate."}</li><li>{language === "zh" ? "参数卡在上下界。" : "Parameters stuck at bounds."}</li><li>{language === "zh" ? "不同初值得到不同参数但误差接近。" : "Different initials give different parameters with similar error."}</li><li>{language === "zh" ? "残差有明显系统结构。" : "Residuals show systematic structure."}</li></ul></section></div>;
-}
-
-export function UserDocumentationPage({ view, registry, appVersion, language = "en" }: { view: AppView; registry: FunctionDefinition[]; appVersion: string; language?: Language }) {
-  const title = view === "usage" ? t(language, "titleUsage") : view === "functions" ? t(language, "titleFunctions") : view === "logic" ? t(language, "titleLogic") : t(language, "titleConvergence");
-  return <div className="doc-page"><div className="card doc-hero"><div><h2>{title}</h2><p className="muted">{t(language, "docsHero")} v{appVersion}</p></div></div>{view === "usage" && <UsageGuide language={language} />}{view === "functions" && <FunctionGuide registry={registry} language={language} />}{view === "logic" && <FittingLogic language={language} />}{view === "convergence" && <ConvergenceGuide language={language} />}</div>;
 }
