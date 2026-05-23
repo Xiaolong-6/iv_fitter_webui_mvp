@@ -1,8 +1,8 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.4.10**
+Current version: **1.4.11**
 
-> v1.4.10 importer note: HappyMeasure combined wide-v2 files now import correctly even when the UI/API passes explicit selected columns. The package includes an anonymized regression fixture under `examples/testdata/`.
+> v1.4.9 importer note: HappyMeasure combined wide-v2 files now import correctly even when the UI/API passes explicit selected columns. The package includes an anonymized regression fixture under `examples/testdata/`.
 
 IV-fitter Web UI is a local-first tool for importing I-V traces, building physically interpretable circuit models, running fits, checking residuals/warnings, and exporting defensible results.
 
@@ -138,7 +138,7 @@ Most important files:
 - `docs/RESPONSIVE_WORKSPACE.md` — responsive layout, mobile behavior, and zoom.
 - `docs/ROADMAP.md` — current roadmap.
 
-Historical root-level `HANDOFF_*` files and old per-version `docs/TESTED_*` files were removed in v1.4.10. Their useful information is consolidated into the files above.
+Historical root-level `HANDOFF_*` files and old per-version `docs/TESTED_*` files were removed in v1.4.8. Their useful information is consolidated into the files above.
 
 ## Known limitations
 
@@ -156,3 +156,7 @@ The Data page **Load sample data** button now loads a full anonymized HappyMeasu
 - `frontend/public/sample_data/happymeasure_combined_wide_v2_anonymized.csv`
 
 The sample preserves the original multi-trace row count and voltage/current data needed to test importer behavior, while removing sample identifiers, timestamps, port names, and trace fingerprints.
+
+### Plot trace selector
+
+The Workspace **Plots** section includes a trace selector in the plot header. This lets users switch the displayed trace directly from the plot area without returning to the Data tab. Switching traces follows the same selected-trace workflow used elsewhere: the next fit/report belongs to the newly selected trace.

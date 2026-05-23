@@ -24,7 +24,13 @@ function mismatchRegions(voltage: number[], measured: number[], fitted: number[]
   return regions.slice(0, 4);
 }
 
-export function PlotWorkspace({ traces, selectedTraceId, result, language }: { traces: TraceData[]; selectedTraceId: string | null; result: FitResult | null; language: Language }) {
+export function PlotWorkspace({ traces, selectedTraceId, onSelectTrace, result, language }: {
+  traces: TraceData[];
+  selectedTraceId: string | null;
+  onSelectTrace: (id: string) => void;
+  result: FitResult | null;
+  language: Language;
+}) {
   const [view, setView] = useState<PlotId>("all");
   if (!traces.length) return <section className="card plots"><h2>{t(language, "plots")}</h2><div className="warning info">{t(language, "noPlotData")}</div></section>;
   const selected = traces.find((tr) => tr.trace_id === selectedTraceId) ?? traces[0];
@@ -40,15 +46,19 @@ export function PlotWorkspace({ traces, selectedTraceId, result, language }: { t
     <div className="card-head plot-head">
       <div>
         <h2>{t(language, "plots")}</h2>
-        <span className="muted">{t(language, "plotHelp")} <strong>{selected.trace_id}</strong></span>
       </div>
-      <label className="inline-select"><span>{t(language, "plotView")}</span><select value={view} onChange={(e) => setView(e.target.value as PlotId)}>
-        <option value="linear">{t(language, "linear")}</option>
-        <option value="log">{t(language, "log")}</option>
-        <option value="residual">{t(language, "residual")}</option>
-        <option value="logResidual">{t(language, "logResidual")}</option>
-        <option value="all">{t(language, "allDiagnosticPlots")}</option>
-      </select></label>
+      <div className="plot-toolbar">
+        <label className="inline-select plot-trace-select"><span>{t(language, "selectedTrace")}</span><select value={selected.trace_id} onChange={(e) => onSelectTrace(e.target.value)}>
+          {traces.map((trace) => <option value={trace.trace_id} key={trace.trace_id}>{trace.trace_id}</option>)}
+        </select></label>
+        <label className="inline-select"><span>{t(language, "plotView")}</span><select value={view} onChange={(e) => setView(e.target.value as PlotId)}>
+          <option value="linear">{t(language, "linear")}</option>
+          <option value="log">{t(language, "log")}</option>
+          <option value="residual">{t(language, "residual")}</option>
+          <option value="logResidual">{t(language, "logResidual")}</option>
+          <option value="all">{t(language, "allDiagnosticPlots")}</option>
+        </select></label>
+      </div>
     </div>
     {residualMissing ? <div className="warning info">{t(language, "noFitResidual")}</div> : null}
     {anomaly ? <div className="warning plot-anomaly">{anomaly}</div> : null}

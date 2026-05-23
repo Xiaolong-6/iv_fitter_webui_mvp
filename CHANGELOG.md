@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.4.11 - Plot trace selector and cleaner plot header
+
+- Removed the redundant selected-trace explanatory sentence from the Plots header.
+- Added a trace selector directly in the Plots header so users can switch plotted traces without returning to the Data tab.
+- Kept trace switching behavior consistent with the existing selected-trace workflow: changing the plotted trace clears stale fit/report results before the next fit.
+
 ## v1.4.10 - Full HappyMeasure sample data loader
 
 - Replaced the Data page sample loader with the full anonymized HappyMeasure combined wide-v2 sample.

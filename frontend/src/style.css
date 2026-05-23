@@ -1732,3 +1732,32 @@ button.running { cursor: progress; opacity: 0.85; }
     min-width: 0;
   }
 }
+
+
+/* v1.4.11: plot trace selector in the plot header. */
+.plot-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.plot-trace-select select {
+  min-width: min(360px, 48vw);
+  max-width: 100%;
+}
+@media (max-width: 640px) {
+  .plot-toolbar {
+    width: 100%;
+    align-items: stretch;
+    justify-content: stretch;
+    gap: 8px;
+  }
+  .plot-toolbar .inline-select,
+  .plot-toolbar .inline-select select {
+    width: 100%;
+  }
+  .plot-trace-select select {
+    min-width: 0;
+  }
+}

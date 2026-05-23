@@ -17,7 +17,7 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 
-const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "1.4.8";
+const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "1.4.11";
 
 const initialModel: ModelSpec = {
   core: [{ id: "D1", location: "core", function_type: "diode", law_id: "shockley_diode", evaluation_form: "current_branch", placement: "junction_current_branch", params: { I0_A: { value: 1e-12, lower: 1e-30, upper: 1, fit: true, unit: "A", label: "I0" }, n: { value: 1.5, lower: 0.5, upper: 10, fit: true, label: "n" } }, metadata: { nickname: "D1" } }],
@@ -90,7 +90,7 @@ function WorkspaceView(props: {
     <section className="plot-stack main-results-stack">
       <Section id="plots" title={t(props.language, "plots")} summary={props.result ? "diagnostic views" : "load data or run fit"}>
         <ErrorBoundary label="Plot workspace">
-          <PlotWorkspace traces={props.traces} selectedTraceId={props.selectedTraceId} result={props.result} language={props.language} />
+          <PlotWorkspace traces={props.traces} selectedTraceId={props.selectedTraceId} onSelectTrace={props.setSelectedTraceId} result={props.result} language={props.language} />
         </ErrorBoundary>
       </Section>
       <div className="main-result-grid">

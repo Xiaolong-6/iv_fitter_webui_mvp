@@ -1,6 +1,6 @@
-# Tested current package — v1.4.10
+# Tested current package — v1.4.11
 
-Scope: HappyMeasure combined wide-v2 selected-column import fix and de-identified test data refresh.
+Scope: v1.4.11 plot trace selector, plus retained HappyMeasure import/sample-data regression coverage.
 
 ## What changed
 
@@ -37,3 +37,10 @@ python -m compileall -q backend/ivfitter backend/tests
 - Confirmed `examples/testdata/happymeasure_combined_wide_v2_anonymized.csv` preserves the full row count of the uploaded HappyMeasure combined wide-v2 fixture.
 - Confirmed the anonymized fixture contains 14 trace columns and no `HPQ` sample identifiers or `COM3` port string.
 - Confirmed the browser sample loader now imports the full HappyMeasure fixture through the backend `importCsvTextMulti` path instead of constructing the old synthetic trace in memory.
+
+
+## v1.4.11 plot selector verification
+
+- Confirmed the Plots header no longer shows the redundant selected-trace explanatory sentence.
+- Confirmed the Plots header includes a trace selector for multi-trace imports.
+- Confirmed trace switching from the Plots section uses the same selected-trace state as the Data page and clears stale fit/report results before the next fit.
