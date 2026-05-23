@@ -83,6 +83,8 @@ Examples of text that should not appear in normal UI:
 
 Implementation details such as accepted CSV wrapper names, internal placement keys, adapter names, serialization details, or numeric draft handling belong in compact help, advanced details, developer docs, logs, or tested notes unless they are needed for physical interpretation or reporting transparency.
 
+User-facing function documentation must describe use cases, unsuitable cases, curve effects, parameters, and fitting strategy first. Internal schema terms such as law IDs, placement keys, adapter names, serialization fields, and raw expression templates belong only in collapsed Advanced details or developer documentation.
+
 ## 4. User-facing transparency without dark boxes
 
 The released UI must show enough information for scientific review without forcing users to read code.

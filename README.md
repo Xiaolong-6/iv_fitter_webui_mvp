@@ -188,6 +188,11 @@ For audit/history:
 IV-fitter imports HappyMeasure CSV v2 single, wide, and long exports. Voltage-source files map `Voltage_V` to voltage and `Current_A` to current. Current-source files are converted so measured `Voltage_V` becomes the IV-fitter voltage array and sourced `Current_A` becomes the current array.
 
 
+
+### v1.4.7 Function Guide note
+
+The User manual Function Guide is now written for real users rather than developers. Each model term explains what physical behavior it represents, when to use it, when to avoid it, how it changes the I-V curve, what the main parameters mean, and how to fit it safely. Internal schema details such as law identifiers, supported forms, placements, and parameter keys are kept in collapsed Advanced details.
+
 ### v1.4.5 run-state note
 
 The workspace now gives visible feedback while a fit is running, exposes a Stop action to ignore an in-flight result, and permits higher app zoom levels for high-resolution displays.

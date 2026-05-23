@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.4.7 - Function Guide docs and regression check
+
+- Updated README and handoff notes for the user-facing Function Guide rewrite.
+- Added a regression test that checks the default Function Guide documentation block does not expose internal schema terms.
+- Added exact-tree tested notes for the v1.4.7 package.
+
+## v1.4.6 - User-facing Function Guide rewrite
+
+- Rewrote the User manual Function Guide around physical purpose, use cases, unsuitable cases, I-V curve effects, parameters, and fitting strategy.
+- Moved internal registry/schema information such as law IDs, supported forms, placements, parameter keys, and serialization notes into collapsed Advanced details.
+- Added rendered formula blocks for each function card, including advanced formula sections where needed.
+- Updated project rules so user-facing function documentation prioritizes physical interpretation and keeps internal schema terms out of the default view.
+
 ## v1.4.5 - Run-state feedback, Stop action, and expanded zoom
 
 - Added visible fitting-running feedback in the toolbar and workspace.
@@ -156,6 +169,19 @@ Focus: HappyMeasure multi-trace import, plot safety, selected-model equation tra
 - Keep legacy composite solver available for compatibility.
 
 # Changelog
+
+## v1.4.7 - Function Guide docs and regression check
+
+- Updated README and handoff notes for the user-facing Function Guide rewrite.
+- Added a regression test that checks the default Function Guide documentation block does not expose internal schema terms.
+- Added exact-tree tested notes for the v1.4.7 package.
+
+## v1.4.6 - User-facing Function Guide rewrite
+
+- Rewrote the User manual Function Guide around physical purpose, use cases, unsuitable cases, I-V curve effects, parameters, and fitting strategy.
+- Moved internal registry/schema information such as law IDs, supported forms, placements, parameter keys, and serialization notes into collapsed Advanced details.
+- Added rendered formula blocks for each function card, including advanced formula sections where needed.
+- Updated project rules so user-facing function documentation prioritizes physical interpretation and keeps internal schema terms out of the default view.
 
 ## v1.4.5 - Run-state feedback, Stop action, and expanded zoom
 

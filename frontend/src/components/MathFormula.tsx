@@ -12,6 +12,9 @@ export function renderLatexLite(src: string) {
   s = s.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '<span class="frac"><span>$1</span><span>$2</span></span>');
   s = s.replace(/\\left|\\right|\\!/g, "");
   s = s.replace(/\\operatorname\{softplus\}/g, "softplus");
+  s = s.replace(/\\text\{([^{}]+)\}/g, "$1");
+  s = s.replace(/\\pm/g, "±");
+  s = s.replace(/\\Delta/g, "Δ");
   s = s.replace(/\\exp/g, "exp");
   s = s.replace(/([A-Za-z]+)_\{([^{}]+)\}/g, '$1<sub>$2</sub>');
   s = s.replace(/([A-Za-z])_([A-Za-z0-9]+)/g, '$1<sub>$2</sub>');

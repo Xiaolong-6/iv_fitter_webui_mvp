@@ -149,3 +149,10 @@ IV-fitter imports HappyMeasure CSV v2 single, wide, and long exports. Voltage-so
 ### v1.4.5 run-state note
 
 The workspace now gives visible feedback while a fit is running, exposes a Stop action to ignore an in-flight result, and permits higher app zoom levels for high-resolution displays.
+
+### v1.4.7 Function Guide rewrite note
+
+The User manual Function Guide must stay user-facing. Default cards should explain physical purpose, suitable data shapes, unsuitable cases, curve effect, main parameters, and fitting advice. Do not expose `law_id`, internal placements, adapter names, parameter keys, serialization notes, or raw expression templates in the default body. Those details belong only in collapsed Advanced details or developer docs.
+
+A lightweight source-level test checks that the default Function Guide documentation block does not contain internal schema terms. Update that test if the manual structure changes, but keep the user-facing boundary.
+

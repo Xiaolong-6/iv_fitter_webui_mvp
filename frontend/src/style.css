@@ -1599,3 +1599,136 @@ button.running { cursor: progress; opacity: 0.85; }
   .mobile-action-bar button { width: 100%; }
   .mobile-action-bar .danger-soft { min-width: 82px; }
 }
+
+/* v1.4.6 Function Guide rewrite: user-facing model cards. */
+.user-law-list {
+  gap: 16px;
+}
+.user-law-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+.manual-law-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #e5edf7;
+  padding-bottom: 10px;
+}
+.manual-law-header h3 {
+  margin: 0 0 4px;
+}
+.manual-law-header p {
+  margin: 0;
+  color: #475569;
+}
+.manual-law-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  min-width: 160px;
+}
+.manual-law-tags span {
+  border: 1px solid #dbe7f5;
+  border-radius: 999px;
+  background: #f8fbff;
+  color: #334155;
+  font-size: 0.78rem;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+.manual-law-user-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.manual-law-user-grid section,
+.manual-fit-advice,
+.manual-formula-view,
+.manual-parameter-table {
+  border: 1px solid #e5edf7;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #ffffff;
+}
+.manual-law-user-grid h4,
+.manual-fit-advice h4,
+.manual-formula-view h4,
+.manual-parameter-table h4 {
+  margin: 0 0 6px;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+.manual-law-user-grid p,
+.manual-fit-advice p {
+  margin: 0;
+  color: #475569;
+}
+.manual-parameter-table > div {
+  display: grid;
+  gap: 6px;
+}
+.manual-parameter-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 0.35fr) 1fr;
+  gap: 10px;
+  align-items: start;
+  border-top: 1px solid #eef3f9;
+  padding-top: 6px;
+}
+.manual-parameter-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.manual-parameter-row span {
+  font-family: "Cambria Math", "STIX Two Math", "Noto Serif", "Times New Roman", serif;
+  font-weight: 700;
+  color: #0f172a;
+}
+.manual-parameter-row p {
+  margin: 0;
+  color: #475569;
+}
+.manual-advanced-formula,
+.manual-advanced-details {
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fbfdff;
+}
+.manual-advanced-formula summary,
+.manual-advanced-details summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #334155;
+}
+.manual-advanced-grid {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.manual-advanced-grid > div {
+  display: grid;
+  gap: 4px;
+}
+.manual-advanced-grid code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+@media (max-width: 720px) {
+  .manual-law-header,
+  .manual-law-user-grid,
+  .manual-parameter-row {
+    grid-template-columns: 1fr;
+  }
+  .manual-law-header {
+    display: grid;
+  }
+  .manual-law-tags {
+    justify-content: flex-start;
+    min-width: 0;
+  }
+}
