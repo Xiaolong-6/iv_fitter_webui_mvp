@@ -1421,3 +1421,26 @@ button .help-tip {
     overflow: visible;
   }
 }
+
+
+/* v1.3.15 circuit layout refinement: branches fold below the main path and return to one shared terminal. */
+.circuit-panel-vertical-branches .circuit-svg {
+  min-height: 210px;
+}
+.circuit-panel-vertical-branches .circuit-return-bus {
+  stroke-dasharray: none;
+}
+.circuit-panel-vertical-branches .circuit-main-box {
+  filter: drop-shadow(0 2px 4px rgba(79, 70, 229, 0.08));
+}
+.circuit-panel-vertical-branches .circuit-branch-box {
+  filter: drop-shadow(0 2px 4px rgba(22, 163, 74, 0.08));
+}
+.circuit-panel-vertical-branches .circuit-terminal-minus {
+  fill: #fff;
+}
+@media (max-width: 850px), (orientation: portrait) {
+  .circuit-panel-vertical-branches .circuit-svg {
+    min-height: 245px;
+  }
+}

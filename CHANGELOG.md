@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.15 - Compact circuit branch layout
+
+- Reworked the equivalent-circuit preview so parallel branches fold below the main path and return to one shared terminal-minus node.
+- Removed the duplicate Main path / Branches text summary below the Model Builder title; the diagram and component sections now carry that information without repeating it.
+- Kept the v1.3.14 data-unit safety and backend import-quality fixes.
+
 ## v1.3.14 - Audit fixes for data units and circuit readability
 
 - Fixed Data workspace unit selectors so they are display-only; imported fitting arrays remain in SI units (V/A) and are not rescaled when users change preview units.

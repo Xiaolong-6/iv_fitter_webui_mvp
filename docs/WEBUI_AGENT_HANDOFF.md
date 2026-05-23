@@ -86,14 +86,14 @@ Important current facts:
 - README is human-facing; keep detailed agent/process notes in `docs/` and `PROJECT_RULES.md`.
 - Validation notes are documented in `docs/TESTED_1_3_13.md`.
 
-## v1.3.14 audit-fix handoff note
+## v1.3.15 circuit-layout handoff note
 
-Current package focus: fixing data-unit safety, aligning browser import with backend import quality, and improving the Model Builder equivalent-circuit schematic.
+Current package focus: improving narrow-width circuit readability after the v1.3.14 data-unit/import-quality fixes.
 
 Important current facts:
 
 - Data workspace unit selectors are display-only. Imported `trace.voltage_V` and `trace.current_A` stay in SI units for fitting.
 - Browser CSV/TXT import now uses the backend `/api/import-csv-text-multi` path so column fallback warnings and row-drop diagnostics are visible in the UI.
 - The selected trace stores backend import quality under `trace.metadata.quality` and the Data tab renders a compact quality summary.
-- Model Builder renders the circuit as an SVG topology diagram: Terminal+ -> main path -> Vj -> branches -> Terminal-.
-- v1.3.14 validation is documented in `docs/TESTED_1_3_14.md`.
+- Model Builder renders the circuit as an SVG topology diagram with the main path on top and parallel branches folded below Vj toward one shared terminal-minus return node.
+- v1.3.15 validation is documented in `docs/TESTED_1_3_15.md`.

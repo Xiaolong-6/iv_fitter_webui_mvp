@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.3.14**
+Current version: **1.3.15**
 
 IV-fitter Web UI is a local-first tool for importing I-V traces, building a circuit model, running fits, and checking whether the result is physically plausible before reporting it.
 
@@ -121,14 +121,14 @@ For audit/history:
 - `CHANGELOG.md`
 - `docs/AUDIT_FIXES_1_3_12.md`
 - `docs/AUDIT_READINESS_REVIEW_1_3_11.md`
-- `docs/TESTED_1_3_14.md`
+- `docs/TESTED_1_3_15.md`
 
-## Current v1.3.14 focus
+## Current v1.3.15 focus
 
-- Keep imported fitting arrays in SI units (V/A) while Data workspace unit selectors affect display only.
-- Use the backend multi-trace import path from the browser Data workspace so import-quality warnings are visible.
-- Show an import-quality summary for rows, selected columns, dropped rows, and warnings.
-- Render the equivalent circuit as a left-to-right topology schematic: Terminal+ -> main path -> Vj -> junction branches -> Terminal-.
+- Keep the v1.3.14 data-unit safety fix: Data workspace display units do not rescale internal V/A fitting arrays.
+- Remove duplicated Main path / Branches summary text below the Model Builder title.
+- Render the equivalent circuit with the main path on top and parallel branches folded below Vj to one shared terminal-minus node.
+- Improve narrow-width readability by using vertical branch stacking instead of pushing branches farther right.
 
 ## Known limitations
 
