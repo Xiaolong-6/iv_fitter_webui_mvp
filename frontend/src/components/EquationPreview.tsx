@@ -3,6 +3,7 @@ import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { fmtEng } from "../model/format";
 import { parameterValueRows } from "../model/diagnostics";
+import { MathFormula } from "./MathFormula";
 
 interface Props { equations?: EquationSummary | null; model: ModelSpec; result?: FitResult | null; language: Language; }
 
@@ -26,11 +27,17 @@ function isOhmic(term: Term) { return /ohmic|shunt|constant_rs|resistance/i.test
 function isDiode(term: Term) { return /diode|shockley|D\d/i.test(`${term.row} ${term.law} ${term.id}`); }
 function isForwardPower(term: Term) { return /forward|power/i.test(`${term.row} ${term.id}`) && !isDiode(term); }
 function isBreakdown(term: Term) { return /break|reverse/i.test(`${term.row} ${term.id}`); }
+function isPhotocurrentConstant(term: Term) { return /photocurrent_constant/i.test(`${term.row} ${term.law} ${term.id}`); }
+function isPhotocurrentVoltage(term: Term) { return /photocurrent_voltage_dependent/i.test(`${term.row} ${term.law} ${term.id}`); }
+function isPhotoconductive(term: Term) { return /photoconductive_branch/i.test(`${term.row} ${term.law} ${term.id}`); }
+function isPhotoMainPath(term: Term) { return /photo_modulated_main_path/i.test(`${term.row} ${term.law} ${term.id}`); }
 function symbolFor(term: Term) {
   const safe = (term.nick || term.id).replace(/[^A-Za-z0-9]+/g, "");
   if (/^rs$/i.test(term.nick) || /^rs$/i.test(term.id)) return { r: "R_s", i: "I", v: "V_{Rs}" };
   if (/rsh|shunt/i.test(term.nick) || /rsh|shunt/i.test(term.id)) return { r: "R_{sh}", i: "I_{Rsh}", v: "V_j" };
   if (isDiode(term)) return { i: `I_{${safe || "D"}}`, r: "", v: "V_j" };
+  if (isPhotocurrentConstant(term) || isPhotocurrentVoltage(term)) return { i: `I_{ph}`, r: "", v: "V_j" };
+  if (isPhotoconductive(term)) return { i: `I_{pc}`, r: "", v: "V_j" };
   if (isForwardPower(term)) return { i: `I_{fwd}`, r: "", v: "V_j" };
   if (isBreakdown(term)) return { i: `I_{br}`, r: "", v: "V_j" };
   return { i: `I_{${safe || "branch"}}`, r: `R_{${safe || "x"}}`, v: "V_j" };
@@ -39,7 +46,9 @@ function seriesDropLatex(series: Term[]) {
   if (!series.length) return "V_j = V_{ext}";
   const drops = series.map((term) => {
     const s = symbolFor(term);
-    return isOhmic(term) ? `I${s.r}` : `V_{${term.id.replace(/[^A-Za-z0-9]/g, "")}}(I)`;
+    if (isOhmic(term)) return `I${s.r}`;
+    if (isPhotoMainPath(term)) return `I\frac{R_0}{1+g_{ph}}`;
+    return `V_{${term.id.replace(/[^A-Za-z0-9]/g, "")}}(I)`;
   });
   return `V_j = V_{ext} - ${drops.join(" - ")}`;
 }
@@ -81,50 +90,20 @@ function termMeaning(term: Term, language: Language) {
   if (term.form === "current_branch" || term.placement.includes("branch")) return language === "zh" ? "并联支路电流，加入总电流" : "parallel branch current; adds to terminal current";
   return language === "zh" ? "模型项" : "model term";
 }
-function LatexFormula({ latex, label }: { latex: string; label?: string }) {
-  // Lightweight TeX-to-visual renderer for the limited formula set above. The annotation keeps a clean TeX copy for screen readers/debug.
-  return <div className="latex-card" aria-label={label ?? latex}>
-    <span className="latex-rendered" dangerouslySetInnerHTML={{ __html: renderLatexLite(latex) }} />
-    <span className="latex-copy">{latex}</span>
-  </div>;
-}
-function renderLatexLite(src: string) {
-  let s = src;
-  const frac = (a: string, b: string) => `<span class="frac"><span>${a}</span><span>${b}</span></span>`;
-  s = s.replace(/\\frac\{V_\{ext\}-IR_s\}\{nV_T\}/g, frac("V_{ext}−IR_s", "nV_T"));
-  s = s.replace(/\\frac\{V_\{ext\}-IR_s\}\{R_\{sh\}\}/g, frac("V_{ext}−IR_s", "R_{sh}"));
-  s = s.replace(/\\frac\{V_j - V_t\}\{V_s\}/g, frac("V_j−V_t", "V_s"));
-  s = s.replace(/\\frac\{-V_j - V_\{br\}\}\{V_s\}/g, frac("−V_j−V_{br}", "V_s"));
-  s = s.replace(/\\frac\{V_j\}\{nV_T\}/g, frac("V_j", "nV_T"));
-  s = s.replace(/\\frac\{V_j\}\{R_\{sh\}\}/g, frac("V_j", "R_{sh}"));
-  s = s.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '<span class="frac"><span>$1</span><span>$2</span></span>');
-  s = s.replace(/\\left|\\right|\\!/g, "");
-  s = s.replace(/\\operatorname\{softplus\}/g, "softplus");
-  s = s.replace(/\\exp/g, "exp");
-  s = s.replace(/([A-Za-z]+)_\{([^{}]+)\}/g, '$1<sub>$2</sub>');
-  s = s.replace(/([A-Za-z])_([A-Za-z0-9]+)/g, '$1<sub>$2</sub>');
-  s = s.replace(/\^\{([^{}]+)\}/g, '<sup>$1</sup>');
-  s = s.replace(/\^([A-Za-z0-9]+)/g, '<sup>$1</sup>');
-  s = s.replace(/\\,/g, " ");
-  s = s.replace(/\*/g, "·");
-  s = s.replace(/\\/g, "");
-  return s;
-}
-
 function FormulaCards({ series, branches, language }: { series: Term[]; branches: Term[]; language: Language }) {
   return <>
     <div className="equation-card formula-card">
       <h3>{language === "zh" ? "1. 结点电压" : "1. Junction voltage"}</h3>
-      <LatexFormula latex={seriesDropLatex(series)} />
+      <MathFormula latex={seriesDropLatex(series)} />
     </div>
     <div className="equation-card formula-card">
       <h3>{language === "zh" ? "2. 支路电流" : "2. Branch currents"}</h3>
-      <LatexFormula latex={totalCurrentLatex(branches)} />
-      <div className="branch-formula-list">{branches.map((b) => <LatexFormula key={b.id} latex={branchCurrentLatex(b)} />)}</div>
+      <MathFormula latex={totalCurrentLatex(branches)} />
+      <div className="branch-formula-list">{branches.map((b) => <MathFormula key={b.id} latex={branchCurrentLatex(b)} />)}</div>
     </div>
     <div className="equation-card formula-card wide-equation">
       <h3>{language === "zh" ? "3. 当前模型的合并方程" : "3. Combined equation for this model"}</h3>
-      <LatexFormula latex={concreteLatex(series, branches)} />
+      <MathFormula latex={concreteLatex(series, branches)} />
     </div>
   </>;
 }
@@ -132,7 +111,7 @@ function SolverCard({ series, branches, language }: { series: Term[]; branches: 
   return <div className="equation-card solver-card">
     <h3>{language === "zh" ? "4. 软件怎么求解" : "4. How the software solves it"}</h3>
     <p className="equation-explain">{language === "zh" ? "如果有主路电压降，电流 I 会同时出现在等号两边。软件会对每一个外部电压点求一个 I，使下面的残差为零。" : "When main-path voltage drops are present, I appears on both sides. For each applied voltage, the software solves for the I that makes the residual zero."}</p>
-    <LatexFormula latex={residualLatex(branches)} />
+    <MathFormula latex={residualLatex(branches)} />
     <div className="chip-row"><strong>{t(language, "mainPath")}</strong>{series.map((s) => <span className="mini-chip" key={s.id}>{s.nick}</span>)}</div>
     <div className="chip-row"><strong>{t(language, "branches")}</strong>{branches.map((b) => <span className="mini-chip" key={b.id}>{b.nick}</span>)}</div>
   </div>;

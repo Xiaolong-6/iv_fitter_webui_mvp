@@ -86,14 +86,29 @@ Important current facts:
 - README is human-facing; keep detailed agent/process notes in `docs/` and `PROJECT_RULES.md`.
 - Validation notes are documented in `docs/TESTED_1_3_13.md`.
 
-## v1.3.15 circuit-layout handoff note
+## v1.3.16 readable-formula handoff note
 
-Current package focus: improving narrow-width circuit readability after the v1.3.14 data-unit/import-quality fixes.
+Current package focus: keep the safer data-import/model-layout work, and make User manual formulas readable enough for non-developer users.
 
 Important current facts:
 
 - Data workspace unit selectors are display-only. Imported `trace.voltage_V` and `trace.current_A` stay in SI units for fitting.
 - Browser CSV/TXT import now uses the backend `/api/import-csv-text-multi` path so column fallback warnings and row-drop diagnostics are visible in the UI.
-- The selected trace stores backend import quality under `trace.metadata.quality` and the Data tab renders a compact quality summary.
 - Model Builder renders the circuit as an SVG topology diagram with the main path on top and parallel branches folded below Vj toward one shared terminal-minus return node.
-- v1.3.15 validation is documented in `docs/TESTED_1_3_15.md`.
+- Formula rendering is now shared through `frontend/src/components/MathFormula.tsx`. `EquationPreview.tsx` and `UserDocumentationPage.tsx` both use it.
+- The renderer is intentionally lightweight and only targets the limited equation patterns used by this app; it is not a general LaTeX engine.
+- v1.3.16 validation is documented in `docs/TESTED_1_3_16.md`.
+
+
+## v1.4.0 photocurrent handoff note
+
+Current package focus: light-response modeling while preserving selected-trace-first fitting.
+
+Important current facts:
+
+- Photocurrent is implemented as first-class laws, not a hard-coded `-Iph` special case.
+- Use `direction_sign` for current direction and `polarity` for bias activation.
+- `photocurrent_voltage_dependent` supports both linear `|Vj|` gain and optional softplus-threshold behavior, but advanced threshold parameters default to fixed.
+- No presets and no ΔI(V) two-trace preview are included in v1.4.0; both are documented as future features.
+- UI text must not expose internal design discussion. The old circuit phrase `Read main path, then downward from Vj` was removed for this reason.
+- Validation is documented in `docs/TESTED_1_4_0.md`.

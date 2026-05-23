@@ -7,12 +7,39 @@ from .topology_graph import assemble_graph, graph_text_summary
 from .component_registry import registry_by_function
 
 
+
+def _component_equation(comp) -> str:
+    nick = comp.metadata.get("nickname") or comp.id
+    if comp.function_type == "photocurrent_constant":
+        return f"I_{nick} = direction_sign * Iph0"
+    if comp.function_type == "photocurrent_voltage_dependent":
+        return f"I_{nick}(V_j) = direction_sign * [Iph0*(1 + gain_per_V*|V_j|) + Aph*sp((|V_j|-Vt_ph)/Vs_ph)^m_ph]"
+    if comp.function_type == "photoconductive_branch":
+        return f"I_{nick} = Gph * V_j"
+    if comp.function_type == "photo_modulated_main_path":
+        return f"V_drop,{nick} = I * R0/(1 + photo_gain)"
+    definition = registry_by_function().get(comp.function_type)
+    return definition.equation_template if definition else comp.function_type
+
+
+def _branch_symbol(comp) -> str:
+    nick = comp.metadata.get("nickname") or comp.id
+    if comp.function_type == "diode":
+        return f"I_{nick}"
+    if comp.function_type in {"photocurrent_constant", "photocurrent_voltage_dependent"}:
+        return f"I_{nick}"
+    if comp.function_type == "photoconductive_branch":
+        return f"I_{nick}"
+    if comp.function_type in {"shunt", "constant_rs"}:
+        return f"I_{nick}"
+    return f"I_{nick}"
+
 def _law_line(comp) -> str:
     definition = registry_by_function().get(comp.function_type)
     law = comp.law_id or (definition.law_id if definition else comp.function_type)
     form = comp.evaluation_form or (definition.default_form if definition else "auto")
     placement = comp.placement or (definition.default_placement if definition else "auto")
-    equation = definition.equation_template if definition else comp.function_type
+    equation = _component_equation(comp)
     nickname = comp.metadata.get("nickname") or comp.id
     param_text = ", ".join(f"{getattr(spec, 'label', None) or name}={spec.value:g}{spec.unit or ''}" for name, spec in comp.params.items())
     if form == "voltage_drop":
@@ -45,8 +72,9 @@ def generate_equations(model: ModelSpec) -> EquationSummary:
         voltage_relation=[
             _equivalent_circuit_line(model),
             "Generic one-junction composite: V_j = V_ext - Σ V_drop,k(I)",
-            "Terminal current: I = Σ I_branch,k(V_j)",
-            "D1 + ohmic main path + ohmic branch: I = I0[exp((V_ext - I R_s)/(n V_T))-1] + (V_ext - I R_s)/R_sh",
+            "Terminal current: I = " + (" + ".join(_branch_symbol(c) for c in [*model.core, *model.parallel]) or "0"),
+            "Model-specific branch laws: " + ("; ".join(_component_equation(c) for c in [*model.core, *model.parallel]) or "no current branches"),
+            "Model-specific main path: " + ("; ".join(_component_equation(c) for c in model.series) or "no main-path voltage drop"),
             _solution_line(model),
         ],
         auxiliary=[

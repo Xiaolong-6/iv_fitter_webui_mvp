@@ -139,12 +139,11 @@ function CircuitCard({ model, language }: { model: ModelSpec; language: Language
   const seriesLabel = series.length ? series.map(nickname).join(" → ") : t(language, "direct");
   const branchLabel = language === "zh" ? "结点分支 / 电流相加" : "Junction branches / current sum";
   const help = language === "zh"
-    ? "先从左到右读主路径：端口+ 经过串联压降到 Vj。然后从 Vj 向下读并联支路：每个分支都连接在 Vj 和公共端口−之间，分支电流相加得到端口电流。"
-    : "Read the main path left to right first: Terminal+ passes through the series drop to Vj. Then read downward from Vj: each parallel branch connects between Vj and the shared Terminal−, and branch currents sum into the terminal current.";
+    ? "等效电路示意图：主路元件决定结点电压，结点支路贡献端口电流。"
+    : "Equivalent-circuit schematic: main-path terms set the junction voltage; junction branches contribute terminal current.";
   return <div className="model-circuit-panel circuit-panel-v2 circuit-panel-vertical-branches">
     <div className="circuit-title-row">
       <h3>{t(language, "circuit")} <HelpTip text={help} /></h3>
-      <span className="circuit-read-order">{language === "zh" ? "先读主路径，再从 Vj 向下" : "Read main path, then downward from Vj"}</span>
     </div>
     <svg className="circuit-svg" viewBox={`0 0 560 ${height}`} role="img" aria-label={language === "zh" ? "等效电路示意图" : "Equivalent circuit schematic"}>
       <title>{language === "zh" ? "端口加经主路径到 Vj，并联支路位于主路径下方并汇到公共端口减。" : "Terminal plus reaches Vj through the main path; parallel branches sit below the main path and return to one shared terminal minus."}</title>
@@ -414,8 +413,11 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
     branches: t(language, "branches"),
   } as const;
 
-  function definitionsForBucket(_bucket: BuilderBucket) {
-    return userDefinitions(registry);
+  function definitionsForBucket(bucket: BuilderBucket) {
+    return userDefinitions(registry).filter((definition) => {
+      if (bucket === "main") return definition.allowed_placements.includes("series_voltage_drop") || definition.available_forms.includes("voltage_drop");
+      return definition.allowed_placements.includes("parallel_current_branch") || definition.allowed_placements.includes("junction_current_branch") || definition.available_forms.includes("current_branch");
+    });
   }
 
   function selectedDefinition(bucket: BuilderBucket) {

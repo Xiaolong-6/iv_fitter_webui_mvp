@@ -1444,3 +1444,57 @@ button .help-tip {
     min-height: 245px;
   }
 }
+
+/* v1.3.16 user-manual math rendering: readable formula cards and inline math. */
+.math-inline {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 0.18rem;
+  padding: 0.1rem 0.34rem;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  font-family: "Cambria Math", "STIX Two Math", "Noto Serif", "Times New Roman", serif;
+  font-size: 0.98em;
+  line-height: 1.25;
+  color: #0f172a;
+}
+.manual-inline-formula {
+  background: #fff;
+}
+.manual-formula {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  background: #ffffff;
+  border-color: #d8e1ee;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+.manual-formula-emphasis {
+  background: #f8fbff;
+  border-color: #bfd5ff;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.08) inset;
+}
+.manual-equations {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+.manual-law-card .math-inline,
+.manual-section .math-inline {
+  white-space: nowrap;
+}
+.manual-section .latex-card .latex-rendered,
+.manual-section .math-inline .latex-rendered {
+  white-space: normal;
+}
+@media (max-width: 850px), (orientation: portrait) {
+  .manual-formula {
+    padding: 10px 12px;
+    font-size: clamp(15px, calc(17px * var(--app-zoom)), 20px);
+  }
+  .math-inline {
+    white-space: normal;
+  }
+}

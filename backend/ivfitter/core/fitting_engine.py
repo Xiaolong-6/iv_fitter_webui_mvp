@@ -49,6 +49,49 @@ def _apply_x(records, x):
         comp.params[name].value = float(value)
 
 
+
+def _direction_sign(comp: ComponentSpec) -> float:
+    return 1.0 if _param_value(comp, "direction_sign", -1.0) >= 0 else -1.0
+
+
+def _bias_activation(v: np.ndarray, polarity: str | None) -> np.ndarray:
+    mode = polarity or "symmetric"
+    if mode == "forward":
+        return (np.asarray(v, dtype=float) >= 0.0).astype(float)
+    if mode == "reverse":
+        return (np.asarray(v, dtype=float) <= 0.0).astype(float)
+    return np.ones_like(np.asarray(v, dtype=float), dtype=float)
+
+
+def _softplus(x: np.ndarray) -> np.ndarray:
+    x = np.asarray(x, dtype=float)
+    return np.logaddexp(0.0, x)
+
+
+def _photocurrent_constant(vj: np.ndarray, comp: ComponentSpec) -> np.ndarray:
+    arr = np.asarray(vj, dtype=float)
+    return _direction_sign(comp) * _param_value(comp, "Iph0_A", 0.0) * _bias_activation(arr, comp.polarity)
+
+
+def _photocurrent_voltage_dependent(vj: np.ndarray, comp: ComponentSpec) -> np.ndarray:
+    arr = np.asarray(vj, dtype=float)
+    base = _param_value(comp, "Iph0_A", 0.0)
+    gain = _param_value(comp, "gain_per_V", 0.0)
+    # Linear collection/gain term is the safe default. Threshold terms default to
+    # zero/fixed, so the law degenerates to the simplest form until users opt in.
+    threshold_amp = _param_value(comp, "Aph", 0.0)
+    vt = _param_value(comp, "Vt_ph_V", 0.0)
+    vs = max(_param_value(comp, "Vs_ph_V", 1.0), 1e-30)
+    m = _param_value(comp, "m_ph", 1.0)
+    threshold = threshold_amp * np.power(_softplus((np.abs(arr) - vt) / vs), m)
+    magnitude = base * (1.0 + gain * np.abs(arr)) + threshold
+    return _direction_sign(comp) * magnitude * _bias_activation(arr, comp.polarity)
+
+
+def _photoconductive_branch(vj: np.ndarray, comp: ComponentSpec) -> np.ndarray:
+    arr = np.asarray(vj, dtype=float)
+    return _param_value(comp, "Gph_S", 0.0) * arr * _bias_activation(arr, comp.polarity)
+
 def _series_rs_eff(vj, model):
     arr = np.asarray(vj, dtype=float)
     rs = np.zeros_like(arr)
@@ -62,6 +105,10 @@ def _series_rs_eff(vj, model):
         if comp.function_type == "softplus_rs_modifier":
             boost = softplus_conductance_boost(arr, _param_value(comp, "A", 0.0), _param_value(comp, "Vt_V", 0.0), _param_value(comp, "Vs_V", 1.0), comp.polarity or "symmetric")
             rs = apply_conductance_boost(rs, boost)
+        elif comp.function_type == "photo_modulated_main_path":
+            r0 = _param_value(comp, "R0_ohm", 0.0)
+            gain = max(_param_value(comp, "photo_gain", 0.0), -0.95)
+            rs = rs + r0 / (1.0 + gain)
         elif comp.function_type == "custom":
             expr = comp.metadata.get("expression", "A*softplus(u)")
             params = {name: spec.value for name, spec in comp.params.items()}
@@ -85,6 +132,12 @@ def branch_currents_at_vj(vj, model):
             out[comp.id] = power_law_current(arr, _param_value(comp, "A", 0.0), _param_value(comp, "Vt_V", 0.0), _param_value(comp, "Vs_V", 1.0), _param_value(comp, "m", 1.0), comp.polarity or "forward")
         elif comp.function_type == "soft_breakdown":
             out[comp.id] = soft_breakdown_current(arr, _param_value(comp, "I0_A", 0.0), _param_value(comp, "Vbr_V", 10.0), _param_value(comp, "Vslope_V", 1.0), _param_value(comp, "w_V", 0.5))
+        elif comp.function_type == "photocurrent_constant":
+            out[comp.id] = _photocurrent_constant(arr, comp)
+        elif comp.function_type == "photocurrent_voltage_dependent":
+            out[comp.id] = _photocurrent_voltage_dependent(arr, comp)
+        elif comp.function_type == "photoconductive_branch":
+            out[comp.id] = _photoconductive_branch(arr, comp)
         elif comp.function_type == "custom":
             expr = comp.metadata.get("expression", "s*A*softplus(u)**m")
             params = {name: spec.value for name, spec in comp.params.items()}
@@ -223,6 +276,43 @@ def _multistart_candidates(x0: np.ndarray, lower: np.ndarray, upper: np.ndarray,
     return unique
 
 
+
+def _photocurrent_fit_warnings(model) -> list[FitWarning]:
+    warnings: list[FitWarning] = []
+    photo_types = {"photocurrent_constant", "photocurrent_voltage_dependent", "photoconductive_branch", "photo_modulated_main_path"}
+    for comp in [*model.core, *model.series, *model.parallel]:
+        if comp.function_type not in photo_types:
+            continue
+        for name, spec in comp.params.items():
+            if not spec.fit:
+                continue
+            value = float(spec.value)
+            lower = spec.lower
+            upper = spec.upper
+            near_lower = lower is not None and abs(value - lower) <= max(abs(lower), 1.0) * 1e-6
+            near_upper = upper is not None and abs(value - upper) <= max(abs(upper), 1.0) * 1e-6
+            if near_lower or near_upper:
+                warnings.append(FitWarning(
+                    code="photocurrent_parameter_near_bound",
+                    message=f"{comp.id}.{name} reached or nearly reached a bound. The light-response term may be unnecessary, under-constrained, or using the wrong form.",
+                    severity="warning",
+                ))
+        if comp.function_type == "photocurrent_voltage_dependent":
+            active_shape_params = [name for name in ("gain_per_V", "Aph", "Vt_ph_V", "Vs_ph_V", "m_ph") if comp.params.get(name) and comp.params[name].fit]
+            if len(active_shape_params) >= 3:
+                warnings.append(FitWarning(
+                    code="photocurrent_overparameterized",
+                    message=f"{comp.id} has several voltage-dependent photocurrent shape parameters free. Fit dark-like parameters first, then free only the minimum light-response parameters needed by the residuals.",
+                    severity="warning",
+                ))
+    if any(c.function_type in photo_types for c in [*model.core, *model.series, *model.parallel]):
+        warnings.append(FitWarning(
+            code="photocurrent_dark_first_guidance",
+            message="For light-response fits, fit the dark trace first, then seed or fix dark-like parameters before freeing photocurrent terms.",
+            severity="info",
+        ))
+    return warnings
+
 def fit_trace(request: FitRequest) -> FitResult:
     """Fit one trace using ModelSpec and FitConfig, independent of any UI."""
     request = copy.deepcopy(request)
@@ -297,6 +387,7 @@ def fit_trace(request: FitRequest) -> FitResult:
     metrics = _metrics(i_pred, i_all)
     quality_ok, quality_warnings = evaluate_fit_quality(i_pred, i_all, metrics.get("linear_rmse_A"))
     warnings.extend(quality_warnings)
+    warnings.extend(_photocurrent_fit_warnings(request.model))
     if not quality_ok:
         success = False
         if "quality gate" not in message.lower():

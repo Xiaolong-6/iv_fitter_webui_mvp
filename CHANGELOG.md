@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.4.0 - Photocurrent and light-response modeling
+
+- Added light-response modeling as first-class Law / Form / Placement components rather than a hard-coded `-Iph` parameter.
+- Added backend laws for constant photocurrent, voltage-dependent photocurrent, photoconductive branch current, and photo-modulated main-path voltage drop.
+- Added model-specific equation summaries for photocurrent terms so normal formula preview can show `Iph`, `Iph(Vj)`, `Gph Vj`, and `R0/(1+photo_gain)` terms.
+- Updated Model Builder filtering so main-path-only laws do not appear in branch-only contexts and branch-current laws do not appear as main-path voltage drops.
+- Removed the user-facing circuit read-order phrase that exposed implementation/discussion wording.
+- Added photocurrent guidance warnings for dark-first fitting, near-bound photocurrent parameters, and over-parameterized voltage-dependent photocurrent fits.
+- Documented dark/light fitting workflow and left presets plus ΔI(V) two-trace preview as future features.
+
+## v1.3.16 - Readable rendered formulas in the User manual
+
+- Added a shared lightweight math renderer component so manual formulas render in a readable textbook-like style instead of plain code blocks.
+- Replaced User manual code-style equations with rendered math cards for the D1 + Rs + Rsh example and the combined implicit equation.
+- Rendered inline formulas in the manual for canonical law examples and key parameter symbols such as I₀, Rₛ, and Rsh.
+- Kept the v1.3.15 circuit-layout improvement and the v1.3.14 data-unit/import-quality fixes.
+
 ## v1.3.15 - Compact circuit branch layout
 
 - Reworked the equivalent-circuit preview so parallel branches fold below the main path and return to one shared terminal-minus node.
@@ -113,6 +130,16 @@ Focus: HappyMeasure multi-trace import, plot safety, selected-model equation tra
 - Keep legacy composite solver available for compatibility.
 
 # Changelog
+
+## v1.4.0 - Photocurrent and light-response modeling
+
+- Added light-response modeling as first-class Law / Form / Placement components rather than a hard-coded `-Iph` parameter.
+- Added backend laws for constant photocurrent, voltage-dependent photocurrent, photoconductive branch current, and photo-modulated main-path voltage drop.
+- Added model-specific equation summaries for photocurrent terms so normal formula preview can show `Iph`, `Iph(Vj)`, `Gph Vj`, and `R0/(1+photo_gain)` terms.
+- Updated Model Builder filtering so main-path-only laws do not appear in branch-only contexts and branch-current laws do not appear as main-path voltage drops.
+- Removed the user-facing circuit read-order phrase that exposed implementation/discussion wording.
+- Added photocurrent guidance warnings for dark-first fitting, near-bound photocurrent parameters, and over-parameterized voltage-dependent photocurrent fits.
+- Documented dark/light fitting workflow and left presets plus ΔI(V) two-trace preview as future features.
 
 ## 1.1.3-plot-control-convergence-tabs
 

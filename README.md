@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.3.15**
+Current version: **1.4.0**
 
 IV-fitter Web UI is a local-first tool for importing I-V traces, building a circuit model, running fits, and checking whether the result is physically plausible before reporting it.
 
@@ -29,6 +29,25 @@ It is a Web UI prototype for the IV-fitter workflow. It is not yet a full replac
 - **User manual**: complete user-facing workflow, function guide, fitting logic, convergence guidance, and reporting notes.
 
 The app version and language control are shown in the left dock footer.
+
+
+## Light-response modeling
+
+v1.4.0 supports manually adding light-response components from Model Builder:
+
+- **Constant photocurrent source** (`Iph`): a bias-independent current branch for simple photodiode-like light current.
+- **Voltage-dependent photocurrent** (`Iph(V)`): a branch for collection efficiency, field-assisted gain, or trap-assisted gain that changes with junction voltage. The advanced threshold parameters are fixed by default to reduce overfitting.
+- **Photoconductive branch** (`Gph`): a light-induced conductive path proportional to junction voltage.
+- **Photo-modulated main path** (`Rphoto`): a main-path voltage-drop term for light-modulated transport, contact, or channel resistance.
+
+Dark/light workflow:
+
+1. Fit the dark trace using the simplest defensible dark model.
+2. Use those dark parameters as seeds, or fix the dark-like parameters if the light fit is under-constrained.
+3. Add one light-response component and fit the selected light trace.
+4. Inspect residuals and warnings before adding more voltage-dependent parameters.
+
+Future features intentionally not included in v1.4.0: one-click light-response presets and direct two-trace ΔI(V) preview.
 
 ## Windows quick start
 
@@ -121,14 +140,15 @@ For audit/history:
 - `CHANGELOG.md`
 - `docs/AUDIT_FIXES_1_3_12.md`
 - `docs/AUDIT_READINESS_REVIEW_1_3_11.md`
-- `docs/TESTED_1_3_15.md`
+- `docs/TESTED_1_3_16.md`
 
-## Current v1.3.15 focus
+## Current v1.4.0 focus
 
-- Keep the v1.3.14 data-unit safety fix: Data workspace display units do not rescale internal V/A fitting arrays.
-- Remove duplicated Main path / Branches summary text below the Model Builder title.
-- Render the equivalent circuit with the main path on top and parallel branches folded below Vj to one shared terminal-minus node.
-- Improve narrow-width readability by using vertical branch stacking instead of pushing branches farther right.
+- Adds light-response modeling as first-class Law / Form / Placement components, not as a hard-coded `-Iph` special case.
+- New addable backend laws: constant photocurrent, voltage-dependent photocurrent, photoconductive branch, and photo-modulated main path.
+- Keeps the default model simple: D1 + Ohmic main-path Rs + Ohmic branch Rsh. Photocurrent terms are manually added when fitting light traces.
+- Recommended workflow: fit the dark trace first, seed or fix dark-like parameters, then add the smallest necessary photocurrent term for the selected light trace.
+- Presets and two-trace ΔI(V) preview are intentionally left as future features so the selected-trace-first workflow remains stable.
 
 ## Known limitations
 

@@ -2,6 +2,36 @@
 
 This is the priority rules file for human developers, agent developers, and future assistants. If scattered notes conflict with this file, this file wins.
 
+## 0. Rules-first, scope-control, and user-verifiable operating principle
+
+Before taking action, any agent must first read, understand, and apply the current project rules, user instructions, handoff notes, and latest user constraints. These rules override default tool habits, convenience shortcuts, and generic assistant behavior. Following the rules is part of the task, not optional process overhead.
+
+Before touching files, the agent must list every file it plans to modify. If the planned list is more than 5 files, the agent must stop and propose splitting the task into smaller phases. No broad multi-file implementation should proceed silently.
+
+Before writing code for any non-trivial change, the agent must explain in plain language:
+
+1. what it understands the goal to be;
+2. what files or subsystems it expects to touch;
+3. the planned implementation approach;
+
+and then wait for the prompter's explicit approval, such as "go".
+
+Treat the user as a non-coder unless told otherwise. The user should not need to read source code to verify work. After any completed change, provide a simple 3-step manual browser test that checks visible behavior without source-code inspection.
+
+This app has one job: help users import I-V data, build physically interpretable circuit models, fit selected traces, inspect residuals/warnings, and export defensible reports. If a proposed change makes that job slower, less reliable, more confusing, harder to test, or harder to maintain, the agent must stop and flag the risk even if the user requested the change.
+
+Do not introduce new libraries, frameworks, services, build systems, plotting packages, math-rendering packages, external APIs, or runtime dependencies without first explaining why they are necessary and receiving explicit approval. The intended stack is the existing React/Vite frontend, FastAPI backend, Python fitting core, NumPy/SciPy/Pandas where already used, and the existing test/build scripts.
+
+If three consecutive fix attempts fail for the same issue, stop modifying files. Propose:
+
+- revert;
+- what is known vs unknown;
+- a different approach.
+
+If a requested action conflicts with these rules, stop and explain the conflict before acting. If the rules are unclear, incomplete, outdated, or blocking the correct implementation, actively ask the prompter whether the rules should be clarified, updated, or overridden before proceeding.
+
+Do not silently bypass, reinterpret, or ignore project rules.
+
 ## 1. Handoff readiness
 
 Every handoff package must be understandable, runnable, and auditable by the next human or agent.
@@ -15,7 +45,9 @@ Before handoff, verify or explicitly mark as not verified:
 - numbered Windows scripts still work from the project root;
 - backend tests, compile checks, and frontend build have been run against the exact packaged tree;
 - generated folders and caches have been removed from the package;
-- known limitations and next actions are documented.
+- known limitations and next actions are documented;
+- a 3-step browser manual test is provided for non-coder verification;
+- README.md is updated for feature-level changes so a future reader can understand the feature without this conversation.
 
 ## 2. Ambiguity gate
 
@@ -31,7 +63,7 @@ Discuss:
 
 Do not generate a new code package under uncertainty.
 
-## 3. Audience separation
+## 3. Audience separation and UI boundary
 
 Keep these audiences separate:
 
@@ -39,7 +71,17 @@ Keep these audiences separate:
 - human developers maintaining the source;
 - agent developers continuing the project.
 
-Normal UI text should be concise and user-facing. Implementation details such as accepted CSV wrapper names, internal placement keys, adapter names, serialization details, or numeric draft handling belong in compact help, advanced details, developer docs, or tested notes unless they are needed for physical interpretation or reporting transparency.
+Normal UI text must be concise and user-facing. Do not expose implementation notes, internal reasoning, handoff language, agent prompts, discussion artifacts, or developer-only reading instructions in the normal app UI.
+
+Examples of text that should not appear in normal UI:
+
+- "Read main path, then downward from Vj";
+- "agent handoff";
+- "debug fallback";
+- "implementation detail";
+- "this was discussed earlier".
+
+Implementation details such as accepted CSV wrapper names, internal placement keys, adapter names, serialization details, or numeric draft handling belong in compact help, advanced details, developer docs, logs, or tested notes unless they are needed for physical interpretation or reporting transparency.
 
 ## 4. User-facing transparency without dark boxes
 
@@ -171,7 +213,11 @@ Desktop workspace panes must have explicit scroll ownership. A visible scrollbar
 
 When adding large cards to the app, verify that the left control column, right plot/results column, and documentation pages remain reachable without relying on accidental browser-body scrolling.
 
-## 14. One-click workflow and dependencies
+## 14. One-click workflow and dependency discipline
+
+Do not add new libraries, frameworks, services, build systems, plotting packages, math-rendering packages, external APIs, or runtime dependencies unless the prompter explicitly approves after seeing the rationale.
+
+The expected stack is the existing React/Vite frontend, FastAPI backend, Python fitting core, NumPy/SciPy/Pandas where already used, and the existing test/build scripts.
 
 Root-level numbered `.bat` scripts are the preferred Windows human workflow:
 
@@ -207,7 +253,7 @@ npm install
 npm run build
 ```
 
-A Vite ready message is not proof that the React app renders. Manual UI checks must be listed separately.
+A Vite ready message is not proof that the React app renders. Manual UI checks must be listed separately. After any completed change, include a 3-step browser test that states where to click, what to observe, and what confirms the change worked.
 
 ## 16. Package hygiene and privacy
 
@@ -240,6 +286,10 @@ Choose version bumps by impact, not by habit:
 - major: breaking schema/API changes, incompatible project layout, removed supported workflow, or changed model semantics.
 
 Document the rationale in the changelog.
+
+## 17a. README maintenance
+
+After each feature-level change, update `README.md` for someone who will read it in three months having forgotten the conversation. The README should explain what the feature does, how to use it, what limitations remain, and what scripts/tests validate it.
 
 ## 18. Rules maintenance
 

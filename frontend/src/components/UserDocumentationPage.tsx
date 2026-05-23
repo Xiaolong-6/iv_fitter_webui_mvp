@@ -2,7 +2,17 @@ import type { ReactNode } from "react";
 import type { AppView } from "./WorkflowSidebar";
 import type { FunctionDefinition } from "../model/types";
 import type { Language } from "../model/i18n";
+import { MathFormula } from "./MathFormula";
 
+
+
+function BlockFormula({ latex }: { latex: string }) {
+  return <div className="manual-equations"><MathFormula latex={latex} className="manual-formula" /></div>;
+}
+
+function InlineFormula({ latex }: { latex: string }) {
+  return <MathFormula latex={latex} inline className="manual-inline-formula" />;
+}
 function ManualSection({ id, title, children, wide = false }: { id: string; title: string; children: ReactNode; wide?: boolean }) {
   return <section id={id} className={wide ? "card doc-card wide-card manual-section" : "card doc-card manual-section"}>
     <h2>{title}</h2>
@@ -53,7 +63,7 @@ function RegistryGuide({ registry, language }: { registry: FunctionDefinition[];
       return <article className="manual-law-card" key={law}>
         <h3>{first.law_name}</h3>
         <p>{first.help_text}</p>
-        <p><strong>{language === "zh" ? "典型公式" : "Canonical equation"}:</strong> <code>{first.canonical_equation}</code></p>
+        <p><strong>{language === "zh" ? "典型公式" : "Canonical equation"}:</strong> <MathFormula latex={first.canonical_equation} inline className="manual-inline-formula" /></p>
         <p><strong>{language === "zh" ? "参数" : "Parameters"}:</strong> {params.join(", ")}</p>
         <details>
           <summary>{language === "zh" ? "高级细节" : "Advanced details"}</summary>
@@ -112,19 +122,20 @@ function EnglishManual({ registry, appVersion }: { registry: FunctionDefinition[
 
       <ManualSection id="functions" title="4. Function guide: laws, forms, placements" wide>
         <p>A function is a mathematical law first. It is not intrinsically series or parallel. A component instance chooses a law, an evaluation form, and a placement.</p>
-        <p><strong>Example:</strong> Ohmic law can be written as <code>V = I R</code> or <code>I = V / R</code>. Rs uses it as a main-path voltage drop; Rsh uses it as a branch current.</p>
+        <p><strong>Example:</strong> Ohmic law can be written as <InlineFormula latex="V = IR" /> or <InlineFormula latex="I = \\frac{V}{R}" />. Rs uses it as a main-path voltage drop; Rsh uses it as a branch current.</p>
         <RegistryGuide registry={registry} language="en" />
       </ManualSection>
 
       <ManualSection id="logic" title="5. Fitting logic and equations" wide>
         <p>For the common D1 + Rs + Rsh model, the solver uses an implicit junction-voltage relation. The main-path drop changes the voltage seen by the branch currents.</p>
         <div className="manual-equations">
-          <code>Vj = Vext - I Rs</code>
-          <code>ID = I0 [exp(Vj / (n VT)) - 1]</code>
-          <code>IRsh = Vj / Rsh</code>
-          <code>I = ID + IRsh</code>
+          <MathFormula latex="V_j = V_{ext} - IR_s" className="manual-formula" />
+          <MathFormula latex="I_D = I_0\\left[\\exp\\!\\left(\\frac{V_j}{nV_T}\\right)-1\\right]" className="manual-formula" />
+          <MathFormula latex="I_{Rsh} = \\frac{V_j}{R_{sh}}" className="manual-formula" />
+          <MathFormula latex="I = I_D + I_{Rsh}" className="manual-formula" />
+          <MathFormula latex="I = I_0\\left[\\exp\\!\\left(\\frac{V_{ext}-IR_s}{nV_T}\\right)-1\\right] + \\frac{V_{ext}-IR_s}{R_{sh}}" className="manual-formula manual-formula-emphasis" />
         </div>
-        <p>Because <code>I</code> appears on both sides when Rs is present, the backend solves for the current that makes the residual equal to zero at each voltage point.</p>
+        <p>Because <InlineFormula latex="I" /> appears on both sides when Rs is present, the backend solves for the current that makes the residual equal to zero at each voltage point.</p>
         <p>The experimental <code>graph_dc</code> solver assembles equations from a topology graph. Treat it as experimental and cross-check before reporting.</p>
       </ManualSection>
 
@@ -139,7 +150,7 @@ function EnglishManual({ registry, appVersion }: { registry: FunctionDefinition[
           <li>Optimize with bounded least-squares, optionally with multistart.</li>
           <li>Reject non-finite, exploded, or poor-quality results before showing them as reportable.</li>
         </ol>
-        <p><strong>Initial value rule of thumb:</strong> <code>I0</code> often spans many decades. Silicon-like junctions may start near <code>1e-12 A</code>; wide-bandgap or very low-leakage devices may need <code>1e-20 A</code> or smaller. Use residuals and multistart when uncertain.</p>
+        <p><strong>Initial value rule of thumb:</strong> <InlineFormula latex="I_0" /> often spans many decades. Silicon-like junctions may start near <code>1e-12 A</code>; wide-bandgap or very low-leakage devices may need <code>1e-20 A</code> or smaller. Use residuals and multistart when uncertain.</p>
       </ManualSection>
 
       <ManualSection id="plots" title="7. Reading plots and residuals">
@@ -155,10 +166,10 @@ function EnglishManual({ registry, appVersion }: { registry: FunctionDefinition[
       <ManualSection id="parameters" title="8. Parameters, warnings, and reports">
         <p>The parameter table is part of the diagnosis, not just a numeric output. Read value, standard error, bounds, fit/fixed state, and the inline physical explanation together.</p>
         <ul className="doc-steps">
-          <li><strong>n:</strong> diode ideality factor. Values near 1 often suggest diffusion current; near 2 often suggest recombination; values above 2 deserve model/data review.</li>
-          <li><strong>I0:</strong> saturation or current scale. Large or unstable values often point to initial-value, leakage, or model-structure problems.</li>
-          <li><strong>Rs:</strong> controls high-current voltage drop and forward-bias roll-off.</li>
-          <li><strong>Rsh:</strong> controls low-bias leakage. Smaller Rsh means stronger leakage.</li>
+          <li><strong><InlineFormula latex="n" />:</strong> diode ideality factor. Values near 1 often suggest diffusion current; near 2 often suggest recombination; values above 2 deserve model/data review.</li>
+          <li><strong><InlineFormula latex="I_0" />:</strong> saturation or current scale. Large or unstable values often point to initial-value, leakage, or model-structure problems.</li>
+          <li><strong><InlineFormula latex="R_s" />:</strong> controls high-current voltage drop and forward-bias roll-off.</li>
+          <li><strong><InlineFormula latex="R_{sh}" />:</strong> controls low-bias leakage. Smaller <InlineFormula latex="R_{sh}" /> means stronger leakage.</li>
           <li><strong>Warnings:</strong> must be reviewed before export. A green status does not erase warning context.</li>
           <li><strong>Reports:</strong> include reproducibility metadata and should match the selected trace and current model.</li>
         </ul>
@@ -172,6 +183,18 @@ function EnglishManual({ registry, appVersion }: { registry: FunctionDefinition[
           <li><strong>Reverse-bias region is invisible:</strong> use log |I| and log residual plots instead of relying on linear I-V.</li>
           <li><strong>Multi-trace confusion:</strong> confirm the selected trace dropdown before running or reporting a fit.</li>
         </ul>
+      </ManualSection>
+
+      <ManualSection id="light-response" title="10. Light-response modeling">
+        <p>Use light-response terms only after the dark trace has a defensible fit. Start with one photocurrent component, then add voltage dependence only if residuals require it.</p>
+        <ul className="doc-steps">
+          <li><strong>Constant photocurrent:</strong> <InlineFormula latex="I_{ph}=s_{dir}I_{ph0}" /> for approximately bias-independent photodiode current.</li>
+          <li><strong>Voltage-dependent photocurrent:</strong> <InlineFormula latex="I_{ph}(V_j)" /> for field-assisted collection or trap-assisted gain. Advanced threshold terms are fixed by default to reduce overfitting.</li>
+          <li><strong>Photoconductive branch:</strong> <InlineFormula latex="I_{pc}=G_{ph}V_j" /> for light-induced conductance.</li>
+          <li><strong>Photo-modulated main path:</strong> <InlineFormula latex="V_{drop}=I\frac{R_0}{1+g_{ph}}" /> for light-modulated transport or contact resistance.</li>
+        </ul>
+        <p>Recommended sequence: fit dark trace → seed or fix dark-like parameters → add a light-response term → fit selected light trace → inspect residuals and warnings.</p>
+        <p>Future features: one-click photodiode presets and direct two-trace <InlineFormula latex="\Delta I(V)=I_{light}(V)-I_{dark}(V)" /> preview.</p>
       </ManualSection>
     </div>
   </>;
@@ -222,19 +245,20 @@ function ChineseManual({ registry, appVersion }: { registry: FunctionDefinition[
 
       <ManualSection id="functions" title="4. 函数说明：数学关系、计算形式、放置位置" wide>
         <p>函数首先是数学关系，本身不天然属于串联或并联。组件实例再选择计算形式和电路位置。</p>
-        <p><strong>例子：</strong>Ohmic law 可写成 <code>V = I R</code> 或 <code>I = V / R</code>。Rs 把它作为主路压降；Rsh 把它作为支路电流。</p>
+        <p><strong>例子：</strong>Ohmic law 可写成 <InlineFormula latex="V = IR" /> 或 <InlineFormula latex="I = \\frac{V}{R}" />。Rs 把它作为主路压降；Rsh 把它作为支路电流。</p>
         <RegistryGuide registry={registry} language="zh" />
       </ManualSection>
 
       <ManualSection id="logic" title="5. 拟合逻辑和方程" wide>
         <p>对于常见 D1 + Rs + Rsh 模型，求解器使用隐式结点电压关系。主路压降会改变支路实际看到的电压。</p>
         <div className="manual-equations">
-          <code>Vj = Vext - I Rs</code>
-          <code>ID = I0 [exp(Vj / (n VT)) - 1]</code>
-          <code>IRsh = Vj / Rsh</code>
-          <code>I = ID + IRsh</code>
+          <MathFormula latex="V_j = V_{ext} - IR_s" className="manual-formula" />
+          <MathFormula latex="I_D = I_0\\left[\\exp\\!\\left(\\frac{V_j}{nV_T}\\right)-1\\right]" className="manual-formula" />
+          <MathFormula latex="I_{Rsh} = \\frac{V_j}{R_{sh}}" className="manual-formula" />
+          <MathFormula latex="I = I_D + I_{Rsh}" className="manual-formula" />
+          <MathFormula latex="I = I_0\\left[\\exp\\!\\left(\\frac{V_{ext}-IR_s}{nV_T}\\right)-1\\right] + \\frac{V_{ext}-IR_s}{R_{sh}}" className="manual-formula manual-formula-emphasis" />
         </div>
-        <p>有 Rs 时，<code>I</code> 同时出现在等式两边，所以后端会对每个外部电压点求一个让 residual 为零的电流。</p>
+        <p>有 Rs 时，<InlineFormula latex="I" /> 同时出现在等式两边，所以后端会对每个外部电压点求一个让 residual 为零的电流。</p>
         <p><code>graph_dc</code> 会从拓扑图装配 DC 方程，目前仍是实验功能，报告前需要交叉检查。</p>
       </ManualSection>
 
@@ -249,7 +273,7 @@ function ChineseManual({ registry, appVersion }: { registry: FunctionDefinition[
           <li>在边界内做 least-squares 优化，可选 multistart。</li>
           <li>最终结果还要经过有限性、爆炸值和质量门控检查，才应显示为可报告。</li>
         </ol>
-        <p><strong>初值经验：</strong><code>I0</code> 可能跨很多数量级。普通硅结可从 <code>1e-12 A</code> 附近开始；宽禁带或极低漏电器件可能需要 <code>1e-20 A</code> 或更小。不确定时看残差并启用 multistart。</p>
+        <p><strong>初值经验：</strong><InlineFormula latex="I_0" /> 可能跨很多数量级。普通硅结可从 <code>1e-12 A</code> 附近开始；宽禁带或极低漏电器件可能需要 <code>1e-20 A</code> 或更小。不确定时看残差并启用 multistart。</p>
       </ManualSection>
 
       <ManualSection id="plots" title="7. 如何读图和残差">
@@ -265,10 +289,10 @@ function ChineseManual({ registry, appVersion }: { registry: FunctionDefinition[
       <ManualSection id="parameters" title="8. 参数、warnings 和报告">
         <p>参数表不是单纯数值输出，而是诊断的一部分。需要同时看数值、不确定度、边界、固定/拟合状态和物理解释。</p>
         <ul className="doc-steps">
-          <li><strong>n：</strong>理想因子。接近 1 常见于扩散主导，接近 2 常见于复合主导，大于 2 通常需要检查模型或数据。</li>
-          <li><strong>I0：</strong>饱和电流/电流尺度。过大或不稳定常指向初值、漏电或模型结构问题。</li>
-          <li><strong>Rs：</strong>控制高电流区压降和正向高偏压弯折。</li>
-          <li><strong>Rsh：</strong>控制低偏压漏电，越小表示漏电越强。</li>
+          <li><strong><InlineFormula latex="n" />：</strong>理想因子。接近 1 常见于扩散主导，接近 2 常见于复合主导，大于 2 通常需要检查模型或数据。</li>
+          <li><strong><InlineFormula latex="I_0" />：</strong>饱和电流/电流尺度。过大或不稳定常指向初值、漏电或模型结构问题。</li>
+          <li><strong><InlineFormula latex="R_s" />：</strong>控制高电流区压降和正向高偏压弯折。</li>
+          <li><strong><InlineFormula latex="R_{sh}" />：</strong>控制低偏压漏电，越小表示漏电越强。</li>
           <li><strong>Warnings：</strong>报告前必须逐条看。绿色状态不代表 warnings 可以忽略。</li>
           <li><strong>报告：</strong>应包含复现实验所需的 trace、模型、参数和版本信息。</li>
         </ul>
@@ -282,6 +306,18 @@ function ChineseManual({ registry, appVersion }: { registry: FunctionDefinition[
           <li><strong>反偏段看不见：</strong>不要只看线性 I-V，用 Log |I| 和 Log residual。</li>
           <li><strong>多 trace 混淆：</strong>运行和报告前确认下拉框选中的 trace。</li>
         </ul>
+      </ManualSection>
+
+      <ManualSection id="light-response" title="10. 光响应建模">
+        <p>先把 dark trace 拟合到合理，再加光响应项。先从一个光电流组件开始；只有残差确实需要时，才打开电压相关参数。</p>
+        <ul className="doc-steps">
+          <li><strong>Constant photocurrent：</strong><InlineFormula latex="I_{ph}=s_{dir}I_{ph0}" />，适合近似与偏压无关的光电流。</li>
+          <li><strong>Voltage-dependent photocurrent：</strong><InlineFormula latex="I_{ph}(V_j)" />，适合场辅助收集或 trap-assisted gain。高级 threshold 参数默认 fixed，避免过拟合。</li>
+          <li><strong>Photoconductive branch：</strong><InlineFormula latex="I_{pc}=G_{ph}V_j" />，表示光照增加并联导电通道。</li>
+          <li><strong>Photo-modulated main path：</strong><InlineFormula latex="V_{drop}=I\frac{R_0}{1+g_{ph}}" />，表示光照改变主路 transport/contact/channel。</li>
+        </ul>
+        <p>推荐流程：先拟合 dark trace → seed 或固定 dark-like 参数 → 加一个光响应项 → 拟合选中的 light trace → 检查残差和 warnings。</p>
+        <p>未来功能：一键 photodiode presets，以及双 trace <InlineFormula latex="\Delta I(V)=I_{light}(V)-I_{dark}(V)" /> 预览。</p>
       </ManualSection>
     </div>
   </>;

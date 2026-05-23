@@ -25,7 +25,13 @@ export function createComponentInLocation(def: FunctionDefinition, location: "co
   const idBase = (def.law_id || def.function_type).replace(/[^a-z0-9]+/gi, "_");
   const placement = defaultPlacementForLocation(def, location);
   const evaluation_form = defaultFormForLocation(def, location);
-  const nickname = def.law_id === "ohmic" ? (location === "series" ? "Rs" : "Rsh") : def.function_type === "diode" ? "D1" : def.display_name.split(" ")[0];
+  const nickname = def.law_id === "ohmic" ? (location === "series" ? "Rs" : "Rsh")
+    : def.function_type === "diode" ? "D1"
+    : def.function_type === "photocurrent_constant" ? "Iph"
+    : def.function_type === "photocurrent_voltage_dependent" ? "Iph(V)"
+    : def.function_type === "photoconductive_branch" ? "Gph"
+    : def.function_type === "photo_modulated_main_path" ? "Rphoto"
+    : def.display_name.split(" ")[0];
   return { id: `${idBase}_${nextId++}`, location, function_type: def.function_type, law_id: def.law_id, evaluation_form, placement, polarity: polarity ?? def.default_polarity ?? null, mode: def.mode ?? null, params: buildParams(def, nickname), metadata: def.function_type === "custom" ? { nickname, expression: evaluation_form === "conductance_modifier" ? "A*softplus(u)" : "s*A*softplus(u)**m" } : { nickname } };
 }
 export function createComponent(def: FunctionDefinition, polarity?: Polarity): ComponentSpec { return createComponentInLocation(def, def.location, polarity); }
