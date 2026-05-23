@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, PointerEvent, ReactNode } from "react";
 import type { FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, EquationSummary, ComponentSpec } from "../model/types";
 import { equations, exportReport, fitTrace, getRegistry } from "../api/client";
 import { emptyTrace, estimateResidualFloorA, updateComponent } from "../model/utils";
@@ -60,6 +60,38 @@ function WorkspaceView(props: {
   setOpenSections: (sections: Record<string, boolean>) => void;
   setActiveView: (view: AppView) => void;
 }) {
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const [leftPaneWidth, setLeftPaneWidth] = useState(() => {
+    const saved = window.localStorage.getItem("ivfitter.workspace.leftPaneWidth");
+    const parsed = saved ? Number(saved) : NaN;
+    return Number.isFinite(parsed) ? parsed : 520;
+  });
+
+  function clampLeftPaneWidth(nextWidth: number) {
+    const containerWidth = gridRef.current?.getBoundingClientRect().width ?? 0;
+    const maxWidth = containerWidth > 0 ? Math.max(320, containerWidth - 520) : 760;
+    return Math.min(Math.max(nextWidth, 300), Math.min(maxWidth, 820));
+  }
+
+  function resizeLeftPane(clientX: number) {
+    const rect = gridRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const nextWidth = clampLeftPaneWidth(clientX - rect.left);
+    setLeftPaneWidth(nextWidth);
+    window.localStorage.setItem("ivfitter.workspace.leftPaneWidth", String(Math.round(nextWidth)));
+  }
+
+  function startPaneResize(event: PointerEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    resizeLeftPane(event.clientX);
+  }
+
+  function handlePaneResize(event: PointerEvent<HTMLButtonElement>) {
+    if (event.buttons !== 1) return;
+    resizeLeftPane(event.clientX);
+  }
+
   function toggleSection(id: string) {
     props.setOpenSections({ ...props.openSections, [id]: !props.openSections[id] });
   }
@@ -72,7 +104,11 @@ function WorkspaceView(props: {
       <div className="workspace-section-body">{children}</div>
     </section>;
   }
-  return <div className="content-grid">
+  return <div
+    ref={gridRef}
+    className="content-grid workspace-split-grid"
+    style={{ "--workspace-left-width": `${leftPaneWidth}px` } as CSSProperties}
+  >
     <aside className="control-stack">
       <Section id="fitSetup" title={t(props.language, "fitSetup")}>
         <ErrorBoundary label="Fit config panel">
@@ -90,6 +126,15 @@ function WorkspaceView(props: {
         </ErrorBoundary>
       </Section>
     </aside>
+
+    <button
+      type="button"
+      className="workspace-resizer"
+      aria-label={props.language === "zh" ? "调整拟合设置和结果区域宽度" : "Resize setup and results panes"}
+      title={props.language === "zh" ? "拖动调整左右宽度" : "Drag to resize panes"}
+      onPointerDown={startPaneResize}
+      onPointerMove={handlePaneResize}
+    />
 
     <section className="plot-stack main-results-stack">
       <Section id="plots" title={t(props.language, "plots")}>

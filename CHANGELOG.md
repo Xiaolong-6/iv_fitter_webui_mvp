@@ -9,6 +9,7 @@
 - Added component-level Fit all, Fix all, Reset initials, and Seed from fitted values controls without changing fitting math, parameter keys, JSON export/import shape, or report keys.
 - Made Model Builder more compact by editing nicknames directly on component cards and removing duplicated initial/bounds editors, parameter summaries, manual Advanced details expansion, and extra expand controls.
 - Moved Model preview below Model Builder and made it collapsed by default.
+- Added a draggable Workspace divider so users can manually resize the setup/model column and the results column on desktop layouts.
 - Moved explanatory Parameters table guidance and fit-setup summary wording out of visible UI text and into hover/help or documentation.
 - Added localization/content extraction guidance and a first shared frontend content module so future translations can be handled as content work instead of component surgery.
 

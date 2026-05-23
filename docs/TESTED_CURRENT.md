@@ -20,6 +20,7 @@ Backend fitting math and serialization schemas were not intentionally changed in
 - Filters cover All, Fitted, Fixed, Changed, At bounds, Main path, and Junction branches.
 - Model Builder no longer duplicates initial values/bounds, parameter summaries, or manual Advanced details expansion.
 - Model preview is below Model Builder and collapsed by default.
+- Desktop Workspace has a draggable divider between setup/model controls and results; narrow/mobile layouts remain single-column.
 - Range/objective/run-option summaries and Parameters explanatory paragraphs are not visible inline in the Workspace UI.
 - Language/content extraction guidance is documented in `docs/LOCALIZATION_AND_TEXT.md`, and first shared frontend text lives in `frontend/src/content/localizedText.ts`.
 

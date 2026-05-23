@@ -517,6 +517,13 @@ th, td { border-bottom: 1px solid #e5e7eb; padding: 5px; text-align: left; }
 }
 @media (max-width: 850px), (orientation: portrait) {
   .content-grid { height: auto; }
+  .workspace-split-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+  .workspace-resizer {
+    display: none;
+  }
   .plot-stack.main-results-stack {
     max-height: none;
     overflow: visible;
@@ -546,6 +553,30 @@ html, body, #root { height: 100%; overflow: hidden; }
   height: auto;
   min-height: 0;
   overflow: hidden;
+}
+.workspace-split-grid {
+  grid-template-columns: minmax(300px, var(--workspace-left-width, 520px)) 8px minmax(420px, 1fr) !important;
+  gap: 0;
+  column-gap: calc(8px * var(--app-zoom));
+}
+.workspace-resizer {
+  align-self: stretch;
+  width: 8px;
+  min-width: 8px;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, transparent 0, transparent 2px, #dbe4f0 2px, #dbe4f0 6px, transparent 6px);
+  cursor: col-resize;
+  touch-action: none;
+}
+.workspace-resizer:hover,
+.workspace-resizer:focus-visible {
+  background:
+    linear-gradient(90deg, transparent 0, transparent 2px, #2563eb 2px, #2563eb 6px, transparent 6px);
+  outline: none;
 }
 .control-stack,
 .plot-stack.main-results-stack,
