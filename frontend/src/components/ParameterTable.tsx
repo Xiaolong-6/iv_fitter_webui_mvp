@@ -1,8 +1,9 @@
+import { Fragment, useState } from "react";
 import type { FitResult } from "../model/types";
 import { fmtBounds, fmtEng } from "../model/format";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
-import { parameterMeaning } from "../model/diagnostics";
+import { parameterMeaning, parameterShortAssessment } from "../model/diagnostics";
 
 function labelForParameter(result: FitResult, key: string) {
   const [componentId, paramName] = key.split(".");
@@ -15,6 +16,7 @@ function labelForParameter(result: FitResult, key: string) {
 }
 
 export function ParameterTable({ result, language }: { result: FitResult | null; language: Language }) {
+  const [openKey, setOpenKey] = useState<string | null>(null);
   const rows = result ? Object.entries(result.parameters) : [];
   return <section className="card parameter-card">
     <h2>{t(language, "parameters")}</h2>
@@ -27,14 +29,28 @@ export function ParameterTable({ result, language }: { result: FitResult | null;
         <th>{t(language, "state")}</th>
         <th>{language === "zh" ? "这个参数在说什么" : "What it is telling you"}</th>
       </tr></thead>
-      <tbody>{rows.map(([k, p]) => <tr key={k}>
-        <td title={k}>{result ? labelForParameter(result, k) : k}</td>
-        <td title={String(p.value)}>{fmtEng(p.value, 5)} {p.unit ?? ""}</td>
-        <td title={p.stderr === null || p.stderr === undefined ? "" : String(p.stderr)}>{p.stderr === null || p.stderr === undefined ? "-" : fmtEng(p.stderr, 3)}</td>
-        <td title={`${p.lower ?? "-inf"} to ${p.upper ?? "+inf"}`}>{fmtBounds(p.lower, p.upper)}</td>
-        <td>{p.fixed ? t(language, "fixed") : t(language, "fitState")}</td>
-        <td className="parameter-meaning">{result ? parameterMeaning(result, k, language) : ""}</td>
-      </tr>)}</tbody>
+      <tbody>{rows.map(([k, p]) => {
+        const open = openKey === k;
+        const meaning = result ? parameterMeaning(result, k, language) : "";
+        const short = result ? parameterShortAssessment(result, k, language) : "";
+        return <Fragment key={k}>
+          <tr className="parameter-summary-row" onClick={() => setOpenKey(open ? null : k)}>
+            <td title={k}>{result ? labelForParameter(result, k) : k}</td>
+            <td title={String(p.value)}>{fmtEng(p.value, 5)} {p.unit ?? ""}</td>
+            <td className="desktop-detail" title={p.stderr === null || p.stderr === undefined ? "" : String(p.stderr)}>{p.stderr === null || p.stderr === undefined ? "-" : fmtEng(p.stderr, 3)}</td>
+            <td className="desktop-detail" title={`${p.lower ?? "-inf"} to ${p.upper ?? "+inf"}`}>{fmtBounds(p.lower, p.upper)}</td>
+            <td>{p.fixed ? t(language, "fixed") : t(language, "fitState")}</td>
+            <td className="parameter-meaning desktop-detail" title={meaning}>{short}</td>
+          </tr>
+          <tr className={open ? "parameter-mobile-detail open" : "parameter-mobile-detail"}>
+            <td colSpan={6}>
+              <div><strong>{t(language, "stdErr")}:</strong> {p.stderr === null || p.stderr === undefined ? "-" : fmtEng(p.stderr, 3)}</div>
+              <div><strong>{t(language, "bounds")}:</strong> {fmtBounds(p.lower, p.upper)}</div>
+              <p title={meaning}>{short}</p>
+            </td>
+          </tr>
+        </Fragment>;
+      })}</tbody>
     </table></div>}
   </section>;
 }

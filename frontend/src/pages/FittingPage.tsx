@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, EquationSummary } from "../model/types";
 import { equations, exportReport, fitTrace, getRegistry } from "../api/client";
 import { emptyTrace, estimateResidualFloorA } from "../model/utils";
@@ -56,24 +56,56 @@ function WorkspaceView(props: {
   report: string;
   equationSummary: EquationSummary | null;
   language: Language;
+  openSections: Record<string, boolean>;
+  setOpenSections: (sections: Record<string, boolean>) => void;
 }) {
+  function toggleSection(id: string) {
+    props.setOpenSections({ ...props.openSections, [id]: !props.openSections[id] });
+  }
+  function modelSummary() {
+    const main = props.model.series.map((c) => String(c.metadata?.nickname ?? c.id)).join(" -> ") || "direct";
+    const branches = [...props.model.core, ...props.model.parallel].map((c) => String(c.metadata?.nickname ?? c.id)).join(" || ") || "none";
+    return `${main} | ${branches}`;
+  }
+  function Section({ id, title, summary, children }: { id: string; title: string; summary: string; children: ReactNode }) {
+    const open = props.openSections[id] ?? true;
+    return <section id={`section-${id}`} className={open ? "workspace-section open" : "workspace-section collapsed"}>
+      <button className="workspace-section-head" onClick={() => toggleSection(id)} aria-expanded={open}>
+        <span>{title}</span>
+        <small>{summary}</small>
+      </button>
+      <div className="workspace-section-body">{children}</div>
+    </section>;
+  }
   return <div className="content-grid">
     <aside className="control-stack">
-      <FitConfigPanel config={props.config} onChange={props.setConfig} language={props.language} />
-      <ModelBuilder model={props.model} registry={props.registry} onChange={props.setModel} language={props.language} />
+      <Section id="fitSetup" title={t(props.language, "fitSetup")} summary={props.config.v_min || props.config.v_max ? `${props.config.v_min ?? "auto"} to ${props.config.v_max ?? "auto"}` : "range: auto"}>
+        <FitConfigPanel config={props.config} onChange={props.setConfig} language={props.language} />
+      </Section>
+      <Section id="model" title={t(props.language, "modelBuilder")} summary={modelSummary()}>
+        <ModelBuilder model={props.model} registry={props.registry} onChange={props.setModel} language={props.language} />
+      </Section>
     </aside>
 
     <section className="plot-stack main-results-stack">
-      <ErrorBoundary label="Plot workspace">
-        <PlotWorkspace traces={props.traces} selectedTraceId={props.selectedTraceId} result={props.result} language={props.language} />
-      </ErrorBoundary>
-      <div className="main-result-grid">
-        <ErrorBoundary label="Parameter table">
-          <ParameterTable result={props.result} language={props.language} />
+      <Section id="plots" title={t(props.language, "plots")} summary={props.result ? "diagnostic views" : "load data or run fit"}>
+        <ErrorBoundary label="Plot workspace">
+          <PlotWorkspace traces={props.traces} selectedTraceId={props.selectedTraceId} result={props.result} language={props.language} />
         </ErrorBoundary>
-        <WarningsPanel result={props.result} language={props.language} />
+      </Section>
+      <div className="main-result-grid">
+        <Section id="parameters" title={t(props.language, "parameters")} summary={props.result ? `${Object.keys(props.result.parameters).length} parameters` : "not fitted yet"}>
+          <ErrorBoundary label="Parameter table">
+            <ParameterTable result={props.result} language={props.language} />
+          </ErrorBoundary>
+        </Section>
+        <Section id="warnings" title={t(props.language, "warnings")} summary={props.result ? `${props.result.warnings.length} item(s)` : "none yet"}>
+          <WarningsPanel result={props.result} language={props.language} />
+        </Section>
       </div>
-      <EquationPreview equations={props.equationSummary} model={props.model} result={props.result} language={props.language} />
+      <Section id="preview" title={t(props.language, "equationPreview")} summary="circuit + formulas">
+        <EquationPreview equations={props.equationSummary} model={props.model} result={props.result} language={props.language} />
+      </Section>
       {props.report && <section className="card report-card"><h2>{t(props.language, "markdownReport")}</h2><textarea readOnly value={props.report} rows={12} /></section>}
     </section>
   </div>;
@@ -93,6 +125,14 @@ export function FittingPage() {
   const [activeView, setActiveView] = useState<AppView>("workspace");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [language, setLanguage] = useState<Language>("en");
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    fitSetup: true,
+    model: false,
+    plots: false,
+    parameters: false,
+    warnings: false,
+    preview: false,
+  });
 
   useEffect(() => {
     getRegistry().then(setRegistry).catch((e) => setError(String(e)));
@@ -154,6 +194,7 @@ export function FittingPage() {
     }
     try {
       setResult(await fitTrace(selectedTrace, model, config));
+      setOpenSections((current) => ({ ...current, plots: true, parameters: true, warnings: true }));
     } catch (e) {
       setError(String(e));
     }
@@ -165,12 +206,17 @@ export function FittingPage() {
     setReport(r.markdown);
     setActiveView("workspace");
   }
+  function openAndScroll(sectionId: string) {
+    setActiveView("workspace");
+    setOpenSections((current) => ({ ...current, [sectionId]: true }));
+    window.setTimeout(() => document.getElementById(`section-${sectionId}`)?.scrollIntoView({ block: "start", behavior: "smooth" }), 50);
+  }
 
   return <div className={sidebarCollapsed ? "app sidebar-collapsed" : "app"} style={{ "--app-zoom": zoom } as ZoomStyle}>
     <WorkflowSidebar activeView={activeView} onSelect={setActiveView} version={APP_VERSION} collapsed={sidebarCollapsed} onToggleCollapsed={() => setSidebarCollapsed((v) => !v)} language={language} onLanguageChange={setLanguage} />
     <main className="workspace">
       <div className="topbar">
-        <FitStatusBar result={result} language={language} />
+        <FitStatusBar result={result} language={language} onCheckLogIv={() => openAndScroll("plots")} onAdjustInitials={() => openAndScroll("model")} />
         <div className="toolbar">
           <button className="primary" onClick={runFit}>{t(language, "runFit")}</button>
           <button disabled={!result} onClick={makeReport}>{t(language, "report")}</button>
@@ -205,7 +251,10 @@ export function FittingPage() {
         report={report}
         equationSummary={equationSummary}
         language={language}
+        openSections={openSections}
+        setOpenSections={setOpenSections}
       /> : <UserDocumentationPage view={activeView} registry={registry} appVersion={APP_VERSION} language={language} />}
+      {activeView === "workspace" && <button className="floating-run primary" onClick={runFit}>{t(language, "runFit")}</button>}
     </main>
   </div>;
 }

@@ -22,6 +22,10 @@ function dataScale(values: number[]) {
   return Math.max(percentile(abs, 0.95), 1e-15);
 }
 
+export function currentDataScale(values: number[]) {
+  return dataScale(values);
+}
+
 function zh(language: Language, english: string, chinese: string) {
   return language === "zh" ? chinese : english;
 }
@@ -90,6 +94,23 @@ export function parameterMeaning(result: FitResult, key: string, language: Langu
     notes.push(zh(language, "The uncertainty is larger than the value, so this parameter is weakly identified by the current data/model.", "不确定度大于参数值，说明当前数据/模型对这个参数约束较弱。"));
   }
   return notes.join(" ");
+}
+
+export function parameterShortAssessment(result: FitResult, key: string, language: Language) {
+  const p = result.parameters[key];
+  if (!p) return "";
+  const absValue = Math.abs(p.value);
+  const nearLower = p.lower !== null && p.lower !== undefined && Math.abs(p.value - p.lower) <= Math.max(absValue, 1) * 1e-6;
+  const nearUpper = p.upper !== null && p.upper !== undefined && Math.abs(p.value - p.upper) <= Math.max(absValue, 1) * 1e-6;
+  if (nearLower || nearUpper) return zh(language, "near bound - inspect range", "贴近边界 - 检查范围");
+  if (Number.isFinite(p.stderr) && p.stderr !== null && p.stderr !== undefined && absValue > 0 && Math.abs(p.stderr / p.value) > 1) {
+    return zh(language, "weakly identified", "约束较弱");
+  }
+  const [, rawName] = key.split(".");
+  if (/^n$/i.test(rawName ?? "") && Number.isFinite(p.value) && p.value > 2) {
+    return zh(language, "n > 2 - check model/data", "n > 2 - 查模型/数据");
+  }
+  return zh(language, "plausible - review residuals", "基本可信 - 仍需看残差");
 }
 
 export function initialValueGuidance(name: string, spec: ParameterSpec, language: Language) {

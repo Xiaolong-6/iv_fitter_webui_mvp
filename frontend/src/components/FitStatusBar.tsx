@@ -2,7 +2,7 @@ import type { FitResult } from "../model/types";
 import { fmtEng } from "../model/format";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
-import { fitQualityVerdict } from "../model/diagnostics";
+import { currentDataScale, fitQualityVerdict } from "../model/diagnostics";
 
 function percentile(sorted: number[], p: number) {
   if (!sorted.length) return 0;
@@ -40,7 +40,17 @@ function frontendQualityFailure(result: FitResult): string | null {
   return null;
 }
 
-export function FitStatusBar({ result, language }: { result: FitResult | null; language: Language }) {
+export function FitStatusBar({
+  result,
+  language,
+  onCheckLogIv,
+  onAdjustInitials,
+}: {
+  result: FitResult | null;
+  language: Language;
+  onCheckLogIv?: () => void;
+  onAdjustInitials?: () => void;
+}) {
   if (!result) return <div className="status">{t(language, "readyNoFit")}</div>;
 
   const backendWarn = result.warnings.filter((w) => w.severity !== "error").length;
@@ -49,18 +59,24 @@ export function FitStatusBar({ result, language }: { result: FitResult | null; l
   const errors = backendErrors + (frontendFailure ? 1 : 0);
   const rmse = result.metrics.linear_rmse_A;
   const passed = result.success && errors === 0;
-  const state = passed ? t(language, "completed") : t(language, "failedQualityGate");
-  const cls = passed ? "status ok" : "status bad";
   const title = frontendFailure ? `Frontend sanity check: ${frontendFailure}` : result.message;
   const verdict = fitQualityVerdict(result, language);
+  const scale = currentDataScale(result.curves.current_measured_A);
+  const rmseRatio = Number.isFinite(rmse) && scale > 0 ? rmse / scale : Infinity;
+  const stateLabel = passed ? "Converged" : "Not reportable";
+  const statusClass = verdict.severity === "ok" ? "status ok" : verdict.severity === "warning" ? "status warn" : "status bad";
 
   return <div className="fit-status-stack">
-    <div className={cls} title={title}>
-      {t(language, "fit")} {state} | RMSE {fmtEng(rmse, 4)} | {t(language, "warnings")} {backendWarn} | {t(language, "errors")} {errors}{frontendFailure ? " | " + t(language, "frontendSanity") : ""}
+    <div className={statusClass} title={title}>
+      {language === "zh" ? (passed ? "已收敛" : "暂不可报告") : stateLabel} | RMSE {fmtEng(rmse, 4)} A ({fmtEng(rmseRatio, 3)}x {language === "zh" ? "数据量级" : "data scale"}) | {backendWarn} {language === "zh" ? "个 warning" : "warning(s)"} | {errors} {language === "zh" ? "个 error" : "error(s)"}{frontendFailure ? " | " + t(language, "frontendSanity") : ""}
     </div>
     <div className={`fit-verdict ${verdict.severity}`}>
       <strong>{verdict.title}</strong>
       <span>{verdict.message}</span>
+      <div className="fit-verdict-actions">
+        <button type="button" onClick={onCheckLogIv}>{language === "zh" ? "查看 Log I-V" : "Check log I-V"}</button>
+        <button type="button" onClick={onAdjustInitials}>{language === "zh" ? "调整初值" : "Adjust initials"}</button>
+      </div>
     </div>
   </div>;
 }

@@ -24,6 +24,7 @@ type SimpleChartProps = {
   height?: number;
   robustScale?: boolean;
   annotation?: string | null;
+  regions?: { x0: number; x1: number; label: string }[];
 };
 
 function finitePairs(series: Series[]) {
@@ -83,13 +84,14 @@ function panSpan([lo, hi]: [number, number], frac: number): [number, number] {
   return [lo + d, hi + d];
 }
 
-export function SimpleChart({ title, series, yLabel, height = 248, robustScale = true, annotation }: SimpleChartProps) {
+export function SimpleChart({ title, series, yLabel, height = 248, robustScale = true, annotation, regions = [] }: SimpleChartProps) {
   const width = 520;
   const margin = { left: 58, right: 14, top: 30, bottom: 38 };
   const plotW = width - margin.left - margin.right;
   const plotH = height - margin.top - margin.bottom;
   const { xs, ys } = useMemo(() => finitePairs(series), [series]);
   const [hover, setHover] = useState<HoverPoint | null>(null);
+  const [showClipInfo, setShowClipInfo] = useState(false);
   const baseX = span(xs, [-1, 1], false);
   const baseY = span(ys, [-1, 1], robustScale);
   const [xView, setXView] = useState<[number, number] | null>(null);
@@ -159,7 +161,11 @@ export function SimpleChart({ title, series, yLabel, height = 248, robustScale =
       <desc>{yLabel ? `${title}, ${yLabel}` : title}</desc>
       <rect x={0} y={0} width={width} height={height} className="chart-bg" />
       <text x={margin.left} y={22} className="chart-title">{title}</text>
-      {clippedCount > 0 && <text x={width - margin.right} y={22} textAnchor="end" className="chart-clip-note">clipped {clippedCount}</text>}
+      {clippedCount > 0 && <g className="chart-clip-badge" onClick={() => setShowClipInfo((v) => !v)} role="button" aria-label={`${clippedCount} clipped points`}>
+        <rect x={width - margin.right - 78} y={8} width={74} height={22} rx={11} />
+        <text x={width - margin.right - 41} y={23} textAnchor="middle">clipped {clippedCount}</text>
+        <title>{clippedCount} point(s) are outside the current robust scale or zoom window. Click to show the note.</title>
+      </g>}
 
       {ticks.map((t) => {
         const x = margin.left + t * plotW;
@@ -177,6 +183,15 @@ export function SimpleChart({ title, series, yLabel, height = 248, robustScale =
       <line x1={margin.left} x2={margin.left + plotW} y1={margin.top + plotH} y2={margin.top + plotH} className="chart-axis" />
       <line x1={margin.left} x2={margin.left} y1={margin.top} y2={margin.top + plotH} className="chart-axis" />
       {yLabel && <text x={16} y={margin.top + plotH / 2} transform={`rotate(-90 16 ${margin.top + plotH / 2})`} className="chart-label">{yLabel}</text>}
+      {regions.map((region) => {
+        const x0 = clip(sx(region.x0), margin.left, margin.left + plotW);
+        const x1 = clip(sx(region.x1), margin.left, margin.left + plotW);
+        const w = Math.max(2, Math.abs(x1 - x0));
+        return <g className="chart-mismatch-region" key={`${region.x0}-${region.x1}-${region.label}`}>
+          <rect x={Math.min(x0, x1)} y={margin.top} width={w} height={plotH} />
+          {w > 54 ? <text x={Math.min(x0, x1) + 6} y={margin.top + 16}>{region.label}</text> : null}
+        </g>;
+      })}
       {annotation && <g className="chart-annotation">
         <rect x={margin.left + 12} y={margin.top + 12} width={Math.min(360, plotW - 24)} height={46} rx={8} />
         <text x={margin.left + 24} y={margin.top + 31}>{annotation.slice(0, 86)}</text>
@@ -208,6 +223,11 @@ export function SimpleChart({ title, series, yLabel, height = 248, robustScale =
         <text x={tooltipX + 10} y={tooltipY + 16}>{hover.label}</text>
         <text x={tooltipX + 10} y={tooltipY + 32}>V = {fmtEng(hover.x, 6)}</text>
         <text x={tooltipX + 10} y={tooltipY + 47}>Y = {fmtEng(hover.y, 6)}</text>
+      </g>}
+      {showClipInfo && <g className="chart-clip-info">
+        <rect x={width - margin.right - 246} y={34} width={238} height={42} rx={8} />
+        <text x={width - margin.right - 236} y={52}>{clippedCount} point(s) outside visible scale.</text>
+        <text x={width - margin.right - 236} y={68}>Use reset or inspect anomalies.</text>
       </g>}
     </svg>
   </div>;
