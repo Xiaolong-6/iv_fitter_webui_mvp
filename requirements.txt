@@ -1,0 +1,10 @@
+# Root Python dependency manifest for handoff/overwrite-friendly setup.
+# The backend remains installable as -e ./backend; this file lists runtime/test deps explicitly.
+fastapi>=0.110
+uvicorn>=0.29
+pydantic>=2
+numpy>=1.26
+scipy>=1.11
+pandas>=2.0
+pytest>=8
+httpx>=0.27

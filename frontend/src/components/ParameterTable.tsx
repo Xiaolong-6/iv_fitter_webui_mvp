@@ -1,0 +1,31 @@
+import type { FitResult } from "../model/types";
+import { fmtBounds, fmtEng } from "../model/format";
+import type { Language } from "../model/i18n";
+import { t } from "../model/i18n";
+
+function labelForParameter(result: FitResult, key: string) {
+  const [componentId, paramName] = key.split(".");
+  const components = [...result.model.core, ...result.model.series, ...result.model.parallel];
+  const comp = components.find((c) => c.id === componentId);
+  if (!comp) return key;
+  const nick = String(comp.metadata?.nickname ?? comp.id);
+  const param = comp.params[paramName];
+  return `${nick}.${param?.label ?? paramName}`;
+}
+
+export function ParameterTable({ result, language }: { result: FitResult | null; language: Language }) {
+  const rows = result ? Object.entries(result.parameters) : [];
+  return <section className="card">
+    <h2>{t(language, "parameters")}</h2>
+    {rows.length === 0 ? <p className="muted">{t(language, "runFitForParameters")}</p> : <div className="table-wrap"><table>
+      <thead><tr><th>{t(language, "parameter")}</th><th>{t(language, "value")}</th><th>{t(language, "stdErr")}</th><th>{t(language, "bounds")}</th><th>{t(language, "state")}</th></tr></thead>
+      <tbody>{rows.map(([k, p]) => <tr key={k}>
+        <td title={k}>{result ? labelForParameter(result, k) : k}</td>
+        <td title={String(p.value)}>{fmtEng(p.value, 5)} {p.unit ?? ""}</td>
+        <td title={p.stderr === null || p.stderr === undefined ? "" : String(p.stderr)}>{p.stderr === null || p.stderr === undefined ? "—" : fmtEng(p.stderr, 3)}</td>
+        <td title={`${p.lower ?? "-∞"} – ${p.upper ?? "∞"}`}>{fmtBounds(p.lower, p.upper)}</td>
+        <td>{p.fixed ? t(language, "fixed") : t(language, "fitState")}</td>
+      </tr>)}</tbody>
+    </table></div>}
+  </section>;
+}

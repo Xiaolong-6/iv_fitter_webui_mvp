@@ -1,0 +1,33 @@
+{
+  "trace": {
+    "voltage_V": [-2, -1, 0, 1, 2, 3, 4],
+    "current_A": [-1e-9, -5e-10, 0, 1e-9, 5e-9, 3e-8, 2e-7],
+    "trace_id": "sample"
+  },
+  "model": {
+    "core": [{
+      "id": "d1",
+      "location": "core",
+      "function_type": "diode",
+      "params": {
+        "I0_A": {"value": 1e-12, "lower": 1e-30, "upper": 1, "fit": true, "unit": "A"},
+        "n": {"value": 1.5, "lower": 0.5, "upper": 10, "fit": true}
+      }
+    }],
+    "series": [{
+      "id": "rs",
+      "location": "series",
+      "function_type": "constant_rs",
+      "params": {"Rs_ohm": {"value": 10, "lower": 0, "upper": 1000000000000, "fit": true, "unit": "Ω"}}
+    }],
+    "parallel": [{
+      "id": "rsh",
+      "location": "parallel",
+      "function_type": "shunt",
+      "params": {"Rsh_ohm": {"value": 1000000000, "lower": 1e-9, "upper": 1e18, "fit": true, "unit": "Ω"}}
+    }],
+    "temperature_K": 300,
+    "version": "1.0.0"
+  },
+  "config": {"weighting": "symmetric_log_signed", "loss": "soft_l1", "fit_speed": "full", "exclude_compliance": true, "max_nfev": 500}
+}
