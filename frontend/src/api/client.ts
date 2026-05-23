@@ -1,6 +1,19 @@
 import type { FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, EquationSummary, FitWarning } from "../model/types";
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
+function resolveApiBase(): string {
+  const configured = import.meta.env.VITE_API_BASE;
+  if (configured && configured.trim()) return configured.replace(/\/+$/, "");
+
+  if (typeof window !== "undefined" && window.location?.hostname) {
+    const { protocol, hostname } = window.location;
+    if (protocol === "http:" || protocol === "https:") {
+      return `${protocol}//${hostname}:8000`;
+    }
+  }
+  return "http://127.0.0.1:8000";
+}
+
+const API_BASE = resolveApiBase();
 
 async function postJson<T>(path: string, payload: unknown): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });

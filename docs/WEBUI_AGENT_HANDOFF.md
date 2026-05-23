@@ -112,3 +112,30 @@ Important current facts:
 - No presets and no ΔI(V) two-trace preview are included in v1.4.0; both are documented as future features.
 - UI text must not expose internal design discussion. The old circuit phrase `Read main path, then downward from Vj` was removed for this reason.
 - Validation is documented in `docs/TESTED_1_4_0.md`.
+
+## v1.4.1 LAN phone/tablet testing handoff note
+
+Current package focus: make local browser testing possible from a phone/tablet without changing the app into a public deployment.
+
+Important current facts:
+
+- `04c_run_lan_dev.bat` is a human-facing local-network launcher.
+- It requires `02_setup_dev.bat` to have completed first; it does not silently install dependencies.
+- It binds the backend to `0.0.0.0:8000` and the frontend to `0.0.0.0:5173`.
+- It sets `VITE_API_BASE` to `http://<detected-LAN-IP>:8000` so a phone does not try to call its own `localhost`.
+- It sets `IVFITTER_CORS_ORIGINS` to include the detected LAN frontend URL plus localhost fallbacks.
+- This is not a public deployment mode. Do not describe it as cloud hosting, production hosting, or internet exposure.
+- If a user reports that the page opens but import/fit fails, check Windows Firewall access for Python/backend port 8000 first.
+
+## v1.4.2 LAN startup and fetch diagnostics handoff note
+
+Current package focus: make the LAN launcher visibly start both required dev services and fail early if the backend is not reachable.
+
+Important current facts:
+
+- `04c_run_lan_dev.bat` now opens separate backend and frontend PowerShell windows.
+- Backend starts first on `0.0.0.0:8000`; the script waits for `http://127.0.0.1:8000/api/health` before starting the frontend.
+- Frontend starts on `0.0.0.0:5173` with `VITE_API_BASE=http://<detected-LAN-IP>:8000`.
+- `frontend/src/api/client.ts` now has a LAN-safe fallback: if `VITE_API_BASE` is absent, it derives the backend URL from the current browser hostname and port `8000`.
+- If the computer browser shows `TypeError: Failed to fetch`, check backend health first. If computer health works but phone health fails, the issue is usually Windows Firewall, wrong adapter IP, VPN, or Wi-Fi client isolation.
+- This remains a local dev helper only, not production deployment.

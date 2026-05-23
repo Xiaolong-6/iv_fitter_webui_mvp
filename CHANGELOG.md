@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.4.2 - LAN startup and fetch diagnostics fix
+
+- Reworked `04c_run_lan_dev.bat` so one script explicitly starts both backend and frontend in separate windows.
+- Added a backend health-check wait before launching the frontend, so backend startup failures are visible before browser testing.
+- Added LAN-safe frontend API-base inference as a fallback when `VITE_API_BASE` is not set.
+- Expanded LAN troubleshooting notes for `TypeError: Failed to fetch`, firewall blocks, occupied ports, and multiple IPv4 adapters.
+
+## v1.4.1 - LAN phone/tablet testing helper
+
+- Added `04c_run_lan_dev.bat` for local Wi-Fi phone/tablet browser testing.
+- The LAN launcher checks common prerequisites, prints the detected computer IPv4 URL, starts the backend on `0.0.0.0:8000`, starts the frontend on `0.0.0.0:5173`, and sets the frontend API base to the computer LAN IP.
+- Documented firewall, same-Wi-Fi, hotspot fallback, and `localhost` troubleshooting notes in README.
+- Clarified that LAN mode is a local development helper, not public deployment.
+
 ## v1.4.0 - Photocurrent and light-response modeling
 
 - Added light-response modeling as first-class Law / Form / Placement components rather than a hard-coded `-Iph` parameter.
@@ -130,6 +144,13 @@ Focus: HappyMeasure multi-trace import, plot safety, selected-model equation tra
 - Keep legacy composite solver available for compatibility.
 
 # Changelog
+
+## v1.4.2 - LAN startup and fetch diagnostics fix
+
+- Reworked `04c_run_lan_dev.bat` so one script explicitly starts both backend and frontend in separate windows.
+- Added a backend health-check wait before launching the frontend, so backend startup failures are visible before browser testing.
+- Added LAN-safe frontend API-base inference as a fallback when `VITE_API_BASE` is not set.
+- Expanded LAN troubleshooting notes for `TypeError: Failed to fetch`, firewall blocks, occupied ports, and multiple IPv4 adapters.
 
 ## v1.4.0 - Photocurrent and light-response modeling
 

@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.4.0**
+Current version: **1.4.2**
 
 IV-fitter Web UI is a local-first tool for importing I-V traces, building a circuit model, running fits, and checking whether the result is physically plausible before reporting it.
 
@@ -74,6 +74,32 @@ Optional split launch:
 .\04a_run_backend_only.bat
 .\04b_run_frontend_only.bat
 ```
+
+### Test from a phone or tablet on the same Wi-Fi
+
+For phone/tablet browser testing on your local network, use:
+
+```powershell
+.\04c_run_lan_dev.bat
+```
+
+The LAN launcher starts **both** required services in separate windows: backend on `0.0.0.0:8000` and frontend on `0.0.0.0:5173`. It prints a phone URL such as `http://192.168.x.x:5173`, sets the frontend API base to the detected computer IP, and checks backend health before launching the frontend.
+
+Prerequisites:
+
+- Run `02_setup_dev.bat` first.
+- Put the computer and phone on the same Wi-Fi, or let the computer connect to the phone hotspot.
+- Allow Windows Firewall access on **Private networks** if prompted.
+- Use the printed LAN URL on the phone, not `localhost`.
+- Keep both new PowerShell windows open while testing.
+
+Troubleshooting `TypeError: Failed to fetch`:
+
+1. On the computer, open `http://127.0.0.1:8000/api/health`. It should return `{"status":"ok"}`.
+2. On the phone, open `http://<computer-LAN-IP>:8000/api/health`. If this fails but the computer health URL works, Windows Firewall or the Wi-Fi network is blocking the backend.
+3. If the script lists multiple IPv4 addresses, the first one may be a VPN/virtual adapter. Disconnect VPN/virtual adapters or use a phone hotspot and rerun the script.
+
+University or company Wi-Fi may block device-to-device access; a phone hotspot is usually the simplest fallback. This is a local development/testing helper only. It is not a public deployment mode.
 
 Setup and launch are intentionally separate. `04_run_dev.bat` should only start the app; it should not silently install dependencies.
 
