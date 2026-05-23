@@ -49,6 +49,17 @@ def validate_component_against_registry(comp: ComponentSpec) -> list[FitWarning]
     return warnings
 
 
+def _duplicate_signature(comp: ComponentSpec):
+    # Same law/form/placement/polarity generally means the parameters are not identifiable.
+    # Two diode branches can be intentionally used as a two-diode model only when users
+    # give them distinct role/nickname labels.
+    form = comp.evaluation_form or "auto"
+    placement = comp.placement or "auto"
+    polarity = comp.polarity or "none"
+    law = comp.law_id or comp.function_type
+    return (law, form, placement, polarity)
+
+
 def validate_model_spec(model: ModelSpec) -> list[FitWarning]:
     """Return all schema, physics, and transparency warnings for a ModelSpec."""
     warnings: list[FitWarning] = []
@@ -58,6 +69,21 @@ def validate_model_spec(model: ModelSpec) -> list[FitWarning]:
     for comp_id, count in Counter(ids).items():
         if count > 1:
             warnings.append(_warn("duplicate_component_id", f"Component id {comp_id!r} appears {count} times.", "error"))
+    signatures = Counter(_duplicate_signature(comp) for _group, comp in _component_groups(model))
+    for sig, count in signatures.items():
+        if count <= 1:
+            continue
+        law, form, placement, polarity = sig
+        # Allow an intentional two-diode branch model when the two branches have distinct nicknames.
+        matching = [comp for _group, comp in _component_groups(model) if _duplicate_signature(comp) == sig]
+        nicknames = {str(comp.metadata.get("nickname") or comp.id) for comp in matching}
+        is_two_diode_role = law == "shockley_diode" and form == "current_branch" and len(nicknames) == count and count <= 2
+        if not is_two_diode_role:
+            warnings.append(_warn(
+                "duplicate_unidentifiable_component",
+                f"{count} components share the same law/form/placement/polarity ({law}, {form}, {placement}, {polarity}). Remove duplicates or give them distinct polarity/role.",
+                "warning",
+            ))
     if not model.core:
         warnings.append(_warn("no_core", "Model has no core junction component."))
     if not any(c.function_type == "constant_rs" for c in model.series):

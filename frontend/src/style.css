@@ -1761,3 +1761,25 @@ button.running { cursor: progress; opacity: 0.85; }
     min-width: 0;
   }
 }
+
+/* v1.4.14 Model Builder structure polish */
+.model-builder-bucket-note {
+  margin: -0.15rem 0 0.55rem;
+  color: #52606d;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+.duplicate-component-note {
+  margin: 0.45rem 0 0.6rem;
+  border-left: 3px solid #7c8da5;
+}
+.add-row button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+@media (max-width: 640px) {
+  .model-builder-bucket-note {
+    font-size: 0.98rem;
+    margin-bottom: 0.7rem;
+  }
+}

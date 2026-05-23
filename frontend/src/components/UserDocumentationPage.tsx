@@ -83,27 +83,54 @@ const FUNCTION_DOCS: FunctionDoc[] = [
     lawId: "shockley_diode",
     en: {
       name: "Shockley diode",
-      oneLine: "Exponential current from a p-n, barrier, or equivalent junction.",
+      oneLine: "Branch current from a p-n, barrier, or equivalent junction.",
       tags: ["junction", "forward turn-on", "start simple"],
       purpose: "Describes ordinary exponential conduction through a p-n junction, barrier junction, or equivalent junction.",
       suitable: "Low-to-medium forward bias before the curve is dominated by series resistance, high injection, breakdown, extra channels, or measurement compliance.",
       notSuitable: "High forward voltage with strong extra conduction, abrupt jumps, strong series-resistance limitation, or reverse breakdown.",
       curveEffect: "Sets the exponential slope and turn-on behavior in the low-to-medium forward-bias region.",
       fitAdvice: "Fit D1 first over a narrow forward low-voltage range. If the high-voltage residual is systematic, add main-path Ohmic resistance, a forward power-law branch, or another physically justified term.",
-      parameters: [["I₀", "Saturation current; controls the current scale."], ["n", "Ideality factor; larger n gives a slower current rise with voltage."]],
+      parameters: [["I₀", "Saturation current; controls the current scale."], ["n", "Ideality factor; larger n gives a slower current rise with voltage."], ["Polarity", "Forward or reverse branch direction."]],
       formula: "I_D = I_0[\exp(V_j/(nV_T))-1]",
     },
     zh: {
       name: "二极管指数电流",
-      oneLine: "描述 p-n 结、势垒结或等效结的指数型导通。",
+      oneLine: "描述 p-n 结、势垒结或等效结的支路指数电流。",
       tags: ["结电流", "正向开启", "优先起点"],
       purpose: "描述普通 p-n 结、势垒结或等效结的指数型导通电流。",
       suitable: "低到中等正向偏压区，尚未被串联电阻、高注入、击穿、额外导通通道或测量合规限制主导的数据。",
       notSuitable: "高正向电压下出现明显额外导通、跳变、强串联电阻限制，或者反向击穿区。",
       curveEffect: "主要决定低到中等正向电压下的指数斜率和 turn-on 行为。",
       fitAdvice: "先在较窄的正向低电压范围拟合 D1。如果高电压区系统性偏离，再加入主路 Ohmic、forward power-law 或其他导通支路。",
-      parameters: [["I₀", "饱和电流，控制指数电流水平。"], ["n", "理想因子，控制指数斜率；n 越大，电流随电压上升越慢。"]],
+      parameters: [["I₀", "饱和电流，控制指数电流水平。"], ["n", "理想因子，控制指数斜率；n 越大，电流随电压上升越慢。"], ["Polarity", "正向或反向支路方向。"]],
       formula: "I_D = I_0[\exp(V_j/(nV_T))-1]",
+    },
+  },
+  {
+    lawId: "shockley_diode_series",
+    en: {
+      name: "Series diode barrier",
+      oneLine: "Main-path voltage drop from a diode-like contact or injection barrier.",
+      tags: ["main path", "barrier", "advanced"],
+      purpose: "Describes a diode-like barrier in the main current path. It consumes voltage before the internal junction branches see the remaining voltage.",
+      suitable: "Use when a contact, injection barrier, or back-to-back junction behaves like a series transport bottleneck rather than a parallel current branch.",
+      notSuitable: "Do not use it as a substitute for an ordinary branch diode. If the current is a parallel junction contribution, use Shockley diode current instead.",
+      curveEffect: "Adds a nonlinear voltage drop that can shift apparent turn-on and limit transport without adding an independent current branch.",
+      fitAdvice: "Treat it as an advanced main-path term. Start with one polarity and compare against simpler Rs + branch-diode models before freeing extra terms.",
+      parameters: [["I₀", "Barrier current scale used in the voltage-drop relation."], ["n", "Ideality factor controlling how quickly the voltage drop grows with current."], ["Polarity", "Which current direction the barrier mainly resists."]],
+      formula: "V_{drop}=nV_T\ln(I/I_0+1)",
+    },
+    zh: {
+      name: "串联二极管势垒",
+      oneLine: "主路中由接触或注入势垒产生的二极管式压降。",
+      tags: ["主路", "势垒", "高级"],
+      purpose: "描述主电流路径中的二极管式势垒。它先消耗一部分外部电压，然后内部结点支路才看到剩余电压。",
+      suitable: "适合接触、注入势垒或背靠背结表现为串联传输瓶颈，而不是并联电流支路的情况。",
+      notSuitable: "不要把它当作普通并联二极管的替代品。如果电流是结支路贡献，应使用二极管指数电流。",
+      curveEffect: "增加一个非线性主路压降，可以改变表观开启电压并限制传输，但不会增加独立电流支路。",
+      fitAdvice: "把它作为高级主路项使用。先用一个极性，并与更简单的 Rs + 支路二极管模型比较后再增加复杂度。",
+      parameters: [["I₀", "压降关系中的势垒电流尺度。"], ["n", "控制压降随电流增长速度的理想因子。"], ["Polarity", "该势垒主要阻碍的电流方向。"]],
+      formula: "V_{drop}=nV_T\ln(I/I_0+1)",
     },
   },
   {
@@ -302,27 +329,27 @@ const FUNCTION_DOCS: FunctionDoc[] = [
   {
     lawId: "photo_modulated_main_path",
     en: {
-      name: "Photo-modulated main path",
-      oneLine: "Light changes the effective main-path resistance or transport.",
+      name: "Photo-modulated main path (advanced)",
+      oneLine: "Advanced interpretation of effective main-path resistance under light.",
       tags: ["light response", "main path", "transport"],
       purpose: "Describes light changing the main current path, such as a contact, conductive channel, surface layer, or near-threshold transport.",
       suitable: "Illumination mainly changes high-current slope, turn-on threshold, or near-threshold conduction state.",
       notSuitable: "If the light curve is only shifted, use constant photocurrent. If light adds a parallel conductive path, use photoconductive branch.",
       curveEffect: "Changes the internal junction voltage, thereby indirectly changing all branch currents.",
-      fitAdvice: "Use only when a branch-current description is misleading. Keep photo_gain bounded and compare against the simpler photoconductive branch.",
+      fitAdvice: "In single-trace fitting this is generally not distinguishable from an effective series resistance. Use as an interpretation note or future light/dark joint-fit term, not as a default standalone choice.",
       parameters: [["R0", "Dark or baseline main-path resistance."], ["photo_gain", "Conductance enhancement under light."]],
       formula: "V_{drop}=IR_{eff}",
       advancedFormula: "R_{eff}=R_0/(1+g_{ph})",
     },
     zh: {
-      name: "光调制主路传输",
-      oneLine: "光照改变主路等效电阻或传输。",
+      name: "光调制主路传输（高级）",
+      oneLine: "对光照下主路等效电阻变化的高级解释。",
       tags: ["光响应", "主路", "传输"],
       purpose: "描述光照改变主电流路径，例如接触、导电通道、表面层或 threshold 附近的 transport。",
       suitable: "光照主要改变高电流区斜率、turn-on threshold、或接近 threshold 时的导通状态。",
       notSuitable: "如果 light curve 只是整体上下平移，用 constant photocurrent。如果光照增加一条并联导电通道，用 photoconductive branch。",
       curveEffect: "改变内部结点电压，从而间接改变所有支路电流。",
-      fitAdvice: "只有当支路电流模型会误导时才使用。保持 photo_gain 边界合理，并与更简单的 photoconductive branch 对比。",
+      fitAdvice: "在单条 trace 拟合中，它通常无法与等效串联电阻区分。应作为解释说明或未来 light/dark 联合拟合项，不作为默认独立选择。",
       parameters: [["R0", "暗态或基准主路电阻。"], ["photo_gain", "光照引起的主路导电增强强度。"]],
       formula: "V_{drop}=IR_{eff}",
       advancedFormula: "R_{eff}=R_0/(1+g_{ph})",
@@ -358,7 +385,7 @@ const FUNCTION_DOCS: FunctionDoc[] = [
 ];
 
 function AdvancedFunctionDetails({ lawId, registry, language }: { lawId: string; registry: FunctionDefinition[]; language: Language }) {
-  const items = registry.filter((item) => item.law_id === lawId);
+  const items = registry.filter((item) => item.law_id === lawId || (lawId === "shockley_diode_series" && item.function_type === "series_diode_barrier"));
   if (!items.length) {
     return <p className="muted">{language === "zh" ? "此项当前未在后端函数库中加载。" : "This item is not currently loaded from the backend registry."}</p>;
   }

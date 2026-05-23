@@ -54,6 +54,16 @@ function componentTitle(comp: ComponentSpec, language: Language) {
   return `${nickname(comp)} · ${law} · ${place}${pol}`;
 }
 
+function functionOptionLabel(definition: FunctionDefinition, language: Language) {
+  const advanced = new Set(["series_diode_barrier", "softplus_rs_modifier", "custom", "power_law", "soft_breakdown", "photocurrent_voltage_dependent"]);
+  const prefix = advanced.has(definition.function_type)
+    ? (language === "zh" ? "高级 · " : "Advanced · ")
+    : (language === "zh" ? "基础 · " : "Basic · ");
+  if (definition.function_type === "series_diode_barrier") return prefix + (language === "zh" ? "串联二极管势垒" : "Series diode barrier");
+  if (definition.law_id === "ohmic") return prefix + (language === "zh" ? "有效欧姆电阻" : "Effective Ohmic resistance");
+  return prefix + definition.display_name;
+}
+
 function defaultLocationForBucket(bucket: BuilderBucket, def: FunctionDefinition, model: ModelSpec): ModelLocation {
   if (bucket === "main") return "series";
   if (def.function_type === "diode") return "core";
@@ -192,11 +202,39 @@ function CircuitCard({ model, language }: { model: ModelSpec; language: Language
 function userDefinitions(registry: FunctionDefinition[]) {
   const seen = new Set<string>();
   return registry.filter((definition) => {
-    if (definition.law_id === "ohmic" && seen.has("ohmic")) return false;
     if (definition.function_type === "shunt") return false;
-    seen.add(definition.law_id || definition.function_type);
+    if (definition.function_type === "photo_modulated_main_path") return false;
+    if (definition.law_id === "ohmic" && seen.has("ohmic")) return false;
+    if (definition.law_id === "ohmic") seen.add("ohmic");
     return true;
   });
+}
+
+function allComponents(model: ModelSpec) {
+  return [...model.core, ...model.series, ...model.parallel];
+}
+
+function duplicateKey(comp: ComponentSpec) {
+  return [comp.law_id ?? comp.function_type, comp.evaluation_form ?? "auto", comp.placement ?? "auto", comp.polarity ?? "none"].join("|");
+}
+
+function isDuplicateBlocked(model: ModelSpec, comp: ComponentSpec) {
+  const key = duplicateKey(comp);
+  const matches = allComponents(model).filter((existing) => duplicateKey(existing) === key);
+  if (!matches.length) return false;
+  // A two-diode branch model is allowed only as an explicit D1/D2 role distinction.
+  if (comp.function_type === "diode" && comp.evaluation_form === "current_branch") return matches.length >= 2;
+  return true;
+}
+
+function nextNickname(model: ModelSpec, base: string) {
+  const names = new Set(allComponents(model).map((comp) => nickname(comp)));
+  if (!names.has(base)) return base;
+  const m = base.match(/^(.*?)(\d+)$/);
+  const prefix = m ? m[1] : base;
+  let idx = m ? Number(m[2]) + 1 : 2;
+  while (names.has(`${prefix}${idx}`)) idx += 1;
+  return `${prefix}${idx}`;
 }
 
 function applyNicknameToParams(comp: ComponentSpec, nick: string): ComponentSpec {
@@ -229,6 +267,8 @@ function AddRow(props: {
   onSelectDefinition: (functionType: string) => void;
   onSelectPolarity: (polarity: string) => void;
   onAdd: () => void;
+  disabled?: boolean;
+  disabledReason?: string;
 }) {
   const polarities = allowedPolarities(props.selectedDefinition);
   const selectedPolarity = props.selectedPolarity || props.selectedDefinition?.default_polarity || polarities[0] || "";
@@ -242,7 +282,7 @@ function AddRow(props: {
       >
         {props.definitions.map((definition) => (
           <option key={definition.function_type} value={definition.function_type}>
-            {definition.law_id === "ohmic" ? "Ohmic" : definition.display_name}
+            {functionOptionLabel(definition, props.language)}
           </option>
         ))}
       </select>
@@ -261,7 +301,7 @@ function AddRow(props: {
           {t(props.language, "noPolarity")}
         </span>
       )}
-      <button title={t(props.language, "addComponentHelp")} onClick={props.onAdd}>{t(props.language, "add")}</button>
+      <button title={props.disabledReason || t(props.language, "addComponentHelp")} disabled={props.disabled} onClick={props.onAdd}>{t(props.language, "add")}</button>
     </div>
   );
 }
@@ -433,7 +473,10 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
       ? (polarity[bucket] || definition.default_polarity || polarities[0]) as Polarity
       : undefined;
     const location = defaultLocationForBucket(bucket, definition, model);
-    onChange(addComponent(model, createComponentInLocation(definition, location, selectedPolarity)));
+    let component = createComponentInLocation(definition, location, selectedPolarity);
+    component = applyNicknameToParams(component, nextNickname(model, nickname(component)));
+    if (isDuplicateBlocked(model, component)) return;
+    onChange(addComponent(model, component));
   }
 
   return (
@@ -446,10 +489,21 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
         const definitions = definitionsForBucket(bucket);
         const definition = selectedDefinition(bucket);
         const components = bucketLocations[bucket].flatMap((location) => model[location].map((comp) => ({ location, comp })));
+        const pendingLocation = definition ? defaultLocationForBucket(bucket, definition, model) : "parallel";
+        const polarities = definition ? allowedPolarities(definition) : [];
+        const pendingPolarity = polarities.length ? (polarity[bucket] || definition?.default_polarity || polarities[0]) as Polarity : undefined;
+        const pendingComponent = definition ? createComponentInLocation(definition, pendingLocation, pendingPolarity) : null;
+        const duplicateBlocked = pendingComponent ? isDuplicateBlocked(model, pendingComponent) : false;
+        const duplicateReason = language === "zh"
+          ? "已存在相同数学形式、位置和极性的模型项；请改用不同极性/角色，或先删除重复项。"
+          : "This law/form/placement/polarity is already present. Use a different polarity/role, or remove the duplicate first.";
 
         return (
           <div className="model-group" key={bucket}>
             <h3>{labels[bucket]} <HelpTip text={bucket === "main" ? t(language, "mainPathUserHelp") : t(language, "branchUserHelp")} /></h3>
+            <p className="model-builder-bucket-note">{bucket === "main"
+              ? (language === "zh" ? "主路项描述串联压降或传输瓶颈；不要把并联电流支路放在这里。" : "Main-path terms describe series voltage drops or transport bottlenecks, not added parallel currents.")
+              : (language === "zh" ? "支路项描述在结点电压下增加到端口电流的贡献。" : "Branch terms add current contributions at the junction voltage.")}</p>
             <AddRow
               bucket={bucket}
               definitions={definitions}
@@ -463,7 +517,10 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
               }}
               onSelectPolarity={(value) => setPolarity((current) => ({ ...current, [bucket]: value }))}
               onAdd={() => addFrom(bucket)}
+              disabled={duplicateBlocked}
+              disabledReason={duplicateBlocked ? duplicateReason : undefined}
             />
+            {duplicateBlocked ? <p className="warning info duplicate-component-note">{duplicateReason}</p> : null}
             {components.length === 0 && <div className="empty-line">{t(language, "noComponents")}</div>}
             {components.map(({ location, comp }) => (
               <ComponentCard

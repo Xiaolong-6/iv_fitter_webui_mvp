@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.4.11**
+Current version: **1.4.14**
 
 > v1.4.9 importer note: HappyMeasure combined wide-v2 files now import correctly even when the UI/API passes explicit selected columns. The package includes an anonymized regression fixture under `examples/testdata/`.
 

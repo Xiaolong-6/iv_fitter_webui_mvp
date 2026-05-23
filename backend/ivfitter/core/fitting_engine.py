@@ -92,6 +92,24 @@ def _photoconductive_branch(vj: np.ndarray, comp: ComponentSpec) -> np.ndarray:
     arr = np.asarray(vj, dtype=float)
     return _param_value(comp, "Gph_S", 0.0) * arr * _bias_activation(arr, comp.polarity)
 
+
+def _thermal_voltage(T: float) -> float:
+    return 8.617333262145e-5 * float(T)
+
+
+def _diode_polarity_sign(polarity: str | None) -> float:
+    return -1.0 if polarity == "reverse" else 1.0
+
+
+def _series_diode_barrier_drop(current: np.ndarray, comp: ComponentSpec, temperature_K: float) -> np.ndarray:
+    arr = np.asarray(current, dtype=float)
+    sign = _diode_polarity_sign(comp.polarity)
+    forward_current = np.maximum(sign * arr, 0.0)
+    i0 = max(_param_value(comp, "I0_A", 1e-12), 1e-300)
+    n = max(_param_value(comp, "n", 1.5), 1e-12)
+    return sign * n * _thermal_voltage(temperature_K) * np.log1p(forward_current / i0)
+
+
 def _series_rs_eff(vj, model):
     arr = np.asarray(vj, dtype=float)
     rs = np.zeros_like(arr)
@@ -117,12 +135,23 @@ def _series_rs_eff(vj, model):
     return np.maximum(rs, 0.0)
 
 
+def _series_voltage_drop(current, vj, model):
+    arr_i = np.asarray(current, dtype=float)
+    arr_vj = np.asarray(vj, dtype=float)
+    drop = arr_i * _series_rs_eff(arr_vj, model)
+    for comp in model.series:
+        if comp.function_type == "series_diode_barrier":
+            drop = drop + _series_diode_barrier_drop(arr_i, comp, model.temperature_K)
+    return drop
+
+
 def branch_currents_at_vj(vj, model):
     arr = np.asarray(vj, dtype=float)
     out: dict[str, np.ndarray] = {}
     for comp in model.core:
         if comp.function_type == "diode":
-            out[comp.id] = diode_current(arr, _param_value(comp, "I0_A", _param_value(comp, "I0", 1e-12)), _param_value(comp, "n", 1.5), model.temperature_K)
+            sign = _diode_polarity_sign(comp.polarity)
+            out[comp.id] = sign * diode_current(sign * arr, _param_value(comp, "I0_A", _param_value(comp, "I0", 1e-12)), _param_value(comp, "n", 1.5), model.temperature_K)
     for comp in model.parallel:
         if comp.function_type == "shunt":
             out[comp.id] = shunt_current(arr, _param_value(comp, "Rsh_ohm", _param_value(comp, "Rs_ohm", 1e30)))
@@ -155,7 +184,10 @@ def _current_at_vj(vj, model):
 
 def _solve_single_vj(v_ext: float, model) -> float:
     def f(vj: float) -> float:
-        return float(vj + _current_at_vj(np.array([vj]), model)[0] * _series_rs_eff(np.array([vj]), model)[0] - v_ext)
+        arr_vj = np.array([vj], dtype=float)
+        current = _current_at_vj(arr_vj, model)
+        drop = _series_voltage_drop(current, arr_vj, model)
+        return float(vj + drop[0] - v_ext)
     span = max(10.0, abs(v_ext) + 10.0)
     lo, hi = v_ext - span, v_ext + span
     flo, fhi = f(lo), f(hi)

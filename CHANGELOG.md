@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.4.14 - Model Builder UI polish after structure cleanup
+
+- Added Basic/Advanced labels in the Model Builder add-function menu.
+- Added short user-facing notes that distinguish main-path voltage drops from branch current contributions.
+- Added visible duplicate-structure feedback when a selected component would duplicate the same law/form/placement/polarity.
+- Kept the fitting workflow unchanged; this is a clarity and guardrail polish pass.
+
+## v1.4.13 - Function Guide alignment for series-barrier model structure
+
+- Added user-facing Function Guide documentation for the Series diode barrier main-path voltage-drop form.
+- Clarified that branch diode and main-path diode barrier are different evaluation forms of a diode-like law.
+- Marked Photo-modulated main path as an advanced interpretation because it is not identifiable separately from effective series resistance in single-trace fitting.
+- Updated diode parameter notes to include forward/reverse polarity.
+
+## v1.4.12 - Model Builder law/form/placement cleanup
+
+- Added a main-path Series diode barrier as the voltage-drop form of the Shockley law.
+- Added forward/reverse polarity support for branch diode current laws.
+- Removed Photo-modulated main path from the default Model Builder add menu because it is not distinguishable from an effective series resistance in single-trace fitting.
+- Added duplicate model-structure guards for same law/form/placement/polarity combinations, while allowing explicit two-diode branch roles.
+- Updated model equations and backend tests for the new series-barrier and polarity behavior.
+
 ## v1.4.11 - Plot trace selector and cleaner plot header
 
 - Removed the redundant selected-trace explanatory sentence from the Plots header.

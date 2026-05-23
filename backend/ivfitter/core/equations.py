@@ -16,6 +16,8 @@ def _component_equation(comp) -> str:
         return f"I_{nick}(V_j) = direction_sign * [Iph0*(1 + gain_per_V*|V_j|) + Aph*sp((|V_j|-Vt_ph)/Vs_ph)^m_ph]"
     if comp.function_type == "photoconductive_branch":
         return f"I_{nick} = Gph * V_j"
+    if comp.function_type == "series_diode_barrier":
+        return f"V_drop,{nick} = n V_T ln(I/I0 + 1)"
     if comp.function_type == "photo_modulated_main_path":
         return f"V_drop,{nick} = I * R0/(1 + photo_gain)"
     definition = registry_by_function().get(comp.function_type)

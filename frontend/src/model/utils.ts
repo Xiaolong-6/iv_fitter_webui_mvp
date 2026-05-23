@@ -26,6 +26,7 @@ export function createComponentInLocation(def: FunctionDefinition, location: "co
   const placement = defaultPlacementForLocation(def, location);
   const evaluation_form = defaultFormForLocation(def, location);
   const nickname = def.law_id === "ohmic" ? (location === "series" ? "Rs" : "Rsh")
+    : def.function_type === "series_diode_barrier" ? "Barrier1"
     : def.function_type === "diode" ? "D1"
     : def.function_type === "photocurrent_constant" ? "Iph"
     : def.function_type === "photocurrent_voltage_dependent" ? "Iph(V)"
