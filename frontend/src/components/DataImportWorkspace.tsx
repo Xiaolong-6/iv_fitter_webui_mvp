@@ -1,9 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import type { TraceData } from "../model/types";
-import { parseCsvTraces, sampleTrace } from "../model/utils";
+import { importCsvTextMulti } from "../api/client";
+import { sampleTrace } from "../model/utils";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { HelpTip } from "./HelpTip";
+
+type ImportQuality = {
+  rows_in_file?: number;
+  rows_imported?: number;
+  rows_dropped?: number;
+  voltage_col?: string;
+  current_col?: string;
+  voltage_min_V?: number;
+  voltage_max_V?: number;
+  current_min_A?: number;
+  current_max_A?: number;
+  warnings?: string[];
+};
+
+type UnitOption = { value: string; label: string; factor: number };
 
 function formatCell(value: number) {
   if (!Number.isFinite(value)) return "";
@@ -12,18 +28,14 @@ function formatCell(value: number) {
   return String(Number(value.toPrecision(6)));
 }
 
-function parseTextToTraces(text: string, name: string) {
-  return parseCsvTraces(text, name);
-}
-
-const voltageUnits = [
+const voltageUnits: UnitOption[] = [
   { value: "V", label: "V", factor: 1 },
   { value: "mV", label: "mV", factor: 1e-3 },
   { value: "uV", label: "uV", factor: 1e-6 },
   { value: "kV", label: "kV", factor: 1e3 },
 ];
 
-const currentUnits = [
+const currentUnits: UnitOption[] = [
   { value: "A", label: "A", factor: 1 },
   { value: "mA", label: "mA", factor: 1e-3 },
   { value: "uA", label: "uA", factor: 1e-6 },
@@ -31,12 +43,31 @@ const currentUnits = [
   { value: "pA", label: "pA", factor: 1e-12 },
 ];
 
-function unitFactor(units: typeof voltageUnits, value: string) {
+function unitFactor(units: UnitOption[], value: string) {
   return units.find((u) => u.value === value)?.factor ?? 1;
 }
 
 function safeTraceName(name: string, fallback: string) {
   return name.trim().replace(/\s+/g, " ") || fallback;
+}
+
+function qualityForTrace(trace?: TraceData): ImportQuality | null {
+  const quality = trace?.metadata?.quality;
+  return quality && typeof quality === "object" ? quality as ImportQuality : null;
+}
+
+function withDefaultDisplayUnits(trace: TraceData): TraceData {
+  return {
+    ...trace,
+    metadata: {
+      ...trace.metadata,
+      voltage_unit: String(trace.metadata?.voltage_unit ?? "V"),
+      current_unit: String(trace.metadata?.current_unit ?? "A"),
+      voltage_unit_factor_to_V: 1,
+      current_unit_factor_to_A: 1,
+      unit_mode: "display_only_si_internal",
+    },
+  };
 }
 
 function DatasetNameInput({ value, language, onCommit }: { value: string; language: Language; onCommit: (value: string) => void }) {
@@ -57,6 +88,23 @@ function DatasetNameInput({ value, language, onCommit }: { value: string; langua
   />;
 }
 
+function ImportQualityPanel({ quality, language }: { quality: ImportQuality | null; language: Language }) {
+  if (!quality) return null;
+  const warnings = quality.warnings ?? [];
+  return <div className="import-quality-panel">
+    <div className="import-quality-title">{language === "zh" ? "导入质量" : "Import quality"}</div>
+    <div className="import-quality-grid">
+      <span>{language === "zh" ? "行" : "Rows"}: <strong>{quality.rows_imported ?? "?"}</strong> / {quality.rows_in_file ?? "?"}</span>
+      <span>V: <code>{quality.voltage_col ?? "?"}</code></span>
+      <span>I: <code>{quality.current_col ?? "?"}</code></span>
+      {Number.isFinite(quality.rows_dropped) && Number(quality.rows_dropped) > 0 ? <span>{language === "zh" ? "丢弃" : "Dropped"}: <strong>{quality.rows_dropped}</strong></span> : null}
+    </div>
+    {warnings.length ? <div className="import-quality-warnings">
+      {warnings.map((warning) => <div className="warning" key={warning}>{warning}</div>)}
+    </div> : null}
+  </div>;
+}
+
 export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelectTrace, language }: {
   traces: TraceData[];
   selectedTraceId: string | null;
@@ -71,6 +119,11 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   const currentUnit = String(selected?.metadata?.current_unit ?? "A");
   const voltageDisplayFactor = unitFactor(voltageUnits, voltageUnit);
   const currentDisplayFactor = unitFactor(currentUnits, currentUnit);
+  const importQuality = qualityForTrace(selected);
+  const unitHelp = language === "zh"
+    ? "这里是显示单位。内部拟合数据始终保持 V/A，不会因为切换显示单位而被重新缩放。"
+    : "Display unit only. Internal fitting arrays remain in V/A and are not rescaled when this selector changes.";
+
   const previewRows = useMemo(() => {
     if (!selected) return [];
     const n = Math.min(200, selected.voltage_V.length, selected.current_A.length);
@@ -81,10 +134,20 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
     }));
   }, [selected, voltageDisplayFactor, currentDisplayFactor]);
 
+  async function parseTextToTraces(text: string, name: string) {
+    const response = await importCsvTextMulti(text, name);
+    const imported = response.traces.map((item) => withDefaultDisplayUnits({
+      ...item.trace,
+      metadata: { ...item.trace.metadata, quality: item.quality },
+    }));
+    if (!imported.length) throw new Error(language === "zh" ? "未找到可导入的有限 V/I 数据。" : "No finite V/I traces were imported.");
+    return imported;
+  }
+
   async function loadFile(file: File) {
     try {
       const text = await file.text();
-      const imported = parseTextToTraces(text, file.name);
+      const imported = await parseTextToTraces(text, file.name);
       onTraces(imported);
       if (imported[0]) onSelectTrace(imported[0].trace_id);
       setMessage(`${imported.length} ${t(language, "tracesLoaded")}`);
@@ -93,9 +156,9 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
     }
   }
 
-  function loadPaste() {
+  async function loadPaste() {
     try {
-      const imported = parseTextToTraces(pasteText, "pasted-data");
+      const imported = await parseTextToTraces(pasteText, "pasted-data");
       onTraces(imported);
       if (imported[0]) onSelectTrace(imported[0].trace_id);
       setMessage(`${imported.length} ${t(language, "tracesLoaded")}`);
@@ -127,23 +190,15 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   function changeUnit(kind: "voltage" | "current", nextUnit: string) {
     if (!selected) return;
     if (kind === "voltage") {
-      const oldUnit = String(selected.metadata?.voltage_unit ?? "V");
-      const oldFactor = unitFactor(voltageUnits, oldUnit);
-      const nextFactor = unitFactor(voltageUnits, nextUnit);
       replaceSelected({
         ...selected,
-        voltage_V: selected.voltage_V.map((v) => (v / oldFactor) * nextFactor),
-        metadata: { ...selected.metadata, voltage_unit: nextUnit, voltage_unit_factor_to_V: nextFactor },
+        metadata: { ...selected.metadata, voltage_unit: nextUnit, voltage_unit_factor_to_V: unitFactor(voltageUnits, nextUnit), unit_mode: "display_only_si_internal" },
       });
       return;
     }
-    const oldUnit = String(selected.metadata?.current_unit ?? "A");
-    const oldFactor = unitFactor(currentUnits, oldUnit);
-    const nextFactor = unitFactor(currentUnits, nextUnit);
     replaceSelected({
       ...selected,
-      current_A: selected.current_A.map((i) => (i / oldFactor) * nextFactor),
-      metadata: { ...selected.metadata, current_unit: nextUnit, current_unit_factor_to_A: nextFactor },
+      metadata: { ...selected.metadata, current_unit: nextUnit, current_unit_factor_to_A: unitFactor(currentUnits, nextUnit), unit_mode: "display_only_si_internal" },
     });
   }
 
@@ -157,7 +212,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
       <div className="data-actions compact-data-actions">
         <label className="file-button" htmlFor={fileId} title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`}>{t(language, "importCsv")}</label>
         <input id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
-        <button title={t(language, "loadDemoHelp")} onClick={() => { const demo = sampleTrace(); onTraces([demo]); onSelectTrace(demo.trace_id); setMessage(t(language, "demoLoaded")); }}>{t(language, "loadDemo")}</button>
+        <button title={t(language, "loadDemoHelp")} onClick={() => { const demo = withDefaultDisplayUnits(sampleTrace()); onTraces([demo]); onSelectTrace(demo.trace_id); setMessage(t(language, "demoLoaded")); }}>{t(language, "loadDemo")}</button>
       </div>
     </div>
 
@@ -181,26 +236,29 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
             <span>{t(language, "pointCount")}: <strong>{selected?.voltage_V.length ?? 0}</strong></span>
             {Boolean(selected?.metadata?.voltage_col) && <span>V: <code>{String(selected?.metadata?.voltage_col)}</code></span>}
             {Boolean(selected?.metadata?.current_col) && <span>I: <code>{String(selected?.metadata?.current_col)}</code></span>}
-            <span>{language === "zh" ? "单位" : "Units"}: <strong>{voltageUnit}</strong>, <strong>{currentUnit}</strong></span>
+            <span>{language === "zh" ? "显示单位" : "Display units"}: <strong>{voltageUnit}</strong>, <strong>{currentUnit}</strong></span>
+            <span>{language === "zh" ? "内部拟合" : "Internal fit"}: <strong>V/A</strong></span>
           </div>
+          <ImportQualityPanel quality={importQuality} language={language} />
           <div className="parsed-settings">
             <label title={language === "zh" ? "更改当前数据集名称；报告和图例会使用这个名称。" : "Rename the active dataset. Plots and reports use this name."}>
               <span>{language === "zh" ? "数据集名称" : "Dataset name"}</span>
               <DatasetNameInput value={selected?.trace_id ?? ""} language={language} onCommit={renameSelected} />
             </label>
-            <label title={language === "zh" ? "选择粘贴/导入数据中电压列的原始单位。内部会换算成 V 进行拟合。" : "Choose the source unit for the voltage column. Values are converted to V internally for fitting."}>
-              <span>{language === "zh" ? "电压单位" : "Voltage unit"}</span>
+            <label title={unitHelp}>
+              <span>{language === "zh" ? "电压显示单位" : "Voltage display unit"}</span>
               <select value={voltageUnit} onChange={(e) => changeUnit("voltage", e.target.value)}>
                 {voltageUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
               </select>
             </label>
-            <label title={language === "zh" ? "选择粘贴/导入数据中电流列的原始单位。内部会换算成 A 进行拟合。" : "Choose the source unit for the current column. Values are converted to A internally for fitting."}>
-              <span>{language === "zh" ? "电流单位" : "Current unit"}</span>
+            <label title={unitHelp}>
+              <span>{language === "zh" ? "电流显示单位" : "Current display unit"}</span>
               <select value={currentUnit} onChange={(e) => changeUnit("current", e.target.value)}>
                 {currentUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
               </select>
             </label>
           </div>
+          <p className="muted unit-integrity-note">{unitHelp}</p>
         </>}
       </section>
     </div>

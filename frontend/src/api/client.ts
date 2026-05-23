@@ -17,3 +17,24 @@ export async function validateModel(model: ModelSpec): Promise<FitWarning[]> { r
 export async function equations(model: ModelSpec): Promise<EquationSummary> { return postJson("/api/equations", model); }
 export async function fitTrace(trace: TraceData, model: ModelSpec, config: FitConfig): Promise<FitResult> { return postJson("/api/fit", { trace, model, config }); }
 export async function exportReport(result: FitResult): Promise<{ markdown: string }> { return postJson("/api/export-report", result); }
+
+export interface ImportQualitySummary {
+  rows_in_file: number;
+  rows_imported: number;
+  rows_dropped: number;
+  voltage_col: string;
+  current_col: string;
+  voltage_min_V: number;
+  voltage_max_V: number;
+  current_min_A: number;
+  current_max_A: number;
+  warnings: string[];
+}
+
+export interface ImportCsvTextMultiResponse {
+  traces: Array<{ trace: TraceData; quality: ImportQualitySummary }>;
+}
+
+export async function importCsvTextMulti(text: string, traceId = "imported_trace"): Promise<ImportCsvTextMultiResponse> {
+  return postJson("/api/import-csv-text-multi", { text, trace_id: traceId });
+}

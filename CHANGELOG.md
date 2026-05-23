@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.14 - Audit fixes for data units and circuit readability
+
+- Fixed Data workspace unit selectors so they are display-only; imported fitting arrays remain in SI units (V/A) and are not rescaled when users change preview units.
+- Routed browser Data import through the backend multi-trace import endpoint so import-quality warnings and column decisions are surfaced in the UI.
+- Added an import-quality summary panel in Data for rows, selected columns, dropped rows, and backend warnings.
+- Reworked the Model Builder equivalent-circuit preview as a left-to-right SVG schematic: Terminal+ -> main path -> Vj -> junction branches -> Terminal-.
+- Added v1.3.14 tested notes and updated package/backend/frontend/UI fallback versions.
+
 ## v1.3.13 - Model-builder circuit placement and unified tooltips
 
 - Moved the equivalent-circuit schematic from Model preview into Model Builder so topology feedback appears beside topology editing.

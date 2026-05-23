@@ -133,6 +133,8 @@ Normal UI should say that HappyMeasure multi-trace files are supported. Exact wr
 
 The Data tab must keep import controls, paste import, selected-trace dropdown, and spreadsheet preview separate from fitting/model-building controls.
 
+Imported trace arrays passed to fitting must stay in SI units (V/A). UI unit selectors may change display units, but they must not rescale or reinterpret the internal fitting arrays unless the user explicitly chooses a separate re-interpret/source-unit action.
+
 ## 10. Numeric input behavior
 
 Numeric inputs must allow temporary draft states without committing invalid values or rewriting the user's text mid-typing.

@@ -129,18 +129,61 @@ function parameterSummary(comp: ComponentSpec) {
 function CircuitCard({ model, language }: { model: ModelSpec; language: Language }) {
   const series = model.series;
   const branches = [...model.core, ...model.parallel];
+  const branchRows = branches.length ? branches : [];
+  const height = Math.max(168, 106 + Math.max(branchRows.length, 1) * 42);
+  const junctionY = 54;
+  const branchStartY = 96;
+  const branchGap = 42;
+  const busBottom = branchStartY + Math.max(branchRows.length - 1, 0) * branchGap;
+  const seriesLabel = series.length ? series.map(nickname).join(" → ") : t(language, "direct");
   const help = language === "zh"
-    ? "Main path 先产生串联压降并决定结点电压 Vj；Junction branches 在 Vj 上贡献端口电流。"
-    : "Main-path elements create voltage drop and set junction voltage Vj. Junction branches contribute terminal current at that junction.";
-  return <div className="model-circuit-panel">
-    <h3>{t(language, "circuit")} <HelpTip text={help} /></h3>
-    <div className="circuit-schematic compact-circuit" aria-label="equivalent circuit schematic">
-      <div className="node terminal">{t(language, "terminalPlus")}</div>
-      <div className="wire" />
-      <div className="main-components">{series.length ? series.map((m) => <span className="component-box" key={m.id}>{nickname(m)}</span>) : <span className="component-box muted-box">{t(language, "direct")}</span>}</div>
-      <div className="wire" />
-      <div className="node junction">V<sub>j</sub></div>
-      <div className="branch-stack">{branches.length ? branches.map((b) => <div className="branch-line" key={b.id}><span className="component-box branch-box">{nickname(b)}</span><span className="wire small" /><span className="node terminal small-node">{t(language, "terminalMinus")}</span></div>) : <div className="branch-line"><span className="muted">{t(language, "noBranch")}</span></div>}</div>
+    ? "从左到右读：端口+ 经过主路径/串联压降到达结点 Vj；D1、Rsh 等分支都连接在 Vj 和端口−之间，分支电流相加得到端口电流。"
+    : "Read left to right: Terminal+ passes through the main path/series drop to junction Vj; D1, Rsh, and other branches connect between Vj and Terminal−, and branch currents sum into the terminal current.";
+  return <div className="model-circuit-panel circuit-panel-v2">
+    <div className="circuit-title-row">
+      <h3>{t(language, "circuit")} <HelpTip text={help} /></h3>
+      <span className="circuit-read-order">{language === "zh" ? "读法：主路径 → Vj → 并联分支" : "Read: main path → Vj → parallel branches"}</span>
+    </div>
+    <svg className="circuit-svg" viewBox={`0 0 620 ${height}`} role="img" aria-label={language === "zh" ? "等效电路示意图" : "Equivalent circuit schematic"}>
+      <title>{language === "zh" ? "端口加到主路径再到 Vj，分支从 Vj 接到端口减。" : "Terminal plus to main path to Vj, with branch currents from Vj to terminal minus."}</title>
+      <defs>
+        <marker id="circuit-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L8,4 L0,8 Z" className="circuit-arrow" />
+        </marker>
+      </defs>
+      <line className="circuit-wire" x1="40" y1={junctionY} x2="128" y2={junctionY} markerEnd="url(#circuit-arrow)" />
+      <rect className="circuit-terminal" x="18" y={junctionY - 18} width="76" height="36" rx="18" />
+      <text className="circuit-node-text" x="56" y={junctionY + 5} textAnchor="middle">{t(language, "terminalPlus")}</text>
+
+      <rect className="circuit-main-box" x="130" y={junctionY - 22} width="148" height="44" rx="10" />
+      <text className="circuit-label-small" x="204" y={junctionY - 30} textAnchor="middle">{t(language, "mainPath")}</text>
+      <text className="circuit-component-text" x="204" y={junctionY + 5} textAnchor="middle">{seriesLabel}</text>
+
+      <line className="circuit-wire" x1="278" y1={junctionY} x2="334" y2={junctionY} markerEnd="url(#circuit-arrow)" />
+      <circle className="circuit-junction" cx="356" cy={junctionY} r="20" />
+      <text className="circuit-vj" x="356" y={junctionY + 6} textAnchor="middle">Vj</text>
+
+      <line className="circuit-bus" x1="356" y1={junctionY + 22} x2="356" y2={busBottom} />
+      <text className="circuit-label-small" x="456" y="26" textAnchor="middle">{language === "zh" ? "结点分支 / 电流相加" : "Junction branches / current sum"}</text>
+
+      {branchRows.length ? branchRows.map((branch, idx) => {
+        const y = branchStartY + idx * branchGap;
+        return <g key={branch.id}>
+          <line className="circuit-wire" x1="356" y1={y} x2="402" y2={y} />
+          <rect className="circuit-branch-box" x="404" y={y - 16} width="86" height="32" rx="9" />
+          <text className="circuit-component-text" x="447" y={y + 5} textAnchor="middle">{nickname(branch)}</text>
+          <line className="circuit-wire" x1="490" y1={y} x2="542" y2={y} markerEnd="url(#circuit-arrow)" />
+          <rect className="circuit-terminal circuit-terminal-minus" x="544" y={y - 16} width="64" height="32" rx="16" />
+          <text className="circuit-node-text" x="576" y={y + 5} textAnchor="middle">{t(language, "terminalMinus")}</text>
+        </g>;
+      }) : <g>
+        <line className="circuit-wire-muted" x1="356" y1={branchStartY} x2="542" y2={branchStartY} />
+        <text className="circuit-muted-text" x="448" y={branchStartY + 5} textAnchor="middle">{t(language, "noBranch")}</text>
+      </g>}
+    </svg>
+    <div className="circuit-caption">
+      <span><strong>{t(language, "mainPath")}</strong>: {seriesLabel}</span>
+      <span><strong>{t(language, "branches")}</strong>: {branches.length ? branches.map(nickname).join(" ∥ ") : "—"}</span>
     </div>
   </div>;
 }

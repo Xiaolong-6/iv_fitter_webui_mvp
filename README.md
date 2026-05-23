@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.3.13**
+Current version: **1.3.14**
 
 IV-fitter Web UI is a local-first tool for importing I-V traces, building a circuit model, running fits, and checking whether the result is physically plausible before reporting it.
 
@@ -15,7 +15,7 @@ It is a Web UI prototype for the IV-fitter workflow. It is not yet a full replac
 ## What users do in the app
 
 1. Open **Data** and import or paste a voltage/current trace.
-2. Confirm the selected dataset name, voltage unit, and current unit.
+2. Confirm the selected dataset name and display units; fitting data remains in V/A internally.
 3. Open **Workspace** and choose the fit range and objective settings.
 4. Build the model in **Model Builder**. The equivalent circuit lives there because it describes what the current model actually means.
 5. Run the fit.
@@ -121,14 +121,14 @@ For audit/history:
 - `CHANGELOG.md`
 - `docs/AUDIT_FIXES_1_3_12.md`
 - `docs/AUDIT_READINESS_REVIEW_1_3_11.md`
-- `docs/TESTED_1_3_13.md`
+- `docs/TESTED_1_3_14.md`
 
-## Current v1.3.13 focus
+## Current v1.3.14 focus
 
-- Move the equivalent circuit into Model Builder so topology is explained where users edit topology.
-- Keep Model Builder compact by moving explanatory text into hover help.
-- Use one top-level portal tooltip system for both new help icons and legacy title hover text.
-- Keep Data import metadata editable for dataset name and voltage/current units.
+- Keep imported fitting arrays in SI units (V/A) while Data workspace unit selectors affect display only.
+- Use the backend multi-trace import path from the browser Data workspace so import-quality warnings are visible.
+- Show an import-quality summary for rows, selected columns, dropped rows, and warnings.
+- Render the equivalent circuit as a left-to-right topology schematic: Terminal+ -> main path -> Vj -> junction branches -> Terminal-.
 
 ## Known limitations
 
