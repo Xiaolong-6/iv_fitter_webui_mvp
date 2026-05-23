@@ -18,15 +18,28 @@ import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { initialValueGuidance } from "../model/diagnostics";
 import { HelpTip } from "./HelpTip";
-import { addDefinitionToModel, applyNicknameToParams, buildPendingComponent } from "../model-builder/mutations";
+import { addDefinitionToModel, addSecondaryDiodeToModel, applyNicknameToParams, buildPendingComponent } from "../model-builder/mutations";
 import { allowedPolarities, bucketForComponent, bucketLocations, builderBuckets, definitionsForBucket as bucketDefinitions, isDuplicateBlocked, isSingleTraceEquivalentMainPathBlocked, nickname, type BuilderBucket, type ModelLocation } from "../model-builder/rules";
 
 
+function componentLawLabel(comp: ComponentSpec, language: Language) {
+  if (comp.function_type === "diode") return language === "zh" ? "二极管指数电流" : "Shockley diode";
+  if (comp.function_type === "series_diode_barrier") return language === "zh" ? "串联二极管势垒" : "Series diode barrier";
+  if (comp.law_id === "ohmic") return language === "zh" ? "欧姆定律" : "Ohmic law";
+  if (comp.function_type === "photocurrent_voltage_dependent") return language === "zh" ? "电压依赖光电流" : "Voltage-dependent photocurrent";
+  if (comp.function_type === "photocurrent_constant") return language === "zh" ? "常数光电流" : "Constant photocurrent";
+  if (comp.function_type === "photoconductive_branch") return language === "zh" ? "光致电导支路" : "Photoconductive branch";
+  if (comp.function_type === "photo_modulated_main_path") return language === "zh" ? "光调制主路" : "Photo-modulated main path";
+  if (comp.function_type === "softplus_rs_modifier") return language === "zh" ? "软开启传输调制" : "Softplus transport modifier";
+  return comp.law_id ?? comp.function_type;
+}
+
 function componentTitle(comp: ComponentSpec, language: Language) {
-  const law = comp.law_id === "ohmic" ? "Ohmic" : (comp.law_id ?? comp.function_type);
+  const law = componentLawLabel(comp, language);
   const place = bucketForComponent(comp) === "main" ? t(language, "mainPath") : t(language, "branches");
+  const role = typeof comp.metadata?.role === "string" && comp.metadata.role ? ` · ${comp.metadata.role}` : "";
   const pol = comp.polarity ? ` · ${t(language, "polarity")}: ${polarityLabel(language, comp.polarity)}` : "";
-  return `${nickname(comp)} · ${law} · ${place}${pol}`;
+  return `${nickname(comp)} · ${law} · ${place}${role}${pol}`;
 }
 
 function functionOptionLabel(definition: FunctionDefinition, language: Language, bucket?: BuilderBucket) {
@@ -371,6 +384,19 @@ function ComponentCard(props: {
   );
 }
 
+function branchDiodes(model: ModelSpec) {
+  return [...model.core, ...model.parallel].filter((comp) => comp.function_type === "diode");
+}
+
+function hasSecondaryForwardDiode(model: ModelSpec) {
+  return branchDiodes(model).some((comp) => comp.polarity === "forward" && comp.metadata?.role === "secondary");
+}
+
+function canAddSecondaryDiode(model: ModelSpec) {
+  const forwardDiodes = branchDiodes(model).filter((comp) => comp.polarity === "forward");
+  return forwardDiodes.length === 1 && !hasSecondaryForwardDiode(model);
+}
+
 export function ModelBuilder({ model, registry, onChange, language }: Props) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Record<string, string>>({});
@@ -402,6 +428,14 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
     onChange(result.model);
   }
 
+  function addSecondaryDiode() {
+    if (!canAddSecondaryDiode(model)) return;
+    const diodeDefinition = registry.find((definition) => definition.function_type === "diode");
+    if (!diodeDefinition) return;
+    const result = addSecondaryDiodeToModel(model, diodeDefinition, "forward");
+    onChange(result.model);
+  }
+
   return (
     <section className="card model-builder">
       <div className="model-sticky-summary">
@@ -422,8 +456,8 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
             ? "单条 I-V 中该主路项通常与已有有效串联电阻不可区分；请先删除等效项，或在未来 light/dark workflow 中使用。"
             : "In a single I-V trace this main-path term is usually indistinguishable from the existing effective series resistance. Remove the equivalent term first, or reserve it for a future light/dark workflow.")
           : (language === "zh"
-            ? "已存在相同数学形式、位置和极性的模型项；请改用不同极性/角色，或先删除重复项。"
-            : "This law/form/placement/polarity is already present. Use a different polarity/role, or remove the duplicate first.");
+            ? "已存在相同数学形式、位置和极性的模型项；请改用不同极性，或使用明确的双二极管按钮，而不是普通重复 Add。"
+            : "This law/form/placement/polarity is already present. Use a different polarity, or use the explicit two-diode action instead of ordinary duplicate Add.");
 
         return (
           <div className="model-group" key={bucket}>
@@ -447,8 +481,12 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
               disabled={duplicateBlocked || equivalentBlocked}
               disabledReason={duplicateBlocked ? duplicateReason : undefined}
             />
-            {(duplicateBlocked || equivalentBlocked) ? <p className="warning info duplicate-component-note">{duplicateReason}</p> : null}
             {components.length === 0 && <div className="empty-line">{t(language, "noComponents")}</div>}
+            {bucket === "branches" && registry.some((definition) => definition.function_type === "diode") && canAddSecondaryDiode(model) ? (
+              <button type="button" className="secondary-diode-button" onClick={addSecondaryDiode} title={language === "zh" ? "添加带 secondary/recombination 角色的 D2，而不是普通重复 D1。" : "Add a role-aware D2 instead of an ordinary duplicate D1."}>
+                {language === "zh" ? "添加双二极管 D2（secondary）" : "Add secondary diode D2"}
+              </button>
+            ) : null}
             {components.map(({ location, comp }) => (
               <ComponentCard
                 key={comp.id}

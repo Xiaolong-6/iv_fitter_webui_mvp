@@ -1,6 +1,24 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.4.19**
+Current version: **1.4.25**
+
+
+
+
+
+
+
+> v1.4.25 Model Builder note: duplicate-add guidance is no longer repeated as a visible inline message. Disabled Add buttons still expose the reason through the button hover/title.
+
+> v1.4.24 layout note: after moving warnings to the Workspace-top banner, the Parameters result section now spans the full right pane instead of being constrained to the old two-column result grid.
+
+> v1.4.23 layout note: the Workspace top area is now compact. Fit status is a single-line summary with expandable details, and warnings use a one-line dismissible summary instead of stacking multiple full-height boxes.
+
+> v1.4.22 layout note: the interactive Parameters table now auto-expands on wide screens so editable initials/bounds and interpretation columns use the available Workspace width instead of staying cramped with unnecessary horizontal scroll.
+
+> v1.4.21 workflow note: default D1 now carries explicit forward polarity, two-diode fitting uses a role-aware D2 action instead of ordinary duplicate Add, the Parameters table can edit next-fit initial values/bounds/fixed state, and warnings are summarized at the top of Workspace with a dismiss button.
+
+> v1.4.20 manual note: the User Manual is now a navigation-style reader. It shows one section at a time, uses a selector/detail Function Guide, and includes a Law/Form/Placement chapter explaining how model terms become physically meaningful.
 
 > v1.4.9 importer note: HappyMeasure combined wide-v2 files now import correctly even when the UI/API passes explicit selected columns. The package includes an anonymized regression fixture under `examples/testdata/`.
 

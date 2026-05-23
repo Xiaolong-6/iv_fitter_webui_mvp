@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.4.19**.
+Current package: **v1.4.25**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -113,6 +113,38 @@ This release is a refactor-only stabilization pass. Model Builder add/duplicate 
 Backend validation is the guardrail for imported or hand-edited model JSON. Location, placement, and evaluation form must agree: series components are only valid as series voltage drops or series conductance modifiers, while core/parallel components are only valid as current branches. Duplicate same law/form/placement/polarity components are non-reportable errors.
 
 
-## v1.4.19 User manual integration note
+## v1.4.25 User manual integration note
 
 The in-app User manual now integrates the reviewed tutorial-style manual draft. Treat `frontend/src/components/UserDocumentationPage.tsx` as the source for the UI manual content and `frontend/src/styles/user-documentation.css` as the dedicated style layer. The UI intentionally separates English and Chinese through the language selector; do not paste bilingual paragraphs into one visible panel. Keep formulas rendered through `MathFormula` and keep backend implementation details collapsed in Advanced details.
+
+
+## v1.4.25 manual-reader note
+
+The User Manual is intentionally a navigation-style reader rather than a long scroll page. Keep it one-section-at-a-time. The Function Guide should remain selector/detail, not a full list of expanded model cards. The Law/Form/Placement chapter is integrated into the manual to explain how laws become meaningful model terms.
+
+
+## v1.4.25 workflow note
+
+Default D1 is now explicit forward-polarity with primary role metadata. Ordinary duplicate Add still blocks same law/form/placement/polarity; use the D2 role-aware action for a two-diode model. The Parameters table is interactive and edits the next-fit model parameters. Warnings are summarized at the top of Workspace with a dismiss button. Keep fit controls out of Data and User Manual views.
+
+
+## v1.4.25 layout note
+
+The Parameters table is intentionally responsive: desktop/wide screens should allocate more width to the editable table and avoid cramped horizontal scrolling, while small screens may keep horizontal scroll as a safety fallback.
+
+
+## v1.4.25 compact-status note
+
+The Workspace top area should stay compact. Do not reintroduce stacked full-height status, verdict, and warning boxes. Keep detailed verdict and warning lists behind expandable controls.
+
+
+## v1.4.25 Parameters layout note
+
+Warnings now live in the Workspace-top banner, so the old two-column result grid should not constrain Parameters. Keep `.main-result-grid` single-column unless another persistent side panel is reintroduced.
+
+
+## v1.4.25 Model Builder note
+
+Do not duplicate disabled-button explanations as visible inline warnings under Add rows. Keep duplicate/equivalent guidance available through the disabled button title/hover unless there is a true blocking error that needs a top-level warning.
+
+- v1.4.25 correction: the role-aware D2 action is single-use. Do not allow repeated D3/D4 secondary diodes from the same button.

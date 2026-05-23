@@ -118,3 +118,14 @@ def test_location_placement_mismatch_makes_fit_non_reportable():
     result = fit_trace(FitRequest(trace=trace, model=model, config=FitConfig(exclude_compliance=False)))
     assert result.reportable is False
     assert any(w.code == "incoherent_location_placement" and w.severity == "error" for w in result.warnings)
+
+
+def test_secondary_diode_action_is_single_use_in_model_builder():
+    root = Path(__file__).resolve().parents[2]
+    model_builder = root / "frontend" / "src" / "components" / "ModelBuilder.tsx"
+    text = model_builder.read_text(encoding="utf-8")
+    assert "function canAddSecondaryDiode" in text
+    assert "forwardDiodes.length === 1" in text
+    assert "!hasSecondaryForwardDiode(model)" in text
+    assert "if (!canAddSecondaryDiode(model)) return;" in text
+    assert "allDiodeCount" not in text

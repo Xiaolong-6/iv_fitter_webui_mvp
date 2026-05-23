@@ -1,4 +1,4 @@
-/* v1.4.19 tutorial-style User Manual integration. */
+/* User Manual tutorial and navigation-reader styles. */
 .manual-step-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -85,4 +85,198 @@
     border-bottom: 1px solid #eef3f9;
   }
   .manual-table-row p:last-child { border-bottom: 0; }
+}
+
+
+/* v1.4.20 navigation-style User Manual reader. */
+.manual-reader {
+  display: grid;
+  gap: 12px;
+  min-height: 0;
+}
+.manual-reader .manual-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.manual-section-select {
+  min-width: 240px;
+  border: 1px solid #d9e4f2;
+  background: #fff;
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+.manual-reader-shell {
+  display: grid;
+  grid-template-columns: minmax(168px, 230px) minmax(0, 1fr);
+  gap: 12px;
+  min-height: 0;
+  align-items: start;
+}
+.manual-reader-nav {
+  position: sticky;
+  top: 8px;
+  display: grid;
+  gap: 6px;
+  max-height: calc(100vh - 170px);
+  overflow: auto;
+  border: 1px solid #dfe8f5;
+  border-radius: 18px;
+  background: #fff;
+  padding: 10px;
+}
+.manual-reader-nav-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 4px 6px;
+}
+.manual-reader-nav button {
+  text-align: left;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 12px;
+  padding: 9px 10px;
+  display: grid;
+  gap: 2px;
+  cursor: pointer;
+}
+.manual-reader-nav button span {
+  font-weight: 800;
+  color: #0f172a;
+}
+.manual-reader-nav button small {
+  color: #64748b;
+  line-height: 1.25;
+}
+.manual-reader-nav button:hover,
+.manual-reader-nav button.active {
+  background: #eef6ff;
+  border-color: #bfdbfe;
+}
+.manual-reader-nav button.active span {
+  color: #1d4ed8;
+}
+.manual-reader-content {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+.manual-reader-heading {
+  border: 1px solid #dfe8f5;
+  border-radius: 16px;
+  background: #fff;
+  padding: 12px 14px;
+}
+.manual-reader-heading span {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.manual-reader-heading h2 {
+  margin: 2px 0 0;
+}
+.manual-reader-content .manual-section {
+  margin: 0;
+}
+.manual-function-reader {
+  display: grid;
+  grid-template-columns: minmax(220px, 310px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.manual-function-list {
+  display: grid;
+  gap: 7px;
+  max-height: calc(100vh - 250px);
+  overflow: auto;
+  border: 1px solid #e5edf7;
+  border-radius: 16px;
+  background: #f8fbff;
+  padding: 8px;
+}
+.manual-function-list button {
+  text-align: left;
+  border: 1px solid #e5edf7;
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+}
+.manual-function-list button strong {
+  color: #0f172a;
+}
+.manual-function-list button span {
+  color: #64748b;
+  line-height: 1.28;
+  font-size: 0.88rem;
+}
+.manual-function-list button:hover,
+.manual-function-list button.active {
+  border-color: #93c5fd;
+  background: #eef6ff;
+}
+.manual-function-detail {
+  min-width: 0;
+}
+.manual-function-detail .manual-law-card {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .manual-reader .manual-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .manual-section-select {
+    width: 100%;
+  }
+  .manual-reader-shell {
+    grid-template-columns: 1fr;
+  }
+  .manual-reader-nav {
+    position: static;
+    display: flex;
+    overflow-x: auto;
+    max-height: none;
+  }
+  .manual-reader-nav-title {
+    display: none;
+  }
+  .manual-reader-nav button {
+    min-width: 128px;
+  }
+  .manual-function-reader {
+    grid-template-columns: 1fr;
+  }
+  .manual-function-list {
+    display: flex;
+    overflow-x: auto;
+    max-height: none;
+  }
+  .manual-function-list button {
+    min-width: 220px;
+  }
+}
+
+@media (max-width: 640px) {
+  .manual-reader-heading {
+    padding: 10px 12px;
+  }
+  .manual-reader-nav button {
+    min-width: 112px;
+    padding: 8px;
+  }
+  .manual-function-list button {
+    min-width: 190px;
+  }
 }

@@ -104,13 +104,16 @@ def validate_component_against_registry(comp: ComponentSpec) -> list[FitWarning]
 
 def _duplicate_signature(comp: ComponentSpec):
     # Same law/form/placement/polarity generally means the parameters are not identifiable.
-    # Two diode branches can be intentionally used as a two-diode model only when users
-    # give them distinct role/nickname labels.
+    # Role-aware diode branches are the supported exception for an explicit two-diode model.
     form = comp.evaluation_form or "auto"
     placement = comp.placement or "auto"
     polarity = comp.polarity or "none"
     law = comp.law_id or comp.function_type
-    return (law, form, placement, polarity)
+    role = ""
+    if comp.function_type == "diode" and form == "current_branch":
+        raw_role = comp.metadata.get("role", "")
+        role = str(raw_role).strip() if raw_role is not None else ""
+    return (law, form, placement, polarity, role)
 
 
 def validate_model_spec(model: ModelSpec) -> list[FitWarning]:
@@ -126,10 +129,10 @@ def validate_model_spec(model: ModelSpec) -> list[FitWarning]:
     for sig, count in signatures.items():
         if count <= 1:
             continue
-        law, form, placement, polarity = sig
+        law, form, placement, polarity, role = sig
         warnings.append(_warn(
             "duplicate_unidentifiable_component",
-            f"{count} components share the same law/form/placement/polarity ({law}, {form}, {placement}, {polarity}). Remove duplicates or use an explicit preset/role with different polarity or form.",
+            f"{count} components share the same law/form/placement/polarity/role ({law}, {form}, {placement}, {polarity}, {role or 'none'}). Remove duplicates or use an explicit role-aware preset with different role, polarity, or form.",
             "error",
         ))
     if not model.core:

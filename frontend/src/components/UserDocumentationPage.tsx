@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { AppView } from "./WorkflowSidebar";
 import type { FunctionDefinition } from "../model/types";
 import type { Language } from "../model/i18n";
@@ -412,7 +412,27 @@ function FunctionDocCard({ doc, registry, language }: { doc: FunctionDoc; regist
 }
 
 function RegistryGuide({ registry, language }: { registry: FunctionDefinition[]; language: Language }) {
-  return <div className="user-law-list">{FUNCTION_DOCS.map((doc) => <FunctionDocCard key={doc.lawId} doc={doc} registry={registry} language={language} />)}</div>;
+  const [selectedLawId, setSelectedLawId] = useState(FUNCTION_DOCS[0]?.lawId ?? "");
+  const selected = FUNCTION_DOCS.find((doc) => doc.lawId === selectedLawId) ?? FUNCTION_DOCS[0];
+  return <div className="manual-function-reader">
+    <nav className="manual-function-list" aria-label={language === "zh" ? "函数列表" : "Function list"}>
+      {FUNCTION_DOCS.map((doc) => {
+        const t = language === "zh" ? doc.zh : doc.en;
+        return <button
+          key={doc.lawId}
+          type="button"
+          className={doc.lawId === selected.lawId ? "active" : ""}
+          onClick={() => setSelectedLawId(doc.lawId)}
+        >
+          <strong>{t.name}</strong>
+          <span>{t.oneLine}</span>
+        </button>;
+      })}
+    </nav>
+    <div className="manual-function-detail">
+      <FunctionDocCard doc={selected} registry={registry} language={language} />
+    </div>
+  </div>;
 }
 
 type Step = { n: string; title: string; text: string };
@@ -446,97 +466,248 @@ const chineseSteps: Step[] = [
   { n: "7", title: "确认后导出", text: "检查选中 trace、模型、参数、warnings、软件版本和可报告性。" },
 ];
 
-function EnglishManual({ registry, appVersion }: { registry: FunctionDefinition[]; appVersion: string }) {
-  return <>
-    <div className="card doc-hero manual-hero"><div><h2>IV-fitter Web User Manual</h2><p className="muted">Tutorial-style guide for v{appVersion}: what the solver is doing, how to build compact models, and how to judge whether a result is reportable.</p></div></div>
-    <InlineNav language="en" />
-    <div className="doc-grid manual-grid">
-      <ManualSection id="solving" title="1. What IV-fitter is solving" wide>
-        <p>IV-fitter treats an I-V curve as a self-consistent circuit-fitting problem, not as one fixed closed-form equation. The measured external voltage is known. The internal junction voltage is generally unknown because main-path elements can consume part of the applied voltage. Branch currents are evaluated at that internal voltage and summed.</p>
-        <FormulaStack formulas={["V_{ext}=V_j+\\Delta V_{series}(I,V_j;\\theta)", "I=\\sum_k I_k(V_j;\\theta)"]} />
-        <div className="manual-keyidea"><strong>Key idea:</strong> main path controls the internal voltage seen by branches; branches generate current at that voltage; fitting repeatedly changes parameters, solves the self-consistent circuit at every voltage point, and minimizes the weighted residual.</div>
-      </ManualSection>
 
-      <ManualSection id="workflow" title="2. Basic workflow" wide><StepCards steps={englishSteps} /><p className="warning info"><strong>Convergence warning:</strong> optimizer success means the numerical algorithm stopped normally. It does not prove that the model is unique, physically meaningful, or reportable.</p></ManualSection>
+type ManualSectionKey =
+  | "solving"
+  | "workflow"
+  | "data"
+  | "model"
+  | "law-form-placement"
+  | "functions"
+  | "formulas"
+  | "fitting"
+  | "recipes"
+  | "residuals"
+  | "reportability"
+  | "light-response"
+  | "troubleshooting"
+  | "glossary";
 
-      <ManualSection id="data" title="3. Data import and trace selection">
-        <p>The Data page is for importing and checking raw data. The Workspace page is for model construction and fitting. Keep these tasks separate: a clean import does not imply a clean physical model, and a good-looking fit does not fix a wrong trace selection.</p>
-        <ul className="doc-steps"><li>Supported input: CSV/TXT/DAT, pasted tables, generic voltage/current columns, and HappyMeasure single- or multi-trace exports.</li><li>Column detection is heuristic. Always verify units and sign convention in the preview table.</li><li>Multi-trace files preserve trace identity. Fit only the selected trace unless a future joint-fit workflow is explicitly used.</li><li>Look for missing rows, duplicate voltage points, compliance plateaus, instrument limits, and obvious wiring/sign reversals.</li></ul>
-      </ManualSection>
+const sectionLabels: Record<Language, Array<{ id: ManualSectionKey; label: string; short: string }>> = {
+  en: [
+    { id: "solving", label: "What IV-fitter solves", short: "Solve" },
+    { id: "workflow", label: "Basic workflow", short: "Workflow" },
+    { id: "data", label: "Data and trace selection", short: "Data" },
+    { id: "model", label: "Model Builder concepts", short: "Model" },
+    { id: "law-form-placement", label: "Law, form, and placement", short: "Law/Form" },
+    { id: "functions", label: "Function guide", short: "Functions" },
+    { id: "formulas", label: "Formula assembly", short: "Formulas" },
+    { id: "fitting", label: "How fitting works", short: "Fitting" },
+    { id: "recipes", label: "Recommended recipes", short: "Recipes" },
+    { id: "residuals", label: "Plots and residuals", short: "Residuals" },
+    { id: "reportability", label: "Warnings and reportability", short: "Report" },
+    { id: "light-response", label: "Light-response modeling", short: "Light" },
+    { id: "troubleshooting", label: "Troubleshooting", short: "Trouble" },
+    { id: "glossary", label: "Glossary", short: "Glossary" },
+  ],
+  zh: [
+    { id: "solving", label: "IV-fitter 在求什么", short: "求解" },
+    { id: "workflow", label: "基本工作流程", short: "流程" },
+    { id: "data", label: "数据与 trace 选择", short: "数据" },
+    { id: "model", label: "Model Builder 概念", short: "模型" },
+    { id: "law-form-placement", label: "Law、form 与 placement", short: "Law/Form" },
+    { id: "functions", label: "函数说明", short: "函数" },
+    { id: "formulas", label: "公式如何组装", short: "公式" },
+    { id: "fitting", label: "拟合如何进行", short: "拟合" },
+    { id: "recipes", label: "推荐拟合流程", short: "流程建议" },
+    { id: "residuals", label: "图和残差", short: "残差" },
+    { id: "reportability", label: "Warnings 与可报告性", short: "可报告" },
+    { id: "light-response", label: "光响应建模", short: "光响应" },
+    { id: "troubleshooting", label: "常见问题排查", short: "排查" },
+    { id: "glossary", label: "术语表", short: "术语" },
+  ],
+};
 
-      <ManualSection id="model" title="4. Model Builder concepts" wide>
-        <p>The user-facing model is organized into <strong>Main path</strong> and <strong>Junction branches</strong>. Think in terms of role: the main path maps external voltage to internal voltage; branches produce current at that internal voltage.</p>
-        <ThreeColumnTable headers={["Concept", "Meaning", "Examples"]} rows={[["Main path", "Carries terminal current and consumes voltage before branches see the remaining voltage.", "Ohmic Rs, series diode barrier, conductance modifier"], ["Junction branches", "Generate current at the internal junction voltage and sum to terminal current.", "Shockley diode, Rsh leakage, reverse breakdown, photocurrent"], ["Mathematical law", "The relation itself, before deciding how it enters the circuit.", "Ohmic, Shockley, softplus power law"], ["Role", "How and where that relation enters the circuit.", "Voltage drop, current branch, conductance modifier"], ["Nickname", "Human-readable label; Rs and Rsh are role labels, not separate laws.", "Rs, Rsh, D1, Gph"]]} />
-        <p className="warning info"><strong>Do not overbuild:</strong> adding a component increases flexibility but also non-identifiability. Add a term only when the residual pattern requires it and the term has a plausible role.</p>
-      </ManualSection>
+function SectionNavigator({
+  language,
+  active,
+  onSelect,
+}: {
+  language: Language;
+  active: ManualSectionKey;
+  onSelect: (id: ManualSectionKey) => void;
+}) {
+  const items = sectionLabels[language];
+  return <aside className="manual-reader-nav" aria-label={language === "zh" ? "手册章节" : "Manual sections"}>
+    <div className="manual-reader-nav-title">{language === "zh" ? "章节" : "Sections"}</div>
+    {items.map((item) => <button
+      key={item.id}
+      type="button"
+      className={active === item.id ? "active" : ""}
+      onClick={() => onSelect(item.id)}
+      title={item.label}
+    >
+      <span>{item.short}</span>
+      <small>{item.label}</small>
+    </button>)}
+  </aside>;
+}
 
-      <ManualSection id="functions" title="5. Function guide" wide><p>This guide describes model terms by what they represent, when they are useful, when they are unsuitable, how they change the I-V curve, and how to fit them. Advanced implementation details are collapsed.</p><RegistryGuide registry={registry} language="en" /></ManualSection>
-
-      <ManualSection id="formulas" title="6. How formulas are assembled" wide>
-        <p>The model proposes an internal voltage. Branch laws generate current at that voltage. Main-path terms then check whether the external voltage is consistent with that current and internal voltage.</p>
-        <FormulaStack formulas={["I_{branches}(V_j;\\theta)=\\sum_k I_k(V_j;\\theta)", "g(V_j;V_{ext},\\theta)=V_j+\\Delta V_{series}(I_{branches}(V_j;\\theta),V_j;\\theta)-V_{ext}=0", "\\hat{I}(V_{ext};\\theta)=I_{branches}(V_j^*;\\theta),\\quad g(V_j^*)=0"]} />
-        <p>For the common D1 + Rs + Rsh example:</p>
-        <FormulaStack formulas={["V_j=V_{ext}-IR_s", "I_D=I_0[\\exp(\\frac{V_j}{nV_T})-1]", "I_{Rsh}=\\frac{V_j}{R_{sh}}", "I=I_D+I_{Rsh}", "I=I_0[\\exp(\\frac{V_{ext}-IR_s}{nV_T})-1]+\\frac{V_{ext}-IR_s}{R_{sh}}"]} />
-        <p className="warning info"><strong>graph_dc policy:</strong> graph_dc is diagnostic only and not reportable. Use the standard solver for final reported parameters unless the backend explicitly marks a result as reportable.</p>
-      </ManualSection>
-
-      <ManualSection id="fitting" title="7. How fitting works">
-        <p>The fitting engine treats the circuit solver as a forward model. For a parameter vector and each measured voltage point, the backend solves the internal circuit, predicts current, compares predicted and measured current through a residual function, and minimizes the total loss.</p>
-        <FormulaStack formulas={["r_i(\\theta)=residual(\\hat{I}(V_i;\\theta),I_{meas,i})", "\\min_{\\theta}\\sum_i \\rho(r_i(\\theta))"]} />
-        <ul className="doc-steps"><li>Signed/log-aware weighting helps wide-range I-V curves avoid being dominated only by high-current points.</li><li>Robust losses reduce outlier influence, but they do not replace data inspection.</li><li>Multistart improves robustness but does not prove global uniqueness.</li><li>Bounds encode plausibility; a parameter stuck at a bound is a diagnostic signal.</li></ul>
-      </ManualSection>
-
-      <ManualSection id="recipes" title="8. Recommended fitting recipes" wide>
-        <div className="manual-recipe-grid"><article><h3>Ordinary diode-like curve</h3><ol><li>Select a narrow forward range before strong series roll-off.</li><li>Fit D1 first.</li><li>Check log slope and residual structure.</li><li>Add Rs only when high-current curvature requires it.</li><li>Expand range gradually.</li></ol></article><article><h3>Reverse leakage or soft breakdown</h3><ol><li>Establish D1 + Rs/Rsh on non-breakdown data.</li><li>Add reverse breakdown only for repeatable reverse onset.</li><li>Keep weakly identified parameters fixed or bounded.</li><li>Do not fit noise with a breakdown branch.</li></ol></article><article><h3>High-forward extra conduction</h3><ol><li>Fit ordinary diode region first.</li><li>Add Rs if high current is limited or bends downward.</li><li>Add forward power-law only if residuals indicate extra current beyond Rs.</li><li>Check identifiability over the selected voltage range.</li></ol></article><article><h3>Light-response fitting</h3><ol><li>Fit a defensible dark baseline first.</li><li>Seed or fix dark-like parameters before light fitting.</li><li>Start with constant photocurrent or photoconductive branch.</li><li>Free voltage-dependent light parameters only if residuals require them.</li></ol></article></div>
-      </ManualSection>
-
-      <ManualSection id="residuals" title="9. Reading plots and residuals" wide>
-        <p>Residual plots are not decoration. They are the main evidence for missing processes, overfitting, or a wrong voltage range.</p>
-        <ThreeColumnTable headers={["Observation", "Possible cause", "Suggested action"]} rows={[["High-current forward region predicted too high", "Missing series limitation", "Add/check main-path Rs; check compliance."], ["High-current forward region predicted too low", "Missing extra conduction branch", "Consider forward power-law only after Rs is tested."], ["Low-bias or reverse leakage mismatch", "Missing shunt/leakage path", "Add branch Ohmic Rsh or appropriate leakage term."], ["Reverse current rises after onset", "Soft breakdown or trap-assisted leakage", "Add reverse breakdown only if repeatable."], ["Residuals look random", "Noise or scatter", "Do not add components only to reduce random scatter."], ["Parameter hits a bound", "Poor identifiability", "Fix/remove the parameter or narrow the voltage range."]]} />
-      </ManualSection>
-
-      <ManualSection id="reportability" title="10. Parameters, warnings, and reportability">
-        <p>The parameter table is part of the diagnosis, not just numeric output. Read value, uncertainty, bounds, fixed/fitted state, warning context, and physical meaning together.</p>
-        <ul className="doc-steps"><li><InlineFormula latex="n" /> near 1 often suggests diffusion-like behavior; near 2 often suggests recombination-like behavior; above 2 needs review.</li><li><InlineFormula latex="I_0" /> is an exponential current scale; large or unstable values may indicate wrong initials, leakage, or missing branches.</li><li><InlineFormula latex="R_s" /> controls main-path voltage drop and high-current roll-off.</li><li><InlineFormula latex="R_{sh}" /> controls low-bias/reverse leakage; smaller values mean stronger leakage.</li><li>A result should be reported only if the backend marks it as reportable and the user has reviewed warnings, residuals, selected trace, voltage range, and model structure.</li></ul>
-      </ManualSection>
-
-      <ManualSection id="light-response" title="11. Light-response modeling" wide>
-        <p>Light-response terms should normally be added only after the dark trace has a defensible fit. Otherwise, a light term may compensate for an incorrect dark model.</p>
-        <ThreeColumnTable headers={["Light behavior", "First model to try", "Escalate only if"]} rows={[["Light curve is mostly shifted", "Constant photocurrent", "Residuals show systematic bias dependence."], ["Light-dark difference grows roughly linearly", "Photoconductive branch", "There is threshold-like growth or saturation."], ["Light response strengthens near a threshold", "Voltage-dependent photocurrent", "Dark baseline is stable and residuals demand it."], ["Light changes high-current slope or threshold", "Photo-modulated main path as advanced interpretation", "A joint light/dark interpretation is needed."]]} />
-        <p>Recommended sequence: fit dark trace → seed or fix dark-like parameters → add one light-response term → fit selected light trace → inspect residuals and warnings.</p>
-      </ManualSection>
-
-      <ManualSection id="troubleshooting" title="12. Troubleshooting"><ThreeColumnTable headers={["Problem", "Likely issue", "Suggested response"]} rows={[["Fit explodes", "Range/initial/model mismatch", "Narrow voltage range; reset initials; enable multistart; inspect abnormal currents."], ["Parameters stick to bounds", "Poor identifiability", "Review bounds, remove/fix weak terms, or add a missing physical path."], ["Residuals have structure", "Missing process or artifact", "Add a term only after the pattern is repeatable and artifacts are ruled out."], ["Reverse region is invisible", "Linear scale hides low current", "Use log |I| and log residual views."], ["Multi-trace confusion", "Wrong selected trace", "Confirm the trace selector before running or reporting."]]} /></ManualSection>
-
-      <ManualSection id="glossary" title="13. Glossary"><ThreeColumnTable headers={["Term", "Meaning", "Where to check"]} rows={[["Vext", "Measured terminal voltage applied by the instrument.", "Data preview and plots"], ["Vj", "Internal voltage seen by branches after main-path drops.", "Formula preview"], ["Main path", "Path carrying terminal current and producing voltage drops or conductance modulation.", "Model Builder"], ["Branch", "Current contribution evaluated at Vj and added to terminal current.", "Model Builder"], ["Residual", "Difference between predicted and measured current after weighting/transform.", "Residual plots"], ["Reportable", "Backend quality/reportability gates passed and warnings reviewed.", "Fit status and warnings"]]} /></ManualSection>
+function ManualReader({ registry, appVersion, language }: { registry: FunctionDefinition[]; appVersion: string; language: Language }) {
+  const [active, setActive] = useState<ManualSectionKey>("solving");
+  const labels = sectionLabels[language];
+  const activeLabel = labels.find((item) => item.id === active)?.label ?? labels[0].label;
+  return <div className="manual-reader">
+    <div className="card doc-hero manual-hero">
+      <div>
+        <h2>{language === "zh" ? "IV-fitter Web 用户手册" : "IV-fitter Web User Manual"}</h2>
+        <p className="muted">{language === "zh"
+          ? `v${appVersion} 导航式教程：一次只显示当前章节，避免长卷轴。`
+          : `Navigation-style tutorial for v${appVersion}: one section at a time, without a long scroll wall.`}</p>
+      </div>
+      <select className="manual-section-select" value={active} onChange={(e) => setActive(e.target.value as ManualSectionKey)} title={language === "zh" ? "选择手册章节" : "Select manual section"}>
+        {labels.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+      </select>
     </div>
-  </>;
+    <div className="manual-reader-shell">
+      <SectionNavigator language={language} active={active} onSelect={setActive} />
+      <main className="manual-reader-content">
+        <div className="manual-reader-heading">
+          <span>{language === "zh" ? "当前章节" : "Current section"}</span>
+          <h2>{activeLabel}</h2>
+        </div>
+        {renderManualSection(active, registry, language)}
+      </main>
+    </div>
+  </div>;
+}
+
+function renderManualSection(section: ManualSectionKey, registry: FunctionDefinition[], language: Language) {
+  const zh = language === "zh";
+  switch (section) {
+    case "solving":
+      return <ManualSection id="solving" title={zh ? "1. IV-fitter 在求什么" : "1. What IV-fitter is solving"} wide>
+        {zh ? <>
+          <p>IV-fitter 把 I-V 曲线看成自洽电路拟合问题，而不是把一个固定闭式公式硬套到数据上。实验给出外部电压；内部结点电压通常未知，因为主路元件会消耗一部分电压。支路电流在内部结点电压下计算并求和。</p>
+          <FormulaStack formulas={["V_{ext}=V_j+\\Delta V_{series}(I,V_j;\\theta)", "I=\\sum_k I_k(V_j;\\theta)"]} />
+          <div className="manual-keyidea"><strong>核心概念：</strong>主路决定支路看到的内部电压；支路在该电压下产生电流；拟合器反复改变参数、逐点求解自洽电路并最小化加权残差。</div>
+        </> : <>
+          <p>IV-fitter treats an I-V curve as a self-consistent circuit-fitting problem, not as one fixed closed-form equation. The measured external voltage is known. The internal junction voltage is generally unknown because main-path elements can consume part of the applied voltage. Branch currents are evaluated at that internal voltage and summed.</p>
+          <FormulaStack formulas={["V_{ext}=V_j+\\Delta V_{series}(I,V_j;\\theta)", "I=\\sum_k I_k(V_j;\\theta)"]} />
+          <div className="manual-keyidea"><strong>Key idea:</strong> main path controls the internal voltage seen by branches; branches generate current at that voltage; fitting repeatedly changes parameters, solves the self-consistent circuit at every voltage point, and minimizes the weighted residual.</div>
+        </>}
+      </ManualSection>;
+    case "workflow":
+      return <ManualSection id="workflow" title={zh ? "2. 基本工作流程" : "2. Basic workflow"} wide>
+        <StepCards steps={zh ? chineseSteps : englishSteps} />
+        <p className="warning info">{zh ? <><strong>收敛警告：</strong>优化器 success 只说明数值算法正常停止，不证明模型唯一、物理正确或可以报告。</> : <><strong>Convergence warning:</strong> optimizer success means the numerical algorithm stopped normally. It does not prove that the model is unique, physically meaningful, or reportable.</>}</p>
+      </ManualSection>;
+    case "data":
+      return <ManualSection id="data" title={zh ? "3. 数据导入与 trace 选择" : "3. Data import and trace selection"}>
+        {zh ? <>
+          <p>Data 页负责导入和检查原始数据；Workspace 负责建模和拟合。数据导入正确不代表模型正确，拟合看起来不错也不能弥补选错 trace。</p>
+          <ul className="doc-steps"><li>支持 CSV/TXT/DAT、粘贴表格、普通 voltage/current 列，以及 HappyMeasure 单 trace 或多 trace 导出。</li><li>列识别是启发式的，必须在预览表中确认单位和符号。</li><li>多 trace 文件保留每条 trace 身份；当前拟合只使用选中 trace。</li><li>检查缺失行、重复电压点、compliance 平台、仪器限制和接线/符号反转。</li></ul>
+        </> : <>
+          <p>The Data page is for importing and checking raw data. The Workspace page is for model construction and fitting. Keep these tasks separate: a clean import does not imply a clean physical model, and a good-looking fit does not fix a wrong trace selection.</p>
+          <ul className="doc-steps"><li>Supported input: CSV/TXT/DAT, pasted tables, generic voltage/current columns, and HappyMeasure single- or multi-trace exports.</li><li>Column detection is heuristic. Always verify units and sign convention in the preview table.</li><li>Multi-trace files preserve trace identity. Fit only the selected trace unless a future joint-fit workflow is explicitly used.</li><li>Look for missing rows, duplicate voltage points, compliance plateaus, instrument limits, and obvious wiring/sign reversals.</li></ul>
+        </>}
+      </ManualSection>;
+    case "model":
+      return <ManualSection id="model" title={zh ? "4. Model Builder 概念" : "4. Model Builder concepts"} wide>
+        {zh ? <>
+          <p>用户界面中最重要的是 <strong>主路 Main path</strong> 和 <strong>结点支路 Junction branches</strong>。按角色理解：主路把外部电压映射到内部结点电压；支路在内部电压下产生电流。</p>
+          <ThreeColumnTable headers={["概念", "含义", "例子"]} rows={[["主路", "承载端口电流，并在支路看到电压前消耗电压。", "Rs、串联二极管势垒、电导调制"], ["结点支路", "在内部结点电压下产生电流并加入总电流。", "Shockley diode、Rsh 漏电、反向击穿、光电流"], ["昵称", "用户可读标签；Rs 和 Rsh 是角色标签，不是不同 law。", "Rs、Rsh、D1、Gph"]]} />
+          <p className="warning info"><strong>不要堆模型：</strong>增加组件会提高灵活性，也会增加不可辨识风险。只有残差形状需要且该项角色合理时才加入。</p>
+        </> : <>
+          <p>The user-facing model is organized into <strong>Main path</strong> and <strong>Junction branches</strong>. Think in terms of role: the main path maps external voltage to internal voltage; branches produce current at that internal voltage.</p>
+          <ThreeColumnTable headers={["Concept", "Meaning", "Examples"]} rows={[["Main path", "Carries terminal current and consumes voltage before branches see the remaining voltage.", "Ohmic Rs, series diode barrier, conductance modifier"], ["Junction branches", "Generate current at the internal junction voltage and sum to terminal current.", "Shockley diode, Rsh leakage, reverse breakdown, photocurrent"], ["Nickname", "Human-readable label; Rs and Rsh are role labels, not separate laws.", "Rs, Rsh, D1, Gph"]]} />
+          <p className="warning info"><strong>Do not overbuild:</strong> adding a component increases flexibility but also non-identifiability. Add a term only when the residual pattern requires it and the term has a plausible role.</p>
+        </>}
+      </ManualSection>;
+    case "law-form-placement":
+      return <LawFormPlacementGuide language={language} />;
+    case "functions":
+      return <ManualSection id="functions" title={zh ? "5. 函数说明" : "5. Function guide"} wide>
+        <p>{zh ? "本节改为选择式阅读器：先选模型项，再查看它的用途、适合/不适合、曲线影响、参数、拟合建议和公式。" : "This section is a selector-based reader: choose one model term, then read its purpose, use cases, unsuitable cases, curve effect, parameters, fit advice, and formulas."}</p>
+        <RegistryGuide registry={registry} language={language} />
+      </ManualSection>;
+    case "formulas":
+      return <ManualSection id="formulas" title={zh ? "6. 公式如何组装" : "6. How formulas are assembled"} wide>
+        {zh ? <p>模型先假设内部电压；支路关系在该电压下产生电流；主路项再检查该电流和内部电压是否能解释外部电压。</p> : <p>The model proposes an internal voltage. Branch laws generate current at that voltage. Main-path terms then check whether the external voltage is consistent with that current and internal voltage.</p>}
+        <FormulaStack formulas={["I_{branches}(V_j;\\theta)=\\sum_k I_k(V_j;\\theta)", "g(V_j;V_{ext},\\theta)=V_j+\\Delta V_{series}(I_{branches}(V_j;\\theta),V_j;\\theta)-V_{ext}=0", "\\hat{I}(V_{ext};\\theta)=I_{branches}(V_j^*;\\theta),\\quad g(V_j^*)=0"]} />
+        <p>{zh ? "对于常见 D1 + Rs + Rsh：" : "For the common D1 + Rs + Rsh example:"}</p>
+        <FormulaStack formulas={["V_j=V_{ext}-IR_s", "I_D=I_0[\\exp(\\frac{V_j}{nV_T})-1]", "I_{Rsh}=\\frac{V_j}{R_{sh}}", "I=I_D+I_{Rsh}", "I=I_0[\\exp(\\frac{V_{ext}-IR_s}{nV_T})-1]+\\frac{V_{ext}-IR_s}{R_{sh}}"]} />
+        <p className="warning info">{zh ? <><strong>graph_dc 策略：</strong>graph_dc 只用于诊断，不可报告。最终参数应使用标准求解器，除非后端明确标记为可报告。</> : <><strong>graph_dc policy:</strong> graph_dc is diagnostic only and not reportable. Use the standard solver for final reported parameters unless the backend explicitly marks a result as reportable.</>}</p>
+      </ManualSection>;
+    case "fitting":
+      return <ManualSection id="fitting" title={zh ? "7. 拟合如何进行" : "7. How fitting works"}>
+        {zh ? <p>拟合器把电路求解器当作前向模型。给定参数向量和每个测量电压点，后端求解内部电路、预测电流、通过残差函数与实测电流比较，并最小化总损失。</p> : <p>The fitting engine treats the circuit solver as a forward model. For a parameter vector and each measured voltage point, the backend solves the internal circuit, predicts current, compares predicted and measured current through a residual function, and minimizes total loss.</p>}
+        <FormulaStack formulas={["r_i(\\theta)=residual(\\hat{I}(V_i;\\theta),I_{meas,i})", "\\min_{\\theta}\\sum_i \\rho(r_i(\\theta))"]} />
+        <ul className="doc-steps">{zh ? <><li>带符号/对数意识的权重避免大电流点完全压制低电流区。</li><li>Robust loss 可降低异常点影响，但不能代替人工检查数据。</li><li>Multistart 提高稳定性，但不证明全局唯一。</li><li>参数贴边界是诊断信号，不应盲信。</li></> : <><li>Signed/log-aware weighting prevents high-current points from completely dominating low-current regions.</li><li>Robust loss reduces the influence of outliers but does not replace data inspection.</li><li>Multistart improves robustness but does not prove global uniqueness.</li><li>A parameter stuck at a bound is a diagnostic signal, not a result to blindly trust.</li></>}</ul>
+      </ManualSection>;
+    case "recipes":
+      return <ManualSection id="recipes" title={zh ? "8. 推荐拟合流程" : "8. Recommended fitting recipes"} wide>
+        {zh ? <div className="manual-recipe-grid"><article><h3>普通二极管型曲线</h3><ol><li>先选正向低到中等电压范围。</li><li>先拟合 D1。</li><li>检查 log 斜率和残差结构。</li><li>只有高电流弯折需要时才加 Rs。</li><li>逐步扩大电压范围。</li></ol></article><article><h3>反向漏电或软击穿</h3><ol><li>先建立 D1 + Rs/Rsh 基线。</li><li>只有反向残差有可重复开启时才加 breakdown。</li><li>开启弱时固定或收紧参数。</li><li>不要用击穿支路拟合噪声。</li></ol></article><article><h3>高正向额外导通</h3><ol><li>先拟合普通 diode 区域。</li><li>高电流受限或下弯时先加 Rs。</li><li>只有残差显示额外电流时才加 forward power-law。</li><li>检查该支路是否可辨识。</li></ol></article><article><h3>光响应拟合</h3><ol><li>先拟合合理暗态基线。</li><li>拟合光照前继承或固定暗态参数。</li><li>先用常数光电流或光致电导支路。</li><li>只有残差需要时才释放电压依赖参数。</li></ol></article></div> : <div className="manual-recipe-grid"><article><h3>Ordinary diode-like curve</h3><ol><li>Select a narrow forward-bias range.</li><li>Fit D1 first.</li><li>Check log slope and residual structure.</li><li>Add Rs only when high-current curvature requires it.</li><li>Expand the range gradually.</li></ol></article><article><h3>Reverse leakage or soft breakdown</h3><ol><li>Establish a D1 + Rs/Rsh baseline outside breakdown.</li><li>Add breakdown only when reverse residuals show repeatable onset.</li><li>Fix or bound weakly identified parameters.</li><li>Do not fit noise with a breakdown branch.</li></ol></article><article><h3>High-forward-bias extra conduction</h3><ol><li>Fit the ordinary diode region first.</li><li>Add Rs if high current is limited or bends downward.</li><li>Add forward power-law only when residuals show extra current.</li><li>Check identifiability over the selected range.</li></ol></article><article><h3>Light-response fitting</h3><ol><li>Fit a defensible dark baseline.</li><li>Seed or fix dark-like parameters before light fitting.</li><li>Start with constant photocurrent or photoconductive branch.</li><li>Free voltage-dependent parameters only when residuals require them.</li></ol></article></div>}
+      </ManualSection>;
+    case "residuals":
+      return <ManualSection id="residuals" title={zh ? "9. 如何读图和残差" : "9. Reading plots and residuals"} wide>
+        <p>{zh ? "残差图不是装饰，而是判断模型是否缺少物理过程、是否过拟合、是否选错电压范围的主要证据。" : "Residual plots are not decoration. They are the main evidence for whether a model is missing a process, overfitting, or using the wrong voltage range."}</p>
+        <ThreeColumnTable headers={zh ? ["现象", "可能原因", "建议动作"] : ["Observation", "Possible cause", "Suggested action"]} rows={zh ? [["正向高电流区预测过高", "缺少主路限制", "加入/检查 Rs，并检查 compliance。"], ["正向高电流区预测过低", "缺少额外导通支路", "先测试 Rs，再考虑 forward power-law。"], ["低偏压或反偏漏电失配", "缺少漏电支路", "加入 Rsh 或合适漏电项。"], ["反向电流在某电压后上升", "软击穿或陷阱辅助漏电", "确认可重复后再加 breakdown。"], ["残差随机无结构", "噪声或数据散布", "不要为了随机残差堆模型。"], ["参数贴边界", "不可辨识", "固定/移除参数或缩小电压范围。"]] : [["Forward high-current region predicted too high", "Missing series limitation", "Add/check main-path Rs and compliance."], ["Forward high-current region predicted too low", "Missing extra conduction branch", "Test Rs first, then consider forward power-law."], ["Low-bias or reverse leakage mismatch", "Missing leakage path", "Add Rsh or suitable leakage term."], ["Reverse current rises after onset", "Soft breakdown or trap-assisted leakage", "Add breakdown only if repeatable."], ["Residuals look random", "Noise or scatter", "Do not add components solely to chase noise."], ["Parameter hits bound", "Poor identifiability", "Fix/remove parameter or narrow range."]]} />
+      </ManualSection>;
+    case "reportability":
+      return <ManualSection id="reportability" title={zh ? "10. 参数、warnings 和可报告性" : "10. Parameters, warnings, and reportability"}>
+        {zh ? <><p>参数表是诊断的一部分，不只是数值输出。需要同时看数值、不确定度、边界、固定/拟合状态、warning 和物理含义。</p><ul className="doc-steps"><li><InlineFormula latex="n" /> 接近 1 常见于扩散型行为，接近 2 常见于复合型行为，大于 2 需要检查。</li><li><InlineFormula latex="I_0" /> 是指数项电流尺度；过大或不稳定可能说明初值、漏电或缺项问题。</li><li><InlineFormula latex="R_s" /> 控制主路压降和高电流 roll-off。</li><li><InlineFormula latex="R_{sh}" /> 控制低偏压/反偏漏电背景。</li></ul><p className="warning info"><strong>可报告性：</strong>只有当后端标记为 reportable，且用户已检查 warnings、残差、选中 trace、电压范围和模型结构后，结果才适合报告。</p></> : <><p>The parameter table is diagnostic output, not just numbers. Read value, uncertainty, bounds, fixed/fitted state, warnings, and physical meaning together.</p><ul className="doc-steps"><li><InlineFormula latex="n" /> near 1 often suggests diffusion-like behavior; near 2 often suggests recombination-like behavior; values above 2 need review.</li><li><InlineFormula latex="I_0" /> is the current scale for exponential terms; large or unstable values may indicate poor initials, leakage, or missing terms.</li><li><InlineFormula latex="R_s" /> controls main-path voltage drop and high-current roll-off.</li><li><InlineFormula latex="R_{sh}" /> controls low-bias or reverse leakage background.</li></ul><p className="warning info"><strong>Reportability:</strong> report a result only if the backend marks it reportable and warnings, residuals, selected trace, voltage range, and model structure have been reviewed.</p></>}
+      </ManualSection>;
+    case "light-response":
+      return <ManualSection id="light-response" title={zh ? "11. 光响应建模" : "11. Light-response modeling"} wide>
+        {zh ? <>
+          <p>光响应项通常应在暗态 trace 已有合理拟合后再加入。否则光响应项可能补偿错误暗态模型，导致误导性的物理解释。</p>
+          <ThreeColumnTable headers={["光照现象", "优先模型", "何时升级"]} rows={[["光照曲线相对暗态整体平移", "常数光电流", "残差显示系统性偏压依赖。"], ["差值大致随电压线性增加", "光致电导支路", "出现阈值型增强或饱和。"], ["光响应在阈值或场辅助下增强", "电压依赖光电流", "暗态基线稳定且残差确实需要。"], ["光照改变高电流斜率或阈值", "光调制主路作为高级解释", "需要联合 light/dark 解释。"]]} />
+        </> : <>
+          <p>Light-response terms should normally be added only after the dark trace has a defensible fit. Otherwise, a light term may compensate for an incorrect dark model and produce misleading interpretation.</p>
+          <ThreeColumnTable headers={["Light behavior", "First model to try", "Escalate only if"]} rows={[["Light curve mostly shifts relative to dark", "Constant photocurrent", "Residuals show systematic bias dependence."], ["Light-dark difference grows roughly linearly with voltage", "Photoconductive branch", "There is threshold-like growth or saturation."], ["Light response strengthens near threshold or with field", "Voltage-dependent photocurrent", "Dark baseline is stable and residuals demand it."], ["Light changes high-current slope or threshold", "Photo-modulated main path as advanced interpretation", "A joint light/dark interpretation is needed."]]} />
+        </>}
+      </ManualSection>;
+    case "troubleshooting":
+      return <ManualSection id="troubleshooting" title={zh ? "12. 常见问题排查" : "12. Troubleshooting"} wide>
+        <ThreeColumnTable headers={zh ? ["问题", "建议处理", "检查位置"] : ["Problem", "Suggested response", "Where to check"]} rows={zh ? [["拟合爆炸", "缩小电压范围、重置初值、启用 multistart、检查异常电流范围。", "Fit setup / Warnings"], ["参数贴边界", "参数可能不可辨识、边界太紧或模型缺少通道。", "Parameter table"], ["残差有结构", "排除数据问题后，只加入残差模式支持的模型项。", "Plots / Residuals"], ["多 trace 混淆", "运行和报告前确认当前 trace selector。", "Data / Plot selector"], ["视觉拟合好但 warning 仍在", "warning 仍是结果的一部分，必须检查可报告性。", "Warnings / reportability"]] : [["Fit explodes", "Narrow voltage range, reset initials, enable multistart, and inspect abnormal current range.", "Fit setup / Warnings"], ["Parameters stick to bounds", "Parameter may be poorly identified, bounds may be too tight, or a path may be missing.", "Parameter table"], ["Residuals have structure", "Add a motivated term only after ruling out data artifacts.", "Plots / Residuals"], ["Multi-trace confusion", "Confirm the selected trace before running or reporting.", "Data / Plot selector"], ["Good visual fit but warnings remain", "Warnings remain part of the result; review reportability.", "Warnings / reportability"]]} />
+      </ManualSection>;
+    case "glossary":
+      return <ManualSection id="glossary" title={zh ? "13. 术语表" : "13. Glossary"} wide>
+        <ThreeColumnTable headers={zh ? ["术语", "含义", "使用位置"] : ["Term", "Meaning", "Used in"]} rows={zh ? [["Vext", "仪器施加和记录的外部端口电压。", "数据、公式"], ["Vj", "扣除主路压降后支路实际看到的内部结点电压。", "模型、公式"], ["Main path", "承载端口电流并产生压降或电导调制的路径。", "Model Builder"], ["Branch", "在 Vj 下计算并加入总电流的电流贡献。", "Model Builder"], ["Law", "数学关系，如 Shockley、Ohmic、softplus 或光电流。", "Law/Form/Placement"], ["Residual", "预测电流与实测电流经过权重/变换后的差异。", "Plots"], ["Reportable", "通过后端可报告性门控并已审查 warnings。", "Fit status"]] : [["Vext", "Measured terminal voltage applied by the instrument.", "Data, formulas"], ["Vj", "Internal junction voltage after main-path voltage drops are accounted for.", "Model, formulas"], ["Main path", "Path carrying terminal current and producing voltage drops or conductance modulation.", "Model Builder"], ["Branch", "Current contribution evaluated at Vj and added to total terminal current.", "Model Builder"], ["Law", "Mathematical relation such as Shockley, Ohmic, softplus, or photocurrent.", "Law/Form/Placement"], ["Residual", "Difference between predicted and measured current after weighting/transform.", "Plots"], ["Reportable", "Backend quality/reportability gates pass and warnings have been reviewed.", "Fit status"]]} />
+      </ManualSection>;
+    default:
+      return null;
+  }
+}
+
+function LawFormPlacementGuide({ language }: { language: Language }) {
+  const zh = language === "zh";
+  return <ManualSection id="law-form-placement" title={zh ? "5. Law、form 与 placement" : "5. Law, form, and placement"} wide>
+    {zh ? <>
+      <p><strong>核心信息：</strong>在 IV-fitter 中，“function”不是完整物理元件，而是数学 law。一个模型项只有在 law 与 evaluation form 和 placement 配对后，才有明确物理角色。</p>
+      <p>这个抽象可以避免把同一个数学关系误认为多个不同物理模型，也可以防止为了让曲线更好看而无约束堆项。</p>
+      <ThreeColumnTable headers={["层级", "含义", "例子"]} rows={[["Law", "数学关系，定义曲线形状，但不决定放在电路哪里。", "Ohmic、Shockley、softplus、photocurrent"], ["Evaluation form", "该关系怎样被数值计算。", "压降、支路电流、电导调制"], ["Placement", "该 form 在组装方程中的位置。", "主路压降、主路电导调制、结点支路、并联支路"]]} />
+      <h3>通用组装</h3>
+      <FormulaStack formulas={["V_{ext}=V_j+\\Delta V_{series}(I,V_j;\\theta)", "I=\\sum_k I_k(V_j;\\theta)"]} />
+      <p className="warning info"><strong>重要区别：</strong>外部电压轴不自动等于二极管电压。存在主路项时，IV-fitter 必须先求内部结点电压，再计算支路电流。</p>
+      <h3>Ohmic law 的例子</h3>
+      <ThreeColumnTable headers={["组合", "模型含义", "方程角色"]} rows={[["Ohmic + voltage-drop form + main path", "串联电阻 Rs", "Vext = Vj + I Rs"], ["Ohmic + current-branch form + parallel placement", "旁路漏电 Rsh", "Ish = Vj / Rsh"]]} />
+      <h3>常见组合</h3>
+      <ThreeColumnTable headers={["Law", "Form / placement", "用户看到的物理角色"]} rows={[["Ohmic linear law", "Voltage drop / main path", "Rs 或 access resistance"], ["Ohmic linear law", "Current branch / parallel", "Rsh 旁路漏电"], ["Shockley diode law", "Current branch / junction", "主二极管支路 D1"], ["Shockley diode law", "Voltage-drop barrier / main path", "接触或串联势垒"], ["Softplus power law", "Current branch / forward or reverse", "额外高偏压导通或软反向开启"], ["Photocurrent law", "Current branch", "有明确方向约定的光生电流"], ["Conductance modifier", "Modifier / main path", "偏压相关主路传输变化"]]} />
+      <p className="manual-keyidea"><strong>一句话规则：</strong>模型项 = law + evaluation form + placement。Law 定义曲线形状；form 定义计算方式；placement 定义它在组装方程里的物理角色。</p>
+    </> : <>
+      <p><strong>Core message:</strong> in IV-fitter, a “function” is not a complete physical component by itself. It is a mathematical law. A model term becomes physically meaningful only when the law is paired with an evaluation form and a placement.</p>
+      <p>This abstraction prevents the same mathematical relation from being mistaken for unrelated physical models, and it discourages adding every available term until the curve merely looks better.</p>
+      <ThreeColumnTable headers={["Level", "Meaning", "Examples"]} rows={[["Law", "The mathematical relation. It defines curve shape, but not where the term belongs.", "Ohmic, Shockley, softplus, photocurrent"], ["Evaluation form", "How the relation is evaluated numerically.", "Voltage drop, current branch, conductance modifier"], ["Placement", "Where the evaluated term enters the assembled model.", "Main-path drop, main-path modifier, junction branch, parallel branch"]]} />
+      <h3>General assembly</h3>
+      <FormulaStack formulas={["V_{ext}=V_j+\\Delta V_{series}(I,V_j;\\theta)", "I=\\sum_k I_k(V_j;\\theta)"]} />
+      <p className="warning info"><strong>Important distinction:</strong> the external voltage axis in the data is not automatically the diode voltage. When main-path terms exist, IV-fitter must solve for the internal junction voltage before evaluating branch currents.</p>
+      <h3>Worked example: Ohmic law</h3>
+      <ThreeColumnTable headers={["Combination", "Model meaning", "Equation role"]} rows={[["Ohmic + voltage-drop form + main-path placement", "Series resistance Rs", "Vext = Vj + I Rs"], ["Ohmic + current-branch form + parallel placement", "Shunt leakage Rsh", "Ish = Vj / Rsh"]]} />
+      <h3>Common combinations</h3>
+      <ThreeColumnTable headers={["Law", "Form / placement", "Physical role seen by the user"]} rows={[["Ohmic linear law", "Voltage drop / main path", "Series resistance Rs or access resistance"], ["Ohmic linear law", "Current branch / parallel", "Shunt leakage Rsh"], ["Shockley diode law", "Current branch / junction", "Main diode branch D1"], ["Shockley diode law", "Voltage-drop barrier / main path", "Contact-like or series barrier contribution"], ["Softplus power law", "Current branch / forward or reverse", "Extra high-bias conduction or soft reverse onset"], ["Photocurrent law", "Current branch", "Light-induced current with explicit sign convention"], ["Conductance modifier", "Modifier / main path", "Bias-dependent series-path modification"]]} />
+      <p className="manual-keyidea"><strong>One-sentence rule:</strong> a model term is the combination of a law, an evaluation form, and a placement. The law defines the curve shape; the form defines how it is evaluated; the placement defines its physical role in the assembled circuit equation.</p>
+    </>}
+  </ManualSection>;
+}
+
+function EnglishManual({ registry, appVersion }: { registry: FunctionDefinition[]; appVersion: string }) {
+  return <ManualReader registry={registry} appVersion={appVersion} language="en" />;
 }
 
 function ChineseManual({ registry, appVersion }: { registry: FunctionDefinition[]; appVersion: string }) {
-  return <>
-    <div className="card doc-hero manual-hero"><div><h2>IV-fitter Web 用户手册</h2><p className="muted">v{appVersion} 教程式说明：软件在求什么、怎样组装紧凑模型、以及怎样判断结果是否可报告。</p></div></div>
-    <InlineNav language="zh" />
-    <div className="doc-grid manual-grid">
-      <ManualSection id="solving" title="1. IV-fitter 在求什么" wide>
-        <p>IV-fitter 把 I-V 曲线看成自洽电路拟合问题，而不是把一个固定闭式公式硬套到数据上。实验给出外部电压；内部结点电压通常未知，因为主路元件会消耗一部分电压。支路电流在内部结点电压下计算并求和。</p>
-        <FormulaStack formulas={["V_{ext}=V_j+\\Delta V_{series}(I,V_j;\\theta)", "I=\\sum_k I_k(V_j;\\theta)"]} />
-        <div className="manual-keyidea"><strong>核心概念：</strong>主路决定支路看到的内部电压；支路在该电压下产生电流；拟合器反复改变参数、逐点求解自洽电路并最小化加权残差。</div>
-      </ManualSection>
-      <ManualSection id="workflow" title="2. 基本工作流程" wide><StepCards steps={chineseSteps} /><p className="warning info"><strong>收敛警告：</strong>优化器 success 只说明数值算法正常停止，不证明模型唯一、物理正确或可以报告。</p></ManualSection>
-      <ManualSection id="data" title="3. 数据导入与 trace 选择"><p>Data 页负责导入和检查原始数据；Workspace 负责建模和拟合。数据导入正确不代表模型正确，拟合看起来不错也不能弥补选错 trace。</p><ul className="doc-steps"><li>支持 CSV/TXT/DAT、粘贴表格、普通 voltage/current 列，以及 HappyMeasure 单 trace 或多 trace 导出。</li><li>列识别是启发式的，必须在预览表中确认单位和符号。</li><li>多 trace 文件保留每条 trace 身份；当前拟合只使用选中 trace。</li><li>检查缺失行、重复电压点、compliance 平台、仪器限制和接线/符号反转。</li></ul></ManualSection>
-      <ManualSection id="model" title="4. Model Builder 概念" wide><p>用户界面中最重要的是 <strong>主路 Main path</strong> 和 <strong>结点支路 Junction branches</strong>。按角色理解：主路把外部电压映射到内部结点电压；支路在内部电压下产生电流。</p><ThreeColumnTable headers={["概念", "含义", "例子"]} rows={[["主路", "承载端口电流，并在支路看到电压前消耗电压。", "Rs、串联二极管势垒、电导调制"], ["结点支路", "在内部结点电压下产生电流并加入总电流。", "Shockley diode、Rsh 漏电、反向击穿、光电流"], ["数学定律", "数学关系本身，尚未决定如何进入电路。", "Ohmic、Shockley、softplus 幂律"], ["角色", "该关系如何、在哪里进入电路。", "压降、电流支路、电导调制"], ["昵称", "用户可读标签；Rs 和 Rsh 是角色标签，不是不同 law。", "Rs、Rsh、D1、Gph"]]} /><p className="warning info"><strong>不要堆模型：</strong>增加组件会提高灵活性，也会增加不可辨识风险。只有残差形状需要且该项角色合理时才加入。</p></ManualSection>
-      <ManualSection id="functions" title="5. 函数说明" wide><p>本节按用户能理解的角色解释每个模型项：它描述什么、什么时候适合、什么时候不适合、怎样改变 I-V 曲线，以及怎样更稳地拟合。高级实现细节默认折叠。</p><RegistryGuide registry={registry} language="zh" /></ManualSection>
-      <ManualSection id="formulas" title="6. 公式如何组装" wide><p>模型先假设内部电压；支路关系在该电压下产生电流；主路项再检查该电流和内部电压是否能解释外部电压。</p><FormulaStack formulas={["I_{branches}(V_j;\\theta)=\\sum_k I_k(V_j;\\theta)", "g(V_j;V_{ext},\\theta)=V_j+\\Delta V_{series}(I_{branches}(V_j;\\theta),V_j;\\theta)-V_{ext}=0", "\\hat{I}(V_{ext};\\theta)=I_{branches}(V_j^*;\\theta),\\quad g(V_j^*)=0"]} /><p>对于常见 D1 + Rs + Rsh：</p><FormulaStack formulas={["V_j=V_{ext}-IR_s", "I_D=I_0[\\exp(\\frac{V_j}{nV_T})-1]", "I_{Rsh}=\\frac{V_j}{R_{sh}}", "I=I_D+I_{Rsh}", "I=I_0[\\exp(\\frac{V_{ext}-IR_s}{nV_T})-1]+\\frac{V_{ext}-IR_s}{R_{sh}}"]} /><p className="warning info"><strong>graph_dc 策略：</strong>graph_dc 只用于诊断，不可报告。最终参数应使用标准求解器，除非后端明确标记为可报告。</p></ManualSection>
-      <ManualSection id="fitting" title="7. 拟合如何进行"><p>拟合器把电路求解器当作前向模型。给定参数向量和每个测量电压点，后端求解内部电路、预测电流、通过残差函数与实测电流比较，并最小化总损失。</p><FormulaStack formulas={["r_i(\\theta)=residual(\\hat{I}(V_i;\\theta),I_{meas,i})", "\\min_{\\theta}\\sum_i \\rho(r_i(\\theta))"]} /><ul className="doc-steps"><li>带符号/对数意识的权重避免大电流点完全压制低电流区。</li><li>Robust loss 可降低异常点影响，但不能代替人工检查数据。</li><li>Multistart 提高稳定性，但不证明全局唯一。</li><li>参数贴边界是诊断信号，不应盲信。</li></ul></ManualSection>
-      <ManualSection id="recipes" title="8. 推荐拟合流程" wide><div className="manual-recipe-grid"><article><h3>普通二极管型曲线</h3><ol><li>先选正向低到中等电压范围。</li><li>先拟合 D1。</li><li>检查 log 斜率和残差结构。</li><li>只有高电流弯折需要时才加 Rs。</li><li>逐步扩大电压范围。</li></ol></article><article><h3>反向漏电或软击穿</h3><ol><li>先在非击穿区建立 D1 + Rs/Rsh 基线。</li><li>只有反向残差有可重复开启时才加 breakdown。</li><li>开启弱时固定或收紧参数。</li><li>不要用击穿支路拟合噪声。</li></ol></article><article><h3>高正向额外导通</h3><ol><li>先拟合普通 diode 区域。</li><li>高电流受限或下弯时先加 Rs。</li><li>只有残差显示额外电流时才加 forward power-law。</li><li>检查该支路是否可辨识。</li></ol></article><article><h3>光响应拟合</h3><ol><li>先拟合合理暗态基线。</li><li>拟合光照前继承或固定暗态参数。</li><li>先用常数光电流或光致电导支路。</li><li>只有残差需要时才释放电压依赖参数。</li></ol></article></div></ManualSection>
-      <ManualSection id="residuals" title="9. 如何读图和残差" wide><p>残差图不是装饰，而是判断模型是否缺少物理过程、是否过拟合、是否选错电压范围的主要证据。</p><ThreeColumnTable headers={["现象", "可能原因", "建议动作"]} rows={[["正向高电流区预测过高", "缺少主路限制", "加入/检查 Rs，并检查 compliance。"], ["正向高电流区预测过低", "缺少额外导通支路", "先测试 Rs，再考虑 forward power-law。"], ["低偏压或反偏漏电失配", "缺少漏电支路", "加入 Rsh 或合适漏电项。"], ["反向电流在某电压后上升", "软击穿或陷阱辅助漏电", "确认可重复后再加 breakdown。"], ["残差随机无结构", "噪声或数据散布", "不要为了随机残差堆模型。"], ["参数贴边界", "不可辨识", "固定/移除参数或缩小电压范围。"]]} /></ManualSection>
-      <ManualSection id="reportability" title="10. 参数、warnings 和可报告性"><p>参数表是诊断的一部分，不只是数值输出。需要同时看数值、不确定度、边界、固定/拟合状态、warning 和物理含义。</p><ul className="doc-steps"><li><InlineFormula latex="n" /> 接近 1 常见于扩散型行为，接近 2 常见于复合型行为，大于 2 需要检查。</li><li><InlineFormula latex="I_0" /> 是指数项电流尺度；过大或不稳定可能说明初值、漏电或缺项问题。</li><li><InlineFormula latex="R_s" /> 控制主路压降和高电流 roll-off。</li><li><InlineFormula latex="R_{sh}" /> 控制低偏压/反偏漏电；越小表示漏电越强。</li><li>只有后端标记为 reportable，且用户已检查 warnings、残差、选中 trace、电压范围和模型结构后，结果才适合报告。</li></ul></ManualSection>
-      <ManualSection id="light-response" title="11. 光响应建模" wide><p>光响应项通常应在暗态 trace 有合理拟合后再加入。否则光响应项可能补偿错误暗态模型，导致误导解释。</p><ThreeColumnTable headers={["光照现象", "优先模型", "何时升级"]} rows={[["光照曲线主要整体平移", "常数光电流", "残差显示系统性偏压依赖。"], ["light-dark 差值大致随电压线性增加", "光致电导支路", "出现阈值型增强或饱和。"], ["光响应在阈值或场辅助下增强", "电压依赖光电流", "暗态基线稳定且残差确实需要。"], ["光照改变高电流斜率或阈值", "光调制主路作为高级解释", "需要联合 light/dark 解释。"]]} /><p>推荐流程：拟合暗态 → 继承或固定暗态参数 → 加一个光响应项 → 拟合选中光照 trace → 检查残差和 warnings。</p></ManualSection>
-      <ManualSection id="troubleshooting" title="12. 常见问题排查"><ThreeColumnTable headers={["问题", "可能原因", "建议处理"]} rows={[["拟合爆炸", "范围/初值/模型不匹配", "缩小电压范围、重置初值、启用 multistart、检查异常电流。"], ["参数贴边界", "参数不可辨识", "检查边界、固定/移除弱项，或加入缺少的物理路径。"], ["残差有结构", "缺少过程或数据伪影", "只有模式可重复且排除伪影后才加项。"], ["反偏段看不见", "线性尺度隐藏低电流", "使用 log |I| 和 log residual。"], ["多 trace 混淆", "选错 trace", "运行和报告前确认 trace 下拉框。"]]} /></ManualSection>
-      <ManualSection id="glossary" title="13. 术语表"><ThreeColumnTable headers={["术语", "含义", "查看位置"]} rows={[["Vext", "仪器施加并记录的端口电压。", "数据预览和图表"], ["Vj", "扣除主路压降后支路实际看到的内部电压。", "公式预览"], ["主路", "承载端口电流并产生压降或电导调制的路径。", "Model Builder"], ["支路", "在 Vj 下计算并加入总电流的电流贡献。", "Model Builder"], ["残差", "加权/变换后的预测电流与实测电流差异。", "残差图"], ["可报告", "通过后端质量/可报告性门控且 warnings 已审查。", "拟合状态和 warnings"]]} /></ManualSection>
-    </div>
-  </>;
+  return <ManualReader registry={registry} appVersion={appVersion} language="zh" />;
 }
 
 export function UserDocumentationPage({ registry, appVersion, language = "en" }: { view?: AppView; registry: FunctionDefinition[]; appVersion: string; language?: Language }) {

@@ -1,5 +1,73 @@
 # Changelog
 
+## v1.4.25 - Remove duplicate Add guidance noise
+
+### Fixed
+- Removed the repeated visible Model Builder duplicate/equivalent Add explanation below the disabled Add row.
+- Kept the disabled Add state and hover/title explanation so the reason remains available without adding visual noise.
+- Made the role-aware D2 action single-use so it cannot repeatedly create D3/D4 secondary diodes.
+
+### Tests
+- Verified frontend build, backend tests, and compileall against the packaged tree.
+
+## v1.4.24 - Parameters section full-width fix
+
+### Fixed
+- Fixed the result grid so the Parameters section spans the full right Workspace pane after warnings were moved to the top banner.
+- Kept the interactive Parameters table autosizing behavior from v1.4.22.
+- Preserved narrow-screen horizontal scroll fallback.
+
+### Tests
+- Verified frontend build, backend tests, and compileall against the packaged tree.
+
+## v1.4.23 - Compact Workspace status area
+
+### Fixed
+- Reduced Workspace top clutter by compressing fit status into a single-line summary.
+- Moved fit-verdict details into an expandable details block.
+- Changed warning display to a compact one-line dismissible summary with optional expanded details.
+- Preserved Run/Stop/Report controls and backend-owned reportability behavior.
+
+### Tests
+- Verified frontend build, backend tests, and compileall against the packaged tree.
+
+## v1.4.22 - Wide-screen Parameters table layout
+
+### Fixed
+- Made the interactive Parameters table expand to available Workspace width on wide screens.
+- Reduced unnecessary horizontal scrolling for editable initial values, bounds, fit/fixed controls, and parameter interpretation.
+- Preserved horizontal scroll protection for narrow/mobile screens.
+
+### Tests
+- Verified frontend build, backend tests, and compileall against the packaged tree.
+
+## v1.4.21 - Diode polarity, interactive parameters, and warning workflow
+
+### Fixed
+- Added explicit forward polarity and primary role metadata to the default D1 branch diode.
+- Replaced raw `shockley_diode` component title text with user-facing law names.
+- Preserved duplicate blocking for ordinary repeated components while adding a role-aware D2 action for explicit two-diode models.
+
+### Changed
+- Made the Parameters table interactive: users can edit initial values, bounds, and fit/fixed state for the next fit.
+- Moved fit warnings/errors into a unified Workspace-top summary banner with a dismiss button.
+- Hid fit status and Run/Stop/Report controls from Data and User Manual views.
+
+### Tests
+- Added backend regression tests for role-aware two-diode duplicate handling.
+- Verified frontend build, backend tests, and compileall against the packaged tree.
+
+## v1.4.20 - Navigation-style User Manual reader
+
+### Changed
+- Reworked the in-app User Manual from a long scrolling document into a navigation-style reader that shows one section at a time.
+- Changed the Function Guide to a selector + detail layout so users choose one model term before reading its full explanation.
+- Integrated the Law/Form/Placement chapter into the User Manual, explaining that a model term is a law plus an evaluation form plus a placement.
+- Added responsive manual navigation styles without adding dependencies or changing solver/model behavior.
+
+### Tests
+- Verified frontend build, backend tests, and compileall against the packaged tree.
+
 ## v1.4.19 - Tutorial-style User Manual integration
 
 ### Changed

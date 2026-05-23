@@ -55,13 +55,32 @@ export function allComponents(model: ModelSpec) {
   return [...model.core, ...model.series, ...model.parallel];
 }
 
-export function duplicateKey(comp: ComponentSpec) {
+export function duplicateBaseKey(comp: ComponentSpec) {
   return [comp.law_id ?? comp.function_type, comp.evaluation_form ?? "auto", comp.placement ?? "auto", comp.polarity ?? "none"].join("|");
 }
 
+export function componentRole(comp: ComponentSpec) {
+  const role = comp.metadata?.role;
+  return typeof role === "string" && role.trim() ? role.trim() : "";
+}
+
+export function duplicateKey(comp: ComponentSpec) {
+  const base = duplicateBaseKey(comp);
+  const role = componentRole(comp);
+  return comp.function_type === "diode" && role ? `${base}|role:${role}` : base;
+}
+
+export function isRoleAwareDiode(comp: ComponentSpec) {
+  return comp.function_type === "diode" && componentRole(comp).length > 0;
+}
+
 export function isDuplicateBlocked(model: ModelSpec, comp: ComponentSpec) {
-  const key = duplicateKey(comp);
-  return allComponents(model).some((existing) => duplicateKey(existing) === key);
+  if (isRoleAwareDiode(comp)) {
+    const key = duplicateKey(comp);
+    return allComponents(model).some((existing) => isRoleAwareDiode(existing) && duplicateKey(existing) === key);
+  }
+  const key = duplicateBaseKey(comp);
+  return allComponents(model).some((existing) => duplicateBaseKey(existing) === key);
 }
 
 export function isSingleTraceEquivalentMainPathBlocked(model: ModelSpec, comp: ComponentSpec) {

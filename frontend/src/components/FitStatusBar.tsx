@@ -67,17 +67,23 @@ export function FitStatusBar({
   const stateLabel = passed ? "Converged" : "Not reportable";
   const statusClass = verdict.severity === "ok" ? "status ok" : verdict.severity === "warning" ? "status warn" : "status bad";
 
-  return <div className="fit-status-stack">
-    <div className={statusClass} title={title}>
-      {language === "zh" ? (passed ? "已收敛" : "暂不可报告") : stateLabel} | RMSE {fmtEng(rmse, 4)} A ({fmtEng(rmseRatio, 3)}x {language === "zh" ? "数据量级" : "data scale"}) | Log MAE excludes {Math.round(logExcluded)} near-zero point(s) | {backendWarn} {language === "zh" ? "个 warning" : "warning(s)"} | {errors} {language === "zh" ? "个 error" : "error(s)"}{frontendFailure ? " | " + t(language, "frontendSanity") : ""}
+  return <div className="fit-status-compact" title={title}>
+    <div className={statusClass}>
+      <strong>{language === "zh" ? (passed ? "已收敛" : "暂不可报告") : stateLabel}</strong>
+      <span>RMSE {fmtEng(rmse, 4)} A</span>
+      <span>{fmtEng(rmseRatio, 3)}× {language === "zh" ? "数据量级" : "scale"}</span>
+      <span>{backendWarn} {language === "zh" ? "warning" : "warning"}</span>
+      <span>{errors} error</span>
+      {frontendFailure ? <span>{t(language, "frontendSanity")}</span> : null}
     </div>
-    <div className={`fit-verdict ${verdict.severity}`}>
-      <strong>{verdict.title}</strong>
-      <span>{verdict.message}</span>
+    <details className={`fit-verdict-compact ${verdict.severity}`}>
+      <summary>{verdict.title}</summary>
+      <p>{verdict.message}</p>
+      <p>{language === "zh" ? "Log MAE 排除近零点：" : "Log MAE near-zero exclusions:"} {Math.round(logExcluded)}</p>
       <div className="fit-verdict-actions">
         <button type="button" onClick={onCheckLogIv}>{language === "zh" ? "查看 Log I-V" : "Check log I-V"}</button>
         <button type="button" onClick={onAdjustInitials}>{language === "zh" ? "调整初值" : "Adjust initials"}</button>
       </div>
-    </div>
+    </details>
   </div>;
 }

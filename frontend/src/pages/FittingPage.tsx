@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import type { FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, EquationSummary } from "../model/types";
+import type { FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, EquationSummary, ComponentSpec } from "../model/types";
 import { equations, exportReport, fitTrace, getRegistry } from "../api/client";
-import { emptyTrace, estimateResidualFloorA } from "../model/utils";
+import { emptyTrace, estimateResidualFloorA, updateComponent } from "../model/utils";
 import { WorkflowSidebar, type AppView } from "../components/WorkflowSidebar";
 import { UserDocumentationPage } from "../components/UserDocumentationPage";
 import { ModelBuilder } from "../components/ModelBuilder";
 import { PlotWorkspace } from "../components/PlotWorkspace";
 import { FitStatusBar } from "../components/FitStatusBar";
 import { ParameterTable } from "../components/ParameterTable";
-import { WarningsPanel } from "../components/WarningsPanel";
 import { DataImportWorkspace } from "../components/DataImportWorkspace";
 import { FitConfigPanel } from "../components/FitConfigPanel";
 import { EquationPreview } from "../components/EquationPreview";
@@ -20,7 +19,7 @@ import { t } from "../model/i18n";
 const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "dev";
 
 const initialModel: ModelSpec = {
-  core: [{ id: "D1", location: "core", function_type: "diode", law_id: "shockley_diode", evaluation_form: "current_branch", placement: "junction_current_branch", params: { I0_A: { value: 1e-12, lower: 1e-30, upper: 1, fit: true, unit: "A", label: "I0" }, n: { value: 1.5, lower: 0.5, upper: 10, fit: true, label: "n" } }, metadata: { nickname: "D1" } }],
+  core: [{ id: "D1", location: "core", function_type: "diode", law_id: "shockley_diode", evaluation_form: "current_branch", placement: "junction_current_branch", polarity: "forward", params: { I0_A: { value: 1e-12, lower: 1e-30, upper: 1, fit: true, unit: "A", label: "I0" }, n: { value: 1.5, lower: 0.5, upper: 10, fit: true, label: "n" } }, metadata: { nickname: "D1", role: "primary" } }],
   series: [{ id: "ohmic_1", location: "series", function_type: "constant_rs", law_id: "ohmic", evaluation_form: "voltage_drop", placement: "series_voltage_drop", params: { Rs_ohm: { value: 10, lower: 0, upper: 1e9, fit: true, unit: "Ω", label: "Rs" } }, metadata: { nickname: "Rs" } }],
   parallel: [{ id: "ohmic_2", location: "parallel", function_type: "constant_rs", law_id: "ohmic", evaluation_form: "current_branch", placement: "parallel_current_branch", params: { Rs_ohm: { value: 1e9, lower: 1e3, upper: 1e18, fit: true, unit: "Ω", label: "Rsh" } }, metadata: { nickname: "Rsh" } }],
   temperature_K: 300,
@@ -100,12 +99,7 @@ function WorkspaceView(props: {
       <div className="main-result-grid">
         <Section id="parameters" title={t(props.language, "parameters")} summary={props.result ? `${Object.keys(props.result.parameters).length} parameters` : "not fitted yet"}>
           <ErrorBoundary label="Parameter table">
-            <ParameterTable result={props.result} language={props.language} />
-          </ErrorBoundary>
-        </Section>
-        <Section id="warnings" title={t(props.language, "warnings")} summary={props.result ? `${props.result.warnings.length} item(s)` : "none yet"}>
-          <ErrorBoundary label="Warnings panel">
-            <WarningsPanel result={props.result} language={props.language} />
+            <ParameterTable result={props.result} model={props.model} onModelChange={props.setModel} language={props.language} />
           </ErrorBoundary>
         </Section>
       </div>
@@ -140,6 +134,42 @@ function BackendConnectionBanner({ message, onRetry }: { message: string; onRetr
   </div>;
 }
 
+
+function WarningSummaryBanner({ result, language, onClose }: { result: FitResult | null; language: Language; onClose: () => void }) {
+  const warnings = result?.warnings ?? [];
+  if (!warnings.length) return null;
+  const errors = warnings.filter((w) => w.severity === "error").length;
+  const first = warnings[0];
+  const title = language === "zh"
+    ? `Warnings：${warnings.length} 项，${errors} 个 error`
+    : `Warnings: ${warnings.length} item(s), ${errors} error(s)`;
+  return <div className={errors ? "top-warning-banner compact error" : "top-warning-banner compact"} role="alert">
+    <strong>{title}</strong>
+    <span className={`warning-chip ${first.severity}`} title={first.message}>{first.code}: {first.message}</span>
+    {warnings.length > 1 ? <details className="warning-details"><summary>{language === "zh" ? "更多" : "More"}</summary>
+      <div className="top-warning-list">
+        {warnings.slice(1).map((w) => <span key={`${w.code}-${w.message}`} className={`warning-chip ${w.severity}`}>{w.code}: {w.message}</span>)}
+      </div>
+    </details> : null}
+    <button className="warning-close" type="button" aria-label={language === "zh" ? "关闭 warnings" : "Close warnings"} onClick={onClose}>×</button>
+  </div>;
+}
+
+function warningDismissKey(result: FitResult | null) {
+  return result ? result.warnings.map((w) => `${w.severity}:${w.code}:${w.message}`).join("|") : "";
+}
+
+function updateModelParameter(model: ModelSpec, componentId: string, paramName: string, patch: Partial<ComponentSpec["params"][string]>) {
+  for (const location of ["core", "series", "parallel"] as const) {
+    const comp = model[location].find((item) => item.id === componentId);
+    if (!comp || !comp.params[paramName]) continue;
+    const next = { ...comp, params: { ...comp.params, [paramName]: { ...comp.params[paramName], ...patch } } };
+    return updateComponent(model, location, componentId, next);
+  }
+  return model;
+}
+
+
 export function FittingPage() {
   const [registry, setRegistry] = useState<FunctionDefinition[]>([]);
   const [traces, setTraces] = useState<TraceData[]>([]);
@@ -161,13 +191,18 @@ export function FittingPage() {
     model: false,
     plots: false,
     parameters: false,
-    warnings: false,
     preview: false,
   });
+  const [dismissedWarningKey, setDismissedWarningKey] = useState("");
 
   useEffect(() => {
     getRegistry().then(setRegistry).catch((e) => setError(String(e)));
   }, []);
+
+  useEffect(() => {
+    setDismissedWarningKey("");
+  }, [warningDismissKey(result)]);
+
 
 
   const selectedTrace = traces.find((t) => t.trace_id === selectedTraceId) ?? traces[0] ?? emptyTrace();
@@ -236,7 +271,7 @@ export function FittingPage() {
       const fit = await fitTrace(selectedTrace, model, config);
       if (cancelFitRef.current) return;
       setResult(fit);
-      setOpenSections((current) => ({ ...current, plots: true, parameters: true, warnings: true }));
+      setOpenSections((current) => ({ ...current, plots: true, parameters: true }));
     } catch (e) {
       if (!cancelFitRef.current) setError(String(e));
     } finally {
@@ -266,7 +301,7 @@ export function FittingPage() {
   return <div className={sidebarCollapsed ? "app sidebar-collapsed" : "app"} style={{ "--app-zoom": zoom } as ZoomStyle}>
     <WorkflowSidebar activeView={activeView} onSelect={setActiveView} version={APP_VERSION} collapsed={sidebarCollapsed} onToggleCollapsed={() => setSidebarCollapsed((v) => !v)} language={language} onLanguageChange={setLanguage} />
     <main className="workspace">
-      <div className="topbar">
+      {activeView === "workspace" && <div className="topbar">
         <FitStatusBar result={result} language={language} onCheckLogIv={() => openAndScroll("plots")} onAdjustInitials={() => openAndScroll("model")} />
         <div className="toolbar">
           <button className={isFitting ? "primary running" : "primary"} disabled={isFitting} onClick={runFit}>{isFitting ? (language === "zh" ? "拟合中…" : "Fitting…") : t(language, "runFit")}</button>
@@ -278,9 +313,9 @@ export function FittingPage() {
             <button onClick={() => setZoom((z) => Math.min(1.6, Number((z + 0.06).toFixed(2))))}>+</button>
           </div>
         </div>
-      </div>
-
-      {isFitting && <div className="fit-running-banner">{language === "zh" ? "拟合正在运行…可以点击 Stop 忽略本次结果。" : "Fit is running… use Stop to ignore this run if needed."}</div>}
+      </div>}
+      {activeView === "workspace" && result && warningDismissKey(result) !== dismissedWarningKey && <WarningSummaryBanner result={result} language={language} onClose={() => setDismissedWarningKey(warningDismissKey(result))} />}
+      {activeView === "workspace" && isFitting && <div className="fit-running-banner">{language === "zh" ? "拟合正在运行…可以点击 Stop 忽略本次结果。" : "Fit is running… use Stop to ignore this run if needed."}</div>}
       {error && (isBackendConnectionError(error) ? <BackendConnectionBanner message={error} onRetry={runFit} /> : <div className="warning error">{error}</div>)}
 
       {activeView === "data" ? <DataImportWorkspace
@@ -296,7 +331,7 @@ export function FittingPage() {
         setTraces={(next) => { setTraces(next); setResult(null); setReport(""); }}
         setSelectedTraceId={(id) => { setSelectedTraceId(id); setResult(null); setReport(""); }}
         model={model}
-        setModel={setModel}
+        setModel={(next) => { setModel(next); setResult(null); setReport(""); }}
         config={config}
         setConfig={setConfig}
         registry={registry}

@@ -101,3 +101,33 @@ def test_softplus_transport_modifier_predicts_finite_current_with_rs_baseline():
     current = predict_current(np.array([-1.0, 0.0, 1.0]), model)
     assert np.isfinite(current).all()
     assert current[-1] > current[1]
+
+
+def test_role_aware_two_diode_model_is_not_duplicate_error():
+    d1 = ComponentSpec(
+        id="D1", location="core", function_type="diode", law_id="shockley_diode",
+        evaluation_form="current_branch", placement="junction_current_branch", polarity="forward",
+        params={"I0_A": p(1e-12), "n": p(1.2)}, metadata={"nickname": "D1", "role": "primary"},
+    )
+    d2 = ComponentSpec(
+        id="D2", location="parallel", function_type="diode", law_id="shockley_diode",
+        evaluation_form="current_branch", placement="parallel_current_branch", polarity="forward",
+        params={"I0_A": p(1e-10), "n": p(2.0)}, metadata={"nickname": "D2", "role": "secondary"},
+    )
+    warnings = validate_model_spec(ModelSpec(core=[d1], parallel=[d2]))
+    assert not any(w.code == "duplicate_unidentifiable_component" for w in warnings)
+
+
+def test_same_role_two_diode_model_is_duplicate_error():
+    d1 = ComponentSpec(
+        id="D1", location="core", function_type="diode", law_id="shockley_diode",
+        evaluation_form="current_branch", placement="junction_current_branch", polarity="forward",
+        params={"I0_A": p(1e-12), "n": p(1.2)}, metadata={"nickname": "D1", "role": "primary"},
+    )
+    d2 = ComponentSpec(
+        id="D2", location="core", function_type="diode", law_id="shockley_diode",
+        evaluation_form="current_branch", placement="junction_current_branch", polarity="forward",
+        params={"I0_A": p(1e-10), "n": p(2.0)}, metadata={"nickname": "D2", "role": "primary"},
+    )
+    warnings = validate_model_spec(ModelSpec(core=[d1, d2]))
+    assert any(w.code == "duplicate_unidentifiable_component" and w.severity == "error" for w in warnings)
