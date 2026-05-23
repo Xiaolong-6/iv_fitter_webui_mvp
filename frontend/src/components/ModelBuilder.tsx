@@ -19,6 +19,7 @@ import { fmtEng } from "../model/format";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { initialValueGuidance } from "../model/diagnostics";
+import { HelpTip } from "./HelpTip";
 
 interface Props {
   model: ModelSpec;
@@ -35,10 +36,6 @@ const bucketLocations: Record<BuilderBucket, ModelLocation[]> = {
   main: ["series"],
   branches: ["core", "parallel"],
 };
-
-function HelpTip({ text }: { text: string }) {
-  return <span className="help-tip" aria-label={text} data-tooltip={text} tabIndex={0}>?</span>;
-}
 
 function bucketForComponent(comp: ComponentSpec): BuilderBucket {
   return comp.location === "series" || comp.evaluation_form === "voltage_drop" || comp.placement === "series_voltage_drop"
@@ -127,6 +124,25 @@ function parameterSummary(comp: ComponentSpec) {
     .slice(0, 3)
     .map(([k, v]) => `${v.label ?? k}=${fmtEng(v.value, 3)}${v.unit ?? ""}`)
     .join(", ");
+}
+
+function CircuitCard({ model, language }: { model: ModelSpec; language: Language }) {
+  const series = model.series;
+  const branches = [...model.core, ...model.parallel];
+  const help = language === "zh"
+    ? "Main path 先产生串联压降并决定结点电压 Vj；Junction branches 在 Vj 上贡献端口电流。"
+    : "Main-path elements create voltage drop and set junction voltage Vj. Junction branches contribute terminal current at that junction.";
+  return <div className="model-circuit-panel">
+    <h3>{t(language, "circuit")} <HelpTip text={help} /></h3>
+    <div className="circuit-schematic compact-circuit" aria-label="equivalent circuit schematic">
+      <div className="node terminal">{t(language, "terminalPlus")}</div>
+      <div className="wire" />
+      <div className="main-components">{series.length ? series.map((m) => <span className="component-box" key={m.id}>{nickname(m)}</span>) : <span className="component-box muted-box">{t(language, "direct")}</span>}</div>
+      <div className="wire" />
+      <div className="node junction">V<sub>j</sub></div>
+      <div className="branch-stack">{branches.length ? branches.map((b) => <div className="branch-line" key={b.id}><span className="component-box branch-box">{nickname(b)}</span><span className="wire small" /><span className="node terminal small-node">{t(language, "terminalMinus")}</span></div>) : <div className="branch-line"><span className="muted">{t(language, "noBranch")}</span></div>}</div>
+    </div>
+  </div>;
 }
 
 function userDefinitions(registry: FunctionDefinition[]) {
@@ -225,7 +241,6 @@ function ParamRow(props: {
           <input type="checkbox" checked={spec.fit ?? true} onChange={(e) => onUpdate({ fit: e.target.checked })} /> {t(language, "fitState")}
         </label>
       </div>
-      {guidance ? <div className="initial-guidance">{guidance}</div> : null}
     </div>
   );
 }
@@ -377,13 +392,13 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
   return (
     <section className="card model-builder">
       <div className="model-sticky-summary">
-        <h2>{t(language, "modelBuilder")}</h2>
+        <h2>{t(language, "modelBuilder")} <HelpTip text={t(language, "modelBuilderHelp")} /></h2>
         <div className="model-summary-line">
           <span>{t(language, "mainPath")}: {model.series.map(nickname).join(" → ") || "—"}</span>
           <span>{t(language, "branches")}: {[...model.core, ...model.parallel].map(nickname).join(" ∥ ") || "—"}</span>
         </div>
       </div>
-      <p className="muted compact-help">{t(language, "modelBuilderShortHelp")} <HelpTip text={t(language, "modelBuilderHelp")} /></p>
+      <CircuitCard model={model} language={language} />
       {builderBuckets.map((bucket) => {
         const definitions = definitionsForBucket(bucket);
         const definition = selectedDefinition(bucket);

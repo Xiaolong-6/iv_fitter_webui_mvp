@@ -72,3 +72,16 @@ Important current facts:
 - ModelBuilder has been expanded into readable helper subcomponents for safer future agent edits.
 
 Known next work remains: full Fit Quality Verdict, parameter identifiability/status labels, structured backend equation schema, and manual UI/browser audit on Windows.
+
+## v1.3.13 UI transparency handoff note
+
+Current package focus: moving topology feedback into Model Builder and unifying hover behavior.
+
+Important current facts:
+
+- Equivalent-circuit topology now belongs to Model Builder.
+- Model preview keeps formula, current parameter values, solver, and component meaning sections.
+- Help icons and legacy `title` hover text share the portal tooltip layer in `frontend/src/components/HelpTip.tsx`.
+- Data import lets users edit parsed dataset names and source units before fitting.
+- README is human-facing; keep detailed agent/process notes in `docs/` and `PROJECT_RULES.md`.
+- Validation notes are documented in `docs/TESTED_1_3_13.md`.

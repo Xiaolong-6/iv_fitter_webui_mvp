@@ -1,20 +1,34 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.3.12**
+Current version: **1.3.13**
 
-**v1.3.12 focus:** fixes from the external audit: covariance/stderr correctness, solver-failure surfacing, dynamic versioning, import warnings, ErrorBoundary protection, debounced equation preview, and ModelBuilder maintainability.
+IV-fitter Web UI is a local-first tool for importing I-V traces, building a circuit model, running fits, and checking whether the result is physically plausible before reporting it.
 
-Top-level rules file: `PROJECT_RULES.md`.
-
-## What this is
-
-A local-first Web UI prototype for IV fitting:
+This repository contains:
 
 ```text
-Python fitting backend + FastAPI API + React/Vite frontend
+React/Vite frontend + FastAPI fitting backend + Python fitting core
 ```
 
-The project is currently a greenfield Web UI branch/package. It is not yet a full replacement for the legacy Tkinter workflow.
+It is a Web UI prototype for the IV-fitter workflow. It is not yet a full replacement for the legacy desktop/Tkinter workflow.
+
+## What users do in the app
+
+1. Open **Data** and import or paste a voltage/current trace.
+2. Confirm the selected dataset name, voltage unit, and current unit.
+3. Open **Workspace** and choose the fit range and objective settings.
+4. Build the model in **Model Builder**. The equivalent circuit lives there because it describes what the current model actually means.
+5. Run the fit.
+6. Inspect the status banner, log I-V plot, residual plots, parameter table, and warnings.
+7. Export a report only after the model, units, warnings, and residuals make sense.
+
+## Current UI areas
+
+- **Data**: CSV/TXT/DAT import, pasted-data import, dataset naming, unit selection, trace selection, and spreadsheet preview.
+- **Workspace**: fit setup, model builder with equivalent circuit, plots, parameter diagnostics, warnings, and formula preview.
+- **User manual**: complete user-facing workflow, function guide, fitting logic, convergence guidance, and reporting notes.
+
+The app version and language control are shown in the left dock footer.
 
 ## Windows quick start
 
@@ -25,7 +39,7 @@ Expected baseline:
 - Git
 - PowerShell
 
-Use the numbered scripts from the project root:
+Run these from the project root:
 
 ```powershell
 .\00_validate_scripts.bat
@@ -42,11 +56,11 @@ Optional split launch:
 .\04b_run_frontend_only.bat
 ```
 
-Setup and run are intentionally separate. `04_run_dev.bat` should launch only; it should not silently install dependencies.
+Setup and launch are intentionally separate. `04_run_dev.bat` should only start the app; it should not silently install dependencies.
 
-## Root dependency entry points
+## Developer entry points
 
-Dependency manifests are available at the project root for overwrite-friendly handoff:
+Dependency manifests live at the repository root for handoff clarity:
 
 ```text
 requirements.txt
@@ -54,58 +68,16 @@ package.json
 DEPENDENCIES.md
 ```
 
-The frontend source still lives under `frontend/`, and the backend source still lives under `backend/`.
-
-## Current user-facing UI
-
-The left dock contains:
-
-- **Workspace**: fit setup, model builder, plots, parameters, warnings, and model formula preview.
-- **Data**: CSV/TXT/DAT import, pasted-data import, selected-trace dropdown, and spreadsheet preview.
-- **User guide**: task-oriented instructions for real users.
-- **Function guide**: user-facing function/law explanations with advanced details hidden.
-- **Fitting logic**: transparent explanation of how the model is assembled and solved.
-- **Fit & convergence**: how to read convergence, warnings, and fit quality.
-
-The app version and language selector are displayed in the left dock footer.
-
-## Current modeling semantics
-
-The UI uses user-facing model buckets:
+Source layout:
 
 ```text
-Main path
-Branches
-```
-
-Internally, the code still preserves legacy `core / series / parallel` fields for compatibility, but normal UI should not present those as the user's mental model.
-
-The mathematical abstraction is:
-
-```text
-component = law + form + placement + parameters + nickname + optional polarity
-```
-
-Rs and Rsh are default nicknames for Ohmic-law instances, not separate mathematical laws.
-
-## Data import
-
-The Data tab supports ordinary V/I tables and HappyMeasure multi-trace CSV exports. HappyMeasure wrapper details are intentionally hidden from normal body text and shown only in help/advanced notes.
-
-A mock HPQ4-like IV CSV remains available at:
-
-```text
-examples/HPQ4_mock_IV_trace_webui_test.csv
+frontend/   React UI
+backend/    FastAPI API and fitting core
+docs/       user, developer, policy, audit, and tested notes
+examples/   sample import data and fit requests
 ```
 
 ## Validation commands
-
-Backend:
-
-```bash
-PYTHONPATH=backend python -m pytest backend/tests -q
-python -m compileall -q backend/ivfitter backend/tests
-```
 
 Frontend:
 
@@ -114,22 +86,52 @@ npm install
 npm run build
 ```
 
+Backend:
+
+```bash
+PYTHONPATH=backend python -m pytest backend/tests -q
+python -m compileall -q backend/ivfitter backend/tests
+```
+
 ## Documentation map
 
-- Top-level rules: `PROJECT_RULES.md`
-- Audit readiness review: `docs/AUDIT_FIXES_1_3_12.md`
-- Agent handoff: `docs/WEBUI_AGENT_HANDOFF.md`
-- Human developer setup: `docs/HUMAN_DEVELOPER_SETUP.md`
-- Dependency overview: `DEPENDENCIES.md`
-- Data import/export notes: `docs/DATA_IMPORT_EXPORT.md`
-- Function extension guide: `docs/FUNCTION_EXTENSION_GUIDE.md`
-- Physics modeling policy: `docs/PHYSICS_MODELING_POLICY.md`
-- User transparency policy: `docs/USER_TRANSPARENCY_UX.md`
-- Tested notes: `docs/TESTED_1_3_12.md`
+For users:
 
-## Known audit-relevant limitations
+- In-app **User manual**
+- `docs/DATA_IMPORT_EXPORT.md`
+- `docs/REPORTING.md`
+- `docs/USER_TRANSPARENCY_UX.md`
 
-- This package passed automated backend and frontend build checks, but browser interaction was not manually clicked in this environment.
-- Backend equation summaries are still partly string-based internally; the frontend renders model-specific formula cards. Future work should move this toward structured backend equation objects.
-- Full fit-quality verdict and parameter-identifiability explanations are still roadmap work, although numerical failure paths are now more explicitly surfaced.
-- Advanced/developer details intentionally expose internal IDs when expanded.
+For developers:
+
+- `docs/HUMAN_DEVELOPER_SETUP.md`
+- `DEPENDENCIES.md`
+- `docs/FUNCTION_EXTENSION_GUIDE.md`
+- `docs/SCHEMA_STABILITY.md`
+
+For agents and handoff:
+
+- `PROJECT_RULES.md`
+- `docs/WEBUI_AGENT_HANDOFF.md`
+- `docs/DEVELOPMENT_RULES.md`
+- `docs/AGENT_DEVELOPER_RULES.md`
+
+For audit/history:
+
+- `CHANGELOG.md`
+- `docs/AUDIT_FIXES_1_3_12.md`
+- `docs/AUDIT_READINESS_REVIEW_1_3_11.md`
+- `docs/TESTED_1_3_13.md`
+
+## Current v1.3.13 focus
+
+- Move the equivalent circuit into Model Builder so topology is explained where users edit topology.
+- Keep Model Builder compact by moving explanatory text into hover help.
+- Use one top-level portal tooltip system for both new help icons and legacy title hover text.
+- Keep Data import metadata editable for dataset name and voltage/current units.
+
+## Known limitations
+
+- Backend equation summaries are still partly string-based internally; the frontend renders model-specific formula cards from those summaries.
+- Fit-quality interpretation is improving, but users should still inspect residual plots and warnings before trusting a report.
+- Advanced model details still expose internal law/form/placement concepts when expanded.

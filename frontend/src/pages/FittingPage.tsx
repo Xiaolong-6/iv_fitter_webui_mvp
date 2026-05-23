@@ -17,7 +17,7 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 
-const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "1.3.12";
+const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "1.3.13";
 
 const initialModel: ModelSpec = {
   core: [{ id: "D1", location: "core", function_type: "diode", law_id: "shockley_diode", evaluation_form: "current_branch", placement: "junction_current_branch", params: { I0_A: { value: 1e-12, lower: 1e-30, upper: 1, fit: true, unit: "A", label: "I0" }, n: { value: 1.5, lower: 0.5, upper: 10, fit: true, label: "n" } }, metadata: { nickname: "D1" } }],
@@ -103,7 +103,7 @@ function WorkspaceView(props: {
           <WarningsPanel result={props.result} language={props.language} />
         </Section>
       </div>
-      <Section id="preview" title={t(props.language, "equationPreview")} summary="circuit + formulas">
+      <Section id="preview" title={t(props.language, "equationPreview")} summary="formulas + solver">
         <EquationPreview equations={props.equationSummary} model={props.model} result={props.result} language={props.language} />
       </Section>
       {props.report && <section className="card report-card"><h2>{t(props.language, "markdownReport")}</h2><textarea readOnly value={props.report} rows={12} /></section>}

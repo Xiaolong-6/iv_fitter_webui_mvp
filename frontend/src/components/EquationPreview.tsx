@@ -111,20 +111,6 @@ function renderLatexLite(src: string) {
   return s;
 }
 
-function CircuitCard({ series, branches, language }: { series: Term[]; branches: Term[]; language: Language }) {
-  return <div className="equation-card circuit-card">
-    <h3>{language === "zh" ? "等效电路" : "Equivalent circuit"}</h3>
-    <div className="circuit-schematic" aria-label="equivalent circuit schematic">
-      <div className="node terminal">{t(language, "terminalPlus")}</div>
-      <div className="wire" />
-      <div className="main-components">{series.length ? series.map((m) => <span className="component-box" key={m.id}>{m.nick}</span>) : <span className="component-box muted-box">{t(language, "direct")}</span>}</div>
-      <div className="wire" />
-      <div className="node junction">V<sub>j</sub></div>
-      <div className="branch-stack">{branches.length ? branches.map((b) => <div className="branch-line" key={b.id}><span className="component-box branch-box">{b.nick}</span><span className="wire small" /><span className="node terminal small-node">{t(language, "terminalMinus")}</span></div>) : <div className="branch-line"><span className="muted">{t(language, "noBranch")}</span></div>}</div>
-    </div>
-    <p className="equation-explain">{language === "zh" ? "主路元件先决定结点电压；结点上的并联支路再贡献端口电流。" : "Main-path elements set the junction voltage first; branch elements then contribute terminal current."}</p>
-  </div>;
-}
 function FormulaCards({ series, branches, language }: { series: Term[]; branches: Term[]; language: Language }) {
   return <>
     <div className="equation-card formula-card">
@@ -183,7 +169,6 @@ export function EquationPreview({ equations, model, result, language }: Props) {
   const terms = [...branches, ...series];
   return <section className="card equation-preview structured-preview"><h2>{t(language, "equationPreview")}</h2>
     <div className="equation-layout">
-      <CircuitCard series={series} branches={branches} language={language} />
       <FormulaCards series={series} branches={branches} language={language} />
       <CurrentValuesCard model={model} result={result} language={language} />
       <SolverCard series={series} branches={branches} language={language} />

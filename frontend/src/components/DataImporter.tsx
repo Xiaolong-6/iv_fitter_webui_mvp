@@ -2,8 +2,7 @@ import type { TraceData } from "../model/types";
 import { parseCsvTraces, sampleTrace } from "../model/utils";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
-
-function HelpTip({ text }: { text: string }) { return <span className="help-tip" aria-label={text} data-tooltip={text} tabIndex={0}>?</span>; }
+import { HelpTip } from "./HelpTip";
 
 export function DataImporter({ traces, selectedTraceId, onTraces, onSelectTrace, language }: {
   traces: TraceData[];

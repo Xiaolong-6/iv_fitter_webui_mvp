@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.3.13 - Model-builder circuit placement and unified tooltips
+
+- Moved the equivalent-circuit schematic from Model preview into Model Builder so topology feedback appears beside topology editing.
+- Kept the remaining Model preview formula, parameter-value, solver, and component-meaning cards in place.
+- Reduced always-visible Model Builder guidance text; detailed explanations now live in hover help.
+- Added a shared portal tooltip layer for legacy `title` hover text so old hover hints use the same readable top-level styling as question-mark help.
+- Added editable parsed-data dataset names and voltage/current unit selectors in the Data workspace.
+- Rewrote the README as a human-facing product and quick-start overview with documentation grouped by audience.
+- Bumped backend, frontend, root package, and UI fallback versions to 1.3.13.
+
 ## v1.3.12 - Audit findings fixed and handoff hardening
 
 - Fixed stderr/covariance reporting by scaling `(JᵀJ)⁻¹` with final residual variance.

@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import type { FitConfig } from "../model/types";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
-
-function HelpTip({ text }: { text: string }) { return <span className="help-tip" aria-label={text} data-tooltip={text} tabIndex={0}>?</span>; }
+import { HelpTip } from "./HelpTip";
 
 function isPartialNumber(text: string) {
   return text === "" || text === "-" || text === "+" || text === "." || text === "-." || text === "+." || /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d*)?$/.test(text);
