@@ -51,7 +51,7 @@ def _apply_x(records, x):
 
 
 def _direction_sign(comp: ComponentSpec) -> float:
-    return 1.0 if _param_value(comp, "direction_sign", -1.0) >= 0 else -1.0
+    return 1.0 if _param_value(comp, "direction_sign", -1.0) > 0 else -1.0
 
 
 def _bias_activation(v: np.ndarray, polarity: str | None) -> np.ndarray:
@@ -244,20 +244,29 @@ def _residual(y_fit, y_meas, weighting: str, floor_A: float = 1e-15):
     return y_fit - y_meas
 
 
-def _metrics(y_fit, y_meas):
+def _metrics(y_fit, y_meas, floor_A: float = 1e-15):
     residual = y_fit - y_meas
     rmse = float(np.sqrt(np.mean(residual**2))) if len(residual) else float("nan")
     denom = float(np.sqrt(np.mean(y_meas**2))) if len(y_meas) else float("nan")
     ss_res = float(np.sum(residual**2))
     ss_tot = float(np.sum((y_meas - np.mean(y_meas))**2))
-    log_fit = np.log10(np.maximum(np.abs(y_fit), 1e-30))
-    log_meas = np.log10(np.maximum(np.abs(y_meas), 1e-30))
-    log_res = log_fit - log_meas
+    floor = max(float(floor_A), 1e-30)
+    log_mask = (np.abs(y_meas) > floor) & np.isfinite(y_meas) & np.isfinite(y_fit)
+    log_points_excluded = int(len(y_meas) - int(np.sum(log_mask)))
+    if np.any(log_mask):
+        log_fit = np.log10(np.maximum(np.abs(y_fit[log_mask]), floor))
+        log_meas = np.log10(np.maximum(np.abs(y_meas[log_mask]), floor))
+        log_res = log_fit - log_meas
+        log_mae = float(np.mean(np.abs(log_res)))
+    else:
+        log_mae = float("nan")
     return {
         "linear_rmse_A": rmse,
         "normalized_rmse": rmse / denom if denom else float("nan"),
         "linear_r2": 1.0 - ss_res / ss_tot if ss_tot else float("nan"),
-        "log_magnitude_mae_decades": float(np.mean(np.abs(log_res))) if len(log_res) else float("nan"),
+        "log_magnitude_mae_decades": log_mae,
+        "log_points_excluded": float(log_points_excluded),
+        "log_floor_A": floor,
     }
 
 
@@ -337,18 +346,18 @@ def _photocurrent_fit_warnings(model) -> list[FitWarning]:
                     message=f"{comp.id} has several voltage-dependent photocurrent shape parameters free. Fit dark-like parameters first, then free only the minimum light-response parameters needed by the residuals.",
                     severity="warning",
                 ))
-    if any(c.function_type in photo_types for c in [*model.core, *model.series, *model.parallel]):
-        warnings.append(FitWarning(
-            code="photocurrent_dark_first_guidance",
-            message="For light-response fits, fit the dark trace first, then seed or fix dark-like parameters before freeing photocurrent terms.",
-            severity="info",
-        ))
     return warnings
 
 def fit_trace(request: FitRequest) -> FitResult:
     """Fit one trace using ModelSpec and FitConfig, independent of any UI."""
     request = copy.deepcopy(request)
     warnings: list[FitWarning] = validate_model_spec(request.model)
+    if getattr(request.config, "seed_scale_factors", None):
+        warnings.append(FitWarning(
+            code="deprecated_field",
+            message="seed_scale_factors is ignored; use multistart_n_seeds instead.",
+            severity="warning",
+        ))
     x0, lower, upper, records = _pack(request)
     v_fit, i_meas, range_mask = _select_range(request)
     excluded = _compliance_mask(i_meas, request.config.exclude_compliance)
@@ -397,7 +406,7 @@ def fit_trace(request: FitRequest) -> FitResult:
     i_all = np.asarray(request.trace.current_A, dtype=float)
     if request.config.solver_mode == "graph_dc":
         i_pred, branches = solve_graph_current(v_all, request.model)
-        warnings.append(FitWarning(code="graph_solver", message="Experimental DC graph solver used. Validate against the legacy solver before reporting.", severity="warning"))
+        warnings.append(FitWarning(code="graph_solver", message="graph_dc is a diagnostic solver and is not reportable.", severity="error"))
     else:
         vj_all = solve_vj(v_all, request.model)
         branches = branch_currents_at_vj(vj_all, request.model)
@@ -416,7 +425,7 @@ def fit_trace(request: FitRequest) -> FitResult:
     range_indices = np.where(range_mask)[0]
     assert len(excluded) == len(range_indices), "compliance mask must align with selected range"
     excluded_mask[range_indices[excluded]] = True
-    metrics = _metrics(i_pred, i_all)
+    metrics = _metrics(i_pred, i_all, request.config.residual_floor_A)
     quality_ok, quality_warnings = evaluate_fit_quality(i_pred, i_all, metrics.get("linear_rmse_A"))
     warnings.extend(quality_warnings)
     warnings.extend(_photocurrent_fit_warnings(request.model))

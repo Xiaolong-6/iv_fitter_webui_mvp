@@ -1,6 +1,24 @@
 # Changelog
 
-## v1.4.15 - Expanded main-path transport functions
+## v1.4.16 - Stabilization hotfix
+
+### Fixed
+- Changed frontend APP_VERSION fallback to `dev` to avoid stale serialized model versions outside Vite version injection.
+- Added abort handling for equation preview updates so rapid model edits cannot leave obsolete requests racing the current state.
+- Expanded ErrorBoundary coverage around fit configuration, Model Builder, equation preview, and warnings panels.
+- Marked `graph_dc` diagnostic solver results as not reportable with an error-severity warning.
+- Added deprecation handling for ignored `seed_scale_factors`; use `multistart_n_seeds` instead.
+- Added stricter validation for photocurrent magnitude parameters and invalid `direction_sign = 0`.
+- Improved log-magnitude metric handling near zero current by excluding near-floor measured points and reporting the excluded count.
+
+### Changed
+- Tightened duplicate component handling so ordinary Add cannot create another identical law/form/placement/polarity component.
+- Kept v1.4.15 main-path transport options; this release focuses on stabilization rather than new modeling features.
+
+### Tests
+- Added regression tests for deprecated multistart config, graph_dc reportability, photocurrent validation, direction-sign validation, and near-zero log metrics.
+
+## v1.4.16 - Expanded main-path transport functions
 
 - Expanded the Model Builder main-path menu beyond Ohmic resistance and Series diode barrier.
 - Exposed advanced main-path transport forms: Softplus transport modifier, Custom transport modifier, and interpretive Photo-modulated effective main path.

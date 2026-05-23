@@ -140,7 +140,7 @@ class FitConfig(BaseModel):
     max_nfev: int = 500
     residual_floor_A: float = 1e-15
     multistart_enabled: bool = False
-    seed_scale_factors: list[float] = Field(default_factory=lambda: [1.0, 0.3, 3.0])
+    seed_scale_factors: list[float] = Field(default_factory=list)
     multistart_n_seeds: int = 12
     solver_mode: SolverMode = "legacy_composite"
 

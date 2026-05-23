@@ -15,8 +15,8 @@ function resolveApiBase(): string {
 
 const API_BASE = resolveApiBase();
 
-async function postJson<T>(path: string, payload: unknown): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+async function postJson<T>(path: string, payload: unknown, init?: { signal?: AbortSignal }): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: init?.signal });
   if (!response.ok) throw new Error(await response.text());
   return response.json();
 }
@@ -27,7 +27,7 @@ export async function getRegistry(): Promise<FunctionDefinition[]> {
   return response.json();
 }
 export async function validateModel(model: ModelSpec): Promise<FitWarning[]> { return postJson("/api/validate-model", model); }
-export async function equations(model: ModelSpec): Promise<EquationSummary> { return postJson("/api/equations", model); }
+export async function equations(model: ModelSpec, signal?: AbortSignal): Promise<EquationSummary> { return postJson("/api/equations", model, { signal }); }
 export async function fitTrace(trace: TraceData, model: ModelSpec, config: FitConfig): Promise<FitResult> { return postJson("/api/fit", { trace, model, config }); }
 export async function exportReport(result: FitResult): Promise<{ markdown: string }> { return postJson("/api/export-report", result); }
 

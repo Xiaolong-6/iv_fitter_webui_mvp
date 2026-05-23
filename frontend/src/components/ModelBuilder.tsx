@@ -225,11 +225,7 @@ function duplicateKey(comp: ComponentSpec) {
 
 function isDuplicateBlocked(model: ModelSpec, comp: ComponentSpec) {
   const key = duplicateKey(comp);
-  const matches = allComponents(model).filter((existing) => duplicateKey(existing) === key);
-  if (!matches.length) return false;
-  // A two-diode branch model is allowed only as an explicit D1/D2 role distinction.
-  if (comp.function_type === "diode" && comp.evaluation_form === "current_branch") return matches.length >= 2;
-  return true;
+  return allComponents(model).some((existing) => duplicateKey(existing) === key);
 }
 
 function isSingleTraceEquivalentMainPathBlocked(model: ModelSpec, comp: ComponentSpec) {

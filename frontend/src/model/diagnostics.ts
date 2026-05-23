@@ -135,6 +135,7 @@ export function initialValueGuidance(name: string, spec: ParameterSpec, language
 
 export function fitQualityVerdict(result: FitResult, language: Language): { severity: Severity; title: string; message: string } {
   const errors = result.warnings.filter((w) => w.severity === "error");
+  const hasGraphSolver = result.warnings.some((w) => w.code === "graph_solver");
   const rmse = result.metrics.linear_rmse_A;
   const logMae = result.metrics.log_magnitude_mae_decades;
   const scale = dataScale(result.curves.current_measured_A);
@@ -143,6 +144,16 @@ export function fitQualityVerdict(result: FitResult, language: Language): { seve
   const maxMeas = Math.max(...finiteAbs(result.curves.current_measured_A), 0);
   const explosion = maxFit > Math.max(1e3, 1e8 * Math.max(maxMeas, scale));
 
+  if (hasGraphSolver) {
+    return {
+      severity: "error",
+      title: zh(language, "Not reportable yet", "暂不适合报告"),
+      message: zh(language,
+        "graph_dc is diagnostic only. Use the legacy composite solver for reportable fits.",
+        "graph_dc 只用于诊断。正式报告拟合请使用 legacy composite solver。",
+      ),
+    };
+  }
   if (errors.length || !result.success || explosion || !Number.isFinite(rmse)) {
     return {
       severity: "error",
@@ -153,13 +164,23 @@ export function fitQualityVerdict(result: FitResult, language: Language): { seve
       ),
     };
   }
-  if (rmseRatio > 0.25 || (Number.isFinite(logMae) && logMae > 0.5)) {
+  if (rmseRatio > 0.25 || (Number.isFinite(logMae) && logMae > 0.3)) {
+    return {
+      severity: "error",
+      title: zh(language, "Poor fit - inspect", "拟合较差 - 需要检查"),
+      message: zh(language,
+        `The fit converged, but RMSE ratio (${fmtEng(rmseRatio, 3)}) or log-magnitude MAE (${fmtEng(logMae, 3)} decades) is too high for reporting.`,
+        `拟合已收敛，但 RMSE 比值 (${fmtEng(rmseRatio, 3)}) 或对数幅值 MAE (${fmtEng(logMae, 3)} decades) 对报告来说过高。`,
+      ),
+    };
+  }
+  if (rmseRatio > 0.1 || (Number.isFinite(logMae) && logMae > 0.1)) {
     return {
       severity: "warning",
-      title: zh(language, "Converged, but inspect residuals", "已收敛，但需要看残差"),
+      title: zh(language, "Caution - inspect residuals", "谨慎 - 检查残差"),
       message: zh(language,
-        `The optimizer converged, but RMSE is still large relative to the current scale. Use the log I-V and residual plots to find the voltage region driving the mismatch.`,
-        `优化器已收敛，但 RMSE 相对电流量级仍偏大。请用对数 I-V 和残差图定位主要失配的电压区间。`,
+        "The fit is usable for inspection, but residuals or log-magnitude error are large enough that parameter interpretation needs care.",
+        "该拟合可用于检查，但残差或对数幅值误差偏大，解释参数时需要谨慎。",
       ),
     };
   }

@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.4.15**.
+Current package: **v1.4.16**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -80,17 +80,17 @@ After every change, provide a 3-step browser test that does not require reading 
 HappyMeasure combined wide-v2 files contain a trace-metadata table before the actual `# section,data` table. The generic single-trace importer must read the explicit data section before applying user-selected `voltage_col` / `current_col`; otherwise selected columns such as `Voltage_V` and `T001 Device_14 [Current_A]` are reported as missing. Keep the anonymized fixture in `examples/testdata/` for regression coverage.
 
 
-## v1.4.15 sample data note
+## Sample data note
 
 The Data page sample loader is intentionally tied to the full anonymized HappyMeasure combined wide-v2 CSV. Do not replace it with a cropped fixture or a synthetic in-memory trace unless the user explicitly asks. The sample is meant to exercise the same importer path users need for HappyMeasure multi-trace files.
 
 
-## v1.4.15 plot selector note
+## Plot selector note
 
 The Plots section now owns a user-facing trace selector. Do not re-add explanatory text like "Showing selected trace only..." in the plot header; the selector itself communicates which trace is active. Keep Data and Plot trace selectors bound to the same selected-trace state.
 
 
-## v1.4.15 main-path transport note
+## Main-path transport note
 
 Main path now exposes advanced transport / voltage-drop forms in the Model Builder menu. Keep this distinction intact:
 
@@ -98,3 +98,8 @@ Main path now exposes advanced transport / voltage-drop forms in the Model Build
 - main-path functions consume voltage or modify effective series transport before branch currents are evaluated.
 
 Do not reframe branch current laws as main-path terms unless they have a clear voltage-drop or transport-modifier evaluation form. The photo-modulated main-path term is available as an interpretive advanced option, but the UI blocks pairing it with ordinary Ohmic series resistance in single-trace fitting because both collapse to an effective resistance.
+
+
+## Stabilization note
+
+Current stabilization guards include: APP_VERSION fallback to `dev`, abortable equation-preview requests, expanded ErrorBoundary coverage, diagnostic-only graph_dc reportability, deprecated `seed_scale_factors` warning, stricter photocurrent sign validation, and near-zero-current exclusion for log-magnitude metrics. Keep these regression tests active when changing fitting configuration, equation preview, or model validation.

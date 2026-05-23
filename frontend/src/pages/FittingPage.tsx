@@ -17,7 +17,7 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 
-const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "1.4.15";
+const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "dev";
 
 const initialModel: ModelSpec = {
   core: [{ id: "D1", location: "core", function_type: "diode", law_id: "shockley_diode", evaluation_form: "current_branch", placement: "junction_current_branch", params: { I0_A: { value: 1e-12, lower: 1e-30, upper: 1, fit: true, unit: "A", label: "I0" }, n: { value: 1.5, lower: 0.5, upper: 10, fit: true, label: "n" } }, metadata: { nickname: "D1" } }],
@@ -80,10 +80,14 @@ function WorkspaceView(props: {
   return <div className="content-grid">
     <aside className="control-stack">
       <Section id="fitSetup" title={t(props.language, "fitSetup")} summary={props.config.v_min || props.config.v_max ? `${props.config.v_min ?? "auto"} to ${props.config.v_max ?? "auto"}` : "range: auto"}>
-        <FitConfigPanel config={props.config} onChange={props.setConfig} language={props.language} />
+        <ErrorBoundary label="Fit config panel">
+          <FitConfigPanel config={props.config} onChange={props.setConfig} language={props.language} />
+        </ErrorBoundary>
       </Section>
       <Section id="model" title={t(props.language, "modelBuilder")} summary={modelSummary()}>
-        <ModelBuilder model={props.model} registry={props.registry} onChange={props.setModel} language={props.language} />
+        <ErrorBoundary label="Model builder">
+          <ModelBuilder model={props.model} registry={props.registry} onChange={props.setModel} language={props.language} />
+        </ErrorBoundary>
       </Section>
     </aside>
 
@@ -100,11 +104,15 @@ function WorkspaceView(props: {
           </ErrorBoundary>
         </Section>
         <Section id="warnings" title={t(props.language, "warnings")} summary={props.result ? `${props.result.warnings.length} item(s)` : "none yet"}>
-          <WarningsPanel result={props.result} language={props.language} />
+          <ErrorBoundary label="Warnings panel">
+            <WarningsPanel result={props.result} language={props.language} />
+          </ErrorBoundary>
         </Section>
       </div>
       <Section id="preview" title={t(props.language, "equationPreview")} summary="formulas + solver">
-        <EquationPreview equations={props.equationSummary} model={props.model} result={props.result} language={props.language} />
+        <ErrorBoundary label="Equation preview">
+          <EquationPreview equations={props.equationSummary} model={props.model} result={props.result} language={props.language} />
+        </ErrorBoundary>
       </Section>
       {props.report && <section className="card report-card"><h2>{t(props.language, "markdownReport")}</h2><textarea readOnly value={props.report} rows={12} /></section>}
     </section>
@@ -184,13 +192,19 @@ export function FittingPage() {
   }, [selectedTraceDataKey, selectedTrace]);
 
   useEffect(() => {
+    const controller = new AbortController();
     const handle = window.setTimeout(() => {
-      equations(model).then(setEquationSummary).catch((e) => {
+      equations(model, controller.signal).then(setEquationSummary).catch((e) => {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        if (typeof e === "object" && e !== null && "name" in e && (e as { name?: string }).name === "AbortError") return;
         console.warn("Equation preview failed", e);
         setEquationSummary(null);
       });
     }, 250);
-    return () => window.clearTimeout(handle);
+    return () => {
+      controller.abort();
+      window.clearTimeout(handle);
+    };
   }, [model]);
 
   useEffect(() => {

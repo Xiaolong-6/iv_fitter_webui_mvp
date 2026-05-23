@@ -44,6 +44,20 @@ def validate_component_against_registry(comp: ComponentSpec) -> list[FitWarning]
             warnings.append(_warn("parameter_above_upper", f"{comp.id}.{name} is above its upper bound.", "error"))
         if name in {"Vs_V", "Vslope_V", "w_V", "n", "Rsh_ohm"} and spec.value <= 0:
             warnings.append(_warn("nonpositive_physical_parameter", f"{comp.id}.{name} should be positive for a physically meaningful model.", "error"))
+    if comp.function_type in {"photocurrent_constant", "photocurrent_voltage_dependent", "photoconductive_branch"}:
+        for name in ("Iph0_A", "Gph_S", "Aph"):
+            if name in comp.params and float(comp.params[name].value) < 0:
+                warnings.append(_warn(
+                    "negative_photocurrent_parameter",
+                    f"{comp.id}.{name} must be non-negative; use direction_sign/polarity to control current direction.",
+                    "error",
+                ))
+        if "direction_sign" in comp.params and float(comp.params["direction_sign"].value) == 0.0:
+            warnings.append(_warn(
+                "invalid_direction_sign",
+                f"{comp.id}.direction_sign must be either -1 or +1; 0 is invalid.",
+                "error",
+            ))
     if comp.function_type == "soft_breakdown" and comp.polarity != "reverse":
         warnings.append(_warn("breakdown_polarity", f"{comp.id}: soft_breakdown is defined only as a reverse-bias leakage/breakdown branch.", "error"))
     return warnings
@@ -74,20 +88,21 @@ def validate_model_spec(model: ModelSpec) -> list[FitWarning]:
         if count <= 1:
             continue
         law, form, placement, polarity = sig
-        # Allow an intentional two-diode branch model when the two branches have distinct nicknames.
-        matching = [comp for _group, comp in _component_groups(model) if _duplicate_signature(comp) == sig]
-        nicknames = {str(comp.metadata.get("nickname") or comp.id) for comp in matching}
-        is_two_diode_role = law == "shockley_diode" and form == "current_branch" and len(nicknames) == count and count <= 2
-        if not is_two_diode_role:
-            warnings.append(_warn(
-                "duplicate_unidentifiable_component",
-                f"{count} components share the same law/form/placement/polarity ({law}, {form}, {placement}, {polarity}). Remove duplicates or give them distinct polarity/role.",
-                "warning",
-            ))
+        warnings.append(_warn(
+            "duplicate_unidentifiable_component",
+            f"{count} components share the same law/form/placement/polarity ({law}, {form}, {placement}, {polarity}). Remove duplicates or use an explicit preset/role with different polarity or form.",
+            "warning",
+        ))
     if not model.core:
         warnings.append(_warn("no_core", "Model has no core junction component."))
     if not any(c.function_type == "constant_rs" for c in model.series):
         warnings.append(_warn("no_rs", "Model has no constant Rs baseline.", "info"))
+    if any(comp.function_type in {"photocurrent_constant", "photocurrent_voltage_dependent", "photoconductive_branch", "photo_modulated_main_path"} for _group, comp in _component_groups(model)):
+        warnings.append(_warn(
+            "photocurrent_dark_first_guidance",
+            "Photocurrent components should normally be fitted after a dark-state baseline model is established.",
+            "warning",
+        ))
     for group_name, comp in _component_groups(model):
         if comp.location != group_name:
             warnings.append(_warn("location_mismatch", f"{comp.id}: stored in {group_name} but declares location {comp.location}.", "error"))

@@ -58,6 +58,7 @@ export function FitStatusBar({
   const frontendFailure = frontendQualityFailure(result);
   const errors = backendErrors + (frontendFailure ? 1 : 0);
   const rmse = result.metrics.linear_rmse_A;
+  const logExcluded = result.metrics.log_points_excluded ?? 0;
   const passed = result.success && errors === 0;
   const title = frontendFailure ? `Frontend sanity check: ${frontendFailure}` : result.message;
   const verdict = fitQualityVerdict(result, language);
@@ -68,7 +69,7 @@ export function FitStatusBar({
 
   return <div className="fit-status-stack">
     <div className={statusClass} title={title}>
-      {language === "zh" ? (passed ? "已收敛" : "暂不可报告") : stateLabel} | RMSE {fmtEng(rmse, 4)} A ({fmtEng(rmseRatio, 3)}x {language === "zh" ? "数据量级" : "data scale"}) | {backendWarn} {language === "zh" ? "个 warning" : "warning(s)"} | {errors} {language === "zh" ? "个 error" : "error(s)"}{frontendFailure ? " | " + t(language, "frontendSanity") : ""}
+      {language === "zh" ? (passed ? "已收敛" : "暂不可报告") : stateLabel} | RMSE {fmtEng(rmse, 4)} A ({fmtEng(rmseRatio, 3)}x {language === "zh" ? "数据量级" : "data scale"}) | Log MAE excludes {Math.round(logExcluded)} near-zero point(s) | {backendWarn} {language === "zh" ? "个 warning" : "warning(s)"} | {errors} {language === "zh" ? "个 error" : "error(s)"}{frontendFailure ? " | " + t(language, "frontendSanity") : ""}
     </div>
     <div className={`fit-verdict ${verdict.severity}`}>
       <strong>{verdict.title}</strong>

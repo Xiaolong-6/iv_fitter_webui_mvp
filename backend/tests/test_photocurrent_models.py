@@ -102,3 +102,35 @@ def test_photocurrent_bound_and_dark_first_guidance_warnings():
     codes = {w.code for w in result.warnings}
     assert "photocurrent_dark_first_guidance" in codes
     assert "photocurrent_parameter_near_bound" in codes
+
+from ivfitter.core.model_validation import validate_model_spec
+
+
+def test_negative_photocurrent_parameter_rejected():
+    model = ModelSpec(parallel=[ComponentSpec(
+        id="Iph", location="parallel", function_type="photocurrent_constant",
+        law_id="photocurrent_constant", evaluation_form="current_branch", placement="parallel_current_branch",
+        params={"Iph0_A": p(-1e-9), "direction_sign": p(-1.0)},
+    )])
+    warnings = validate_model_spec(model)
+    assert any(w.code == "negative_photocurrent_parameter" and w.severity == "error" for w in warnings)
+
+
+def test_direction_sign_zero_rejected():
+    model = ModelSpec(parallel=[ComponentSpec(
+        id="Iph", location="parallel", function_type="photocurrent_constant",
+        law_id="photocurrent_constant", evaluation_form="current_branch", placement="parallel_current_branch",
+        params={"Iph0_A": p(1e-9), "direction_sign": p(0.0)},
+    )])
+    warnings = validate_model_spec(model)
+    assert any(w.code == "invalid_direction_sign" and w.severity == "error" for w in warnings)
+
+
+def test_photocurrent_dark_first_guidance_is_validation_warning():
+    model = ModelSpec(parallel=[ComponentSpec(
+        id="Iph", location="parallel", function_type="photocurrent_constant",
+        law_id="photocurrent_constant", evaluation_form="current_branch", placement="parallel_current_branch",
+        params={"Iph0_A": p(1e-9), "direction_sign": p(-1.0)},
+    )])
+    warnings = validate_model_spec(model)
+    assert any(w.code == "photocurrent_dark_first_guidance" and w.severity == "warning" for w in warnings)
