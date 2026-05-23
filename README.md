@@ -1,12 +1,21 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.4.25**
+Current version: **1.4.28**
 
 
 
 
 
 
+
+
+
+
+> v1.4.28 navigation note: the dock/sidebar now starts collapsed by default, and the language selector dropdown uses readable light-background option colors in the dark sidebar.
+
+> v1.4.27 mobile/data note: the Data page now contains the Spreadsheet preview inside an internal scroll area on mobile so it no longer stretches behind the bottom navigation. Navigation tabs are leaner, with no per-tab subtitles, and the sidebar note is shortened to “Fit locally. Review before reporting.”
+
+> v1.4.26 Data page note: the Data page now uses a two-row aligned layout: Import data aligns with Trace selection, and Paste data aligns with Spreadsheet preview. Trace-selection summary chips were deduplicated so V/I column names are not repeated in both facts and import-quality blocks.
 
 > v1.4.25 Model Builder note: duplicate-add guidance is no longer repeated as a visible inline message. Disabled Add buttons still expose the reason through the button hover/title.
 

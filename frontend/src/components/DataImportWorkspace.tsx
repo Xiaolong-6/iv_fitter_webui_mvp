@@ -217,26 +217,26 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   }
 
   const fileId = "data-workspace-file-input";
+  const qualityWarnings = importQuality?.warnings ?? [];
   return <section className="data-workspace scroll-page">
     <div className="page-header-card">
       <div>
         <h2>{t(language, "dataImportTitle")}</h2>
         <p className="muted">{t(language, "dataImportIntro")}</p>
       </div>
-      <div className="data-actions compact-data-actions">
-        <label className="file-button" htmlFor={fileId} title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`}>{t(language, "importCsv")}</label>
-        <input id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
-        <button title={t(language, "loadDemoHelp")} onClick={loadSampleData}>{t(language, "loadDemo")}</button>
-      </div>
     </div>
 
     {message && <div className={message.toLowerCase().includes("error") || message.includes("Error") ? "warning error" : "warning info"}>{message}</div>}
 
-    <div className="data-import-grid">
-      <section className="card paste-card">
-        <div className="card-head"><h3>{t(language, "pasteData")}</h3><HelpTip text={t(language, "pasteDataHelp")} /></div>
-        <textarea title={t(language, "pasteDataHelp")} value={pasteText} onChange={(e) => setPasteText(e.target.value)} placeholder={t(language, "pastePlaceholder")} rows={10} />
-        <button title={t(language, "parsePastedHelp")} disabled={!pasteText.trim()} onClick={loadPaste}>{t(language, "parsePastedData")}</button>
+    <div className="data-import-layout">
+      <section className="card import-actions-card">
+        <div className="card-head"><h3>{language === "zh" ? "导入数据" : "Import data"}</h3><HelpTip text={t(language, "importCsvHelp")} /></div>
+        <p className="muted">{language === "zh" ? "导入文件或加载内置 HappyMeasure 示例。" : "Import a file or load the bundled HappyMeasure sample."}</p>
+        <div className="data-actions compact-data-actions">
+          <label className="file-button" htmlFor={fileId} title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`}>{t(language, "importCsv")}</label>
+          <input id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
+          <button title={t(language, "loadDemoHelp")} onClick={loadSampleData}>{t(language, "loadDemo")}</button>
+        </div>
       </section>
 
       <section className="card trace-card">
@@ -245,15 +245,15 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
           <label className="trace-select-label"><span>{t(language, "selectedTrace")}</span><select title={t(language, "selectedTraceHelp")} value={selected?.trace_id ?? ""} onChange={(e) => onSelectTrace(e.target.value)}>
             {traces.map((tr) => <option key={tr.trace_id} value={tr.trace_id}>{tr.trace_id} · {tr.voltage_V.length} pts</option>)}
           </select></label>
-          <div className="trace-facts">
+          <div className="trace-facts compact-trace-facts">
             <span>{t(language, "importedTraces")}: <strong>{traces.length}</strong></span>
             <span>{t(language, "pointCount")}: <strong>{selected?.voltage_V.length ?? 0}</strong></span>
-            {Boolean(selected?.metadata?.voltage_col) && <span>V: <code>{String(selected?.metadata?.voltage_col)}</code></span>}
-            {Boolean(selected?.metadata?.current_col) && <span>I: <code>{String(selected?.metadata?.current_col)}</code></span>}
-            <span>{language === "zh" ? "显示单位" : "Display units"}: <strong>{voltageUnit}</strong>, <strong>{currentUnit}</strong></span>
-            <span>{language === "zh" ? "内部拟合" : "Internal fit"}: <strong>V/A</strong></span>
+            <span>{language === "zh" ? "显示/拟合单位" : "Units"}: <strong>{voltageUnit}/{currentUnit}</strong> display · <strong>V/A</strong> fit</span>
+            {qualityWarnings.length ? <span>{language === "zh" ? "质量提示" : "Quality notes"}: <strong>{qualityWarnings.length}</strong></span> : null}
           </div>
-          <ImportQualityPanel quality={importQuality} language={language} />
+          {qualityWarnings.length ? <div className="import-quality-warnings compact-quality-warnings">
+            {qualityWarnings.map((warning) => <div className="warning" key={warning}>{warning}</div>)}
+          </div> : null}
           <div className="parsed-settings">
             <label title={language === "zh" ? "更改当前数据集名称；报告和图例会使用这个名称。" : "Rename the active dataset. Plots and reports use this name."}>
               <span>{language === "zh" ? "数据集名称" : "Dataset name"}</span>
@@ -275,17 +275,23 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
           <p className="muted unit-integrity-note">{unitHelp}</p>
         </>}
       </section>
-    </div>
 
-    <section className="card spreadsheet-card">
-      <div className="card-head"><h3>{t(language, "dataPreview")}</h3><HelpTip text={t(language, "dataPreviewHelp")} /></div>
-      {!selected ? <p className="warning info">{t(language, "noData")}</p> : <div className="spreadsheet-wrap" role="region" aria-label={t(language, "dataPreview")}>
-        <table className="data-spreadsheet">
-          <thead><tr><th>#</th><th>V ({voltageUnit})</th><th>I ({currentUnit})</th></tr></thead>
-          <tbody>{previewRows.map((row) => <tr key={row.idx}><td>{row.idx + 1}</td><td>{formatCell(row.v)}</td><td>{formatCell(row.i)}</td></tr>)}</tbody>
-        </table>
-      </div>}
-      {selected && selected.voltage_V.length > previewRows.length && <p className="muted">{t(language, "previewLimited")}</p>}
-    </section>
+      <section className="card paste-card">
+        <div className="card-head"><h3>{t(language, "pasteData")}</h3><HelpTip text={t(language, "pasteDataHelp")} /></div>
+        <textarea title={t(language, "pasteDataHelp")} value={pasteText} onChange={(e) => setPasteText(e.target.value)} placeholder={t(language, "pastePlaceholder")} rows={10} />
+        <button title={t(language, "parsePastedHelp")} disabled={!pasteText.trim()} onClick={loadPaste}>{t(language, "parsePastedData")}</button>
+      </section>
+
+      <section className="card spreadsheet-card">
+        <div className="card-head"><h3>{t(language, "dataPreview")}</h3><HelpTip text={t(language, "dataPreviewHelp")} /></div>
+        {!selected ? <p className="warning info">{t(language, "noData")}</p> : <div className="spreadsheet-wrap" role="region" aria-label={t(language, "dataPreview")}>
+          <table className="data-spreadsheet">
+            <thead><tr><th>#</th><th>V ({voltageUnit})</th><th>I ({currentUnit})</th></tr></thead>
+            <tbody>{previewRows.map((row) => <tr key={row.idx}><td>{row.idx + 1}</td><td>{formatCell(row.v)}</td><td>{formatCell(row.i)}</td></tr>)}</tbody>
+          </table>
+        </div>}
+        {selected && selected.voltage_V.length > previewRows.length && <p className="muted">{t(language, "previewLimited")}</p>}
+      </section>
+    </div>
   </section>;
 }

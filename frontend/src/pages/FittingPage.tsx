@@ -66,12 +66,11 @@ function WorkspaceView(props: {
     const branches = [...props.model.core, ...props.model.parallel].map((c) => String(c.metadata?.nickname ?? c.id)).join(" || ") || "none";
     return `${main} | ${branches}`;
   }
-  function Section({ id, title, summary, children }: { id: string; title: string; summary: string; children: ReactNode }) {
+  function Section({ id, title, summary: _summary, children }: { id: string; title: string; summary: string; children: ReactNode }) {
     const open = props.openSections[id] ?? true;
     return <section id={`section-${id}`} className={open ? "workspace-section open" : "workspace-section collapsed"}>
       <button className="workspace-section-head" onClick={() => toggleSection(id)} aria-expanded={open}>
         <span>{title}</span>
-        <small>{summary}</small>
       </button>
       <div className="workspace-section-body">{children}</div>
     </section>;
@@ -184,7 +183,7 @@ export function FittingPage() {
   const [equationSummary, setEquationSummary] = useState<EquationSummary | null>(null);
   const [zoom, setZoom] = useState(0.92);
   const [activeView, setActiveView] = useState<AppView>("workspace");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [language, setLanguage] = useState<Language>("en");
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     fitSetup: true,

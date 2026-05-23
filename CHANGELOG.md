@@ -1,5 +1,38 @@
 # Changelog
 
+## v1.4.28 - Sidebar default and language selector readability
+
+### Fixed
+- Fixed language selector dropdown readability in the dark sidebar by forcing native option text to dark-on-light colors.
+- Changed the dock/sidebar to start collapsed by default while keeping the hamburger toggle available.
+
+### Tests
+- Verified frontend build, backend tests, and compileall against the packaged tree.
+
+## v1.4.27 - Mobile Data page containment and lean tabs
+
+### Fixed
+- Fixed mobile Data page behavior so Spreadsheet preview uses an internal scroll area and no longer stretches behind the bottom navigation.
+- Preserved the two-row desktop Data layout from v1.4.26.
+- Removed per-tab subtitles from the navigation tabs.
+- Removed Workspace section-header summary text such as range/objective/run-option hints.
+- Removed visible Model Builder bucket-explanation text under Main path / Junction branches; the same guidance stays in the title HelpTip.
+- Reviewed hover/help wording so user-facing UI does not expose developer/schema terminology.
+- Shortened the sidebar note to: "Fit locally. Review before reporting."
+
+### Tests
+- Verified frontend build, backend tests, and compileall against the packaged tree.
+
+## v1.4.26 - Data page aligned layout
+
+### Fixed
+- Reworked the Data page into a two-row aligned layout: Import data aligns with Trace selection, and Paste data aligns with Spreadsheet preview.
+- Removed duplicated V/I column-name facts from the Trace selection panel.
+- Kept import-quality warnings, trace count, point count, display units, and internal-fit unit information visible without repeating the same metadata twice.
+
+### Tests
+- Verified frontend build, backend tests, and compileall against the packaged tree.
+
 ## v1.4.25 - Remove duplicate Add guidance noise
 
 ### Fixed

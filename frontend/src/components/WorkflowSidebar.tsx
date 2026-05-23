@@ -46,10 +46,9 @@ export function WorkflowSidebar({
         >
           <span className="tab-icon" aria-hidden="true">{tabIcons[tab]}</span>
           {!collapsed && <span className="tab-label">{labelFor(tab)}</span>}
-          {!collapsed && <small>{hintFor(tab)}</small>}
         </button>)}
       </nav>
-      {!collapsed && <p className="muted sidebar-note">{language === "zh" ? "本地优先 Web UI。报告结果前必须检查模型、范围、初值、收敛、残差和 warnings。" : "Local-first Web UI. Check model, range, initials, convergence, residuals, and warnings before reporting results."}</p>}
+      {!collapsed && <p className="muted sidebar-note">{language === "zh" ? "本地拟合，报告前复核。" : "Fit locally. Review before reporting."}</p>}
     </div>
     <div className="sidebar-footer">
       {!collapsed ? <label className="language-switch"><span>{t(language, "language")}</span><select value={language} onChange={(e) => onLanguageChange(e.target.value as Language)}>

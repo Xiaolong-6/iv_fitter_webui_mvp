@@ -462,9 +462,6 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
         return (
           <div className="model-group" key={bucket}>
             <h3>{labels[bucket]} <HelpTip text={bucket === "main" ? t(language, "mainPathUserHelp") : t(language, "branchUserHelp")} /></h3>
-            <p className="model-builder-bucket-note">{bucket === "main"
-              ? (language === "zh" ? "主路项描述串联压降或传输瓶颈；不要把并联电流支路放在这里。" : "Main-path terms describe series voltage drops or transport bottlenecks, not added parallel currents.")
-              : (language === "zh" ? "支路项描述在结点电压下增加到端口电流的贡献。" : "Branch terms add current contributions at the junction voltage.")}</p>
             <AddRow
               bucket={bucket}
               definitions={definitions}

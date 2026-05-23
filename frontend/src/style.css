@@ -1802,3 +1802,140 @@ button.running { cursor: progress; opacity: 0.85; }
   width: 100%;
   max-width: none;
 }
+
+
+/* v1.4.26 Data page aligned two-row layout. */
+.data-import-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(420px, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+.data-import-layout > .card {
+  margin: 0;
+}
+.import-actions-card,
+.trace-card,
+.paste-card,
+.spreadsheet-card {
+  min-width: 0;
+}
+.import-actions-card {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+}
+.import-actions-card .data-actions {
+  justify-content: flex-start;
+}
+.paste-card,
+.spreadsheet-card {
+  min-height: 360px;
+}
+.paste-card textarea {
+  min-height: 260px;
+}
+.spreadsheet-card .spreadsheet-wrap {
+  max-height: 320px;
+}
+.compact-trace-facts {
+  margin-top: 8px;
+}
+.compact-quality-warnings {
+  margin-top: 8px;
+}
+@media (max-width: 920px) {
+  .data-import-layout {
+    grid-template-columns: 1fr;
+  }
+  .paste-card,
+  .spreadsheet-card {
+    min-height: auto;
+  }
+  .paste-card textarea {
+    min-height: 12rem;
+  }
+  .spreadsheet-card .spreadsheet-wrap {
+    max-height: 50vh;
+  }
+}
+
+
+/* v1.4.27 mobile Data page containment and lean navigation tabs. */
+.side-tab small {
+  display: none !important;
+}
+.side-tab {
+  align-items: center;
+}
+.sidebar-note {
+  font-size: calc(12px * var(--app-zoom));
+  line-height: 1.35;
+  opacity: 0.92;
+}
+@media (max-width: 850px), (orientation: portrait) {
+  .data-workspace.scroll-page {
+    padding-bottom: calc(var(--mobile-bottom-nav) + 18px);
+    overflow: auto;
+  }
+  .data-import-layout {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .data-import-layout > .card {
+    border-radius: 12px;
+  }
+  .spreadsheet-card {
+    min-height: 0;
+    max-height: calc(100dvh - var(--mobile-bottom-nav) - 24px);
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .spreadsheet-card .spreadsheet-wrap,
+  .spreadsheet-wrap {
+    max-height: calc(100dvh - var(--mobile-bottom-nav) - 160px) !important;
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .data-spreadsheet {
+    min-width: 560px;
+  }
+  .data-spreadsheet th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+}
+@media (max-width: 640px) {
+  .data-workspace.scroll-page {
+    padding-bottom: calc(var(--mobile-bottom-nav) + 22px);
+  }
+  .spreadsheet-card .spreadsheet-wrap,
+  .spreadsheet-wrap {
+    max-height: calc(100dvh - var(--mobile-bottom-nav) - 145px) !important;
+  }
+  .paste-card textarea {
+    min-height: 9rem;
+  }
+}
+
+
+/* v1.4.28 readable language selector dropdown.
+   The closed select can stay dark in the sidebar, but native dropdown options
+   need explicit light-background/dark-text colors for hover/readability. */
+.language-switch select {
+  color-scheme: light;
+}
+.language-switch select option {
+  background: #ffffff;
+  color: #0f172a;
+}
+.language-switch select option:checked,
+.language-switch select option:hover {
+  background: #eaf2ff;
+  color: #0f172a;
+}
+.language-icon {
+  color: #0f172a;
+  background: #ffffff;
+}
