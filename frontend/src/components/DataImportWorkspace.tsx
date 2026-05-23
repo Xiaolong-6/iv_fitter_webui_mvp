@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { TraceData } from "../model/types";
 import { importCsvTextMulti } from "../api/client";
-import { sampleTrace } from "../model/utils";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { HelpTip } from "./HelpTip";
@@ -202,6 +201,21 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
     });
   }
 
+  async function loadSampleData() {
+    setMessage(null);
+    try {
+      const response = await fetch("/sample_data/happymeasure_combined_wide_v2_anonymized.csv", { cache: "no-store" });
+      if (!response.ok) throw new Error(`Sample file request failed (${response.status})`);
+      const csvText = await response.text();
+      const nextTraces = await parseTextToTraces(csvText, "happymeasure_combined_wide_v2_anonymized.csv");
+      onTraces(nextTraces);
+      onSelectTrace(nextTraces[0].trace_id);
+      setMessage(`${t(language, "demoLoaded")} (${nextTraces.length} traces)`);
+    } catch (err) {
+      setMessage(`Sample data could not be loaded: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   const fileId = "data-workspace-file-input";
   return <section className="data-workspace scroll-page">
     <div className="page-header-card">
@@ -212,7 +226,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
       <div className="data-actions compact-data-actions">
         <label className="file-button" htmlFor={fileId} title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`}>{t(language, "importCsv")}</label>
         <input id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
-        <button title={t(language, "loadDemoHelp")} onClick={() => { const demo = withDefaultDisplayUnits(sampleTrace()); onTraces([demo]); onSelectTrace(demo.trace_id); setMessage(t(language, "demoLoaded")); }}>{t(language, "loadDemo")}</button>
+        <button title={t(language, "loadDemoHelp")} onClick={loadSampleData}>{t(language, "loadDemo")}</button>
       </div>
     </div>
 

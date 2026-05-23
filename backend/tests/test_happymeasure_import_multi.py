@@ -1,4 +1,6 @@
-from ivfitter.io.import_trace import ImportCsvTextRequest, import_csv_text_multi
+from pathlib import Path
+
+from ivfitter.io.import_trace import ImportCsvTextRequest, import_csv_text, import_csv_text_multi
 
 
 def test_happymeasure_wide_v2_imports_multiple_traces():
@@ -89,3 +91,47 @@ Elapsed_s,Current_A,T001 A [Voltage_V],T002 B [Voltage_V]
     assert traces[0][0].voltage_V == [-1.0, 0.0, 1.0]
     assert traces[0][0].current_A == [-1e-6, 0.0, 1e-6]
     assert traces[1][0].voltage_V[-1] == 2.0
+
+
+def test_happymeasure_combined_wide_fixture_imports_all_traces():
+    fixture = Path(__file__).resolve().parents[2] / "examples" / "testdata" / "happymeasure_combined_wide_v2_anonymized.csv"
+    text = fixture.read_text(encoding="utf-8")
+    traces = import_csv_text_multi(ImportCsvTextRequest(text=text, trace_id="hm-wide-fixture"))
+    assert len(traces) == 14
+    first_trace, first_quality = traces[0]
+    assert first_trace.trace_id.startswith("T001 Device_14")
+    assert len(first_trace.voltage_V) == 95
+    assert first_quality.voltage_col == "Voltage_V"
+    assert first_quality.current_col == "T001 Device_14 [Current_A]"
+    assert min(first_trace.voltage_V) == -20.0
+    assert max(first_trace.voltage_V) == 20.0
+
+
+def test_happymeasure_combined_wide_selected_columns_use_data_section_not_metadata_table():
+    fixture = Path(__file__).resolve().parents[2] / "examples" / "testdata" / "happymeasure_combined_wide_v2_anonymized.csv"
+    text = fixture.read_text(encoding="utf-8")
+    trace, quality = import_csv_text(ImportCsvTextRequest(
+        text=text,
+        trace_id="selected-wide-column",
+        voltage_col="Voltage_V",
+        current_col="T001 Device_14 [Current_A]",
+        delimiter=",",
+    ))
+    assert len(trace.voltage_V) == 95
+    assert quality.voltage_col == "Voltage_V"
+    assert quality.current_col == "T001 Device_14 [Current_A]"
+    assert trace.current_A[0] == -0.0001552275
+
+
+def test_happymeasure_fixture_is_full_length_and_anonymized():
+    fixture = Path(__file__).resolve().parents[2] / "examples" / "testdata" / "happymeasure_combined_wide_v2_anonymized.csv"
+    text = fixture.read_text(encoding="utf-8")
+    public_fixture = Path(__file__).resolve().parents[2] / "frontend" / "public" / "sample_data" / "happymeasure_combined_wide_v2_anonymized.csv"
+    assert public_fixture.read_text(encoding="utf-8") == text
+    assert "HPQ" not in text
+    assert "COM3" not in text
+    assert "# trace_count,14" in text
+    assert text.count("\n") + 1 >= 132
+    traces = import_csv_text_multi(ImportCsvTextRequest(text=text, trace_id="hm-wide-fixture"))
+    assert len(traces) == 14
+    assert all(len(trace.voltage_V) == 95 for trace, _quality in traces)

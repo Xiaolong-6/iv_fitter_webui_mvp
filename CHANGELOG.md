@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.4.10 - Full HappyMeasure sample data loader
+
+- Replaced the Data page sample loader with the full anonymized HappyMeasure combined wide-v2 sample.
+- Preserved all data rows from the uploaded HappyMeasure multi-trace file while removing sample identifiers, timestamps, port names, and fingerprints.
+- Bundled the same anonymized 14-trace sample under `examples/testdata/` and `frontend/public/sample_data/` so browser-based "Load sample data" exercises the real importer path.
+- Removed the old synthetic/mock IV sample from the default sample workflow.
+
+## v1.4.9 - HappyMeasure selected-column import fix
+
+- Fixed HappyMeasure combined wide-v2 imports when the UI or API supplies explicit selected columns such as `Voltage_V` and `T001 ... [Current_A]`.
+- Made single-trace import prefer the explicit HappyMeasure `# section,data` table so the preceding trace-metadata table is not mistaken for the data header.
+- Added an anonymized HappyMeasure combined wide-v2 fixture that reproduces the selected-column failure without sample-specific device names.
+- Replaced the older mock example dataset with a de-identified filename and trace label.
+
 ## v1.4.8 - Documentation cleanup and consolidation
 
 - Added `docs/DOCUMENTATION_INDEX.md` as the stable documentation map.
@@ -70,4 +84,4 @@
 
 ## Earlier alpha history
 
-Earlier v1.0-v1.3 alpha changes are summarized in `docs/VALIDATION_HISTORY.md`. The old per-version tested/handoff files were removed in v1.4.8 to keep the repository readable.
+Earlier v1.0-v1.3 alpha changes are summarized in `docs/VALIDATION_HISTORY.md`. The old per-version tested/handoff files were removed in v1.4.9 to keep the repository readable.

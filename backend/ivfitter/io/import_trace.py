@@ -75,8 +75,13 @@ def _infer_column(columns: list[str], kind: Literal["voltage", "current"], warni
 
 def _read_dataframe_from_text(payload: ImportCsvTextRequest) -> pd.DataFrame:
     sep = payload.delimiter if payload.delimiter else None
-    # Skip comment/metadata lines commonly produced by measurement software, including HappyMeasure.
-    return pd.read_csv(StringIO(payload.text), sep=sep, engine="python", comment="#")
+    # Prefer the explicit HappyMeasure data section when present.  A combined
+    # HappyMeasure file can include a non-comment trace_metadata table before
+    # the actual data table; reading the whole file with comment="#" makes
+    # pandas treat that metadata table as the header, so explicit user-selected
+    # columns such as Voltage_V and T001 ... [Current_A] appear "missing".
+    data_text = _data_section_text(payload.text)
+    return pd.read_csv(StringIO(data_text), sep=sep, engine="python")
 
 
 def import_csv_text(payload: ImportCsvTextRequest) -> tuple[TraceData, ImportQualitySummary]:

@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.4.8**.
+Current package: **v1.4.10**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -73,3 +73,13 @@ For docs-only changes, still run the full set if dependency availability allows 
 ## Required manual test in final response
 
 After every change, provide a 3-step browser test that does not require reading source code. The user should be able to verify the change through the UI or visible files.
+
+
+## v1.4.10 selected-column HappyMeasure fix
+
+HappyMeasure combined wide-v2 files contain a trace-metadata table before the actual `# section,data` table. The generic single-trace importer must read the explicit data section before applying user-selected `voltage_col` / `current_col`; otherwise selected columns such as `Voltage_V` and `T001 Device_14 [Current_A]` are reported as missing. Keep the anonymized fixture in `examples/testdata/` for regression coverage.
+
+
+## v1.4.10 sample data note
+
+The Data page sample loader is intentionally tied to the full anonymized HappyMeasure combined wide-v2 CSV. Do not replace it with a cropped fixture or a synthetic in-memory trace unless the user explicitly asks. The sample is meant to exercise the same importer path users need for HappyMeasure multi-trace files.

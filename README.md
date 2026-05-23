@@ -1,6 +1,8 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.4.8**
+Current version: **1.4.10**
+
+> v1.4.10 importer note: HappyMeasure combined wide-v2 files now import correctly even when the UI/API passes explicit selected columns. The package includes an anonymized regression fixture under `examples/testdata/`.
 
 IV-fitter Web UI is a local-first tool for importing I-V traces, building physically interpretable circuit models, running fits, checking residuals/warnings, and exporting defensible results.
 
@@ -136,7 +138,7 @@ Most important files:
 - `docs/RESPONSIVE_WORKSPACE.md` — responsive layout, mobile behavior, and zoom.
 - `docs/ROADMAP.md` — current roadmap.
 
-Historical root-level `HANDOFF_*` files and old per-version `docs/TESTED_*` files were removed in v1.4.8. Their useful information is consolidated into the files above.
+Historical root-level `HANDOFF_*` files and old per-version `docs/TESTED_*` files were removed in v1.4.10. Their useful information is consolidated into the files above.
 
 ## Known limitations
 
@@ -144,3 +146,13 @@ Historical root-level `HANDOFF_*` files and old per-version `docs/TESTED_*` file
 - Backend equation summaries are still partly string-based internally.
 - Fit-quality interpretation is improving, but users should still inspect residual plots and warnings before trusting a report.
 - Light/dark two-trace `ΔI(V)` preview and one-click light-response presets remain future features.
+
+
+### Sample data
+
+The Data page **Load sample data** button now loads a full anonymized HappyMeasure `combined-v2` / `wide-v2` CSV containing 14 traces. The bundled sample is stored in:
+
+- `examples/testdata/happymeasure_combined_wide_v2_anonymized.csv`
+- `frontend/public/sample_data/happymeasure_combined_wide_v2_anonymized.csv`
+
+The sample preserves the original multi-trace row count and voltage/current data needed to test importer behavior, while removing sample identifiers, timestamps, port names, and trace fingerprints.
