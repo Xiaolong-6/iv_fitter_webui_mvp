@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.4.18**
+Current version: **1.4.19**
 
 > v1.4.9 importer note: HappyMeasure combined wide-v2 files now import correctly even when the UI/API passes explicit selected columns. The package includes an anonymized regression fixture under `examples/testdata/`.
 
@@ -11,6 +11,11 @@ React/Vite frontend + FastAPI backend + Python fitting core
 ```
 
 It is a Web UI prototype for the IV-fitter workflow. It is not yet a full replacement for the legacy desktop/Tkinter workflow.
+
+
+### v1.4.19 tutorial-style User Manual
+
+The in-app **User manual** now uses a tutorial-style structure adapted from the reviewed v1.4.18 manual draft. It explains what IV-fitter solves, how main-path and branch terms assemble into a self-consistent circuit equation, how fitting/residuals/reportability should be interpreted, and how to choose fitting recipes. English and Chinese are shown through the existing language selector rather than as a bilingual wall of text.
 
 ## What users do in the app
 

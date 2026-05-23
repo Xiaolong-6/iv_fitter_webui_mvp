@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.4.19 - Tutorial-style User Manual integration
+
+### Changed
+- Reworked the in-app User manual into a tutorial-style guide based on the reviewed v1.4.18 manual draft.
+- Added a top-level explanation of the self-consistent IV fitting problem before model-function details.
+- Added workflow cards, model-builder concepts, formula assembly, fitting mechanics, recipes, residual interpretation, reportability guidance, light-response workflow, troubleshooting, and glossary sections.
+- Kept English and Chinese content separated by the existing language selector instead of showing bilingual text in the same panel.
+- Added dedicated User manual CSS while preserving current app behavior.
+
+### Tests
+- Verified frontend build, backend test suite, and Python compile checks against the packaged tree.
+
 ## v1.4.18 - Semantic consistency stabilization
 
 ### Fixed

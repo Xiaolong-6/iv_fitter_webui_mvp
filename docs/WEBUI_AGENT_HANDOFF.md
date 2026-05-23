@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.4.18**.
+Current package: **v1.4.19**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -111,3 +111,8 @@ This release is a refactor-only stabilization pass. Model Builder add/duplicate 
 ## v1.4.18 semantic consistency note
 
 Backend validation is the guardrail for imported or hand-edited model JSON. Location, placement, and evaluation form must agree: series components are only valid as series voltage drops or series conductance modifiers, while core/parallel components are only valid as current branches. Duplicate same law/form/placement/polarity components are non-reportable errors.
+
+
+## v1.4.19 User manual integration note
+
+The in-app User manual now integrates the reviewed tutorial-style manual draft. Treat `frontend/src/components/UserDocumentationPage.tsx` as the source for the UI manual content and `frontend/src/styles/user-documentation.css` as the dedicated style layer. The UI intentionally separates English and Chinese through the language selector; do not paste bilingual paragraphs into one visible panel. Keep formulas rendered through `MathFormula` and keep backend implementation details collapsed in Advanced details.

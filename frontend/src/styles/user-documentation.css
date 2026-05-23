@@ -1,0 +1,88 @@
+/* v1.4.19 tutorial-style User Manual integration. */
+.manual-step-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.manual-step-card {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #e5edf7;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 12px;
+}
+.manual-step-card span {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #eef6ff;
+  color: #1d4ed8;
+  font-weight: 800;
+}
+.manual-step-card h3,
+.manual-recipe-grid h3 { margin: 0; font-size: 0.98rem; }
+.manual-step-card p { margin: 0; color: #475569; }
+.manual-keyidea {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+  border-radius: 14px;
+  padding: 12px;
+  margin-top: 10px;
+}
+.manual-table {
+  display: grid;
+  border: 1px solid #e5edf7;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #ffffff;
+  margin: 12px 0;
+}
+.manual-table-head,
+.manual-table-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(160px, 1fr) minmax(160px, 1fr);
+  gap: 0;
+}
+.manual-table-head { background: #f8fbff; }
+.manual-table-head strong,
+.manual-table-row p {
+  margin: 0;
+  padding: 9px 10px;
+  border-right: 1px solid #e5edf7;
+  border-bottom: 1px solid #e5edf7;
+}
+.manual-table-head strong:last-child,
+.manual-table-row p:last-child { border-right: 0; }
+.manual-table-row:last-child p { border-bottom: 0; }
+.manual-recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.manual-recipe-grid article {
+  border: 1px solid #e5edf7;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 12px;
+}
+.manual-recipe-grid ol { padding-left: 1.15rem; margin: 8px 0 0; }
+.manual-recipe-grid li { margin: 5px 0; color: #475569; }
+@media (max-width: 720px) {
+  .manual-table-head { display: none; }
+  .manual-table-row {
+    grid-template-columns: 1fr;
+    border-bottom: 1px solid #e5edf7;
+  }
+  .manual-table-row:last-child { border-bottom: 0; }
+  .manual-table-row p {
+    border-right: 0;
+    border-bottom: 1px solid #eef3f9;
+  }
+  .manual-table-row p:last-child { border-bottom: 0; }
+}
