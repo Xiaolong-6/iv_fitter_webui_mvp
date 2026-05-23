@@ -1,6 +1,17 @@
 # Changelog
 
-## v1.4.16 - Stabilization hotfix
+## v1.4.17 - Stabilization refactor
+
+### Changed
+- Extracted Model Builder rule and mutation logic into pure frontend modules under `frontend/src/model-builder/`.
+- Split fitting-engine implementation into evaluation, residual, metrics, multistart, warning, and reportability helper modules while keeping the public fitting API stable.
+- Added backend-owned `reportable` and `reportability_reason` fields to FitResult so the UI does not invent reportability independently.
+- Split Model Builder/circuit CSS into `frontend/src/styles/model-builder.css` and imported it from the root stylesheet.
+
+### Tests
+- Added regression tests for extracted metrics, multistart, backend reportability, frontend Model Builder rule extraction, and CSS split structure.
+
+## v1.4.17 - Stabilization hotfix
 
 ### Fixed
 - Changed frontend APP_VERSION fallback to `dev` to avoid stale serialized model versions outside Vite version injection.
@@ -18,7 +29,7 @@
 ### Tests
 - Added regression tests for deprecated multistart config, graph_dc reportability, photocurrent validation, direction-sign validation, and near-zero log metrics.
 
-## v1.4.16 - Expanded main-path transport functions
+## v1.4.17 - Expanded main-path transport functions
 
 - Expanded the Model Builder main-path menu beyond Ohmic resistance and Series diode barrier.
 - Exposed advanced main-path transport forms: Softplus transport modifier, Custom transport modifier, and interpretive Photo-modulated effective main path.

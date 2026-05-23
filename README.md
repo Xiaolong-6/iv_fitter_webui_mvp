@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.4.16**
+Current version: **1.4.17**
 
 > v1.4.9 importer note: HappyMeasure combined wide-v2 files now import correctly even when the UI/API passes explicit selected columns. The package includes an anonymized regression fixture under `examples/testdata/`.
 
@@ -162,7 +162,7 @@ The sample preserves the original multi-trace row count and voltage/current data
 The Workspace **Plots** section includes a trace selector in the plot header. This lets users switch the displayed trace directly from the plot area without returning to the Data tab. Switching traces follows the same selected-trace workflow used elsewhere: the next fit/report belongs to the newly selected trace.
 
 
-### v1.4.16 main-path transport options
+### v1.4.17 main-path transport options
 
 The Model Builder main path now includes more than an Ohmic resistance and a series diode barrier. It exposes:
 

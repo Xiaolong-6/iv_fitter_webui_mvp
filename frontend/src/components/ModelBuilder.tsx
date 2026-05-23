@@ -9,9 +9,7 @@ import type {
   Polarity,
 } from "../model/types";
 import {
-  addComponent,
   buildParams,
-  createComponentInLocation,
   removeComponent,
   updateComponent,
 } from "../model/utils";
@@ -20,32 +18,9 @@ import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { initialValueGuidance } from "../model/diagnostics";
 import { HelpTip } from "./HelpTip";
+import { addDefinitionToModel, applyNicknameToParams, buildPendingComponent } from "../model-builder/mutations";
+import { allowedPolarities, bucketForComponent, bucketLocations, builderBuckets, definitionsForBucket as bucketDefinitions, isDuplicateBlocked, isSingleTraceEquivalentMainPathBlocked, nickname, type BuilderBucket, type ModelLocation } from "../model-builder/rules";
 
-interface Props {
-  model: ModelSpec;
-  registry: FunctionDefinition[];
-  onChange: (model: ModelSpec) => void;
-  language: Language;
-}
-
-type ModelLocation = "core" | "series" | "parallel";
-type BuilderBucket = "main" | "branches";
-
-const builderBuckets: BuilderBucket[] = ["main", "branches"];
-const bucketLocations: Record<BuilderBucket, ModelLocation[]> = {
-  main: ["series"],
-  branches: ["core", "parallel"],
-};
-
-function bucketForComponent(comp: ComponentSpec): BuilderBucket {
-  return comp.location === "series" || comp.evaluation_form === "voltage_drop" || comp.placement === "series_voltage_drop"
-    ? "main"
-    : "branches";
-}
-
-function nickname(comp: ComponentSpec) {
-  return String(comp.metadata?.nickname ?? comp.id);
-}
 
 function componentTitle(comp: ComponentSpec, language: Language) {
   const law = comp.law_id === "ohmic" ? "Ohmic" : (comp.law_id ?? comp.function_type);
@@ -70,12 +45,11 @@ function functionOptionLabel(definition: FunctionDefinition, language: Language,
   return prefix + definition.display_name;
 }
 
-function defaultLocationForBucket(bucket: BuilderBucket, def: FunctionDefinition, model: ModelSpec): ModelLocation {
-  if (bucket === "main") return "series";
-  if (def.function_type === "diode") return "core";
-  if (def.available_forms.includes("current_branch")) return "parallel";
-  if (!model.core.length) return "core";
-  return "parallel";
+interface Props {
+  model: ModelSpec;
+  registry: FunctionDefinition[];
+  onChange: (model: ModelSpec) => void;
+  language: Language;
 }
 
 function num(v: number | undefined | null) {
@@ -203,60 +177,6 @@ function CircuitCard({ model, language }: { model: ModelSpec; language: Language
       <text className="circuit-node-text" x="55" y={terminalMinusY + 5} textAnchor="middle">{t(language, "terminalMinus")}</text>
     </svg>
   </div>;
-}
-
-function userDefinitions(registry: FunctionDefinition[]) {
-  const seen = new Set<string>();
-  return registry.filter((definition) => {
-    if (definition.function_type === "shunt") return false;
-    if (definition.law_id === "ohmic" && seen.has("ohmic")) return false;
-    if (definition.law_id === "ohmic") seen.add("ohmic");
-    return true;
-  });
-}
-
-function allComponents(model: ModelSpec) {
-  return [...model.core, ...model.series, ...model.parallel];
-}
-
-function duplicateKey(comp: ComponentSpec) {
-  return [comp.law_id ?? comp.function_type, comp.evaluation_form ?? "auto", comp.placement ?? "auto", comp.polarity ?? "none"].join("|");
-}
-
-function isDuplicateBlocked(model: ModelSpec, comp: ComponentSpec) {
-  const key = duplicateKey(comp);
-  return allComponents(model).some((existing) => duplicateKey(existing) === key);
-}
-
-function isSingleTraceEquivalentMainPathBlocked(model: ModelSpec, comp: ComponentSpec) {
-  const mainTerms = model.series;
-  const isOhmicDrop = (c: ComponentSpec) => c.law_id === "ohmic" && (c.evaluation_form === "voltage_drop" || c.placement === "series_voltage_drop");
-  const isPhotoEffectiveDrop = (c: ComponentSpec) => c.function_type === "photo_modulated_main_path";
-  return (isPhotoEffectiveDrop(comp) && mainTerms.some(isOhmicDrop)) || (isOhmicDrop(comp) && mainTerms.some(isPhotoEffectiveDrop));
-}
-
-function nextNickname(model: ModelSpec, base: string) {
-  const names = new Set(allComponents(model).map((comp) => nickname(comp)));
-  if (!names.has(base)) return base;
-  const m = base.match(/^(.*?)(\d+)$/);
-  const prefix = m ? m[1] : base;
-  let idx = m ? Number(m[2]) + 1 : 2;
-  while (names.has(`${prefix}${idx}`)) idx += 1;
-  return `${prefix}${idx}`;
-}
-
-function applyNicknameToParams(comp: ComponentSpec, nick: string): ComponentSpec {
-  const params = Object.fromEntries(
-    Object.entries(comp.params).map(([name, spec]) => [
-      name,
-      { ...spec, label: comp.law_id === "ohmic" ? nick : (spec.label ?? name) },
-    ]),
-  );
-  return { ...comp, params, metadata: { ...comp.metadata, nickname: nick } };
-}
-
-function allowedPolarities(def?: FunctionDefinition) {
-  return def?.allowed_polarities ?? [];
 }
 
 function polarityLabel(language: Language, p: string) {
@@ -462,15 +382,7 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
   } as const;
 
   function definitionsForBucket(bucket: BuilderBucket) {
-    return userDefinitions(registry).filter((definition) => {
-      if (bucket === "main") {
-        return definition.allowed_placements.includes("series_voltage_drop")
-          || definition.allowed_placements.includes("series_conductance_modifier")
-          || definition.available_forms.includes("voltage_drop")
-          || definition.available_forms.includes("conductance_modifier");
-      }
-      return definition.allowed_placements.includes("parallel_current_branch") || definition.allowed_placements.includes("junction_current_branch") || definition.available_forms.includes("current_branch");
-    });
+    return bucketDefinitions(registry, bucket);
   }
 
   function selectedDefinition(bucket: BuilderBucket) {
@@ -485,11 +397,9 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
     const selectedPolarity = polarities.length
       ? (polarity[bucket] || definition.default_polarity || polarities[0]) as Polarity
       : undefined;
-    const location = defaultLocationForBucket(bucket, definition, model);
-    let component = createComponentInLocation(definition, location, selectedPolarity);
-    component = applyNicknameToParams(component, nextNickname(model, nickname(component)));
-    if (isDuplicateBlocked(model, component) || isSingleTraceEquivalentMainPathBlocked(model, component)) return;
-    onChange(addComponent(model, component));
+    const result = addDefinitionToModel(model, bucket, definition, selectedPolarity);
+    if (!result.added) return;
+    onChange(result.model);
   }
 
   return (
@@ -502,10 +412,9 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
         const definitions = definitionsForBucket(bucket);
         const definition = selectedDefinition(bucket);
         const components = bucketLocations[bucket].flatMap((location) => model[location].map((comp) => ({ location, comp })));
-        const pendingLocation = definition ? defaultLocationForBucket(bucket, definition, model) : "parallel";
         const polarities = definition ? allowedPolarities(definition) : [];
         const pendingPolarity = polarities.length ? (polarity[bucket] || definition?.default_polarity || polarities[0]) as Polarity : undefined;
-        const pendingComponent = definition ? createComponentInLocation(definition, pendingLocation, pendingPolarity) : null;
+        const pendingComponent = definition ? buildPendingComponent(model, bucket, definition, pendingPolarity) : null;
         const duplicateBlocked = pendingComponent ? isDuplicateBlocked(model, pendingComponent) : false;
         const equivalentBlocked = pendingComponent ? isSingleTraceEquivalentMainPathBlocked(model, pendingComponent) : false;
         const duplicateReason = equivalentBlocked

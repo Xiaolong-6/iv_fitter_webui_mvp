@@ -1,26 +1,83 @@
-"""Headless fitting engine for the greenfield Web UI prototype."""
+"""Headless fitting engine orchestration for the Web UI prototype.
+
+The heavy numerical pieces live in focused helper modules:
+``evaluation`` (model currents/voltage drops), ``residuals`` (range and
+weighting), ``metrics`` (quality metrics/covariance), ``multistart`` (seed
+selection), ``warnings`` (fit warnings), and ``reportability`` (backend-owned
+reportability verdict).  This file now coordinates those pieces instead of
+embedding all implementation details.
+"""
 
 from __future__ import annotations
 
 import copy
 import numpy as np
-from scipy.optimize import brentq, least_squares
+from scipy.optimize import least_squares
 
 from ivfitter import __version__
-from ivfitter.components.diode import diode_current
-from ivfitter.components.parallel import shunt_current, power_law_current, soft_breakdown_current
-from ivfitter.components.series import softplus_conductance_boost, apply_conductance_boost
-from ivfitter.components.custom import evaluate_custom_expression
+from . import evaluation
 from .equations import generate_equations
-from .model_validation import validate_model_spec
 from .fit_quality import evaluate_fit_quality
-from .model_spec import ComponentSpec, FitCurves, FitRequest, FitResult, FitWarning, ParameterResult
 from .graph_solver import solve_graph_current
+from .metrics import fit_metrics, parameter_stderr
+from .model_spec import FitCurves, FitRequest, FitResult, FitWarning, ParameterResult
+from .model_validation import validate_model_spec
+from .multistart import multistart_candidates
+from .reportability import reportability_from_warnings
+from .residuals import compliance_mask, select_range, weighted_residual
+from .warnings import deprecated_config_warnings, graph_solver_not_reportable_warning, photocurrent_fit_warnings
+
+# Backwards-compatible aliases kept for tests and downstream scripts that used
+# older private helpers directly.
+_param_value = evaluation.param_value
+branch_currents_at_vj = evaluation.branch_currents_at_vj
+_series_rs_eff = evaluation.series_resistance_effective
+_metrics = fit_metrics
+_stderr = parameter_stderr
+_select_range = select_range
+_compliance_mask = compliance_mask
+_residual = weighted_residual
+_multistart_candidates = multistart_candidates
 
 
-def _param_value(comp: ComponentSpec, name: str, default: float = 0.0) -> float:
-    spec = comp.params.get(name)
-    return float(spec.value) if spec is not None else default
+
+def _current_at_vj(vj, model):
+    return evaluation.current_at_vj(vj, model)
+
+
+def _solve_single_vj(v_ext: float, model) -> float:
+    def f(vj: float) -> float:
+        arr_vj = np.array([vj], dtype=float)
+        current = _current_at_vj(arr_vj, model)
+        drop = evaluation.series_voltage_drop(current, arr_vj, model, rs_eff_fn=_series_rs_eff)
+        return float(vj + drop[0] - v_ext)
+    span = max(10.0, abs(v_ext) + 10.0)
+    lo, hi = v_ext - span, v_ext + span
+    flo, fhi = f(lo), f(hi)
+    tries = 0
+    while flo * fhi > 0 and tries < 5:
+        span *= 2
+        lo, hi = v_ext - span, v_ext + span
+        flo, fhi = f(lo), f(hi)
+        tries += 1
+    if flo * fhi <= 0:
+        try:
+            from scipy.optimize import brentq
+            root = float(brentq(f, lo, hi, maxiter=80))
+            return root if np.isfinite(root) else float("nan")
+        except Exception:
+            return float("nan")
+    return float("nan")
+
+def solve_vj(voltage_v, model) -> np.ndarray:
+    return np.array([_solve_single_vj(float(v), model) for v in np.asarray(voltage_v, dtype=float)], dtype=float)
+
+
+def predict_current(voltage_v, model, solver_mode: str = "legacy_composite") -> np.ndarray:
+    if solver_mode == "graph_dc":
+        return evaluation.predict_current(voltage_v, model, solver_mode)
+    vj = solve_vj(voltage_v, model)
+    return _current_at_vj(vj, model)
 
 
 def _all_fit_params(request: FitRequest):
@@ -49,318 +106,14 @@ def _apply_x(records, x):
         comp.params[name].value = float(value)
 
 
-
-def _direction_sign(comp: ComponentSpec) -> float:
-    return 1.0 if _param_value(comp, "direction_sign", -1.0) > 0 else -1.0
-
-
-def _bias_activation(v: np.ndarray, polarity: str | None) -> np.ndarray:
-    mode = polarity or "symmetric"
-    if mode == "forward":
-        return (np.asarray(v, dtype=float) >= 0.0).astype(float)
-    if mode == "reverse":
-        return (np.asarray(v, dtype=float) <= 0.0).astype(float)
-    return np.ones_like(np.asarray(v, dtype=float), dtype=float)
-
-
-def _softplus(x: np.ndarray) -> np.ndarray:
-    x = np.asarray(x, dtype=float)
-    return np.logaddexp(0.0, x)
-
-
-def _photocurrent_constant(vj: np.ndarray, comp: ComponentSpec) -> np.ndarray:
-    arr = np.asarray(vj, dtype=float)
-    return _direction_sign(comp) * _param_value(comp, "Iph0_A", 0.0) * _bias_activation(arr, comp.polarity)
-
-
-def _photocurrent_voltage_dependent(vj: np.ndarray, comp: ComponentSpec) -> np.ndarray:
-    arr = np.asarray(vj, dtype=float)
-    base = _param_value(comp, "Iph0_A", 0.0)
-    gain = _param_value(comp, "gain_per_V", 0.0)
-    # Linear collection/gain term is the safe default. Threshold terms default to
-    # zero/fixed, so the law degenerates to the simplest form until users opt in.
-    threshold_amp = _param_value(comp, "Aph", 0.0)
-    vt = _param_value(comp, "Vt_ph_V", 0.0)
-    vs = max(_param_value(comp, "Vs_ph_V", 1.0), 1e-30)
-    m = _param_value(comp, "m_ph", 1.0)
-    threshold = threshold_amp * np.power(_softplus((np.abs(arr) - vt) / vs), m)
-    magnitude = base * (1.0 + gain * np.abs(arr)) + threshold
-    return _direction_sign(comp) * magnitude * _bias_activation(arr, comp.polarity)
-
-
-def _photoconductive_branch(vj: np.ndarray, comp: ComponentSpec) -> np.ndarray:
-    arr = np.asarray(vj, dtype=float)
-    return _param_value(comp, "Gph_S", 0.0) * arr * _bias_activation(arr, comp.polarity)
-
-
-def _thermal_voltage(T: float) -> float:
-    return 8.617333262145e-5 * float(T)
-
-
-def _diode_polarity_sign(polarity: str | None) -> float:
-    return -1.0 if polarity == "reverse" else 1.0
-
-
-def _series_diode_barrier_drop(current: np.ndarray, comp: ComponentSpec, temperature_K: float) -> np.ndarray:
-    arr = np.asarray(current, dtype=float)
-    sign = _diode_polarity_sign(comp.polarity)
-    forward_current = np.maximum(sign * arr, 0.0)
-    i0 = max(_param_value(comp, "I0_A", 1e-12), 1e-300)
-    n = max(_param_value(comp, "n", 1.5), 1e-12)
-    return sign * n * _thermal_voltage(temperature_K) * np.log1p(forward_current / i0)
-
-
-def _series_rs_eff(vj, model):
-    arr = np.asarray(vj, dtype=float)
-    rs = np.zeros_like(arr)
-    for comp in model.series:
-        if comp.function_type == "constant_rs":
-            rs = rs + _param_value(comp, "Rs_ohm", _param_value(comp, "Rsh_ohm", 0.0))
-        elif comp.function_type == "shunt" and (comp.placement == "series_voltage_drop" or comp.evaluation_form == "voltage_drop"):
-            rs = rs + _param_value(comp, "Rsh_ohm", _param_value(comp, "Rs_ohm", 0.0))
-    rs = np.maximum(rs, 0.0)
-    for comp in model.series:
-        if comp.function_type == "softplus_rs_modifier":
-            boost = softplus_conductance_boost(arr, _param_value(comp, "A", 0.0), _param_value(comp, "Vt_V", 0.0), _param_value(comp, "Vs_V", 1.0), comp.polarity or "symmetric")
-            rs = apply_conductance_boost(rs, boost)
-        elif comp.function_type == "photo_modulated_main_path":
-            r0 = _param_value(comp, "R0_ohm", 0.0)
-            gain = max(_param_value(comp, "photo_gain", 0.0), -0.95)
-            rs = rs + r0 / (1.0 + gain)
-        elif comp.function_type == "custom":
-            expr = comp.metadata.get("expression", "A*softplus(u)")
-            params = {name: spec.value for name, spec in comp.params.items()}
-            boost = evaluate_custom_expression(arr, expr, params, comp.polarity or "symmetric")
-            rs = apply_conductance_boost(rs, np.maximum(boost, -0.95))
-    return np.maximum(rs, 0.0)
-
-
-def _series_voltage_drop(current, vj, model):
-    arr_i = np.asarray(current, dtype=float)
-    arr_vj = np.asarray(vj, dtype=float)
-    drop = arr_i * _series_rs_eff(arr_vj, model)
-    for comp in model.series:
-        if comp.function_type == "series_diode_barrier":
-            drop = drop + _series_diode_barrier_drop(arr_i, comp, model.temperature_K)
-    return drop
-
-
-def branch_currents_at_vj(vj, model):
-    arr = np.asarray(vj, dtype=float)
-    out: dict[str, np.ndarray] = {}
-    for comp in model.core:
-        if comp.function_type == "diode":
-            sign = _diode_polarity_sign(comp.polarity)
-            out[comp.id] = sign * diode_current(sign * arr, _param_value(comp, "I0_A", _param_value(comp, "I0", 1e-12)), _param_value(comp, "n", 1.5), model.temperature_K)
-    for comp in model.parallel:
-        if comp.function_type == "shunt":
-            out[comp.id] = shunt_current(arr, _param_value(comp, "Rsh_ohm", _param_value(comp, "Rs_ohm", 1e30)))
-        elif comp.function_type == "constant_rs":
-            out[comp.id] = shunt_current(arr, _param_value(comp, "Rs_ohm", _param_value(comp, "Rsh_ohm", 1e30)))
-        elif comp.function_type == "power_law":
-            out[comp.id] = power_law_current(arr, _param_value(comp, "A", 0.0), _param_value(comp, "Vt_V", 0.0), _param_value(comp, "Vs_V", 1.0), _param_value(comp, "m", 1.0), comp.polarity or "forward")
-        elif comp.function_type == "soft_breakdown":
-            out[comp.id] = soft_breakdown_current(arr, _param_value(comp, "I0_A", 0.0), _param_value(comp, "Vbr_V", 10.0), _param_value(comp, "Vslope_V", 1.0), _param_value(comp, "w_V", 0.5))
-        elif comp.function_type == "photocurrent_constant":
-            out[comp.id] = _photocurrent_constant(arr, comp)
-        elif comp.function_type == "photocurrent_voltage_dependent":
-            out[comp.id] = _photocurrent_voltage_dependent(arr, comp)
-        elif comp.function_type == "photoconductive_branch":
-            out[comp.id] = _photoconductive_branch(arr, comp)
-        elif comp.function_type == "custom":
-            expr = comp.metadata.get("expression", "s*A*softplus(u)**m")
-            params = {name: spec.value for name, spec in comp.params.items()}
-            out[comp.id] = evaluate_custom_expression(arr, expr, params, comp.polarity or "forward")
-    return out
-
-
-def _current_at_vj(vj, model):
-    arr = np.asarray(vj, dtype=float)
-    total = np.zeros_like(arr)
-    for current in branch_currents_at_vj(arr, model).values():
-        total = total + current
-    return total
-
-
-def _solve_single_vj(v_ext: float, model) -> float:
-    def f(vj: float) -> float:
-        arr_vj = np.array([vj], dtype=float)
-        current = _current_at_vj(arr_vj, model)
-        drop = _series_voltage_drop(current, arr_vj, model)
-        return float(vj + drop[0] - v_ext)
-    span = max(10.0, abs(v_ext) + 10.0)
-    lo, hi = v_ext - span, v_ext + span
-    flo, fhi = f(lo), f(hi)
-    tries = 0
-    while flo * fhi > 0 and tries < 5:
-        span *= 2
-        lo, hi = v_ext - span, v_ext + span
-        flo, fhi = f(lo), f(hi)
-        tries += 1
-    if flo * fhi <= 0:
-        try:
-            root = float(brentq(f, lo, hi, maxiter=80))
-            return root if np.isfinite(root) else float("nan")
-        except Exception:
-            return float("nan")
-    # Do not silently return a fixed-point fallback.  Without a bracketed
-    # root, the junction voltage is undefined for this parameter set.
-    return float("nan")
-
-
-def solve_vj(voltage_v, model) -> np.ndarray:
-    return np.array([_solve_single_vj(float(v), model) for v in np.asarray(voltage_v, dtype=float)], dtype=float)
-
-
-def predict_current(voltage_v, model, solver_mode: str = "legacy_composite") -> np.ndarray:
-    if solver_mode == "graph_dc":
-        current, _branches = solve_graph_current(voltage_v, model)
-        return current
-    vj = solve_vj(voltage_v, model)
-    return _current_at_vj(vj, model)
-
-
-def _select_range(request: FitRequest):
-    v = np.asarray(request.trace.voltage_V, dtype=float)
-    i = np.asarray(request.trace.current_A, dtype=float)
-    mask = np.ones(v.shape, dtype=bool)
-    if request.config.v_min is not None: mask &= v >= request.config.v_min
-    if request.config.v_max is not None: mask &= v <= request.config.v_max
-    return v[mask], i[mask], mask
-
-
-def _compliance_mask(i: np.ndarray, enabled: bool) -> np.ndarray:
-    if not enabled or len(i) < 8: return np.zeros(i.shape, dtype=bool)
-    a = np.abs(i)
-    high = np.quantile(a, 0.98)
-    if high <= 0: return np.zeros(i.shape, dtype=bool)
-    return a >= 0.995 * high
-
-
-def _residual(y_fit, y_meas, weighting: str, floor_A: float = 1e-15):
-    if weighting == "symmetric_log_signed":
-        scale = np.maximum(np.maximum(np.abs(y_fit), np.abs(y_meas)), max(float(floor_A), 1e-30))
-        return (y_fit - y_meas) / scale
-    return y_fit - y_meas
-
-
-def _metrics(y_fit, y_meas, floor_A: float = 1e-15):
-    residual = y_fit - y_meas
-    rmse = float(np.sqrt(np.mean(residual**2))) if len(residual) else float("nan")
-    denom = float(np.sqrt(np.mean(y_meas**2))) if len(y_meas) else float("nan")
-    ss_res = float(np.sum(residual**2))
-    ss_tot = float(np.sum((y_meas - np.mean(y_meas))**2))
-    floor = max(float(floor_A), 1e-30)
-    log_mask = (np.abs(y_meas) > floor) & np.isfinite(y_meas) & np.isfinite(y_fit)
-    log_points_excluded = int(len(y_meas) - int(np.sum(log_mask)))
-    if np.any(log_mask):
-        log_fit = np.log10(np.maximum(np.abs(y_fit[log_mask]), floor))
-        log_meas = np.log10(np.maximum(np.abs(y_meas[log_mask]), floor))
-        log_res = log_fit - log_meas
-        log_mae = float(np.mean(np.abs(log_res)))
-    else:
-        log_mae = float("nan")
-    return {
-        "linear_rmse_A": rmse,
-        "normalized_rmse": rmse / denom if denom else float("nan"),
-        "linear_r2": 1.0 - ss_res / ss_tot if ss_tot else float("nan"),
-        "log_magnitude_mae_decades": log_mae,
-        "log_points_excluded": float(log_points_excluded),
-        "log_floor_A": floor,
-    }
-
-
-def _stderr(records, jac, residual_vector):
-    if jac is None or jac.size == 0 or len(records) == 0 or residual_vector is None:
-        return {}
-    try:
-        n_obs, n_params = jac.shape
-        dof = max(n_obs - n_params, 1)
-        sigma2 = float(np.sum(np.asarray(residual_vector, dtype=float) ** 2) / dof)
-        jtj = jac.T @ jac
-        cov = sigma2 * np.linalg.pinv(jtj)
-        return {key: float(np.sqrt(max(cov[idx, idx], 0.0))) for idx, (key, *_rest) in enumerate(records)}
-    except Exception:
-        return {}
-
-
-def _multistart_candidates(x0: np.ndarray, lower: np.ndarray, upper: np.ndarray, n_seeds: int) -> list[np.ndarray]:
-    candidates = [np.clip(np.asarray(x0, dtype=float), lower, upper)]
-    n_extra = max(int(n_seeds) - 1, 0)
-    if n_extra <= 0 or len(x0) == 0:
-        return candidates
-    phi = 0.6180339887498949
-    for seed_idx in range(n_extra):
-        values = []
-        for dim, value in enumerate(x0):
-            lo = lower[dim]
-            hi = upper[dim]
-            q = ((seed_idx + 1) * (dim + 1) * phi) % 1.0
-            q = min(max(q, 1e-6), 1.0 - 1e-6)
-            if np.isfinite(lo) and np.isfinite(hi) and hi > lo:
-                if lo > 0 and hi / lo > 100:
-                    val = float(np.exp(np.log(lo) + q * (np.log(hi) - np.log(lo))))
-                else:
-                    val = float(lo + q * (hi - lo))
-            elif value > 0:
-                val = float(value * (10.0 ** ((q - 0.5) * 6.0)))
-            else:
-                scale = max(abs(float(value)), 1.0)
-                val = float(value + (q - 0.5) * 2.0 * scale)
-            values.append(val)
-        candidates.append(np.clip(np.asarray(values, dtype=float), lower, upper))
-    # Deduplicate numerically identical seeds produced by clipping.
-    unique: list[np.ndarray] = []
-    for candidate in candidates:
-        if not any(np.allclose(candidate, existing, rtol=1e-12, atol=1e-30) for existing in unique):
-            unique.append(candidate)
-    return unique
-
-
-
-def _photocurrent_fit_warnings(model) -> list[FitWarning]:
-    warnings: list[FitWarning] = []
-    photo_types = {"photocurrent_constant", "photocurrent_voltage_dependent", "photoconductive_branch", "photo_modulated_main_path"}
-    for comp in [*model.core, *model.series, *model.parallel]:
-        if comp.function_type not in photo_types:
-            continue
-        for name, spec in comp.params.items():
-            if not spec.fit:
-                continue
-            value = float(spec.value)
-            lower = spec.lower
-            upper = spec.upper
-            near_lower = lower is not None and abs(value - lower) <= max(abs(lower), 1.0) * 1e-6
-            near_upper = upper is not None and abs(value - upper) <= max(abs(upper), 1.0) * 1e-6
-            if near_lower or near_upper:
-                warnings.append(FitWarning(
-                    code="photocurrent_parameter_near_bound",
-                    message=f"{comp.id}.{name} reached or nearly reached a bound. The light-response term may be unnecessary, under-constrained, or using the wrong form.",
-                    severity="warning",
-                ))
-        if comp.function_type == "photocurrent_voltage_dependent":
-            active_shape_params = [name for name in ("gain_per_V", "Aph", "Vt_ph_V", "Vs_ph_V", "m_ph") if comp.params.get(name) and comp.params[name].fit]
-            if len(active_shape_params) >= 3:
-                warnings.append(FitWarning(
-                    code="photocurrent_overparameterized",
-                    message=f"{comp.id} has several voltage-dependent photocurrent shape parameters free. Fit dark-like parameters first, then free only the minimum light-response parameters needed by the residuals.",
-                    severity="warning",
-                ))
-    return warnings
-
 def fit_trace(request: FitRequest) -> FitResult:
     """Fit one trace using ModelSpec and FitConfig, independent of any UI."""
     request = copy.deepcopy(request)
     warnings: list[FitWarning] = validate_model_spec(request.model)
-    if getattr(request.config, "seed_scale_factors", None):
-        warnings.append(FitWarning(
-            code="deprecated_field",
-            message="seed_scale_factors is ignored; use multistart_n_seeds instead.",
-            severity="warning",
-        ))
+    warnings.extend(deprecated_config_warnings(request.config))
     x0, lower, upper, records = _pack(request)
-    v_fit, i_meas, range_mask = _select_range(request)
-    excluded = _compliance_mask(i_meas, request.config.exclude_compliance)
+    v_fit, i_meas, range_mask = select_range(request)
+    excluded = compliance_mask(i_meas, request.config.exclude_compliance)
     if excluded.any():
         warnings.append(FitWarning(code="compliance_excluded", message=f"Excluded {int(excluded.sum())} high-current point(s) as possible compliance points.", severity="warning"))
     use = ~excluded
@@ -376,12 +129,12 @@ def fit_trace(request: FitRequest) -> FitResult:
             pred = predict_current(v_fit[use], request.model, request.config.solver_mode)
             if not np.all(np.isfinite(pred)):
                 return np.full_like(i_meas[use], 1e30, dtype=float)
-            res_vec = _residual(pred, i_meas[use], request.config.weighting, request.config.residual_floor_A)
+            res_vec = weighted_residual(pred, i_meas[use], request.config.weighting, request.config.residual_floor_A)
             return np.nan_to_num(res_vec, nan=1e30, posinf=1e30, neginf=-1e30)
         try:
             starts = [x0]
             if request.config.multistart_enabled:
-                starts = _multistart_candidates(x0, lower, upper, getattr(request.config, "multistart_n_seeds", 12))
+                starts = multistart_candidates(x0, lower, upper, getattr(request.config, "multistart_n_seeds", 12))
             best = None
             for start in starts:
                 res = least_squares(fun, start, bounds=(lower, upper), loss=request.config.loss, max_nfev=request.config.max_nfev)
@@ -406,7 +159,7 @@ def fit_trace(request: FitRequest) -> FitResult:
     i_all = np.asarray(request.trace.current_A, dtype=float)
     if request.config.solver_mode == "graph_dc":
         i_pred, branches = solve_graph_current(v_all, request.model)
-        warnings.append(FitWarning(code="graph_solver", message="graph_dc is a diagnostic solver and is not reportable.", severity="error"))
+        warnings.append(graph_solver_not_reportable_warning())
     else:
         vj_all = solve_vj(v_all, request.model)
         branches = branch_currents_at_vj(vj_all, request.model)
@@ -418,23 +171,26 @@ def fit_trace(request: FitRequest) -> FitResult:
         i_pred = np.asarray(i_pred, dtype=float)
     residual = i_pred - i_all
     params: dict[str, ParameterResult] = {}
-    stderrs = _stderr(records, fit_jac, fit_residual_vector)
+    stderrs = parameter_stderr(records, fit_jac, fit_residual_vector)
     for key, comp, name, spec in _all_fit_params(request):
         params[key] = ParameterResult(value=spec.value, unit=spec.unit, fixed=not spec.fit, lower=spec.lower, upper=spec.upper, stderr=stderrs.get(key))
     excluded_mask = np.zeros_like(v_all, dtype=bool)
     range_indices = np.where(range_mask)[0]
     assert len(excluded) == len(range_indices), "compliance mask must align with selected range"
     excluded_mask[range_indices[excluded]] = True
-    metrics = _metrics(i_pred, i_all, request.config.residual_floor_A)
+    metrics = fit_metrics(i_pred, i_all, request.config.residual_floor_A)
     quality_ok, quality_warnings = evaluate_fit_quality(i_pred, i_all, metrics.get("linear_rmse_A"))
     warnings.extend(quality_warnings)
-    warnings.extend(_photocurrent_fit_warnings(request.model))
+    warnings.extend(photocurrent_fit_warnings(request.model))
     if not quality_ok:
         success = False
         if "quality gate" not in message.lower():
             message = f"{message}; failed numerical quality gate"
+    reportable, reportability_reason = reportability_from_warnings(success, warnings, metrics)
     return FitResult(
         success=success,
+        reportable=reportable,
+        reportability_reason=reportability_reason,
         message=message,
         model=request.model,
         config=request.config,

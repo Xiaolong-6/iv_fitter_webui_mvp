@@ -199,6 +199,8 @@ class FitResult(BaseModel):
     """Reproducible fit result returned by the backend."""
 
     success: bool
+    reportable: bool = True
+    reportability_reason: str = "passed backend checks"
     message: str
     model: ModelSpec
     config: FitConfig

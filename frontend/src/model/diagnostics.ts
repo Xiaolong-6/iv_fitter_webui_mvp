@@ -136,6 +136,16 @@ export function initialValueGuidance(name: string, spec: ParameterSpec, language
 export function fitQualityVerdict(result: FitResult, language: Language): { severity: Severity; title: string; message: string } {
   const errors = result.warnings.filter((w) => w.severity === "error");
   const hasGraphSolver = result.warnings.some((w) => w.code === "graph_solver");
+  if (result.reportable === false) {
+    return {
+      severity: "error",
+      title: zh(language, "Not reportable yet", "暂不适合报告"),
+      message: result.reportability_reason || zh(language,
+        "The backend marked this fit as not reportable. Check warnings, solver mode, and numerical quality before using the result.",
+        "后端已将该拟合标记为暂不适合报告。请先检查警告、求解器模式和数值质量。",
+      ),
+    };
+  }
   const rmse = result.metrics.linear_rmse_A;
   const logMae = result.metrics.log_magnitude_mae_decades;
   const scale = dataScale(result.curves.current_measured_A);

@@ -10,6 +10,8 @@ def fit_result_markdown(result: FitResult) -> str:
     lines.append("")
     lines.append(f"Software version: `{result.software_version}`")
     lines.append(f"Success: `{result.success}`")
+    lines.append(f"Reportable: `{result.reportable}`")
+    lines.append(f"Reportability reason: {result.reportability_reason}")
     lines.append(f"Message: {result.message}")
     lines.append("")
     lines.append("## Metrics")

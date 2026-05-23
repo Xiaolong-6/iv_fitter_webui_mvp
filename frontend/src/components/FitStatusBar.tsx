@@ -56,11 +56,11 @@ export function FitStatusBar({
   const backendWarn = result.warnings.filter((w) => w.severity !== "error").length;
   const backendErrors = result.warnings.filter((w) => w.severity === "error").length;
   const frontendFailure = frontendQualityFailure(result);
-  const errors = backendErrors + (frontendFailure ? 1 : 0);
+  const errors = backendErrors;
   const rmse = result.metrics.linear_rmse_A;
   const logExcluded = result.metrics.log_points_excluded ?? 0;
-  const passed = result.success && errors === 0;
-  const title = frontendFailure ? `Frontend sanity check: ${frontendFailure}` : result.message;
+  const passed = (result.reportable ?? result.success) && result.success && errors === 0;
+  const title = result.reportability_reason ?? result.message;
   const verdict = fitQualityVerdict(result, language);
   const scale = currentDataScale(result.curves.current_measured_A);
   const rmseRatio = Number.isFinite(rmse) && scale > 0 ? rmse / scale : Infinity;
