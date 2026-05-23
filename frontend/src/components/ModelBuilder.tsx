@@ -22,16 +22,28 @@ import { addDefinitionToModel, addSecondaryDiodeToModel, applyNicknameToParams, 
 import { allowedPolarities, bucketForComponent, bucketLocations, builderBuckets, definitionsForBucket as bucketDefinitions, isDuplicateBlocked, isSingleTraceEquivalentMainPathBlocked, nickname, type BuilderBucket, type ModelLocation } from "../model-builder/rules";
 
 
+const functionLabels: Record<string, { en: string; zh: string }> = {
+  diode: { en: "Shockley diode", zh: "二极管指数电流" },
+  series_diode_barrier: { en: "Series diode barrier", zh: "串联二极管势垒" },
+  softplus_rs_modifier: { en: "Softplus transport modifier", zh: "软开启传输调制" },
+  power_law: { en: "Softplus power-law current", zh: "软开启幂律电流" },
+  soft_breakdown: { en: "Soft reverse-breakdown current", zh: "软反向击穿电流" },
+  photocurrent_constant: { en: "Constant photocurrent", zh: "常数光电流" },
+  photocurrent_voltage_dependent: { en: "Voltage-dependent photocurrent", zh: "电压依赖光电流" },
+  photoconductive_branch: { en: "Photoconductive branch", zh: "光致电导支路" },
+  photo_modulated_main_path: { en: "Photo-modulated main path", zh: "光调制主路" },
+  custom: { en: "Custom expression law", zh: "自定义表达式定律" },
+};
+
+function localizedFunctionLabel(functionType: string, fallback: string, language: Language) {
+  const label = functionLabels[functionType];
+  if (!label) return fallback;
+  return language === "zh" ? label.zh : label.en;
+}
+
 function componentLawLabel(comp: ComponentSpec, language: Language) {
-  if (comp.function_type === "diode") return language === "zh" ? "二极管指数电流" : "Shockley diode";
-  if (comp.function_type === "series_diode_barrier") return language === "zh" ? "串联二极管势垒" : "Series diode barrier";
   if (comp.law_id === "ohmic") return language === "zh" ? "欧姆定律" : "Ohmic law";
-  if (comp.function_type === "photocurrent_voltage_dependent") return language === "zh" ? "电压依赖光电流" : "Voltage-dependent photocurrent";
-  if (comp.function_type === "photocurrent_constant") return language === "zh" ? "常数光电流" : "Constant photocurrent";
-  if (comp.function_type === "photoconductive_branch") return language === "zh" ? "光致电导支路" : "Photoconductive branch";
-  if (comp.function_type === "photo_modulated_main_path") return language === "zh" ? "光调制主路" : "Photo-modulated main path";
-  if (comp.function_type === "softplus_rs_modifier") return language === "zh" ? "软开启传输调制" : "Softplus transport modifier";
-  return comp.law_id ?? comp.function_type;
+  return localizedFunctionLabel(comp.function_type, comp.law_id ?? comp.function_type, language);
 }
 
 function componentTitle(comp: ComponentSpec, language: Language) {
@@ -55,7 +67,7 @@ function functionOptionLabel(definition: FunctionDefinition, language: Language,
   if (definition.function_type === "photo_modulated_main_path") return prefix + (language === "zh" ? "光调制有效主路电阻" : "Photo-modulated effective main path");
   if (definition.function_type === "custom" && bucket === "main") return prefix + (language === "zh" ? "自定义传输调制" : "Custom transport modifier");
   if (definition.law_id === "ohmic") return prefix + (language === "zh" ? "有效欧姆电阻" : "Effective Ohmic resistance");
-  return prefix + definition.display_name;
+  return prefix + localizedFunctionLabel(definition.function_type, definition.display_name, language);
 }
 
 interface Props {

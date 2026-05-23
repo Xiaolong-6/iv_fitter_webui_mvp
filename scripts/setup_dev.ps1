@@ -39,6 +39,19 @@ if (-not (Test-Path $Python)) {
     throw "Expected venv Python not found: $Python"
 }
 
+try {
+    & $Python -c "import sys; print(sys.executable)" | Out-Host
+} catch {
+    Write-Warning "Existing .venv could not start. It may point to a removed Python installation."
+    Write-Host "Recreating root .venv with Python $PythonVersion..."
+    Remove-Item -Recurse -Force ".venv"
+    & py -$PythonVersion -m venv .venv
+    if (-not (Test-Path $Python)) {
+        throw "Expected venv Python not found after recreation: $Python"
+    }
+    & $Python -c "import sys; print(sys.executable)" | Out-Host
+}
+
 Write-Host "Upgrading pip/setuptools/wheel..."
 & $Python -m pip install --upgrade pip setuptools wheel
 
