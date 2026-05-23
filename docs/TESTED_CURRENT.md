@@ -13,6 +13,16 @@ python -m compileall -q backend/ivfitter backend/tests
 
 Expected results: frontend build passes, backend tests pass, compileall passes. Regression tests continue to cover user-facing Function Guide constraints and backend semantic consistency.
 
+## v1.4.29 label/recovery validation
+
+Validated Model Builder localization and developer-environment recovery polish:
+
+- Chinese Model Builder function menus now use user-facing Chinese names for advanced/current-law options instead of falling back to backend English registry labels.
+- Browser check confirmed branch options render as Chinese labels such as diode exponential current, softplus power-law current, reverse-breakdown current, photocurrent, photoconductive branch, and custom expression law.
+- `scripts/setup_dev.ps1` now detects an existing `.venv` whose Python launcher cannot start, warns that it may point to a removed Python installation, and recreates the virtual environment.
+- `scripts/test_backend.ps1` now checks whether `.venv\Scripts\python.exe` can start before invoking pytest, with a clear instruction to rerun setup if the venv is broken.
+- Verified with frontend production build and PowerShell script parse checks before commit.
+
 ## Manual integration checks
 
 - User manual starts with what IV-fitter solves, then workflow, data import, Model Builder concepts, Function Guide, formula assembly, fitting mechanics, recipes, residuals, reportability, light response, troubleshooting, and glossary.
