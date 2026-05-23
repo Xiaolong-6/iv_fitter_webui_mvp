@@ -62,7 +62,11 @@ def photocurrent_voltage_dependent(vj: np.ndarray, comp: ComponentSpec) -> np.nd
     vs = max(param_value(comp, "Vs_ph_V", 1.0), 1e-30)
     m = param_value(comp, "m_ph", 1.0)
     threshold = threshold_amp * np.power(softplus((np.abs(arr) - vt) / vs), m)
-    magnitude = base * (1.0 + gain * np.abs(arr)) + threshold
+    # ``direction_sign`` is the only current-direction control. Negative linear
+    # gain values may reduce the voltage-dependent magnitude, but the computed
+    # photocurrent magnitude must never become negative for imported/bypassed
+    # configurations.
+    magnitude = np.maximum(base * (1.0 + gain * np.abs(arr)) + threshold, 0.0)
     return direction_sign(comp) * magnitude * bias_activation(arr, comp.polarity)
 
 

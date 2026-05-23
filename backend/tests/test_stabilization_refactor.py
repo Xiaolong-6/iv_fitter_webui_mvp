@@ -75,3 +75,46 @@ def test_css_model_builder_rules_are_split_out():
     assert extracted.exists()
     assert '@import "./styles/model-builder.css";' in style.read_text(encoding="utf-8")
     assert ".circuit-panel-v2" in extracted.read_text(encoding="utf-8")
+
+
+def test_duplicate_unidentifiable_component_makes_fit_non_reportable():
+    def diode(id_: str) -> ComponentSpec:
+        return ComponentSpec(
+            id=id_,
+            location="core",
+            function_type="diode",
+            law_id="shockley_diode",
+            evaluation_form="current_branch",
+            placement="junction_current_branch",
+            polarity="forward",
+            params={
+                "I0_A": ParameterSpec(value=1e-12, fit=False, lower=1e-30),
+                "n": ParameterSpec(value=1.5, fit=False, lower=0.5),
+            },
+        )
+    model = ModelSpec(core=[diode("D1"), diode("D2")])
+    trace = TraceData(voltage_V=[-0.1, 0.0, 0.1, 0.2], current_A=[0.0, 0.0, 1e-9, 2e-9])
+    result = fit_trace(FitRequest(trace=trace, model=model, config=FitConfig(exclude_compliance=False)))
+    assert result.reportable is False
+    assert any(w.code == "duplicate_unidentifiable_component" and w.severity == "error" for w in result.warnings)
+
+
+def test_location_placement_mismatch_makes_fit_non_reportable():
+    bad = ComponentSpec(
+        id="bad_series_branch",
+        location="series",
+        function_type="diode",
+        law_id="shockley_diode",
+        evaluation_form="current_branch",
+        placement="parallel_current_branch",
+        polarity="forward",
+        params={
+            "I0_A": ParameterSpec(value=1e-12, fit=False, lower=1e-30),
+            "n": ParameterSpec(value=1.5, fit=False, lower=0.5),
+        },
+    )
+    model = ModelSpec(series=[bad])
+    trace = TraceData(voltage_V=[-0.1, 0.0, 0.1, 0.2], current_A=[0.0, 0.0, 1e-9, 2e-9])
+    result = fit_trace(FitRequest(trace=trace, model=model, config=FitConfig(exclude_compliance=False)))
+    assert result.reportable is False
+    assert any(w.code == "incoherent_location_placement" and w.severity == "error" for w in result.warnings)

@@ -19,6 +19,43 @@ def _component_groups(model: ModelSpec):
             yield group_name, comp
 
 
+def _location_coherence_warnings(comp: ComponentSpec, placement: str, evaluation_form: str) -> list[FitWarning]:
+    """Reject imported/bypassed JSON whose UI bucket contradicts topology semantics.
+
+    The legacy ``location`` bucket is still accepted for compatibility, but it must
+    agree with the concrete placement/evaluation form so stale or hand-edited JSON
+    cannot silently turn a branch current into a series voltage drop, or vice versa.
+    """
+    warnings: list[FitWarning] = []
+    if comp.location == "series":
+        if placement not in {"series_voltage_drop", "series_conductance_modifier"}:
+            warnings.append(_warn(
+                "incoherent_location_placement",
+                f"{comp.id}: series components must use series_voltage_drop or series_conductance_modifier, not {placement!r}.",
+                "error",
+            ))
+        if evaluation_form not in {"voltage_drop", "conductance_modifier"}:
+            warnings.append(_warn(
+                "incoherent_location_evaluation_form",
+                f"{comp.id}: series components must use voltage_drop or conductance_modifier, not {evaluation_form!r}.",
+                "error",
+            ))
+    elif comp.location in {"core", "parallel"}:
+        if placement not in {"junction_current_branch", "parallel_current_branch"}:
+            warnings.append(_warn(
+                "incoherent_location_placement",
+                f"{comp.id}: core/parallel components must use junction_current_branch or parallel_current_branch, not {placement!r}.",
+                "error",
+            ))
+        if evaluation_form != "current_branch":
+            warnings.append(_warn(
+                "incoherent_location_evaluation_form",
+                f"{comp.id}: core/parallel components must use current_branch, not {evaluation_form!r}.",
+                "error",
+            ))
+    return warnings
+
+
 def validate_component_against_registry(comp: ComponentSpec) -> list[FitWarning]:
     """Validate one component against registry location, polarity, and parameter rules."""
     warnings: list[FitWarning] = []
@@ -27,6 +64,8 @@ def validate_component_against_registry(comp: ComponentSpec) -> list[FitWarning]
         return [_warn("unknown_function", f"{comp.id}: unknown function {comp.function_type}.", "error")]
     allowed = set(definition.allowed_polarities or [])
     placement = comp.placement or definition.default_placement
+    evaluation_form = comp.evaluation_form or definition.default_form
+    warnings.extend(_location_coherence_warnings(comp, placement, evaluation_form))
     if placement not in set(definition.allowed_placements):
         warnings.append(_warn("unsupported_placement", f"{comp.id}: {comp.function_type} cannot be placed as {placement!r}.", "error"))
     if allowed and comp.polarity not in allowed:
@@ -91,7 +130,7 @@ def validate_model_spec(model: ModelSpec) -> list[FitWarning]:
         warnings.append(_warn(
             "duplicate_unidentifiable_component",
             f"{count} components share the same law/form/placement/polarity ({law}, {form}, {placement}, {polarity}). Remove duplicates or use an explicit preset/role with different polarity or form.",
-            "warning",
+            "error",
         ))
     if not model.core:
         warnings.append(_warn("no_core", "Model has no core junction component."))

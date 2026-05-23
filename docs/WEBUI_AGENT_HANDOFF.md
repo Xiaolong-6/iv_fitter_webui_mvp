@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.4.17**.
+Current package: **v1.4.18**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -104,6 +104,10 @@ Do not reframe branch current laws as main-path terms unless they have a clear v
 
 Current stabilization guards include: APP_VERSION fallback to `dev`, abortable equation-preview requests, expanded ErrorBoundary coverage, diagnostic-only graph_dc reportability, deprecated `seed_scale_factors` warning, stricter photocurrent sign validation, and near-zero-current exclusion for log-magnitude metrics. Keep these regression tests active when changing fitting configuration, equation preview, or model validation.
 
-## v1.4.17 stabilization refactor note
+## v1.4.18 stabilization refactor note
 
 This release is a refactor-only stabilization pass. Model Builder add/duplicate rules now live in pure frontend modules under `frontend/src/model-builder/`. Fitting orchestration stays in `fitting_engine.py`, while model evaluation, residuals, metrics, multistart, warnings, and reportability decisions are split into focused backend helper modules. Do not re-inline these helpers into UI or fitting orchestration unless a testable architecture reason is documented.
+
+## v1.4.18 semantic consistency note
+
+Backend validation is the guardrail for imported or hand-edited model JSON. Location, placement, and evaluation form must agree: series components are only valid as series voltage drops or series conductance modifiers, while core/parallel components are only valid as current branches. Duplicate same law/form/placement/polarity components are non-reportable errors.

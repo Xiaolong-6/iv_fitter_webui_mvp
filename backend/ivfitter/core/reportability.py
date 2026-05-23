@@ -19,6 +19,7 @@ NON_REPORTABLE_WARNING_CODES = {
     "quality_rmse_explosion",
     "fit_exception",
     "too_few_points",
+    "duplicate_unidentifiable_component",
 }
 
 

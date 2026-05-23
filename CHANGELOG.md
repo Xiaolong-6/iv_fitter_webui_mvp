@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.4.18 - Semantic consistency stabilization
+
+### Fixed
+- Added backend validation for location/placement/evaluation-form coherence so imported or hand-edited JSON cannot silently put branch-current components into the main path or series voltage-drop components into branch buckets.
+- Made `duplicate_unidentifiable_component` an error and a non-reportable warning code.
+- Clamped voltage-dependent photocurrent magnitude to be non-negative so `direction_sign` remains the only current-direction control, including when `gain_per_V` is negative.
+
+### Tests
+- Added regression tests for location/placement mismatch validation, duplicate unidentifiable components, non-reportability from bypassed JSON, and negative-gain voltage-dependent photocurrent.
+
 ## v1.4.17 - Stabilization refactor
 
 ### Changed

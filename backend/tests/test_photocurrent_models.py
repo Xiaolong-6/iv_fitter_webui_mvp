@@ -134,3 +134,31 @@ def test_photocurrent_dark_first_guidance_is_validation_warning():
     )])
     warnings = validate_model_spec(model)
     assert any(w.code == "photocurrent_dark_first_guidance" and w.severity == "warning" for w in warnings)
+
+
+def test_voltage_dependent_photocurrent_negative_gain_cannot_flip_direction():
+    import numpy as np
+    from ivfitter.core.evaluation import photocurrent_voltage_dependent
+    from ivfitter.core.model_spec import ComponentSpec, ParameterSpec
+
+    comp = ComponentSpec(
+        id="iphv",
+        location="parallel",
+        function_type="photocurrent_voltage_dependent",
+        law_id="photocurrent_voltage_dependent",
+        evaluation_form="current_branch",
+        placement="parallel_current_branch",
+        polarity="symmetric",
+        params={
+            "Iph0_A": ParameterSpec(value=1e-9, lower=0.0),
+            "gain_per_V": ParameterSpec(value=-100.0),
+            "Aph": ParameterSpec(value=0.0, lower=0.0, fit=False),
+            "Vt_ph_V": ParameterSpec(value=1.0, lower=0.0, fit=False),
+            "Vs_ph_V": ParameterSpec(value=1.0, lower=1e-9, fit=False),
+            "m_ph": ParameterSpec(value=1.0, lower=0.05, fit=False),
+            "direction_sign": ParameterSpec(value=1.0, lower=-1.0, upper=1.0, fit=False),
+        },
+    )
+    current = photocurrent_voltage_dependent(np.array([0.0, 0.1, 1.0]), comp)
+    assert np.all(current >= 0.0)
+    assert current[-1] == 0.0
