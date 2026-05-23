@@ -209,6 +209,20 @@ A release is not handoff-ready if switching language leaves major workflow panel
 
 The language selector belongs in the left dock footer near the version label.
 
+Translation and visible user text should be treated as content, not as ordinary implementation logic. When adding or editing substantial UI/user-manual text, prefer a structure that lets the text be reviewed or translated without requiring the translator to understand React, TypeScript, fitting math, or serialization details. Follow `docs/LOCALIZATION_AND_TEXT.md`.
+
+## 12a. Repeatable-feature abstraction principle
+
+When adding a feature, first ask whether this is likely to become a family of similar features. If yes, avoid hard-coding the first instance directly into workflow code. Prefer a small data structure, registry, pure helper, or documented content format that lets future instances be added by editing data/content rather than rewriting behavior.
+
+Examples:
+
+- Language strings and user-manual prose should be separable enough that a general AI assistant or translator can update text without modifying business logic.
+- Parameter-table grouping, filters, and batch actions should live in reusable grouping/action helpers rather than only inside JSX rendering.
+- Model functions should continue to enter through the Law / Form / Placement registry pattern rather than one-off UI branches.
+
+Do not over-abstract speculative ideas into large frameworks. The expected shape is the smallest useful seam: enough separation that the next similar item is cheaper, safer, and easier to review.
+
 ## 13. Layout and scrolling
 
 Desktop workspace panes must have explicit scroll ownership. A visible scrollbar must correspond to a constrained, scrollable container.

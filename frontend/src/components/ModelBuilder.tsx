@@ -1,45 +1,20 @@
 import { useState } from "react";
 import type {
   ComponentSpec,
-  EvaluationForm,
   FunctionDefinition,
   ModelSpec,
-  ParameterSpec,
-  Placement,
   Polarity,
 } from "../model/types";
 import {
-  buildParams,
   removeComponent,
   updateComponent,
 } from "../model/utils";
-import { fmtEng } from "../model/format";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
-import { initialValueGuidance } from "../model/diagnostics";
 import { HelpTip } from "./HelpTip";
 import { addDefinitionToModel, addSecondaryDiodeToModel, applyNicknameToParams, buildPendingComponent } from "../model-builder/mutations";
 import { allowedPolarities, bucketForComponent, bucketLocations, builderBuckets, definitionsForBucket as bucketDefinitions, isDuplicateBlocked, isSingleTraceEquivalentMainPathBlocked, nickname, type BuilderBucket, type ModelLocation } from "../model-builder/rules";
-
-
-const functionLabels: Record<string, { en: string; zh: string }> = {
-  diode: { en: "Shockley diode", zh: "二极管指数电流" },
-  series_diode_barrier: { en: "Series diode barrier", zh: "串联二极管势垒" },
-  softplus_rs_modifier: { en: "Softplus transport modifier", zh: "软开启传输调制" },
-  power_law: { en: "Softplus power-law current", zh: "软开启幂律电流" },
-  soft_breakdown: { en: "Soft reverse-breakdown current", zh: "软反向击穿电流" },
-  photocurrent_constant: { en: "Constant photocurrent", zh: "常数光电流" },
-  photocurrent_voltage_dependent: { en: "Voltage-dependent photocurrent", zh: "电压依赖光电流" },
-  photoconductive_branch: { en: "Photoconductive branch", zh: "光致电导支路" },
-  photo_modulated_main_path: { en: "Photo-modulated main path", zh: "光调制主路" },
-  custom: { en: "Custom expression law", zh: "自定义表达式定律" },
-};
-
-function localizedFunctionLabel(functionType: string, fallback: string, language: Language) {
-  const label = functionLabels[functionType];
-  if (!label) return fallback;
-  return language === "zh" ? label.zh : label.en;
-}
+import { localizedFunctionLabel } from "../content/localizedText";
 
 function componentLawLabel(comp: ComponentSpec, language: Language) {
   if (comp.law_id === "ohmic") return language === "zh" ? "欧姆定律" : "Ohmic law";
@@ -75,70 +50,6 @@ interface Props {
   registry: FunctionDefinition[];
   onChange: (model: ModelSpec) => void;
   language: Language;
-}
-
-function num(v: number | undefined | null) {
-  return v === undefined || v === null ? "" : String(v);
-}
-
-function isPartialNumber(text: string) {
-  return text === "" ||
-    text === "-" ||
-    text === "+" ||
-    text === "." ||
-    text === "-." ||
-    text === "+." ||
-    /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d*)?$/.test(text);
-}
-
-function commitNumber(text: string): number | null | undefined {
-  if (text === "") return null;
-  if (["-", "+", ".", "-.", "+."].includes(text) || /[eE][-+]?$/.test(text)) return undefined;
-  const n = Number(text);
-  return Number.isFinite(n) ? n : undefined;
-}
-
-function DraftNumberInput(props: {
-  value: number | null | undefined;
-  placeholder?: string;
-  title?: string;
-  onCommit: (value: number | null) => void;
-}) {
-  const [draft, setDraft] = useState(num(props.value));
-
-  function commitOrRevert() {
-    const parsed = commitNumber(draft);
-    if (parsed === undefined) {
-      setDraft(num(props.value));
-      return;
-    }
-    props.onCommit(parsed);
-    setDraft(num(parsed));
-  }
-
-  return (
-    <input
-      title={props.title}
-      value={draft}
-      placeholder={props.placeholder}
-      onChange={(e) => {
-        const text = e.target.value;
-        if (isPartialNumber(text)) setDraft(text);
-      }}
-      onBlur={commitOrRevert}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") commitOrRevert();
-        if (e.key === "Escape") setDraft(num(props.value));
-      }}
-    />
-  );
-}
-
-function parameterSummary(comp: ComponentSpec) {
-  return Object.entries(comp.params)
-    .slice(0, 3)
-    .map(([k, v]) => `${v.label ?? k}=${fmtEng(v.value, 3)}${v.unit ?? ""}`)
-    .join(", ");
 }
 
 function CircuitCard({ model, language }: { model: ModelSpec; language: Language }) {
@@ -259,138 +170,42 @@ function AddRow(props: {
   );
 }
 
-function ParamRow(props: {
-  name: string;
-  spec: ParameterSpec;
-  language: Language;
-  onUpdate: (patch: Partial<ParameterSpec>) => void;
-}) {
-  const { name, spec, language, onUpdate } = props;
-  const guidance = initialValueGuidance(name, spec, language);
-  return (
-    <div className="param-row-wrap">
-      <div className="param-row">
-        <span title={`${name}: ${t(language, "parameterNameHelp")}`}>{spec.label ?? name}</span>
-        <DraftNumberInput title={guidance || t(language, "initialHelp")} value={spec.value} onCommit={(value) => onUpdate({ value: value ?? spec.value })} />
-        <DraftNumberInput title={t(language, "lowerHelp")} value={spec.lower} placeholder="lower" onCommit={(value) => onUpdate({ lower: value })} />
-        <DraftNumberInput title={t(language, "upperHelp")} value={spec.upper} placeholder="upper" onCommit={(value) => onUpdate({ upper: value })} />
-        <label title={t(language, "fitToggleHelp")}>
-          <input type="checkbox" checked={spec.fit ?? true} onChange={(e) => onUpdate({ fit: e.target.checked })} /> {t(language, "fitState")}
-        </label>
-      </div>
-    </div>
-  );
-}
-
 function ComponentCard(props: {
   comp: ComponentSpec;
   location: ModelLocation;
-  definition?: FunctionDefinition;
-  isOpen: boolean;
   model: ModelSpec;
   language: Language;
-  registry: FunctionDefinition[];
-  onToggle: () => void;
   onChange: (model: ModelSpec) => void;
 }) {
-  const { comp, location, definition, isOpen, model, language, registry, onChange } = props;
-  const componentPolarities = allowedPolarities(definition);
-
-  function updateParam(name: string, patch: Partial<ParameterSpec>) {
-    const next = { ...comp, params: { ...comp.params, [name]: { ...comp.params[name], ...patch } } };
-    onChange(updateComponent(model, location, comp.id, next));
-  }
+  const { comp, location, model, language, onChange } = props;
 
   function updateMetadata(patch: Record<string, unknown>) {
     onChange(updateComponent(model, location, comp.id, { ...comp, metadata: { ...comp.metadata, ...patch } }));
   }
 
-  function resetDefaults() {
-    const def = registry.find((item) => item.function_type === comp.function_type);
-    if (!def) return;
-    onChange(updateComponent(model, location, comp.id, { ...comp, params: buildParams(def, nickname(comp)) }));
-  }
-
   return (
-    <div className="component-card compact-component-card">
+    <div className="component-card compact-component-card compact-model-row">
       <div className="component-head">
         <div>
           <strong>{componentTitle(comp, language)}</strong>
-          <div className="component-summary">{parameterSummary(comp)}</div>
         </div>
         <div className="component-actions">
-          <button title={t(language, "initialsHelp")} onClick={props.onToggle}>{isOpen ? t(language, "hide") : t(language, "initials")}</button>
-          <button title={t(language, "removeComponentHelp")} onClick={() => onChange(removeComponent(model, location, comp.id))}>{t(language, "remove")}</button>
-        </div>
-      </div>
-      {isOpen && (
-        <>
-          <label className="full" title={t(language, "nicknameHelp")}>
-            {t(language, "nickname")}
+          <label className="component-nickname-edit" title={t(language, "nicknameHelp")}>
+            <span>{t(language, "nickname")}</span>
             <input
               title={t(language, "nicknameHelp")}
               value={nickname(comp)}
               onChange={(e) => onChange(updateComponent(model, location, comp.id, applyNicknameToParams(comp, e.target.value)))}
             />
           </label>
-          {componentPolarities.length ? (
-            <label className="full" title={t(language, "polarityHelp")}>
-              {t(language, "polarity")}
-              <select
-                value={comp.polarity ?? definition?.default_polarity ?? componentPolarities[0]}
-                onChange={(e) => onChange(updateComponent(model, location, comp.id, { ...comp, polarity: e.target.value as Polarity }))}
-              >
-                {componentPolarities.map((polarity) => <option key={polarity} value={polarity}>{polarityLabel(language, polarity)}</option>)}
-              </select>
-            </label>
-          ) : null}
-          {definition?.allowed_placements?.length ? (
-            <details className="advanced-details">
-              <summary>{t(language, "advancedModelDetails")}</summary>
-              <label className="full" title={t(language, "formHelp")}>
-                {t(language, "form")}
-                <select
-                  value={comp.evaluation_form ?? definition.default_form}
-                  onChange={(e) => onChange(updateComponent(model, location, comp.id, { ...comp, evaluation_form: e.target.value as EvaluationForm }))}
-                >
-                  {definition.available_forms.map((form) => <option key={form} value={form}>{form}</option>)}
-                </select>
-              </label>
-              <label className="full" title={t(language, "placementHelp")}>
-                {t(language, "placement")}
-                <select
-                  value={comp.placement ?? definition.default_placement}
-                  onChange={(e) => onChange(updateComponent(model, location, comp.id, { ...comp, placement: e.target.value as Placement }))}
-                >
-                  {definition.allowed_placements.map((placement) => <option key={placement} value={placement}>{placement}</option>)}
-                </select>
-              </label>
-            </details>
-          ) : null}
-          {comp.function_type === "custom" && (
-            <label className="full" title={t(language, "expressionHelp")}>
-              {t(language, "expression")}
-              <input title={t(language, "expressionHelp")} value={String(comp.metadata?.expression ?? "")} onChange={(e) => updateMetadata({ expression: e.target.value })} />
-            </label>
-          )}
-          <div className="param-editor-head">
-            <strong>{t(language, "initialsBounds")}</strong>
-            <HelpTip text={t(language, "initialsBoundsHelp")} />
-            <button title={t(language, "resetDefaultsHelp")} onClick={resetDefaults}>{t(language, "resetDefaults")}</button>
-          </div>
-          <div className="param-row param-header">
-            <span>{t(language, "name")}</span>
-            <span>{t(language, "initial")}</span>
-            <span>{t(language, "lower")}</span>
-            <span>{t(language, "upper")}</span>
-            <span>{t(language, "fitQuestion")}</span>
-          </div>
-          <div className="param-grid">
-            {Object.entries(comp.params).map(([name, spec]) => (
-              <ParamRow key={name} name={name} spec={spec} language={language} onUpdate={(patch) => updateParam(name, patch)} />
-            ))}
-          </div>
-        </>
+          <button title={t(language, "removeComponentHelp")} onClick={() => onChange(removeComponent(model, location, comp.id))}>{t(language, "remove")}</button>
+        </div>
+      </div>
+      {comp.function_type === "custom" && (
+        <label className="component-expression-edit" title={t(language, "expressionHelp")}>
+          <span>{t(language, "expression")}</span>
+          <input title={t(language, "expressionHelp")} value={String(comp.metadata?.expression ?? "")} onChange={(e) => updateMetadata({ expression: e.target.value })} />
+        </label>
       )}
     </div>
   );
@@ -410,7 +225,6 @@ function canAddSecondaryDiode(model: ModelSpec) {
 }
 
 export function ModelBuilder({ model, registry, onChange, language }: Props) {
-  const [open, setOpen] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Record<string, string>>({});
   const [polarity, setPolarity] = useState<Record<string, string>>({});
 
@@ -501,12 +315,8 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
                 key={comp.id}
                 comp={comp}
                 location={location}
-                definition={registry.find((item) => item.function_type === comp.function_type)}
-                isOpen={open[comp.id] ?? false}
                 model={model}
                 language={language}
-                registry={registry}
-                onToggle={() => setOpen((current) => ({ ...current, [comp.id]: !(current[comp.id] ?? false) }))}
                 onChange={onChange}
               />
             ))}

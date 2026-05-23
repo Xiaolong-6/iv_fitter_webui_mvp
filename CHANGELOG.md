@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.4.30 - Grouped parameters and compact model workflow
+
+### Changed
+- Reworked the Parameters table into placement and component groups for complex models: Main path first, Junction branches second, then component instances such as D1, Rs, Rsh, barriers, and softplus terms.
+- Added component headers with law/form/placement/polarity summaries and fitted-count status.
+- Added parameter filters for All, Fitted, Fixed, Changed, At bounds, Main path, and Junction branches.
+- Added component-level Fit all, Fix all, Reset initials, and Seed from fitted values controls without changing fitting math, parameter keys, JSON export/import shape, or report keys.
+- Made Model Builder more compact by editing nicknames directly on component cards and removing duplicated initial/bounds editors, parameter summaries, manual Advanced details expansion, and extra expand controls.
+- Moved Model preview below Model Builder and made it collapsed by default.
+- Moved explanatory Parameters table guidance and fit-setup summary wording out of visible UI text and into hover/help or documentation.
+- Added localization/content extraction guidance and a first shared frontend content module so future translations can be handled as content work instead of component surgery.
+
+### Tests
+- Added pure logic coverage for parameter grouping order, filters, batch fit/fix behavior, seed-from-fitted behavior, and unchanged serialization keys.
+- Verified frontend production build and browser behavior for the compact Model Builder, grouped Parameters table, collapsed Model preview, and removed visible explanatory text.
+
 ## v1.4.29 - Audit fixes, timeout, and empty-plot import shortcut
 
 ### Fixed

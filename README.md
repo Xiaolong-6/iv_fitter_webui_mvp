@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.4.29**
+Current version: **1.4.30**
 
 
 
@@ -11,6 +11,8 @@ Current version: **1.4.29**
 
 
 
+
+> v1.4.30 workflow note: Parameters are now grouped by placement and component with component-level fit/fix/reset/seed actions. Model Builder is more compact, Model preview lives below the builder and starts collapsed, and user-facing text/localization content has started moving into dedicated content modules and documentation.
 
 > v1.4.29 audit/workflow note: Plots empty state now has an Import data shortcut; Run options include a 60 s default timeout with frontend abort and backend cooperative timeout; starting a run clears previous fit verdict/warnings; Parameters table uses scientific notation for extreme values; several backend/frontend audit issues were closed.
 

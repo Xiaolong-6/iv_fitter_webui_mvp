@@ -63,14 +63,9 @@ function WorkspaceView(props: {
   function toggleSection(id: string) {
     props.setOpenSections({ ...props.openSections, [id]: !props.openSections[id] });
   }
-  function modelSummary() {
-    const main = props.model.series.map((c) => String(c.metadata?.nickname ?? c.id)).join(" -> ") || "direct";
-    const branches = [...props.model.core, ...props.model.parallel].map((c) => String(c.metadata?.nickname ?? c.id)).join(" || ") || "none";
-    return `${main} | ${branches}`;
-  }
-  function Section({ id, title, summary: _summary, children }: { id: string; title: string; summary: string; children: ReactNode }) {
+  function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
     const open = props.openSections[id] ?? true;
-    return <section id={`section-${id}`} className={open ? "workspace-section open" : "workspace-section collapsed"}>
+    return <section id={`section-${id}`} className={`${open ? "workspace-section open" : "workspace-section collapsed"} workspace-section-${id}`}>
       <button className="workspace-section-head" onClick={() => toggleSection(id)} aria-expanded={open}>
         <span>{title}</span>
       </button>
@@ -79,36 +74,36 @@ function WorkspaceView(props: {
   }
   return <div className="content-grid">
     <aside className="control-stack">
-      <Section id="fitSetup" title={t(props.language, "fitSetup")} summary={props.config.v_min || props.config.v_max ? `${props.config.v_min ?? "auto"} to ${props.config.v_max ?? "auto"}` : "range: auto"}>
+      <Section id="fitSetup" title={t(props.language, "fitSetup")}>
         <ErrorBoundary label="Fit config panel">
           <FitConfigPanel config={props.config} onChange={props.setConfig} language={props.language} />
         </ErrorBoundary>
       </Section>
-      <Section id="model" title={t(props.language, "modelBuilder")} summary={modelSummary()}>
+      <Section id="model" title={t(props.language, "modelBuilder")}>
         <ErrorBoundary label="Model builder">
           <ModelBuilder model={props.model} registry={props.registry} onChange={props.setModel} language={props.language} />
+        </ErrorBoundary>
+      </Section>
+      <Section id="preview" title={t(props.language, "equationPreview")}>
+        <ErrorBoundary label="Equation preview">
+          <EquationPreview equations={props.equationSummary} model={props.model} result={props.result} language={props.language} />
         </ErrorBoundary>
       </Section>
     </aside>
 
     <section className="plot-stack main-results-stack">
-      <Section id="plots" title={t(props.language, "plots")} summary={props.result ? "diagnostic views" : "load data or run fit"}>
+      <Section id="plots" title={t(props.language, "plots")}>
         <ErrorBoundary label="Plot workspace">
           <PlotWorkspace traces={props.traces} selectedTraceId={props.selectedTraceId} onSelectTrace={props.setSelectedTraceId} onImportData={() => props.setActiveView("data")} result={props.result} language={props.language} />
         </ErrorBoundary>
       </Section>
       <div className="main-result-grid">
-        <Section id="parameters" title={t(props.language, "parameters")} summary={props.result ? `${Object.keys(props.result.parameters).length} parameters` : "not fitted yet"}>
+        <Section id="parameters" title={t(props.language, "parameters")}>
           <ErrorBoundary label="Parameter table">
-            <ParameterTable result={props.result} model={props.model} onModelChange={props.setModel} language={props.language} />
+            <ParameterTable result={props.result} model={props.model} registry={props.registry} onModelChange={props.setModel} language={props.language} />
           </ErrorBoundary>
         </Section>
       </div>
-      <Section id="preview" title={t(props.language, "equationPreview")} summary="formulas + solver">
-        <ErrorBoundary label="Equation preview">
-          <EquationPreview equations={props.equationSummary} model={props.model} result={props.result} language={props.language} />
-        </ErrorBoundary>
-      </Section>
       {props.report && <section className="card report-card"><h2>{t(props.language, "markdownReport")}</h2><textarea readOnly value={props.report} rows={12} /></section>}
     </section>
   </div>;

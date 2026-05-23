@@ -1,4 +1,27 @@
-# Tested current package — v1.4.29
+# Tested current package - v1.4.30
+
+## v1.4.30 validation
+
+Validated grouped Parameters and compact Workspace behavior with:
+
+```powershell
+npm.cmd run test:parameter-ui
+npm.cmd run build
+```
+
+Expected results: parameter grouping logic passes, frontend production build passes, and browser checks confirm the compact grouped parameter table, collapsed Model preview below Model Builder, removed visible explanatory helper text, and unchanged parameter serialization keys.
+
+Backend fitting math and serialization schemas were not intentionally changed in v1.4.30. Full backend pytest/compileall was not rerun in this environment because `python`/`py` are not on PATH and the existing `.venv\Scripts\python.exe` points to a removed Python installation; rerun `.\02_setup_dev.bat` before backend release validation.
+
+## v1.4.30 UI/workflow validation
+
+- Parameters are grouped by Main path and Junction branches, then by component instance.
+- Component rows expose Fit all, Fix all, Reset initials, and Seed from fitted values where applicable.
+- Filters cover All, Fitted, Fixed, Changed, At bounds, Main path, and Junction branches.
+- Model Builder no longer duplicates initial values/bounds, parameter summaries, or manual Advanced details expansion.
+- Model preview is below Model Builder and collapsed by default.
+- Range/objective/run-option summaries and Parameters explanatory paragraphs are not visible inline in the Workspace UI.
+- Language/content extraction guidance is documented in `docs/LOCALIZATION_AND_TEXT.md`, and first shared frontend text lives in `frontend/src/content/localizedText.ts`.
 
 ## v1.4.29 validation
 

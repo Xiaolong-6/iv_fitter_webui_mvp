@@ -1,12 +1,13 @@
 {
   "name": "iv-fitter-webui-mvp-root",
-  "version": "1.4.29",
+  "version": "1.4.30",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -p frontend/tsconfig.json && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:parameter-ui": "node scripts/test_parameter_grouping.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",

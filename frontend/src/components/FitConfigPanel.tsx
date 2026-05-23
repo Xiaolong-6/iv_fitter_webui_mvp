@@ -42,7 +42,6 @@ export function FitConfigPanel({ config, onChange, language }: { config: FitConf
   return <section className="card config-panel embedded-card">
     <div className="card-head">
       <h2>{t(language, "fitSetup")}</h2>
-      <span className="muted">{t(language, "fitSetupHint")}</span>
     </div>
 
     <div className="setup-section">

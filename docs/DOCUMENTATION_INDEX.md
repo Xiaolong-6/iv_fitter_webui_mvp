@@ -21,6 +21,7 @@ This file is the stable entry point for IV-fitter Web UI documentation.
 - `docs/RESPONSIVE_WORKSPACE.md` — responsive layout, mobile behavior, and app-local zoom.
 - `docs/USER_DOCUMENTATION_POLICY.md` — how user-facing docs should be written.
 - `docs/USER_TRANSPARENCY_UX.md` — what the UI must expose to users without leaking internal implementation text.
+- `docs/LOCALIZATION_AND_TEXT.md` — how UI text, translations, and larger content blocks should be separated from behavior.
 
 ### Developer-facing architecture
 
