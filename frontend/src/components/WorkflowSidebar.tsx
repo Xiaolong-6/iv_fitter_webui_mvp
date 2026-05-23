@@ -4,7 +4,7 @@ import { t } from "../model/i18n";
 export type AppView = "data" | "workspace" | "usage";
 
 const tabIds: AppView[] = ["data", "workspace", "usage"];
-const tabIcons: Record<AppView, string> = { data: "D", workspace: "W", usage: "?" };
+const tabIcons: Record<AppView, string> = { data: "D", workspace: "W", usage: "M" };
 
 export function WorkflowSidebar({
   activeView,

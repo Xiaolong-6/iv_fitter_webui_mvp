@@ -37,7 +37,7 @@ const bucketLocations: Record<BuilderBucket, ModelLocation[]> = {
 };
 
 function HelpTip({ text }: { text: string }) {
-  return <span className="help-tip" title={text} aria-label={text}>?</span>;
+  return <span className="help-tip" aria-label={text} data-tooltip={text} tabIndex={0}>?</span>;
 }
 
 function bucketForComponent(comp: ComponentSpec): BuilderBucket {

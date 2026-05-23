@@ -3,7 +3,7 @@ import { parseCsvTraces, sampleTrace } from "../model/utils";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 
-function HelpTip({ text }: { text: string }) { return <span className="help-tip" title={text} aria-label={text}>?</span>; }
+function HelpTip({ text }: { text: string }) { return <span className="help-tip" aria-label={text} data-tooltip={text} tabIndex={0}>?</span>; }
 
 export function DataImporter({ traces, selectedTraceId, onTraces, onSelectTrace, language }: {
   traces: TraceData[];
@@ -23,7 +23,7 @@ export function DataImporter({ traces, selectedTraceId, onTraces, onSelectTrace,
   return <section className="card data-card">
     <h2>{t(language, "data")}</h2>
     <div className="data-actions compact-data-actions">
-      <label className="file-button" htmlFor={fileId}>{t(language, "importCsv")} <HelpTip text={t(language, "happyMeasureSupported")} /></label>
+      <label className="file-button" htmlFor={fileId} title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`}>{t(language, "importCsv")}</label>
       <input id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && load(e.target.files[0])} />
       <button onClick={() => { const demo = sampleTrace(); onTraces([demo]); onSelectTrace(demo.trace_id); }}>{t(language, "loadDemo")}</button>
     </div>

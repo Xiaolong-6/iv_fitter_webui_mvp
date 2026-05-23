@@ -3,7 +3,7 @@ import type { FitConfig } from "../model/types";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 
-function HelpTip({ text }: { text: string }) { return <span className="help-tip" title={text} aria-label={text}>?</span>; }
+function HelpTip({ text }: { text: string }) { return <span className="help-tip" aria-label={text} data-tooltip={text} tabIndex={0}>?</span>; }
 
 function isPartialNumber(text: string) {
   return text === "" || text === "-" || text === "+" || text === "." || text === "-." || text === "+." || /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d*)?$/.test(text);
