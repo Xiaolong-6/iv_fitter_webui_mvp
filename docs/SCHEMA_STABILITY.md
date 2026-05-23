@@ -1,6 +1,6 @@
-# Schema stability for 1.0 candidate
+# Schema stability
 
-The following schemas are considered stable for the 1.0 candidate branch:
+The following schemas are compatibility-sensitive:
 
 - `ParameterSpec`
 - `ComponentSpec`
@@ -20,11 +20,15 @@ Future versions may add optional fields, but should not rename or remove existin
 
 ## Reproducibility rule
 
-A 1.0 exported JSON result must be sufficient to reproduce:
+A JSON fit result should be sufficient to reproduce:
 
 - exact model topology;
-- function types and polarities;
+- laws, forms, placements, and polarities;
 - custom expressions and parameter values;
 - fitting configuration;
 - warnings and metrics;
 - plotted curves.
+
+## User-facing boundary
+
+Schema names are allowed in exported JSON, developer docs, and collapsed Advanced details. They should not dominate default user-facing documentation or normal UI text.

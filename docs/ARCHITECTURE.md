@@ -3,64 +3,45 @@
 ## Runtime split
 
 ```text
-React UI -> FastAPI API -> Python fitting engine
+React/Vite frontend -> FastAPI API -> Python fitting core
 ```
 
-The fitting engine is the owner of scientific behavior. FastAPI is an adapter. React is only a client.
+The fitting engine owns scientific behavior. FastAPI is an adapter. React is the user-facing client.
 
-## Model construction
+## Model architecture
 
-The model is represented as:
+The current model architecture is **Law / Form / Placement**.
+
+- **Law**: the mathematical/physical relation, such as Shockley diode, Ohmic resistance, softplus power-law current, photocurrent, or photoconductive conductance.
+- **Form**: how the relation participates numerically, such as `current_branch` or `voltage_drop`.
+- **Placement**: where the relation appears in the user model, primarily **Main path** or **Branches**.
+
+User-facing UI should say **Main path** and **Branches**. Internal schema terms belong in developer docs or collapsed Advanced details.
+
+## Data flow
 
 ```text
-ModelSpec
-  core[]
-  series[]
-  parallel[]
+CSV/TXT/Data paste -> backend import parser -> TraceData -> FitRequest -> FitResult -> UI plots/warnings/report
 ```
 
-Each component is a `ComponentSpec`:
+Import parsing happens in the backend so column decisions, dropped rows, unit handling, and HappyMeasure compatibility are consistent between browser and API tests.
 
-```text
-location + function_type + polarity + params + metadata
-```
+## Fitting flow
 
-This encodes the principle that forward/reverse/symmetric variants are polarity choices, not separate UI component families.
+1. The frontend sends the selected trace, fit range, model spec, and fit config.
+2. The backend validates the model and data.
+3. The fitting engine evaluates current branches and main-path voltage-drop terms.
+4. The API returns parameters, warnings, metrics, curves, and equation summaries.
+5. The frontend renders plots, diagnostics, equation preview, and report/export panels.
 
-## Series path
+## Solver boundary
 
-The current MVP uses a lightweight fixed-point approximation:
+The legacy implicit solver is the report-grade default path for normal composite fitting. The graph DC solver remains experimental and must be labeled as such.
 
-```text
-V = Vj + I Rs_eff(Vj)
-```
+## Frontend boundary
 
-This is sufficient for the first scaffold but must be strengthened in v0.3 to match the current Tkinter backend.
+The frontend may render model summaries, formula cards, circuit previews, and user documentation. It must not invent scientific behavior that is not represented in the backend model spec and registry.
 
-## Custom expressions
+## Documentation boundary
 
-Custom expressions are evaluated in a restricted environment. Available variables:
-
-```text
-Vj, absVj, u, s
-```
-
-where `u` and `s` come from the polarity helper.
-
-Default parallel branch:
-
-```text
-s*A*softplus(u)**m
-```
-
-Default series modifier:
-
-```text
-A*softplus(u)
-```
-
-Series custom expression is interpreted as a conductance boost:
-
-```text
-Rs_eff <- Rs_eff/(1 + G_custom)
-```
+User-facing documentation explains physical use, I-V curve effects, parameter meaning, and fitting strategy first. Schema IDs, internal parameter keys, adapter names, and serialization details belong only in developer docs or collapsed Advanced details.

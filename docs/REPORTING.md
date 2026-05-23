@@ -1,10 +1,25 @@
 # Reporting and diagnostics
 
-Version 0.4.0 adds a Markdown report pathway. The report is intentionally text-first and reproducible: it records software version, fit success, metrics, warnings, parameter values, and generated equations.
+Fit reports should be reproducible and understandable without reading source code.
 
-Future work:
+A defensible report/export should record:
 
-- Add downloadable JSON/CSV endpoint.
-- Add SVG/PNG figure export from the browser.
-- Add branch-contribution plots in the Plotly workspace.
-- Add fit comparison reports.
+- software version;
+- selected trace name and import quality;
+- exact model specification;
+- exact fit configuration and fit range;
+- fitted parameter values, units, bounds, and fit/fixed state;
+- warnings and diagnostics;
+- equation summary;
+- plotted curve arrays sufficient to redraw the fit.
+
+## Reporting rule
+
+Do not treat a pretty curve as sufficient. Reports should help the user judge whether the model is physically plausible and whether warnings invalidate the result.
+
+## Future reporting work
+
+- Richer fit-quality verdicts with explicit next steps.
+- Branch-contribution plots.
+- Fit comparison reports.
+- Browser-side figure export.
