@@ -683,3 +683,23 @@ details {
   background: rgba(127,127,127,0.07);
 }
 details summary { cursor: pointer; font-weight: 650; }
+
+
+/* v1.3.10 data transparency workspace and compact user-help polish */
+.scroll-page { height: 100%; overflow-y: auto; min-height: 0; padding: 1rem; }
+.page-header-card { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; background: var(--panel, #fff); border: 1px solid var(--border, #d9e0e8); border-radius: 14px; padding: 1rem; margin-bottom: 1rem; }
+.data-import-grid { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr); gap: 1rem; align-items: start; }
+.paste-card textarea { width: 100%; min-height: 12rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize: vertical; }
+.trace-facts { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .8rem; }
+.trace-facts span { border: 1px solid var(--border, #d9e0e8); border-radius: 999px; padding: .2rem .55rem; background: rgba(0,0,0,.025); }
+.spreadsheet-card { margin-top: 1rem; }
+.spreadsheet-wrap { max-height: min(52vh, 560px); overflow: auto; border: 1px solid var(--border, #d9e0e8); border-radius: 10px; }
+.data-spreadsheet { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: .9rem; }
+.data-spreadsheet th { position: sticky; top: 0; background: var(--panel, #fff); z-index: 1; }
+.data-spreadsheet th, .data-spreadsheet td { border-bottom: 1px solid var(--border, #d9e0e8); padding: .35rem .55rem; text-align: right; }
+.data-spreadsheet th:first-child, .data-spreadsheet td:first-child { text-align: left; color: var(--muted, #667085); }
+.compact-help { margin-top: .25rem; }
+.advanced-details { margin: .5rem 0; padding: .5rem; border: 1px dashed var(--border, #d9e0e8); border-radius: 10px; }
+.advanced-details summary { cursor: pointer; font-weight: 600; }
+.help-tip { display: inline-flex; align-items: center; justify-content: center; width: 1.15em; height: 1.15em; border-radius: 999px; border: 1px solid currentColor; font-size: .75em; margin-left: .25rem; cursor: help; opacity: .75; }
+@media (max-width: 920px) { .data-import-grid, .page-header-card { grid-template-columns: 1fr; display: block; } .page-header-card .data-actions { margin-top: 1rem; } }

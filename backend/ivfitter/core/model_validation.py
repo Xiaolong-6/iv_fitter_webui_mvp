@@ -52,6 +52,8 @@ def validate_component_against_registry(comp: ComponentSpec) -> list[FitWarning]
 def validate_model_spec(model: ModelSpec) -> list[FitWarning]:
     """Return all schema, physics, and transparency warnings for a ModelSpec."""
     warnings: list[FitWarning] = []
+    if model.temperature_K <= 0:
+        warnings.append(_warn("nonpositive_temperature", "Temperature must be greater than 0 K for a physically meaningful diode model.", "error"))
     ids = [comp.id for _group, comp in _component_groups(model)]
     for comp_id, count in Counter(ids).items():
         if count > 1:

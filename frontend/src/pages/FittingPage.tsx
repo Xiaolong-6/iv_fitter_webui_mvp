@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, EquationSummary } from "../model/types";
 import { equations, exportReport, fitTrace, getRegistry } from "../api/client";
@@ -10,13 +10,14 @@ import { PlotWorkspace } from "../components/PlotWorkspace";
 import { FitStatusBar } from "../components/FitStatusBar";
 import { ParameterTable } from "../components/ParameterTable";
 import { WarningsPanel } from "../components/WarningsPanel";
-import { DataImporter } from "../components/DataImporter";
+import { DataImportWorkspace } from "../components/DataImportWorkspace";
 import { FitConfigPanel } from "../components/FitConfigPanel";
 import { EquationPreview } from "../components/EquationPreview";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 
-const APP_VERSION = "1.3.9";
+const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "1.3.12";
 
 const initialModel: ModelSpec = {
   core: [{ id: "D1", location: "core", function_type: "diode", law_id: "shockley_diode", evaluation_form: "current_branch", placement: "junction_current_branch", params: { I0_A: { value: 1e-12, lower: 1e-30, upper: 1, fit: true, unit: "A", label: "I0" }, n: { value: 1.5, lower: 0.5, upper: 10, fit: true, label: "n" } }, metadata: { nickname: "D1" } }],
@@ -34,6 +35,7 @@ const initialConfig: FitConfig = {
   max_nfev: 200,
   residual_floor_A: 1e-15,
   multistart_enabled: false,
+  multistart_n_seeds: 12,
   solver_mode: "legacy_composite",
 };
 
@@ -57,15 +59,18 @@ function WorkspaceView(props: {
 }) {
   return <div className="content-grid">
     <aside className="control-stack">
-      <DataImporter traces={props.traces} selectedTraceId={props.selectedTraceId} onTraces={props.setTraces} onSelectTrace={props.setSelectedTraceId} language={props.language} />
       <FitConfigPanel config={props.config} onChange={props.setConfig} language={props.language} />
       <ModelBuilder model={props.model} registry={props.registry} onChange={props.setModel} language={props.language} />
     </aside>
 
     <section className="plot-stack main-results-stack">
-      <PlotWorkspace traces={props.traces} selectedTraceId={props.selectedTraceId} result={props.result} language={props.language} />
+      <ErrorBoundary label="Plot workspace">
+        <PlotWorkspace traces={props.traces} selectedTraceId={props.selectedTraceId} result={props.result} language={props.language} />
+      </ErrorBoundary>
       <div className="main-result-grid">
-        <ParameterTable result={props.result} language={props.language} />
+        <ErrorBoundary label="Parameter table">
+          <ParameterTable result={props.result} language={props.language} />
+        </ErrorBoundary>
         <WarningsPanel result={props.result} language={props.language} />
       </div>
       <EquationPreview equations={props.equationSummary} language={props.language} />
@@ -95,18 +100,34 @@ export function FittingPage() {
 
 
   const selectedTrace = traces.find((t) => t.trace_id === selectedTraceId) ?? traces[0] ?? emptyTrace();
+  const selectedTraceDataKey = useMemo(() => {
+    const v = selectedTrace.voltage_V;
+    const i = selectedTrace.current_A;
+    return [
+      selectedTrace.trace_id,
+      v.length,
+      i.length,
+      v[0],
+      v[v.length - 1],
+      i[0],
+      i[i.length - 1],
+    ].join("|");
+  }, [selectedTrace]);
 
   useEffect(() => {
     if (!selectedTrace.voltage_V.length) return;
     const nextFloor = estimateResidualFloorA(selectedTrace);
     setConfig((current) => current.residual_floor_A === nextFloor ? current : { ...current, residual_floor_A: nextFloor });
-  }, [selectedTrace.trace_id]);
+  }, [selectedTraceDataKey, selectedTrace]);
 
   useEffect(() => {
-    equations(model).then(setEquationSummary).catch((e) => {
-      console.warn("Equation preview failed", e);
-      setEquationSummary(null);
-    });
+    const handle = window.setTimeout(() => {
+      equations(model).then(setEquationSummary).catch((e) => {
+        console.warn("Equation preview failed", e);
+        setEquationSummary(null);
+      });
+    }, 250);
+    return () => window.clearTimeout(handle);
   }, [model]);
 
   useEffect(() => {
@@ -163,7 +184,13 @@ export function FittingPage() {
 
       {error && <div className="warning error">{error}</div>}
 
-      {activeView === "workspace" ? <WorkspaceView
+      {activeView === "data" ? <DataImportWorkspace
+        traces={traces}
+        selectedTraceId={selectedTraceId}
+        onTraces={(next) => { setTraces(next); setResult(null); setReport(""); }}
+        onSelectTrace={(id) => { setSelectedTraceId(id); setResult(null); setReport(""); }}
+        language={language}
+      /> : activeView === "workspace" ? <WorkspaceView
         traces={traces}
         selectedTrace={selectedTrace}
         selectedTraceId={selectedTraceId}

@@ -1,10 +1,12 @@
 """FastAPI application for the greenfield IV-fitter backend."""
 
 from __future__ import annotations
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
+from ivfitter import __version__
 from ivfitter.core.component_registry import component_registry
 from ivfitter.core.equations import generate_equations
 from ivfitter.core.topology_graph import assemble_graph, graph_text_summary
@@ -16,8 +18,13 @@ from ivfitter.io.import_trace import ImportCsvTextRequest, import_csv_text, impo
 from ivfitter.io.export_result import fit_result_json_text, parameter_csv_text
 
 
-app = FastAPI(title="IV-fitter Web Backend", version="1.3.3")
-app.add_middleware(CORSMiddleware, allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app = FastAPI(title="IV-fitter Web Backend", version=__version__)
+
+def _cors_origins() -> list[str]:
+    raw = os.getenv("IVFITTER_CORS_ORIGINS", "http://127.0.0.1:5173,http://localhost:5173")
+    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
+app.add_middleware(CORSMiddleware, allow_origins=_cors_origins(), allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 class ReportResponse(BaseModel):
     markdown: str
@@ -53,8 +60,10 @@ def fit(request: FitRequest):
     """Run one local trace fit."""
     try:
         return fit_trace(request)
+    except (ValueError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 @app.post("/api/export-report", response_model=ReportResponse)
 def export_report(result: FitResult) -> ReportResponse:
@@ -74,16 +83,20 @@ def import_csv_text_endpoint(payload: ImportCsvTextRequest):
     try:
         trace, quality = import_csv_text(payload)
         return {"trace": trace, "quality": quality}
+    except (ValueError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 @app.post("/api/import-csv-text-multi")
 def import_csv_text_multi_endpoint(payload: ImportCsvTextRequest):
     """Import plain/HappyMeasure CSV text and return one or more traces."""
     try:
         return {"traces": [{"trace": trace, "quality": quality} for trace, quality in import_csv_text_multi(payload)]}
+    except (ValueError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 @app.post("/api/export-result-json", response_model=TextResponse)
 def export_result_json(result: FitResult) -> TextResponse:
@@ -99,5 +112,5 @@ def export_parameters_csv(result: FitResult) -> TextResponse:
 @app.get("/api/version")
 def version() -> dict[str, str]:
     """Return backend version and schema milestone."""
-    return {"version": "1.3.3", "schema": "ModelSpec/FitResult law-form-placement + HappyMeasure multi-trace v1.3.3"}
+    return {"version": __version__, "schema": "ModelSpec/FitResult law-form-placement + HappyMeasure multi-trace"}
 

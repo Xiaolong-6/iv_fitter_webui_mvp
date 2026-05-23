@@ -37,7 +37,7 @@ class ImportQualitySummary(BaseModel):
     warnings: list[str]
 
 
-def _infer_column(columns: list[str], kind: Literal["voltage", "current"]) -> str:
+def _infer_column(columns: list[str], kind: Literal["voltage", "current"], warnings: list[str] | None = None) -> str:
     candidates = {
         "voltage": [
             "v", "voltage", "voltage_v", "bias", "bias_v", "source_v", "set_v",
@@ -61,10 +61,14 @@ def _infer_column(columns: list[str], kind: Literal["voltage", "current"]) -> st
             return original
         if kind == "current" and ("current" in key or key.endswith("_a") or key == "i_a"):
             return original
-    # fallback: first numeric-looking column for voltage, second for current
+    # fallback: preserve compatibility, but do not silently accept ambiguous column names.
     if kind == "voltage" and columns:
+        if warnings is not None:
+            warnings.append(f"Could not recognize a voltage column name; automatically selected first column {columns[0]!r}.")
         return columns[0]
     if kind == "current" and len(columns) > 1:
+        if warnings is not None:
+            warnings.append(f"Could not recognize a current column name; automatically selected second column {columns[1]!r}.")
         return columns[1]
     raise ValueError(f"Could not infer {kind} column from {columns!r}")
 
@@ -79,14 +83,14 @@ def import_csv_text(payload: ImportCsvTextRequest) -> tuple[TraceData, ImportQua
     """Import CSV/TXT text and return trace data plus quality diagnostics."""
     df = _read_dataframe_from_text(payload)
     rows_in = len(df)
-    vcol = payload.voltage_col or _infer_column(list(df.columns), "voltage")
-    icol = payload.current_col or _infer_column(list(df.columns), "current")
+    warnings: list[str] = []
+    vcol = payload.voltage_col or _infer_column(list(df.columns), "voltage", warnings)
+    icol = payload.current_col or _infer_column(list(df.columns), "current", warnings)
     if vcol not in df.columns or icol not in df.columns:
         raise ValueError(f"Selected columns not present: {vcol!r}, {icol!r}")
     v = pd.to_numeric(df[vcol], errors="coerce").to_numpy(dtype=float)
     i = pd.to_numeric(df[icol], errors="coerce").to_numpy(dtype=float)
     finite = np.isfinite(v) & np.isfinite(i)
-    warnings: list[str] = []
     if finite.sum() < len(finite):
         warnings.append(f"Dropped {int((~finite).sum())} non-finite row(s).")
     if finite.sum() == 0:

@@ -1,10 +1,10 @@
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 
-export type AppView = "workspace" | "usage" | "functions" | "logic" | "convergence";
+export type AppView = "data" | "workspace" | "usage" | "functions" | "logic" | "convergence";
 
-const tabIds: AppView[] = ["workspace", "usage", "functions", "logic", "convergence"];
-const tabIcons: Record<AppView, string> = { workspace: "▦", usage: "?", functions: "ƒ", logic: "∑", convergence: "✓" };
+const tabIds: AppView[] = ["data", "workspace", "usage", "functions", "logic", "convergence"];
+const tabIcons: Record<AppView, string> = { data: "▤", workspace: "▦", usage: "?", functions: "ƒ", logic: "∑", convergence: "✓" };
 
 export function WorkflowSidebar({
   activeView,

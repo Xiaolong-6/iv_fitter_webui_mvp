@@ -1,3 +1,36 @@
+# Changelog
+
+## v1.3.12 - Audit findings fixed and handoff hardening
+
+- Fixed stderr/covariance reporting by scaling `(JᵀJ)⁻¹` with final residual variance.
+- Removed silent junction-voltage fixed-point fallback; unbracketed implicit solves now produce non-finite predictions and error warnings instead of fake results.
+- Made graph DC KCL failures return NaN currents and surface `graph_solver_kcl_failed` warnings.
+- Added bounded/log-space deterministic multistart seed generation controlled by `multistart_n_seeds`.
+- Added temperature validation for nonpositive Kelvin values.
+- Updated API version and frontend app version to use dynamic package/build version sources rather than stale hardcoded constants.
+- Added import fallback warnings when voltage/current columns cannot be identified by name.
+- Added React ErrorBoundary protection around plot and parameter panels.
+- Debounced equation-preview API calls to avoid request flooding while editing model parameters.
+- Reworked ModelBuilder into readable subcomponents for safer future agent patches.
+- Added audit regression tests for covariance, solver failure paths, import warnings, temperature validation, API versioning, and unsafe custom expressions.
+- Updated handoff notes, rules, tested notes, and audit-fix documentation for v1.3.12.
+
+## v1.3.11 - Audit-readiness cleanup and rule consolidation
+
+- Rewrote the README to remove stale 1.0.0-era sections and align setup instructions with root-level dependency manifests.
+- Consolidated PROJECT_RULES.md into stable operating principles instead of repeated version-specific incident blocks.
+- Added an explicit rules-maintenance principle requiring periodic cleanup when the rules file becomes repetitive.
+- Updated physics/user-transparency policy docs to match current Law / Form / Placement and Main path / Branches semantics.
+- Added audit-readiness review notes and v1.3.11 tested notes.
+- Bumped backend, frontend, and root package versions to 1.3.11.
+
+## v1.3.10
+
+- Added a dedicated Data import workspace with import buttons, pasted-data parsing, multi-trace trace selector, and spreadsheet preview.
+- Added polarity selection to Model Builder functions where supported.
+- Added hover hints for user inputs and selections while keeping implementation details out of the main UI text.
+- Kept workspace focused on fitting/modeling by moving import workflow out to the Data tab.
+
 ## v1.3.9 - Unified Ohmic law nicknames, root dependencies, and UI polish
 
 - Treat Rs and Rsh as default user nicknames for Ohmic law instances rather than separate user-facing functions.

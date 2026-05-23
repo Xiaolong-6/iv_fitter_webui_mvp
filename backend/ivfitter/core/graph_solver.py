@@ -79,7 +79,10 @@ def _solve_one(v_ext: float, model: ModelSpec, guess: np.ndarray | None = None) 
         return kcl
     x0 = guess if guess is not None and len(guess) == len(internal) else np.full(len(internal), v_ext / 2.0)
     sol = root(residual, x0, method="hybr")
-    x = sol.x if sol.success and np.all(np.isfinite(sol.x)) else x0
+    if not (sol.success and np.all(np.isfinite(sol.x)) and np.all(np.isfinite(residual(sol.x)))):
+        branches = {comp.id: float("nan") for comp in graph.components if comp.placement != "series_conductance_modifier"}
+        return float("nan"), branches, x0
+    x = sol.x
     vals = voltages(x)
     total = 0.0
     branches = {}

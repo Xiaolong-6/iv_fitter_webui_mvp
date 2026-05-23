@@ -27,6 +27,7 @@ ivfitter_web_backend.egg-info/SOURCES.txt
 ivfitter_web_backend.egg-info/dependency_links.txt
 ivfitter_web_backend.egg-info/requires.txt
 ivfitter_web_backend.egg-info/top_level.txt
+tests/test_audit_fixes_1_3_12.py
 tests/test_backend_mvp.py
 tests/test_backend_parity.py
 tests/test_fit_quality.py

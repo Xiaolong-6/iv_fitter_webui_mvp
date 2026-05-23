@@ -17,7 +17,7 @@ function commitNumber(text: string): number | null | undefined {
 function formatDraft(value: number | null | undefined) {
   return value === null || value === undefined ? "" : String(value);
 }
-function NumericInput({ label, value, placeholder, onCommit }: { label: string; value: number | null | undefined; placeholder?: string; onCommit: (value: number | null) => void }) {
+function NumericInput({ label, value, placeholder, help, onCommit }: { label: string; value: number | null | undefined; placeholder?: string; help?: string; onCommit: (value: number | null) => void }) {
   const [draft, setDraft] = useState(formatDraft(value));
   useEffect(() => { setDraft(formatDraft(value)); }, [value]);
   function commitOrRevert() {
@@ -29,7 +29,7 @@ function NumericInput({ label, value, placeholder, onCommit }: { label: string; 
     onCommit(parsed);
     setDraft(formatDraft(parsed));
   }
-  return <label><span>{label}</span><input inputMode="decimal" placeholder={placeholder} value={draft} onChange={(e) => {
+  return <label title={help}><span>{label}</span><input title={help} inputMode="decimal" placeholder={placeholder} value={draft} onChange={(e) => {
     const text = e.target.value;
     if (!isPartialNumber(text)) return;
     setDraft(text);
@@ -49,34 +49,34 @@ export function FitConfigPanel({ config, onChange, language }: { config: FitConf
     <div className="setup-section">
       <h3>{t(language, "voltageRange")} <HelpTip text={t(language, "numericHelp")} /></h3>
       <div className="setup-grid two-col">
-        <NumericInput label={t(language, "vMin")} placeholder={t(language, "auto")} value={config.v_min} onCommit={(v) => onChange({ ...config, v_min: v })} />
-        <NumericInput label={t(language, "vMax")} placeholder={t(language, "auto")} value={config.v_max} onCommit={(v) => onChange({ ...config, v_max: v })} />
+        <NumericInput label={t(language, "vMin")} help={t(language, "vMinHelp")} placeholder={t(language, "auto")} value={config.v_min} onCommit={(v) => onChange({ ...config, v_min: v })} />
+        <NumericInput label={t(language, "vMax")} help={t(language, "vMaxHelp")} placeholder={t(language, "auto")} value={config.v_max} onCommit={(v) => onChange({ ...config, v_max: v })} />
       </div>
     </div>
 
     <div className="setup-section">
       <h3>{t(language, "objective")}</h3>
       <div className="setup-grid">
-        <label><span>{t(language, "weighting")}</span><select value={config.weighting} onChange={(e) => onChange({ ...config, weighting: e.target.value })}><option value="symmetric_log_signed">symmetric log signed</option><option value="linear">linear</option></select></label>
-        <label><span>{t(language, "loss")}</span><select value={config.loss} onChange={(e) => onChange({ ...config, loss: e.target.value })}><option value="soft_l1">soft_l1</option><option value="linear">linear</option><option value="huber">huber</option></select></label>
-        <NumericInput label={t(language, "residualFloor")} value={(config as any).residual_floor_A ?? 1e-15} onCommit={(v) => onChange({ ...config, residual_floor_A: v ?? 1e-15 })} />
+        <label title={t(language, "weightingHelp")}><span>{t(language, "weighting")}</span><select title={t(language, "weightingHelp")} value={config.weighting} onChange={(e) => onChange({ ...config, weighting: e.target.value })}><option value="symmetric_log_signed">symmetric log signed</option><option value="linear">linear</option></select></label>
+        <label title={t(language, "lossHelp")}><span>{t(language, "loss")}</span><select title={t(language, "lossHelp")} value={config.loss} onChange={(e) => onChange({ ...config, loss: e.target.value })}><option value="soft_l1">soft_l1</option><option value="linear">linear</option><option value="huber">huber</option></select></label>
+        <NumericInput label={t(language, "residualFloor")} help={t(language, "residualFloorHelp")} value={(config as any).residual_floor_A ?? 1e-15} onCommit={(v) => onChange({ ...config, residual_floor_A: v ?? 1e-15 })} />
       </div>
     </div>
 
     <div className="setup-section">
       <h3>{t(language, "runOptions")}</h3>
       <div className="setup-grid">
-        <label><span>{t(language, "fitSpeed")}</span><select value={config.fit_speed} onChange={(e) => onChange({ ...config, fit_speed: e.target.value })}><option value="full">full</option><option value="quick">quick</option></select></label>
-        <NumericInput label={t(language, "maxEvals")} value={config.max_nfev} onCommit={(v) => onChange({ ...config, max_nfev: Math.max(1, Math.round(v ?? 200)) })} />
+        <label title={t(language, "fitSpeedHelp")}><span>{t(language, "fitSpeed")}</span><select title={t(language, "fitSpeedHelp")} value={config.fit_speed} onChange={(e) => onChange({ ...config, fit_speed: e.target.value })}><option value="full">full</option><option value="quick">quick</option></select></label>
+        <NumericInput label={t(language, "maxEvals")} help={t(language, "maxEvalsHelp")} value={config.max_nfev} onCommit={(v) => onChange({ ...config, max_nfev: Math.max(1, Math.round(v ?? 200)) })} />
       </div>
-      <label className="check-row"><input type="checkbox" checked={config.exclude_compliance} onChange={(e) => onChange({ ...config, exclude_compliance: e.target.checked })} /> {t(language, "excludePlateaus")}</label>
-      <label className="check-row"><input type="checkbox" checked={(config as any).multistart_enabled ?? false} onChange={(e) => onChange({ ...config, multistart_enabled: e.target.checked })} /> {t(language, "multistart")}</label>
+      <label className="check-row" title={t(language, "excludePlateausHelp")}><input title={t(language, "excludePlateausHelp")} type="checkbox" checked={config.exclude_compliance} onChange={(e) => onChange({ ...config, exclude_compliance: e.target.checked })} /> {t(language, "excludePlateaus")}</label>
+      <label className="check-row" title={t(language, "multistartHelp")}><input title={t(language, "multistartHelp")} type="checkbox" checked={(config as any).multistart_enabled ?? false} onChange={(e) => onChange({ ...config, multistart_enabled: e.target.checked })} /> {t(language, "multistart")}</label>
     </div>
 
     <div className="fit-config-section">
       <h3>{t(language, "solver")}</h3>
-      <label>{t(language, "solverMode")}
-        <select value={config.solver_mode ?? "legacy_composite"} onChange={(e) => onChange({ ...config, solver_mode: e.target.value as any })}>
+      <label title={t(language, "solverModeHelp")}>{t(language, "solverMode")}
+        <select title={t(language, "solverModeHelp")} value={config.solver_mode ?? "legacy_composite"} onChange={(e) => onChange({ ...config, solver_mode: e.target.value as any })}>
           <option value="legacy_composite">{t(language, "legacySolver")}</option>
           <option value="graph_dc">{t(language, "graphSolver")}</option>
         </select>

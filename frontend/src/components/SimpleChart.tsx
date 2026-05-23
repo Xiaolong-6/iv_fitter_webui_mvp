@@ -152,7 +152,10 @@ export function SimpleChart({ title, series, yLabel, height = 248, robustScale =
       onMouseMove={(e) => setHover(nearestPoint(e.clientX, e.clientY, e.currentTarget))}
       onMouseLeave={() => setHover(null)}
       onWheel={wheelZoom}
+      tabIndex={0}
     >
+      <title>{title}</title>
+      <desc>{yLabel ? `${title}, ${yLabel}` : title}</desc>
       <rect x={0} y={0} width={width} height={height} className="chart-bg" />
       <text x={margin.left} y={22} className="chart-title">{title}</text>
       {clippedCount > 0 && <text x={width - margin.right} y={22} textAnchor="end" className="chart-clip-note">clipped {clippedCount}</text>}
@@ -192,7 +195,7 @@ export function SimpleChart({ title, series, yLabel, height = 248, robustScale =
         </g>)}
       </g>
 
-      {hover && <g className="chart-hover">
+      {hover && <g className="chart-hover" aria-live="polite">
         <line x1={hover.px} x2={hover.px} y1={margin.top} y2={margin.top + plotH} />
         <circle cx={hover.px} cy={hover.py} r={4.5} />
         <rect x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} rx={7} />

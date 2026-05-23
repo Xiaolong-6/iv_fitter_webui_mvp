@@ -1,32 +1,177 @@
-# IV-fitter project rules
+# IV-fitter Web UI project rules
 
-This is the top-level rules file for human developers, agent developers, and future assistants.
+This is the priority rules file for human developers, agent developers, and future assistants. If scattered notes conflict with this file, this file wins.
 
-If any rule here conflicts with scattered notes elsewhere, this file takes priority.
+## 1. Handoff readiness
 
-## 1. Handoff-ready state
+Every handoff package must be understandable, runnable, and auditable by the next human or agent.
 
-Every handed-off commit/package must be understandable and runnable by the next human or agent.
+Before handoff, verify or explicitly mark as not verified:
 
-Required before handoff:
+- version numbers match in backend, frontend, root package, README, changelog, UI, and tested notes;
+- changelog and tested notes describe the exact package being handed off;
+- user-facing docs match the current UI and backend behavior;
+- developer/agent docs do not leak into the normal user workflow;
+- numbered Windows scripts still work from the project root;
+- backend tests, compile checks, and frontend build have been run against the exact packaged tree;
+- generated folders and caches have been removed from the package;
+- known limitations and next actions are documented.
 
-- version/changelog updated;
-- docs updated for the correct audience;
-- one-click or clearly numbered entry scripts documented;
-- feasible tests run against the exact packaged tree;
-- unrun checks explicitly listed with reasons;
-- known limitations documented;
-- next action clearly stated.
+## 2. Ambiguity gate
 
-## 2. Do not assume the human understands code or architecture
+When architecture, solver behavior, UI semantics, or implementation intent is ambiguous, stop and confirm the design with the user before changing code or producing a new package.
 
-Explain what a command/package/change does, why it is needed, what it changes, and what success looks like.
+Discuss:
 
-Avoid unexplained command dumps.
+- the problem being solved;
+- proposed design;
+- alternatives;
+- risks;
+- expected user-visible behavior.
 
-## 3. Prefer one-click human workflows
+Do not generate a new code package under uncertainty.
 
-For Windows, common actions should have numbered `.bat` entry points:
+## 3. Audience separation
+
+Keep these audiences separate:
+
+- real users using the fitting UI;
+- human developers maintaining the source;
+- agent developers continuing the project.
+
+Normal UI text should be concise and user-facing. Implementation details such as accepted CSV wrapper names, internal placement keys, adapter names, serialization details, or numeric draft handling belong in compact help, advanced details, developer docs, or tested notes unless they are needed for physical interpretation or reporting transparency.
+
+## 4. User-facing transparency without dark boxes
+
+The released UI must show enough information for scientific review without forcing users to read code.
+
+Required user-facing surfaces:
+
+- current data source, selected trace, point count, and preview;
+- current model summary in user-facing terms;
+- equivalent-circuit preview;
+- model-specific formatted formulas;
+- parameter values, units, fit/fixed state, bounds, and uncertainty when available;
+- warnings and fit-quality verdicts with actionable next steps;
+- software version and reproducibility metadata.
+
+The UI must not merely say that a fit completed. It must distinguish numerical convergence from fit credibility.
+
+## 5. Law / Form / Placement model semantics
+
+A function/law is a mathematical relation first. It is not inherently series or parallel.
+
+A component instance chooses:
+
+- law/function;
+- evaluation form, such as voltage drop or current branch;
+- topology placement, such as main path or branch;
+- polarity when applicable;
+- parameters, units, bounds, and nickname;
+- nodes/graph connection when graph solving is used.
+
+Rs and Rsh are default nicknames for two Ohmic-law instances. They are not separate mathematical laws.
+
+Normal Model Builder UI must expose the user-facing buckets:
+
+- Main path;
+- Branches.
+
+Do not expose internal implementation buckets such as `core`, `series`, or `parallel` in the normal workflow. Internal keys may appear only in advanced/developer details.
+
+## 6. Formula and equation presentation
+
+User-facing formulas must be rendered as formatted equation blocks/cards, not raw backend/debug strings.
+
+Default formula display must be model-specific. For example, a D1 + Ohmic main path + Ohmic branch model should show:
+
+- junction voltage relation;
+- branch-current terms;
+- total-current relation;
+- combined implicit equation;
+- solver residual only in an explanatory or advanced block.
+
+Generic summation expressions or debug strings may be used in developer/debug views, not as the primary user explanation.
+
+## 7. Fitting and solver truthfulness
+
+Fit success from the optimizer is not automatically a trustworthy scientific fit.
+
+Quality gates must prevent exploded/non-finite fits from appearing as normal success. Warnings should be actionable and should distinguish:
+
+- numerical failure;
+- numerical convergence but poor fit quality;
+- parameter-bound issues;
+- likely compliance/outlier dominance;
+- model-structure mismatch;
+- insufficient points or invalid input data.
+
+## 8. Plot safety and selected-trace workflow
+
+Plot rendering must not visually invent connections between unrelated data.
+
+Rules:
+
+- fit lines are unfilled paths;
+- invalid or log-invalid points break lines;
+- different traces are never connected into one path;
+- hysteresis/segmented data must not be stitched into misleading polygons;
+- multi-trace import defaults to selected-trace-first plotting and fitting;
+- comparison views must be explicit user choices.
+
+## 9. Data transparency and HappyMeasure compatibility
+
+Data import must preserve trace identity.
+
+HappyMeasure CSV v2 compatibility is a release-facing contract. Import code must handle:
+
+- `single-v2`: one trace from source and measured columns;
+- `wide-v2`: shared source axis with one measured column per trace;
+- `long-v2`: one row per trace point grouped by `trace_index`.
+
+Normal UI should say that HappyMeasure multi-trace files are supported. Exact wrapper names should be shown in hover/help or advanced details, not as permanent body text.
+
+The Data tab must keep import controls, paste import, selected-trace dropdown, and spreadsheet preview separate from fitting/model-building controls.
+
+## 10. Numeric input behavior
+
+Numeric inputs must allow temporary draft states without committing invalid values or rewriting the user's text mid-typing.
+
+Allowed draft examples:
+
+- `-`;
+- `-.`;
+- `-0.`;
+- `-0.1`;
+- `1e`;
+- `1e-`;
+- `1e-9`.
+
+Only complete finite values should be committed to fitting configuration or parameter state. Invalid drafts should revert on blur or remain visually marked without corrupting config.
+
+## 11. Hover/help coverage
+
+Every user input, selector, checkbox, and action button that changes fitting, data, model, plots, or export behavior should have a concise hover/help explanation.
+
+The main workflow should remain visually clean. Prefer compact `?` help and titles over long explanatory paragraphs.
+
+## 12. I18n and user text
+
+Visible workflow labels should be routed through the English/Chinese i18n dictionary when practical.
+
+A release is not handoff-ready if switching language leaves major workflow panels half translated. Technical identifiers may remain untranslated only when they are intentional internal IDs, formulas, units, or solver names.
+
+The language selector belongs in the left dock footer near the version label.
+
+## 13. Layout and scrolling
+
+Desktop workspace panes must have explicit scroll ownership. A visible scrollbar must correspond to a constrained, scrollable container.
+
+When adding large cards to the app, verify that the left control column, right plot/results column, and documentation pages remain reachable without relying on accidental browser-body scrolling.
+
+## 14. One-click workflow and dependencies
+
+Root-level numbered `.bat` scripts are the preferred Windows human workflow:
 
 ```text
 00_validate_scripts.bat
@@ -36,26 +181,15 @@ For Windows, common actions should have numbered `.bat` entry points:
 04_run_dev.bat
 ```
 
-Do not create redundant wrapper chains.
+Setup and run must stay separate. Run scripts should not silently install dependencies.
 
-## 4. Confirm the human environment first
+Root-level dependency manifests must remain available for overwrite-friendly handoff:
 
-Before debugging setup or runtime issues, confirm:
+- `requirements.txt`;
+- `package.json`;
+- `DEPENDENCIES.md`.
 
-```powershell
-py -0p
-py -3.12 --version
-py -3.12 -m pip --version
-node --version
-npm --version
-git --version
-```
-
-Preferred Python baseline: Python 3.12.x.
-
-Do not use preview/dev Python as the default baseline.
-
-## 5. Test before handoff
+## 15. Testing before handoff
 
 Backend handoff checks:
 
@@ -67,203 +201,80 @@ python -m compileall -q backend/ivfitter backend/tests
 Frontend handoff checks when Node/npm is available:
 
 ```bash
-cd frontend
 npm install
 npm run build
 ```
 
-A Vite `ready` message is not proof that the React app renders.
+A Vite ready message is not proof that the React app renders. Manual UI checks must be listed separately.
 
-## 6. Keep the project compact
+## 16. Package hygiene and privacy
 
-Do not commit `.venv`, `node_modules`, `dist`, caches, temporary logs, or generated junk.
+Do not commit or package:
 
-Do not add large dependencies for small utilities.
+- `.venv`;
+- `node_modules`;
+- `dist`;
+- `__pycache__`;
+- `.pytest_cache`;
+- temporary logs;
+- generated junk.
 
-## 7. Function-extension discipline
+Commit messages, docs, examples, reports, screenshots, and handoff notes must not expose private local paths, usernames, account names, email addresses, or secrets.
 
-New physical/empirical functions must be registry/schema driven and must define:
-
-- topology location;
-- function type;
-- allowed polarities;
-- parameters, units, defaults, bounds;
-- equation text;
-- help text;
-- validation warnings;
-- tests.
-
-## 8. Physics transparency
-
-Empirical fitting terms must not be overclaimed as physical mechanisms.
-
-The UI and reports must show equations, parameter roles, warnings, and reproducibility metadata.
-
-## 9. Mistake-learning rule
-
-When an assistant/agent causes friction or finds a mismatch, ask whether the lesson should be written into the next version's rules. If yes, update this file and the relevant docs.
-
-## 10. Documentation audiences
-
-Keep these audiences separate:
-
-- human users;
-- human developers;
-- agent developers.
-
-Do not dump all guidance into one unstructured README.
-
-## 11. Do not expose human privacy or local paths in commits
-
-Commit messages, changelogs, docs, examples, reports, screenshots, and handoff notes must not expose the human developer's private local paths, usernames, email addresses, account names, or machine-specific secrets.
-
-Bad:
-
-```text
-C:\Users\carll\Documents\GitHub\...
-```
-
-Good:
+Use placeholders such as:
 
 ```text
 <project-root>
+<user-home>
+<repo>
 ```
 
-Local paths may appear in transient console screenshots only when the user shares them for debugging; do not copy them into committed docs or commit messages.
+## 17. Versioning
 
-## 12. Setup and run must stay separate
-
-Run scripts must not implicitly perform slow dependency installation. Setup scripts install dependencies; run scripts launch already-installed software.
-
-If dependencies are missing, a run script should stop with a clear message telling the user to run the numbered setup script.
-
-## 13. Choose version bumps by change impact
-
-The assistant/agent must choose the version bump that reflects the change, not blindly increment the last digit.
-
-Use semantic intent:
+Choose version bumps by impact, not by habit:
 
 - patch: bug fixes, script fixes, docs/rules updates, small UX fixes without schema/API change;
 - minor: new user-visible capability, layout/workflow improvement, new validated function, new export/import path, or meaningful UI restructuring that remains backward compatible;
 - major: breaking schema/API changes, incompatible project layout, removed supported workflow, or changed model semantics.
 
-Document the reason for the chosen bump in the changelog.
+Document the rationale in the changelog.
 
-## 14. Keep UI features modular and explainable
+## 18. Rules maintenance
 
-Interactive UI features such as charts, hover text, scaling, tooltips, and panels should be implemented as small reusable components.
+The rules file must not become a dump of repeated version-specific lessons.
 
-Do not bury chart math, tooltip logic, model editing, and API calls in one large page component.
+When audit or user feedback reveals a systemic issue:
 
-Preferred examples:
+1. fix it if feasible;
+2. add or update a general rule here;
+3. avoid appending duplicate version-specific rule blocks;
+4. periodically consolidate overlapping rules into stable sections;
+5. move detailed history to changelog or tested notes.
 
-```text
-SimpleChart.tsx
-FitStatusBar.tsx
-ModelBuilder.tsx
-ParameterTable.tsx
-format.ts
-```
+Rules should be durable operating principles, not an unmaintained incident log.
 
-Each component should have one clear responsibility.
+## 19. Audit-driven numerical and frontend robustness
 
-## 15. User-facing transparency tabs must stay consistent
+External audits must be converted into durable rules, not only one-off patches.
 
-The Web UI left-panel documentation tabs are part of the released product, not developer notes. Before each version handoff, verify that these user-facing tabs still match:
+Numerical rules:
 
-- the current component registry and available functions;
-- the actual fitting workflow and quality-gate behavior;
-- the current import/export/report behavior;
-- the displayed software version;
-- the wording in README, changelog, and tested notes.
+- reported parameter standard errors must include residual variance scaling, not bare `(J^T J)^-1`;
+- implicit solvers must never silently return unconverged fallback guesses as valid predictions;
+- graph/KCL solver failures must surface NaN/error warnings and make results non-reportable;
+- experimental solvers exposed to users or agents must carry warning-level gating until manually validated;
+- model validation must reject physically invalid global settings such as nonpositive temperature;
+- multistart seeding should explore bounded/log-scale parameter space for strongly correlated diode parameters.
 
-Avoid a black-box fitting experience. Real users must be able to see what the software does, what the model functions mean, what warnings mean, and what the software does not decide for them.
+Backend/API rules:
 
-## UI transparency consistency rule added in 1.1.3
+- API, UI, exported model, and package versions must come from a single dynamic source where practical;
+- column inference fallbacks must warn users instead of silently choosing ambiguous columns;
+- request validation errors and runtime failures should use distinct HTTP status classes.
 
-Every release that changes fitting behavior, plotting, model functions, parameter editing, or warnings must check the user-facing tabs for consistency:
+Frontend rules:
 
-- User guide must describe the current workflow.
-- Function guide must match the backend registry and Model Builder.
-- Fitting logic must match the actual backend fit request/response path.
-- Fit & convergence must match current parameter-initialization, bounds, multistart, and warning behavior.
-- Version shown in the UI, README, changelog, backend package, and frontend package must match.
-
-
-## Function/topology architecture rule
-
-A function defines an equation. A component instance defines where that equation is placed in the model topology. The solver, not the function registry, determines how component equations are assembled.
-
-Every release must check that user-facing Function guide, Fitting logic, topology preview, Model Builder, and backend registry remain consistent.
-
-
-## Law / Form / Placement architecture rule
-
-A function/law must be defined mathematically before topology is considered. A component instance chooses the law, the evaluation form, the placement in the topology, parameters, and nodes. Rs and Rsh must be treated as the same Ohmic law used with different forms/placements, not as unrelated mathematical functions.
-
-## Ambiguity gate for code changes
-
-When architecture or implementation intent is ambiguous, stop and confirm the intended design with the user before changing code or producing a new package. Discuss options, risks, and expected behavior first.
-
-## HappyMeasure import and multi-trace rule
-
-HappyMeasure CSV compatibility must be treated as a release-facing contract. Import code and UI must handle:
-
-- `single-v2`: one trace from source and measured columns;
-- `wide-v2`: one shared source axis with one measured column per trace;
-- `long-v2`: one row per trace point grouped by `trace_index`.
-
-Multi-trace imports must not silently collapse traces into one trace. The UI must show the trace count, list imported traces, and make clear which trace is selected for fitting.
-
-## Plot safety rule
-
-Plot rendering must never visually invent connections between unrelated data. Fit lines must be sorted by x for display, invalid/log-invalid points must not be drawn as continuous segments, and different traces must never be connected into a single fit line. SVG/CSS must keep line paths unfilled.
-
-## Numeric input editing rule
-
-Numeric text boxes must allow partial valid typing states such as `-`, `-.`, `1e`, and `1e-` without committing NaN or blocking the user. Only complete finite values should be committed to fitting configuration or parameter state.
-
-
-## v1.3.5 UI clarity and i18n rules
-
-- User-facing equations and equivalent-circuit explanations must not be dumped as raw plain text paragraphs. Use structured cards, schematic-style layout, and readable formula blocks.
-- Multi-trace imports must default to selected-trace-first plotting and fitting. Do not overload the plot workspace with every imported trace unless the user explicitly selects a comparison mode.
-- The Data panel should avoid redundant trace controls; one clear selected-trace dropdown is preferred over both dropdown and list.
-- New user-facing UI strings must be routed through the English/Chinese i18n dictionary when practical.
-- The language selector belongs in the left dock footer near the version label so it is persistent but not disruptive.
-
-## v1.3.5 readable UI and i18n rules
-
-- User-facing formulas must be rendered as structured math/equation UI, not backend/debug plain text such as raw `V_ext`, `V_drop,k`, or solver residual strings.
-- If a formula comes from backend equation summaries, the frontend must convert it into a user-readable card or hide it behind a developer/debug view.
-- Chinese and English UI labels must be kept in the i18n dictionary for all visible workflow controls, docs, status text, parameter/warning panels, and model-builder labels.
-- A release is not handoff-ready if switching language leaves major workflow panels half translated.
-
-
-## v1.3.6 scroll and layout rule
-
-Desktop workspace columns must have explicit scroll ownership. Long right-side content such as plots, parameters, warnings, equation preview, documentation cards, and generated reports must remain reachable without relying on browser body scrolling. When adding large cards to the main workspace, verify that both the left control column and the right plot/results column can scroll independently.
-
-## v1.3.8 rendered formula, scroll, and numeric-input rules
-
-- User-facing model formulas must be rendered as displayed equation blocks. Do not expose backend/debug equation strings as the primary UI.
-- Equation previews must be model-specific: show the equivalent circuit, junction-voltage relation, branch-current terms, combined equation, and solver residual for the currently selected model.
-- Desktop UI panes must have explicit scroll ownership. A visible scrollbar must correspond to a scrollable container whose height is actually constrained by the app layout.
-- Numeric inputs must support temporary draft states such as `-`, `-.`, `-0.`, `-0.1`, `1e-`, and `1e-9` without committing NaN or rewriting the draft mid-typing.
-- Residual floor should be estimated from the selected trace when data is loaded or the selected trace changes, unless a later explicit user-lock setting is implemented.
-
-
-## v1.3.8 UI semantics rules
-
-- Model Builder must use user-facing topology buckets: Main path and Branches. Avoid exposing internal buckets such as core, node branch, or solver implementation names in the normal workflow.
-- Implementation details such as accepted CSV schema variants or numeric draft handling must not be shown as permanent body text. Put them behind compact help icons/tooltips unless they directly affect physical interpretation or reporting transparency.
-- The collapsed left dock must remain icon-based, not first-letter based, so Chinese/English labels collapse consistently.
-
-
-## v1.3.9 model semantics and handoff rules
-
-- Rs and Rsh must be treated as user-facing nicknames for Ohmic law instances, not as separate mathematical laws.
-- The normal Model Builder must expose Main path and Branches, not internal core/series/parallel implementation buckets.
-- Developer identifiers such as adapter names, wrapper schema names, and serialization details belong in hover/help/details sections, not primary user workflow text.
-- Dependency entry points for handoff packages must exist at repository root: `requirements.txt`, `package.json`, and numbered one-click scripts.
-- Before each version, inspect the UI against the user-facing documentation and the current model semantics; do not let stale docs describe old internal categories.
+- major panels that render external data, plots, or fit results need ErrorBoundary protection;
+- equation/preview requests triggered by model editing must be debounced or explicitly user-triggered;
+- large React components must be split into readable subcomponents before they become agent-hostile patch targets;
+- accessibility basics for charts include `role`, `aria-label`, `<title>`, and keyboard focus support.

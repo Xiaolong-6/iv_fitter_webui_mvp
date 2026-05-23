@@ -113,14 +113,14 @@ def _solve_single_vj(v_ext: float, model) -> float:
         flo, fhi = f(lo), f(hi)
         tries += 1
     if flo * fhi <= 0:
-        return float(brentq(f, lo, hi, maxiter=80))
-    # fixed-point fallback for pathological combinations
-    vj = v_ext
-    for _ in range(12):
-        i = _current_at_vj(np.array([vj]), model)[0]
-        rs = _series_rs_eff(np.array([vj]), model)[0]
-        vj = float(v_ext - i * rs)
-    return vj
+        try:
+            root = float(brentq(f, lo, hi, maxiter=80))
+            return root if np.isfinite(root) else float("nan")
+        except Exception:
+            return float("nan")
+    # Do not silently return a fixed-point fallback.  Without a bracketed
+    # root, the junction voltage is undefined for this parameter set.
+    return float("nan")
 
 
 def solve_vj(voltage_v, model) -> np.ndarray:
@@ -176,14 +176,51 @@ def _metrics(y_fit, y_meas):
     }
 
 
-def _stderr(records, jac):
-    if jac is None or jac.size == 0 or len(records) == 0: return {}
+def _stderr(records, jac, residual_vector):
+    if jac is None or jac.size == 0 or len(records) == 0 or residual_vector is None:
+        return {}
     try:
+        n_obs, n_params = jac.shape
+        dof = max(n_obs - n_params, 1)
+        sigma2 = float(np.sum(np.asarray(residual_vector, dtype=float) ** 2) / dof)
         jtj = jac.T @ jac
-        cov = np.linalg.pinv(jtj)
+        cov = sigma2 * np.linalg.pinv(jtj)
         return {key: float(np.sqrt(max(cov[idx, idx], 0.0))) for idx, (key, *_rest) in enumerate(records)}
     except Exception:
         return {}
+
+
+def _multistart_candidates(x0: np.ndarray, lower: np.ndarray, upper: np.ndarray, n_seeds: int) -> list[np.ndarray]:
+    candidates = [np.clip(np.asarray(x0, dtype=float), lower, upper)]
+    n_extra = max(int(n_seeds) - 1, 0)
+    if n_extra <= 0 or len(x0) == 0:
+        return candidates
+    phi = 0.6180339887498949
+    for seed_idx in range(n_extra):
+        values = []
+        for dim, value in enumerate(x0):
+            lo = lower[dim]
+            hi = upper[dim]
+            q = ((seed_idx + 1) * (dim + 1) * phi) % 1.0
+            q = min(max(q, 1e-6), 1.0 - 1e-6)
+            if np.isfinite(lo) and np.isfinite(hi) and hi > lo:
+                if lo > 0 and hi / lo > 100:
+                    val = float(np.exp(np.log(lo) + q * (np.log(hi) - np.log(lo))))
+                else:
+                    val = float(lo + q * (hi - lo))
+            elif value > 0:
+                val = float(value * (10.0 ** ((q - 0.5) * 6.0)))
+            else:
+                scale = max(abs(float(value)), 1.0)
+                val = float(value + (q - 0.5) * 2.0 * scale)
+            values.append(val)
+        candidates.append(np.clip(np.asarray(values, dtype=float), lower, upper))
+    # Deduplicate numerically identical seeds produced by clipping.
+    unique: list[np.ndarray] = []
+    for candidate in candidates:
+        if not any(np.allclose(candidate, existing, rtol=1e-12, atol=1e-30) for existing in unique):
+            unique.append(candidate)
+    return unique
 
 
 def fit_trace(request: FitRequest) -> FitResult:
@@ -201,17 +238,19 @@ def fit_trace(request: FitRequest) -> FitResult:
     success = True
     message = "No free parameters; evaluated model only."
     fit_jac = None
+    fit_residual_vector = None
     if len(x0) > 0 and len(v_fit[use]) >= 3:
         def fun(x):
             _apply_x(records, x)
-            return _residual(predict_current(v_fit[use], request.model, request.config.solver_mode), i_meas[use], request.config.weighting, request.config.residual_floor_A)
+            pred = predict_current(v_fit[use], request.model, request.config.solver_mode)
+            if not np.all(np.isfinite(pred)):
+                return np.full_like(i_meas[use], 1e30, dtype=float)
+            res_vec = _residual(pred, i_meas[use], request.config.weighting, request.config.residual_floor_A)
+            return np.nan_to_num(res_vec, nan=1e30, posinf=1e30, neginf=-1e30)
         try:
             starts = [x0]
             if request.config.multistart_enabled:
-                starts = []
-                for factor in request.config.seed_scale_factors:
-                    candidate = np.clip(x0 * float(factor), lower, upper)
-                    starts.append(candidate)
+                starts = _multistart_candidates(x0, lower, upper, getattr(request.config, "multistart_n_seeds", 12))
             best = None
             for start in starts:
                 res = least_squares(fun, start, bounds=(lower, upper), loss=request.config.loss, max_nfev=request.config.max_nfev)
@@ -225,8 +264,9 @@ def fit_trace(request: FitRequest) -> FitResult:
             message = str(res.message)
             if request.config.multistart_enabled:
                 message += f"; multistart tried {len(starts)} seed set(s)"
-                warnings.append(FitWarning(code="multistart", message=f"Multistart tried {len(starts)} seed set(s).", severity="info"))
+                warnings.append(FitWarning(code="multistart", message=f"Multistart tried {len(starts)} seed set(s) using bounded/log-space sampling.", severity="info"))
             fit_jac = res.jac
+            fit_residual_vector = res.fun
         except Exception as exc:
             success = False
             message = f"Fit failed: {exc}"
@@ -235,19 +275,25 @@ def fit_trace(request: FitRequest) -> FitResult:
     i_all = np.asarray(request.trace.current_A, dtype=float)
     if request.config.solver_mode == "graph_dc":
         i_pred, branches = solve_graph_current(v_all, request.model)
-        warnings.append(FitWarning(code="graph_solver", message="Experimental DC graph solver used. Validate against the legacy solver before reporting.", severity="info"))
+        warnings.append(FitWarning(code="graph_solver", message="Experimental DC graph solver used. Validate against the legacy solver before reporting.", severity="warning"))
     else:
         vj_all = solve_vj(v_all, request.model)
         branches = branch_currents_at_vj(vj_all, request.model)
         i_pred = sum(branches.values(), np.zeros_like(v_all)) if branches else np.zeros_like(v_all)
+    if not np.all(np.isfinite(i_pred)):
+        code = "graph_solver_kcl_failed" if request.config.solver_mode == "graph_dc" else "junction_solver_failed"
+        warnings.append(FitWarning(code=code, message="Model prediction produced non-finite currents; this fit is not reportable.", severity="error"))
+        success = False
+        i_pred = np.asarray(i_pred, dtype=float)
     residual = i_pred - i_all
     params: dict[str, ParameterResult] = {}
-    stderrs = _stderr(records, fit_jac)
+    stderrs = _stderr(records, fit_jac, fit_residual_vector)
     for key, comp, name, spec in _all_fit_params(request):
         params[key] = ParameterResult(value=spec.value, unit=spec.unit, fixed=not spec.fit, lower=spec.lower, upper=spec.upper, stderr=stderrs.get(key))
     excluded_mask = np.zeros_like(v_all, dtype=bool)
-    idx = np.where(range_mask)[0]
-    excluded_mask[idx[excluded]] = True
+    range_indices = np.where(range_mask)[0]
+    assert len(excluded) == len(range_indices), "compliance mask must align with selected range"
+    excluded_mask[range_indices[excluded]] = True
     metrics = _metrics(i_pred, i_all)
     quality_ok, quality_warnings = evaluate_fit_quality(i_pred, i_all, metrics.get("linear_rmse_A"))
     warnings.extend(quality_warnings)

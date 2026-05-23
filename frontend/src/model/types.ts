@@ -11,7 +11,7 @@ export interface GraphComponent { id: string; function_type: string; law_id?: st
 export interface GraphSpec { terminals: string[]; reference_node: string; nodes: GraphNode[]; components: GraphComponent[]; assembly_notes: string[]; schema_version: string; }
 export interface ModelSpec { core: ComponentSpec[]; series: ComponentSpec[]; parallel: ComponentSpec[]; graph?: GraphSpec | null; temperature_K: number; version: string; }
 export interface TraceData { voltage_V: number[]; current_A: number[]; trace_id: string; metadata: Record<string, unknown>; }
-export interface FitConfig { v_min?: number | null; v_max?: number | null; weighting: string; loss: string; fit_speed: string; exclude_compliance: boolean; max_nfev: number; residual_floor_A?: number | null; multistart_enabled?: boolean; seed_scale_factors?: number[]; solver_mode?: SolverMode; }
+export interface FitConfig { v_min?: number | null; v_max?: number | null; weighting: string; loss: string; fit_speed: string; exclude_compliance: boolean; max_nfev: number; residual_floor_A?: number | null; multistart_enabled?: boolean; seed_scale_factors?: number[]; multistart_n_seeds?: number; solver_mode?: SolverMode; }
 export interface ParameterResult { value: number; unit?: string | null; fixed: boolean; lower?: number | null; upper?: number | null; stderr?: number | null; }
 export interface FitWarning { code: string; message: string; severity: "info" | "warning" | "error"; }
 export interface FitCurves { voltage_V: number[]; current_measured_A: number[]; current_fit_A: number[]; residual_A: number[]; branch_currents_A?: Record<string, number[]>; excluded_mask?: boolean[]; }
