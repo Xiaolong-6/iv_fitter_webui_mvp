@@ -1485,6 +1485,58 @@ button.running { cursor: progress; opacity: 0.85; }
   .mobile-action-bar .danger-soft { min-width: 82px; }
 }
 
+/* v1.4.30 portrait workspace should collapse the desktop split pane. */
+@media (max-width: 850px), (orientation: portrait) {
+  html,
+  body,
+  #root,
+  .app,
+  .workspace {
+    overflow-x: hidden;
+  }
+  .workspace {
+    height: auto;
+    min-height: 100dvh;
+    overflow-y: visible;
+    padding-bottom: calc(var(--mobile-bottom-nav, 74px) + var(--mobile-action-bar, 0px) + 18px);
+  }
+  .content-grid.workspace-split-grid,
+  .workspace-split-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    gap: 8px !important;
+    column-gap: 0 !important;
+  }
+  .workspace-resizer {
+    display: none !important;
+  }
+  .control-stack,
+  .plot-stack.main-results-stack,
+  .main-result-grid {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+  .topbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fit-status-compact > .status {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+  .top-warning-banner.compact {
+    margin: 0;
+  }
+}
+
 /* v1.4.6 Function Guide rewrite: user-facing model cards. */
 .user-law-list {
   gap: 16px;
