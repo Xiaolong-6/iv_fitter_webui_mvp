@@ -182,6 +182,33 @@ const FUNCTION_DOCS: FunctionDoc[] = [
     },
   },
   {
+    lawId: "softplus_power_law_voltage_drop",
+    en: {
+      name: "Softplus power-law voltage drop",
+      oneLine: "Empirical main-path voltage loss that softly turns on with current.",
+      tags: ["main path", "voltage drop", "high current"],
+      purpose: "Models an extra current-activated voltage drop in the main path when a constant Rs is too simple.",
+      suitable: "High-current roll-off or transport loss that behaves like an additional main-path voltage loss.",
+      notSuitable: "If the missing behavior is an added parallel current, use the branch softplus power-law current instead.",
+      curveEffect: "Consumes more external voltage near and above the current threshold, reducing the voltage seen by junction branches.",
+      fitAdvice: "Use after Rs is inadequate. Keep current threshold and softness bounded to avoid overfitting.",
+      parameters: [["A_V", "Voltage-drop scale."], ["It", "Turn-on current."], ["Is", "Softness current."], ["m", "Growth exponent."], ["Polarity", "Current direction."]],
+      formula: "V_{drop}=\\pm A_V\\,\\operatorname{softplus}(\\frac{\\pm I-I_t}{I_s})^m",
+    },
+    zh: {
+      name: "Softplus power-law voltage drop",
+      oneLine: "Empirical main-path voltage loss that softly turns on with current.",
+      tags: ["main path", "voltage drop", "high current"],
+      purpose: "Models an extra current-activated voltage drop in the main path when a constant Rs is too simple.",
+      suitable: "Use for high-current roll-off that behaves like an additional main-path voltage loss.",
+      notSuitable: "If the missing behavior is an added parallel current, use the branch softplus power-law current instead.",
+      curveEffect: "Consumes more external voltage near and above the current threshold.",
+      fitAdvice: "Use after Rs is inadequate. Keep current threshold and softness bounded.",
+      parameters: [["A_V", "Voltage-drop scale."], ["It", "Turn-on current."], ["Is", "Softness current."], ["m", "Growth exponent."], ["Polarity", "Current direction."]],
+      formula: "V_{drop}=\\pm A_V\\,\\operatorname{softplus}(\\frac{\\pm I-I_t}{I_s})^m",
+    },
+  },
+  {
     lawId: "softplus_power_law_current",
     en: {
       name: "Softplus power-law current",

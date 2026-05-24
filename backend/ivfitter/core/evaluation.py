@@ -84,6 +84,17 @@ def series_diode_barrier_drop(current: np.ndarray, comp: ComponentSpec, temperat
     return sign * n * thermal_voltage(temperature_K) * np.log1p(forward_current / i0)
 
 
+def series_power_law_drop(current: np.ndarray, comp: ComponentSpec) -> np.ndarray:
+    arr = np.asarray(current, dtype=float)
+    sign = diode_polarity_sign(comp.polarity)
+    amp = param_value(comp, "A_V", 0.0)
+    threshold = param_value(comp, "It_A", 0.0)
+    softness = max(param_value(comp, "Is_A", 1e-6), 1e-30)
+    exponent = param_value(comp, "m", 1.0)
+    u = (sign * arr - threshold) / softness
+    return sign * amp * np.power(softplus(u), exponent)
+
+
 def series_resistance_effective(vj: np.ndarray, model) -> np.ndarray:
     arr = np.asarray(vj, dtype=float)
     rs = np.zeros_like(arr)
@@ -116,6 +127,8 @@ def series_voltage_drop(current: np.ndarray, vj: np.ndarray, model, rs_eff_fn=se
     for comp in model.series:
         if comp.function_type == "series_diode_barrier":
             drop = drop + series_diode_barrier_drop(arr_i, comp, model.temperature_K)
+        elif comp.function_type == "series_power_law_drop":
+            drop = drop + series_power_law_drop(arr_i, comp)
     return drop
 
 

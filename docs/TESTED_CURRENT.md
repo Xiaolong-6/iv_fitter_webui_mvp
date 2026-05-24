@@ -19,8 +19,12 @@ Backend fitting math and serialization schemas were not intentionally changed in
 - Component rows expose Fit all, Fix all, Reset initials, and Seed from fitted values where applicable.
 - Filters cover All, Fitted, Fixed, Changed, At bounds, Main path, and Junction branches.
 - Model Builder no longer duplicates initial values/bounds, parameter summaries, or manual Advanced details expansion.
+- Model Builder component rows show nickname, component name, and Remove only; law/placement/role/polarity details are available from hover text.
 - Model preview is below Model Builder and collapsed by default.
 - Desktop Workspace has a draggable divider between setup/model controls and results; narrow/mobile layouts remain single-column.
+- Model preview formula cards are stacked vertically so Junction voltage and Branch currents are read in sequence.
+- Fit setup fields wrap to one column when the left Workspace pane is narrow.
+- Main path exposes a Softplus voltage drop option backed by a `series_power_law_drop` voltage-drop adapter.
 - Range/objective/run-option summaries and Parameters explanatory paragraphs are not visible inline in the Workspace UI.
 - Language/content extraction guidance is documented in `docs/LOCALIZATION_AND_TEXT.md`, and first shared frontend text lives in `frontend/src/content/localizedText.ts`.
 

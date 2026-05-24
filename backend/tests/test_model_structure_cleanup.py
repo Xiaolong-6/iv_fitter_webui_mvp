@@ -79,6 +79,9 @@ def test_registry_exposes_advanced_main_path_transport_forms():
     photo = registry["photo_modulated_main_path"]
     assert photo.default_form == "voltage_drop"
     assert "series_voltage_drop" in photo.allowed_placements
+    series_power = registry["series_power_law_drop"]
+    assert series_power.default_form == "voltage_drop"
+    assert "series_voltage_drop" in series_power.allowed_placements
 
 
 def test_softplus_transport_modifier_predicts_finite_current_with_rs_baseline():
@@ -98,6 +101,23 @@ def test_softplus_transport_modifier_predicts_finite_current_with_rs_baseline():
         params={"A": p(2.0), "Vt_V": p(0.1), "Vs_V": p(0.2)}, metadata={"nickname": "Gmod"},
     )
     model = ModelSpec(parallel=[branch], series=[rs, modifier], temperature_K=300.0)
+    current = predict_current(np.array([-1.0, 0.0, 1.0]), model)
+    assert np.isfinite(current).all()
+    assert current[-1] > current[1]
+
+
+def test_series_power_law_drop_predicts_finite_current_with_branch():
+    branch = ComponentSpec(
+        id="Rsh", location="parallel", function_type="constant_rs", law_id="ohmic",
+        evaluation_form="current_branch", placement="parallel_current_branch",
+        params={"Rs_ohm": p(1e6)}, metadata={"nickname": "Rsh"},
+    )
+    series_drop = ComponentSpec(
+        id="Softplus1", location="series", function_type="series_power_law_drop", law_id="softplus_power_law_voltage_drop",
+        evaluation_form="voltage_drop", placement="series_voltage_drop", polarity="forward",
+        params={"A_V": p(0.2), "It_A": p(1e-7), "Is_A": p(1e-7), "m": p(1.0)}, metadata={"nickname": "Softplus1"},
+    )
+    model = ModelSpec(parallel=[branch], series=[series_drop], temperature_K=300.0)
     current = predict_current(np.array([-1.0, 0.0, 1.0]), model)
     assert np.isfinite(current).all()
     assert current[-1] > current[1]

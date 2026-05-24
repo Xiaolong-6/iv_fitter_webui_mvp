@@ -32,6 +32,7 @@ function isPhotocurrentVoltage(term: Term) { return /photocurrent_voltage_depend
 function isPhotoconductive(term: Term) { return /photoconductive_branch/i.test(`${term.row} ${term.law} ${term.id}`); }
 function isPhotoMainPath(term: Term) { return /photo_modulated_main_path/i.test(`${term.row} ${term.law} ${term.id}`); }
 function isConductanceModifier(term: Term) { return term.form === "conductance_modifier" || /conductance_modifier|softplus_rs_modifier|series-path modifier/i.test(`${term.row} ${term.law} ${term.id}`); }
+function isSeriesPowerDrop(term: Term) { return /softplus_power_law_voltage_drop|series_power_law_drop/i.test(`${term.row} ${term.law} ${term.id}`); }
 function symbolFor(term: Term) {
   const safe = (term.nick || term.id).replace(/[^A-Za-z0-9]+/g, "");
   if (/^rs$/i.test(term.nick) || /^rs$/i.test(term.id)) return { r: "R_s", i: "I", v: "V_{Rs}" };
@@ -49,6 +50,7 @@ function seriesDropLatex(series: Term[]) {
     const s = symbolFor(term);
     if (isOhmic(term)) return `I${s.r}`;
     if (isPhotoMainPath(term)) return `I\\frac{R_0}{1+g_{ph}}`;
+    if (isSeriesPowerDrop(term)) return `sA_V\\,\\operatorname{softplus}\\!\\left(\\frac{sI-I_t}{I_s}\\right)^m`;
     if (isConductanceModifier(term)) return `I R_{base}/[1 + A\\,\\operatorname{softplus}(u)]`;
     return `V_{${term.id.replace(/[^A-Za-z0-9]/g, "")}}(I)`;
   });

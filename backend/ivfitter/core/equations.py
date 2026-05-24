@@ -18,6 +18,8 @@ def _component_equation(comp) -> str:
         return f"I_{nick} = Gph * V_j"
     if comp.function_type == "series_diode_barrier":
         return f"V_drop,{nick} = n V_T ln(I/I0 + 1)"
+    if comp.function_type == "series_power_law_drop":
+        return f"V_drop,{nick} = s A_V sp((sI - It)/Is)^m"
     if comp.function_type == "softplus_rs_modifier":
         return f"R_eff,{nick} = R_base / [1 + A*sp((s*V_j - Vt)/Vs)]"
     if comp.function_type == "custom" and (comp.evaluation_form == "conductance_modifier" or comp.placement == "series_conductance_modifier"):

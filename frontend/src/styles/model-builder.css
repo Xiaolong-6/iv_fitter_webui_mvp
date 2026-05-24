@@ -1,30 +1,33 @@
 /* Extracted from style.css lines 126-130 for Model Builder stabilization refactor. */
 .add-row { display: grid; grid-template-columns: minmax(120px,1fr) minmax(92px,0.7fr) auto; gap: 6px; }
 .component-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px; margin: 5px 0; background: #fbfdff; }
-.component-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.component-head {
+  display: grid;
+  grid-template-columns: minmax(72px, 112px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
 .param-grid { display: grid; gap: 5px; margin-top: 7px; }
 .param-row { display: grid; grid-template-columns: 88px 1fr 1fr 1fr 52px; gap: 5px; align-items: center; }
 
 /* Extracted from style.css lines 212-227 for Model Builder stabilization refactor. */
 .component-summary { color: #64748b; font-size: 0.82em; margin-top: 2px; line-height: 1.25; }
 .component-actions { display: inline-flex; gap: 5px; align-items: center; flex-wrap: nowrap; }
-.compact-model-row .component-head > div:first-child {
-  min-width: 0;
-}
-.compact-model-row strong {
+.compact-model-row strong,
+.component-display-name {
   display: block;
   line-height: 1.25;
-}
-.component-nickname-edit {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: #64748b;
-  font-size: 0.86em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
+.component-nickname-edit {
+  display: block;
+  min-width: 0;
+}
 .component-nickname-edit input {
-  width: 92px;
+  width: 100%;
   padding: 4px 6px;
 }
 .component-expression-edit {

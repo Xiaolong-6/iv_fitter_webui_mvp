@@ -18,19 +18,23 @@ import { localizedFunctionLabel } from "../content/localizedText";
 
 function componentLawLabel(comp: ComponentSpec, language: Language) {
   if (comp.law_id === "ohmic") return language === "zh" ? "欧姆定律" : "Ohmic law";
+  if (comp.function_type === "series_power_law_drop") return language === "zh" ? "Softplus voltage drop" : "Softplus voltage drop";
   return localizedFunctionLabel(comp.function_type, comp.law_id ?? comp.function_type, language);
 }
 
-function componentTitle(comp: ComponentSpec, language: Language) {
-  const law = componentLawLabel(comp, language);
+function componentDisplayName(comp: ComponentSpec, language: Language) {
+  return componentLawLabel(comp, language);
+}
+
+function componentDetailTitle(comp: ComponentSpec, language: Language) {
   const place = bucketForComponent(comp) === "main" ? t(language, "mainPath") : t(language, "branches");
   const role = typeof comp.metadata?.role === "string" && comp.metadata.role ? ` · ${comp.metadata.role}` : "";
   const pol = comp.polarity ? ` · ${t(language, "polarity")}: ${polarityLabel(language, comp.polarity)}` : "";
-  return `${nickname(comp)} · ${law} · ${place}${role}${pol}`;
+  return `${componentLawLabel(comp, language)} · ${place}${role}${pol}`;
 }
 
 function functionOptionLabel(definition: FunctionDefinition, language: Language, bucket?: BuilderBucket) {
-  const advanced = new Set(["series_diode_barrier", "softplus_rs_modifier", "custom", "power_law", "soft_breakdown", "photocurrent_voltage_dependent"]);
+  const advanced = new Set(["series_diode_barrier", "softplus_rs_modifier", "series_power_law_drop", "custom", "power_law", "soft_breakdown", "photocurrent_voltage_dependent"]);
   const interpretive = new Set(["photo_modulated_main_path"]);
   const prefix = interpretive.has(definition.function_type)
     ? (language === "zh" ? "解释性 · " : "Interpretive · ")
@@ -186,18 +190,18 @@ function ComponentCard(props: {
   return (
     <div className="component-card compact-component-card compact-model-row">
       <div className="component-head">
-        <div>
-          <strong>{componentTitle(comp, language)}</strong>
-        </div>
+        <label className="component-nickname-edit" title={t(language, "nicknameHelp")}>
+          <input
+            aria-label={t(language, "nickname")}
+            title={t(language, "nicknameHelp")}
+            value={nickname(comp)}
+            onChange={(e) => onChange(updateComponent(model, location, comp.id, applyNicknameToParams(comp, e.target.value)))}
+          />
+        </label>
+        <strong className="component-display-name" title={componentDetailTitle(comp, language)}>
+          {componentDisplayName(comp, language)}
+        </strong>
         <div className="component-actions">
-          <label className="component-nickname-edit" title={t(language, "nicknameHelp")}>
-            <span>{t(language, "nickname")}</span>
-            <input
-              title={t(language, "nicknameHelp")}
-              value={nickname(comp)}
-              onChange={(e) => onChange(updateComponent(model, location, comp.id, applyNicknameToParams(comp, e.target.value)))}
-            />
-          </label>
           <button title={t(language, "removeComponentHelp")} onClick={() => onChange(removeComponent(model, location, comp.id))}>{t(language, "remove")}</button>
         </div>
       </div>
