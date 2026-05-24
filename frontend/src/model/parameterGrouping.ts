@@ -1,6 +1,5 @@
 import type { ComponentSpec, FitResult, Location, ModelSpec, ParameterSpec } from "./types";
 
-export type ParameterFilter = "all" | "fitted" | "fixed" | "changed" | "at_bounds" | "main" | "branches";
 export type PlacementGroupId = "main" | "branches";
 
 export interface ParameterRowModel {
@@ -11,8 +10,6 @@ export interface ParameterRowModel {
   spec: ParameterSpec;
   placementGroup: PlacementGroupId;
   isFitted: boolean;
-  isChanged: boolean;
-  isAtBounds: boolean;
 }
 
 export interface ComponentParameterGroup {
@@ -37,34 +34,11 @@ export function placementGroupForLocation(location: Location): PlacementGroupId 
   return location === "series" ? "main" : "branches";
 }
 
-function nearlyEqual(a: number, b: number) {
-  const scale = Math.max(Number.EPSILON, Math.abs(a), Math.abs(b));
-  return Math.abs(a - b) <= Math.max(Number.EPSILON, scale * 1e-9);
-}
-
-function parameterChanged(spec: ParameterSpec, fitted?: { value: number; lower?: number | null; upper?: number | null; fixed: boolean }) {
-  if (!fitted) return false;
-  const fitFlag = spec.fit ?? true;
-  if (!nearlyEqual(spec.value, fitted.value)) return true;
-  if ((spec.lower ?? null) !== (fitted.lower ?? null)) return true;
-  if ((spec.upper ?? null) !== (fitted.upper ?? null)) return true;
-  if (fitFlag === fitted.fixed) return true;
-  return false;
-}
-
-function parameterAtBounds(spec: ParameterSpec, fitted?: { value: number }) {
-  const value = fitted?.value ?? spec.value;
-  if (spec.lower !== null && spec.lower !== undefined && nearlyEqual(value, spec.lower)) return true;
-  if (spec.upper !== null && spec.upper !== undefined && nearlyEqual(value, spec.upper)) return true;
-  return false;
-}
-
 export function buildParameterRows(model: ModelSpec, result: FitResult | null): ParameterRowModel[] {
   return (["series", "core", "parallel"] as const).flatMap((location) =>
     model[location].flatMap((component) =>
       Object.entries(component.params).map(([paramName, spec]) => {
         const key = parameterKey(component.id, paramName);
-        const fitted = result?.parameters[key];
         return {
           key,
           location,
@@ -73,22 +47,10 @@ export function buildParameterRows(model: ModelSpec, result: FitResult | null): 
           spec,
           placementGroup: placementGroupForLocation(location),
           isFitted: spec.fit ?? true,
-          isChanged: parameterChanged(spec, fitted),
-          isAtBounds: parameterAtBounds(spec, fitted),
         };
       }),
     ),
   );
-}
-
-export function filterParameterRows(rows: ParameterRowModel[], filter: ParameterFilter): ParameterRowModel[] {
-  if (filter === "fitted") return rows.filter((row) => row.isFitted);
-  if (filter === "fixed") return rows.filter((row) => !row.isFitted);
-  if (filter === "changed") return rows.filter((row) => row.isChanged);
-  if (filter === "at_bounds") return rows.filter((row) => row.isAtBounds);
-  if (filter === "main") return rows.filter((row) => row.placementGroup === "main");
-  if (filter === "branches") return rows.filter((row) => row.placementGroup === "branches");
-  return rows;
 }
 
 export function groupParameterRows(rows: ParameterRowModel[]): PlacementParameterGroup[] {
@@ -125,6 +87,39 @@ export function seedComponentFromFittedValues(model: ModelSpec, result: FitResul
     const fitted = result.parameters[parameterKey(componentId, paramName)];
     return fitted ? { ...spec, value: fitted.value } : spec;
   });
+}
+
+export function seedModelFromFittedValues(model: ModelSpec, result: FitResult | null): ModelSpec {
+  if (!result) return model;
+  let next = model;
+  for (const location of ["series", "core", "parallel"] as const) {
+    for (const component of next[location]) {
+      next = seedComponentFromFittedValues(next, result, location, component.id);
+    }
+  }
+  return next;
+}
+
+export function restoreModelParameterValues(model: ModelSpec, snapshot: ModelSpec | null): ModelSpec {
+  if (!snapshot) return model;
+  const snapshotValues = new Map<string, number>();
+  for (const location of ["series", "core", "parallel"] as const) {
+    for (const component of snapshot[location]) {
+      for (const [paramName, spec] of Object.entries(component.params)) {
+        snapshotValues.set(parameterKey(component.id, paramName), spec.value);
+      }
+    }
+  }
+  let next = model;
+  for (const location of ["series", "core", "parallel"] as const) {
+    for (const component of next[location]) {
+      next = updateComponentParams(next, location, component.id, (spec, paramName) => {
+        const value = snapshotValues.get(parameterKey(component.id, paramName));
+        return value === undefined ? spec : { ...spec, value };
+      });
+    }
+  }
+  return next;
 }
 
 export function replaceComponentParams(model: ModelSpec, location: Location, componentId: string, params: Record<string, ParameterSpec>): ModelSpec {

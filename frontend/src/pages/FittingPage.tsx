@@ -3,6 +3,7 @@ import type { CSSProperties, PointerEvent, ReactNode } from "react";
 import type { FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, EquationSummary, ComponentSpec } from "../model/types";
 import { equations, exportReport, fitTrace, getRegistry } from "../api/client";
 import { emptyTrace, estimateResidualFloorA, updateComponent } from "../model/utils";
+import { restoreModelParameterValues, seedModelFromFittedValues } from "../model/parameterGrouping";
 import { WorkflowSidebar, type AppView } from "../components/WorkflowSidebar";
 import { UserDocumentationPage } from "../components/UserDocumentationPage";
 import { ModelBuilder } from "../components/ModelBuilder";
@@ -50,6 +51,8 @@ function WorkspaceView(props: {
   model: ModelSpec;
   setModel: (model: ModelSpec) => void;
   updateParameterModel: (model: ModelSpec) => void;
+  canRestoreInitialValues: boolean;
+  onRestoreInitialValues: () => void;
   config: FitConfig;
   setConfig: (config: FitConfig) => void;
   registry: FunctionDefinition[];
@@ -60,6 +63,9 @@ function WorkspaceView(props: {
   openSections: Record<string, boolean>;
   setOpenSections: (sections: Record<string, boolean>) => void;
   setActiveView: (view: AppView) => void;
+  fitStatus: ReactNode;
+  fitActions: ReactNode;
+  fitMessages: ReactNode;
 }) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [leftPaneWidth, setLeftPaneWidth] = useState(() => {
@@ -113,7 +119,16 @@ function WorkspaceView(props: {
     <aside className="control-stack">
       <Section id="fitSetup" title={t(props.language, "fitSetup")}>
         <ErrorBoundary label="Fit config panel">
-          <FitConfigPanel config={props.config} onChange={props.setConfig} language={props.language} />
+          <FitConfigPanel
+            config={props.config}
+            onChange={props.setConfig}
+            language={props.language}
+            actionDock={<div className="fit-setup-action-dock" aria-label={props.language === "zh" ? "拟合状态和操作" : "Fit status and actions"}>
+              {props.fitStatus}
+              <div className="fit-action-row">{props.fitActions}</div>
+              {props.fitMessages ? <div className="fit-message-stack">{props.fitMessages}</div> : null}
+            </div>}
+          />
         </ErrorBoundary>
       </Section>
       <Section id="model" title={t(props.language, "modelBuilder")}>
@@ -146,7 +161,7 @@ function WorkspaceView(props: {
       <div className="main-result-grid">
         <Section id="parameters" title={t(props.language, "parameters")}>
           <ErrorBoundary label="Parameter table">
-            <ParameterTable result={props.result} model={props.model} registry={props.registry} onModelChange={props.updateParameterModel} language={props.language} />
+            <ParameterTable result={props.result} model={props.model} registry={props.registry} onModelChange={props.updateParameterModel} language={props.language} canRestoreInitialValues={props.canRestoreInitialValues} onRestoreInitialValues={props.onRestoreInitialValues} />
           </ErrorBoundary>
         </Section>
       </div>
@@ -217,6 +232,7 @@ export function FittingPage() {
   const [traces, setTraces] = useState<TraceData[]>([]);
   const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
   const [model, setModel] = useState<ModelSpec>(initialModel);
+  const [preFitInitialModel, setPreFitInitialModel] = useState<ModelSpec | null>(null);
   const [config, setConfig] = useState<FitConfig>(initialConfig);
   const [result, setResult] = useState<FitResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -320,6 +336,8 @@ export function FittingPage() {
       setError(t(language, "noTraceError"));
       return;
     }
+    const modelBeforeFit = structuredClone(model) as ModelSpec;
+    setPreFitInitialModel(modelBeforeFit);
     cancelFitRef.current = false;
     const timeoutS = Math.max(1, Number(config.run_timeout_s ?? 60));
     const controller = new AbortController();
@@ -335,9 +353,10 @@ export function FittingPage() {
       setError(language === "zh" ? `拟合超过 ${timeoutS} 秒，已自动停止并忽略本次结果。` : `Fit exceeded ${timeoutS} s and was stopped; this run result was ignored.`);
     }, timeoutS * 1000);
     try {
-      const fit = await fitTrace(selectedTrace, model, { ...config, run_timeout_s: timeoutS }, controller.signal);
+      const fit = await fitTrace(selectedTrace, modelBeforeFit, { ...config, run_timeout_s: timeoutS }, controller.signal);
       if (cancelFitRef.current) return;
       setResult(fit);
+      setModel(seedModelFromFittedValues(modelBeforeFit, fit));
       setOpenSections((current) => ({ ...current, plots: true, parameters: true }));
     } catch (e) {
       if (!cancelFitRef.current) {
@@ -376,26 +395,15 @@ export function FittingPage() {
     window.setTimeout(() => document.getElementById(`section-${sectionId}`)?.scrollIntoView({ block: "start", behavior: "smooth" }), 50);
   }
 
-  return <div className={sidebarCollapsed ? "app sidebar-collapsed" : "app"} style={{ "--app-zoom": zoom } as ZoomStyle}>
-    <WorkflowSidebar activeView={activeView} onSelect={setActiveView} version={APP_VERSION} collapsed={sidebarCollapsed} onToggleCollapsed={() => setSidebarCollapsed((v) => !v)} language={language} onLanguageChange={setLanguage} />
-    <main className="workspace">
-      {activeView === "workspace" && <div className="topbar">
-        <FitStatusBar result={result} language={language} onCheckLogIv={() => openAndScroll("plots")} onAdjustInitials={() => openAndScroll("model")} />
-        <div className="toolbar">
-          <button className={isFitting ? "primary running" : "primary"} disabled={isFitting} onClick={runFit}>{isFitting ? (language === "zh" ? "拟合中…" : "Fitting…") : t(language, "runFit")}</button>
-          <button className="danger-soft" disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止" : "Stop"}</button>
-          <button disabled={!result || isFitting} onClick={makeReport}>{t(language, "report")}</button>
-          <div className="zoom-control" title={t(language, "appZoomHelp")}>
-            <button onClick={() => setZoom((z) => Math.max(0.55, Number((z - 0.06).toFixed(2))))}>−</button>
-            <span>{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom((z) => Math.min(1.6, Number((z + 0.06).toFixed(2))))}>+</button>
-          </div>
-        </div>
-      </div>}
-      {activeView === "workspace" && result && warningDismissKey(result) !== dismissedWarningKey && <WarningSummaryBanner result={result} language={language} onClose={() => setDismissedWarningKey(warningDismissKey(result))} />}
-      {activeView === "workspace" && isFitting && <div className="fit-running-banner">{language === "zh" ? `拟合正在运行…已用 ${elapsedSeconds} 秒。可以点击 Stop 忽略本次结果。` : `Fit is running… ${elapsedSeconds}s elapsed. Use Stop to ignore this run if needed.`}</div>}
-      {error && (isBackendConnectionError(error) ? <BackendConnectionBanner message={error} onRetry={runFit} /> : <div className="warning error">{error}</div>)}
+  const zoomControl = <div className="zoom-control sidebar-zoom-control" title={t(language, "appZoomHelp")}>
+    <button onClick={() => setZoom((z) => Math.max(0.55, Number((z - 0.06).toFixed(2))))}>−</button>
+    <span>{Math.round(zoom * 100)}%</span>
+    <button onClick={() => setZoom((z) => Math.min(1.6, Number((z + 0.06).toFixed(2))))}>+</button>
+  </div>;
 
+  return <div className={sidebarCollapsed ? "app sidebar-collapsed" : "app"} style={{ "--app-zoom": zoom } as ZoomStyle}>
+    <WorkflowSidebar activeView={activeView} onSelect={setActiveView} version={APP_VERSION} collapsed={sidebarCollapsed} onToggleCollapsed={() => setSidebarCollapsed((v) => !v)} language={language} onLanguageChange={setLanguage} zoomControl={zoomControl} />
+    <main className="workspace">
       {activeView === "data" ? <DataImportWorkspace
         traces={traces}
         selectedTraceId={selectedTraceId}
@@ -409,8 +417,10 @@ export function FittingPage() {
         setTraces={(next) => { setTraces(next); setResult(null); setReport(""); }}
         setSelectedTraceId={(id) => { setSelectedTraceId(id); setResult(null); setReport(""); }}
         model={model}
-        setModel={(next) => { setModel(next); setResult(null); setReport(""); }}
+        setModel={(next) => { setModel(next); setPreFitInitialModel(null); setResult(null); setReport(""); }}
         updateParameterModel={(next) => { setModel(next); setReport(""); }}
+        canRestoreInitialValues={preFitInitialModel !== null}
+        onRestoreInitialValues={() => { if (preFitInitialModel) setModel((current) => restoreModelParameterValues(current, preFitInitialModel)); }}
         config={config}
         setConfig={setConfig}
         registry={registry}
@@ -421,6 +431,17 @@ export function FittingPage() {
         openSections={openSections}
         setOpenSections={setOpenSections}
         setActiveView={setActiveView}
+        fitStatus={<FitStatusBar result={result} language={language} onCheckLogIv={() => openAndScroll("plots")} onAdjustInitials={() => openAndScroll("model")} />}
+        fitActions={<>
+          <button className={isFitting ? "primary running" : "primary"} disabled={isFitting} onClick={runFit}>{isFitting ? (language === "zh" ? "拟合中…" : "Fitting…") : t(language, "runFit")}</button>
+          <button className="danger-soft" disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止" : "Stop"}</button>
+          <button disabled={!result || isFitting} onClick={makeReport}>{t(language, "report")}</button>
+        </>}
+        fitMessages={<>
+          {result && warningDismissKey(result) !== dismissedWarningKey ? <WarningSummaryBanner result={result} language={language} onClose={() => setDismissedWarningKey(warningDismissKey(result))} /> : null}
+          {isFitting ? <div className="fit-running-banner">{language === "zh" ? `拟合正在运行…已用 ${elapsedSeconds} 秒。可以点击 Stop 忽略本次结果。` : `Fit is running… ${elapsedSeconds}s elapsed. Use Stop to ignore this run if needed.`}</div> : null}
+          {error ? (isBackendConnectionError(error) ? <BackendConnectionBanner message={error} onRetry={runFit} /> : <div className="warning error">{error}</div>) : null}
+        </>}
       /> : <UserDocumentationPage view={activeView} registry={registry} appVersion={APP_VERSION} language={language} />}
       {activeView === "workspace" && <div className="mobile-action-bar"><button className={isFitting ? "primary running" : "primary"} disabled={isFitting} onClick={runFit}>{isFitting ? (language === "zh" ? "拟合中…" : "Fitting…") : t(language, "runFit")}</button><button className="danger-soft" disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止" : "Stop"}</button></div>}
     </main>

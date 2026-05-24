@@ -1,24 +1,32 @@
-# Tested current package - v1.4.30
+# Tested current package - v1.4.33
 
-## v1.4.30 validation
+## v1.4.33 validation
 
-Validated grouped Parameters and compact Workspace behavior with:
+- Frontend validation: `npm run test:parameter-ui` from the repository root and `npm run build` from `frontend/` both pass.
+- Backend syntax validation: `python -m compileall -q backend/ivfitter backend/tests` passes.
+- Scope: frontend parameter workflow change only. Backend fitting math was not intentionally changed.
+- Backend pytest note: `PYTHONPATH=backend python -m pytest backend/tests -q` was run and currently has one pre-existing/orthogonal failure in `backend/tests/test_photocurrent_models.py::test_implicit_solver_failure_still_returns_warning_and_nan_no_fallback`, where a constant photocurrent branch remains finite even when the junction-voltage solver is monkeypatched to return NaN. This change does not modify backend fitting behavior.
+
+
+## v1.4.33 parameter workflow validation
+
+Validated simplified Parameters and auto-seed behavior with:
 
 ```powershell
 npm.cmd run test:parameter-ui
 npm.cmd run build
 ```
 
-Expected results: parameter grouping logic passes, frontend production build passes, and browser checks confirm the compact grouped parameter table, collapsed Model preview below Model Builder, removed visible explanatory helper text, and unchanged parameter serialization keys.
+Expected results: parameter grouping logic passes, frontend production build passes, and browser checks confirm the simplified Parameters toolbar, automatic post-fit seeding behavior, Restore initial values action, and unchanged parameter serialization keys.
 
-Backend fitting math and serialization schemas were not intentionally changed in v1.4.30. Full backend pytest/compileall was not rerun in this environment because `python`/`py` are not on PATH and the existing `.venv\Scripts\python.exe` points to a removed Python installation; rerun `.\02_setup_dev.bat` before backend release validation.
+Backend fitting math and serialization schemas were not intentionally changed in v1.4.33. The frontend-specific regression test and build pass; backend pytest needs the photocurrent solver-failure expectation resolved before using a fully green backend release gate.
 
-## v1.4.30 UI/workflow validation
+## v1.4.33 UI/workflow validation
 
 - Parameters are grouped by Main path and Junction branches, then by component instance.
-- Component rows expose Fit all, Fix all, Reset initials, and Seed from fitted values where applicable.
-- Filters cover All, Fitted, Fixed, Changed, At bounds, Main path, and Junction branches.
-- Model Builder no longer duplicates initial values/bounds, parameter summaries, or manual Advanced details expansion.
+- Component rows expose Fit all/Fix all only; reset/seed actions are no longer duplicated per component.
+- The old All/Fitted/Fixed/Changed/At bounds/Main path/Junction branches filter tabs are removed. The toolbar now contains one Restore initial values action plus a short auto-seed note.
+- Model Builder no longer duplicates initial values/bounds, parameter summaries, or manual Advanced details expansion. Parameters owns next-fit values, and completed fits automatically seed those values from the fitted result.
 - Model Builder component rows show nickname, component name, and Remove only; law/placement/role/polarity details are available from hover text.
 - Narrow left-pane layouts keep Model Builder actions visible and contain long Model preview formulas inside their cards.
 - Model Builder polarity is edited per component instance after adding a model term, instead of being selected globally in the Add row.
@@ -30,7 +38,7 @@ Backend fitting math and serialization schemas were not intentionally changed in
 - Fit setup fields wrap to one column when the left Workspace pane is narrow.
 - Main path exposes a Softplus voltage drop option backed by a `series_power_law_drop` voltage-drop adapter.
 - Photo-specific duplicate aliases are no longer exposed when they are mathematically equivalent to existing Ohmic or custom circuit terms.
-- Editing Parameter-table initials, bounds, or fit/fixed state preserves the previous fit result, keeping fitted values visible and seed-from-fitted available.
+- Editing Parameter-table initials, bounds, or fit/fixed state preserves the previous fit result. Completed fits automatically write fitted values into the Initial column for the next run, and Restore initial values returns the latest pre-fit seed values.
 - Range/objective/run-option summaries and Parameters explanatory paragraphs are not visible inline in the Workspace UI.
 - Language/content extraction guidance is documented in `docs/LOCALIZATION_AND_TEXT.md`, and first shared frontend text lives in `frontend/src/content/localizedText.ts`.
 

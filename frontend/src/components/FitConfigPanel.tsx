@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import type { FitConfig } from "../model/types";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
@@ -38,11 +39,13 @@ function NumericInput({ label, value, placeholder, help, onCommit }: { label: st
   }} /></label>;
 }
 
-export function FitConfigPanel({ config, onChange, language }: { config: FitConfig; onChange: (cfg: FitConfig) => void; language: Language }) {
+export function FitConfigPanel({ config, onChange, language, actionDock }: { config: FitConfig; onChange: (cfg: FitConfig) => void; language: Language; actionDock?: ReactNode }) {
   return <section className="card config-panel embedded-card">
     <div className="card-head">
       <h2>{t(language, "fitSetup")}</h2>
     </div>
+
+    {actionDock}
 
     <div className="setup-section">
       <h3>{t(language, "voltageRange")} <HelpTip text={t(language, "numericHelp")} /></h3>

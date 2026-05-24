@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.4.30**.
+Current package: **v1.4.33**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -37,7 +37,7 @@ React/Vite frontend -> FastAPI API -> Python fitting core
   - photo-modulated main path
 - Model Builder equivalent-circuit preview uses a compact topology diagram with main path on top and branches below Vj.
 - Model Builder is compact: component nicknames are edited directly, and parameter initials/bounds/fixed state are handled in the Parameters table rather than duplicated in builder cards.
-- Parameters are displayed by placement and component instance. Keep parameter keys unchanged for fitting, save/load, JSON export/import, and reports.
+- Parameters are displayed by placement and component instance. Keep parameter keys unchanged for fitting, save/load, JSON export/import, and reports. After a completed fit, fitted values are automatically written into the model as next-run initial values; the restore button should recover the pre-fit value snapshot only, not rename parameters or alter serialization.
 - Model preview belongs below Model Builder and starts collapsed by default.
 - User-facing text should move toward content modules and translation-ready documents; start with `docs/LOCALIZATION_AND_TEXT.md` before adding new visible UI copy.
 - User manual Function Guide is user-facing by default. Internal schema terms are only allowed in collapsed Advanced details.
@@ -79,10 +79,15 @@ For docs-only changes, still run the full set if dependency availability allows 
 After every change, provide a 3-step browser test that does not require reading source code. The user should be able to verify the change through the UI or visible files.
 
 
-## v1.4.30 grouped-parameters and localization note
+## v1.4.33 validation caveat
+
+- `npm run test:parameter-ui`, `frontend/npm run build`, and backend `compileall` passed for v1.4.33.
+- Full backend pytest currently has one unrelated photocurrent solver-failure expectation mismatch in `test_implicit_solver_failure_still_returns_warning_and_nan_no_fallback`; do not treat v1.4.33 as having changed backend fitting math. Resolve or update that backend test before claiming a fully green backend gate.
+
+## v1.4.33 parameter auto-seeding and localization note
 
 - Parameter table organization is display-only. Do not rename internal parameter keys when changing grouping, filters, labels, export, report, or save/load behavior.
-- Prefer `frontend/src/model/parameterGrouping.ts` for grouping, filtering, component batch behavior, and seed-from-fitted logic instead of reimplementing those rules inside React components.
+- Prefer `frontend/src/model/parameterGrouping.ts` for grouping, component batch behavior, whole-model seed-from-fitted logic, and restore-from-snapshot logic instead of reimplementing those rules inside React components.
 - Prefer `frontend/src/content/localizedText.ts` and `frontend/src/model/i18n.ts` for visible labels/help text. Avoid scattering translation strings across component bodies.
 - Keep explanatory text out of the visible Workspace surface when it can live in HelpTips, the user manual, or localization docs.
 

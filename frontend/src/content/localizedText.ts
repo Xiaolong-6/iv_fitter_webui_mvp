@@ -1,6 +1,4 @@
 import type { Language } from "../model/i18n";
-import type { ParameterFilter } from "../model/parameterGrouping";
-
 type LocalizedText = Record<Language, string>;
 
 function pick(text: LocalizedText, language: Language) {
@@ -23,32 +21,22 @@ export function localizedFunctionLabel(functionType: string, fallback: string, l
   return text ? pick(text, language) : fallback;
 }
 
-export const parameterFilterLabels: Record<ParameterFilter, LocalizedText> = {
-  all: { en: "All", zh: "全部" },
-  fitted: { en: "Fitted", zh: "参与拟合" },
-  fixed: { en: "Fixed", zh: "固定" },
-  changed: { en: "Changed", zh: "已改动" },
-  at_bounds: { en: "At bounds", zh: "贴边界" },
-  main: { en: "Main path", zh: "主路" },
-  branches: { en: "Junction branches", zh: "结点支路" },
-};
-
-export function parameterFilterLabel(filter: ParameterFilter, language: Language) {
-  return pick(parameterFilterLabels[filter], language);
-}
-
 export const parameterTableText = {
   help: {
-    en: "Parameters are grouped by placement and component. Edit initials, bounds, and fit/fixed state for the next fit; fitted value shows the previous fit result.",
-    zh: "参数按位置和组件分组。这里可以修改下一次拟合使用的初值、边界和 fit/fixed 状态；Fitted value 是上一次拟合结果。",
+    en: "Parameters are grouped by placement and component. After a fit, fitted values are automatically written back as the next initial values. Use Restore initial values to recover the values that were present before the most recent fit.",
+    zh: "参数按位置和组件分组。每次拟合完成后，拟合值会自动写回为下一次拟合初值。可用 Restore initial values 恢复最近一次拟合前的初值。",
   },
-  noFilterMatch: {
-    en: "No parameters match the current filter.",
-    zh: "当前筛选没有匹配参数。",
+  restoreToolbar: {
+    en: "Parameter restore controls",
+    zh: "参数恢复控制",
   },
-  filterToolbar: {
-    en: "Parameter filters",
-    zh: "参数筛选",
+  restoreInitialValues: {
+    en: "Restore initial values",
+    zh: "恢复初始值",
+  },
+  autoSeedNote: {
+    en: "Fitted values are auto-seeded as the next initials after each completed fit.",
+    zh: "每次拟合完成后，拟合值会自动作为下一次初值。",
   },
   fittedCountSuffix: {
     en: "fitted",
@@ -61,14 +49,6 @@ export const parameterTableText = {
   batchFixAll: {
     en: "Fix all",
     zh: "全部固定",
-  },
-  batchResetInitials: {
-    en: "Reset initials",
-    zh: "重置初值",
-  },
-  batchSeedFromFitted: {
-    en: "Seed from fitted values",
-    zh: "用拟合值作初值",
   },
   initial: {
     en: "Initial",

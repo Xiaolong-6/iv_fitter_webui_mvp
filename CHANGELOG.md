@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.4.33 - Parameter auto-seeding and simplified restore workflow
+
+- After a completed fit, fitted parameter values are automatically written back into the model as the next-run initial values.
+- Replaced the parameter filter tab row with a single Restore initial values action that restores the values present before the most recent completed fit.
+- Removed component-level Reset initials and Seed from fitted values buttons to reduce duplicated parameter actions. Component-level Fit all/Fix all remains available.
+- Updated parameter grouping tests, user-facing workflow notes, current validation notes, and agent handoff documentation.
+
+## v1.4.32 - Fit setup action dock and sidebar zoom
+
+- Moved desktop fit status, Run fit/Stop/Report controls, warning summary, running timer, and errors into the Fit setup card, above Voltage range and Advanced objective/run options.
+- Moved the global zoom control into the sidebar below the language control so the fit action dock contains only fit/report workflow controls.
+- Kept the mobile bottom action bar behavior unchanged while allowing the Fit setup action dock to become non-sticky on narrow screens.
+
 ## v1.4.30 - Grouped parameters and compact model workflow
 
 ### Changed

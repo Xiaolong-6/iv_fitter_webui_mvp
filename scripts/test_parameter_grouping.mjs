@@ -13,10 +13,11 @@ vm.runInNewContext(transpiled, { module, exports: module.exports, structuredClon
 
 const {
   buildParameterRows,
-  filterParameterRows,
   groupParameterRows,
   parameterKey,
   seedComponentFromFittedValues,
+  seedModelFromFittedValues,
+  restoreModelParameterValues,
   setComponentFitState,
 } = module.exports;
 
@@ -60,13 +61,6 @@ assertJsonEqual(grouped[1].groups.map((group) => group.component.id), ["D1", "Rs
 assert.equal(grouped[1].groups[0].fittedCount, 1);
 assert.equal(grouped[1].groups[0].totalCount, 2);
 
-assertJsonEqual(filterParameterRows(rows, "main").map((row) => row.key), ["Rs.Rs_ohm"]);
-assertJsonEqual(filterParameterRows(rows, "branches").map((row) => row.key), ["D1.I0_A", "D1.n", "Rsh.Rs_ohm"]);
-assertJsonEqual(filterParameterRows(rows, "fixed").map((row) => row.key), ["D1.n", "Rsh.Rs_ohm"]);
-assertJsonEqual(filterParameterRows(rows, "fitted").map((row) => row.key), ["Rs.Rs_ohm", "D1.I0_A"]);
-assertJsonEqual(filterParameterRows(rows, "at_bounds").map((row) => row.key), ["Rs.Rs_ohm"]);
-assertJsonEqual(filterParameterRows(rows, "changed").map((row) => row.key), ["Rs.Rs_ohm", "D1.I0_A"]);
-
 const fixedD1 = setComponentFitState(model, "core", "D1", false);
 assert.equal(fixedD1.core[0].params.I0_A.fit, false);
 assert.equal(fixedD1.core[0].params.n.fit, false);
@@ -74,6 +68,16 @@ assert.equal(fixedD1.core[0].params.n.fit, false);
 const seededD1 = seedComponentFromFittedValues(model, result, "core", "D1");
 assert.equal(seededD1.core[0].params.I0_A.value, 2e-12);
 assert.equal(seededD1.core[0].params.n.value, 1.5);
+
+const seededModel = seedModelFromFittedValues(model, result);
+assert.equal(seededModel.series[0].params.Rs_ohm.value, 0);
+assert.equal(seededModel.core[0].params.I0_A.value, 2e-12);
+assert.equal(seededModel.parallel[0].params.Rs_ohm.value, 1e9);
+
+const restoredValues = restoreModelParameterValues(seededModel, model);
+assert.equal(restoredValues.series[0].params.Rs_ohm.value, 10);
+assert.equal(restoredValues.core[0].params.I0_A.value, 1e-12);
+assert.equal(restoredValues.parallel[0].params.Rs_ohm.value, 1e9);
 
 const beforeKeys = JSON.stringify(Object.keys(model.core[0].params));
 const afterKeys = JSON.stringify(Object.keys(seededD1.core[0].params));

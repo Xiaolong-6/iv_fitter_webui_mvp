@@ -4,19 +4,15 @@ import { fmtBounds } from "../model/format";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { parameterMeaning, parameterShortAssessment } from "../model/diagnostics";
-import { buildParams, updateComponent } from "../model/utils";
+import { updateComponent } from "../model/utils";
 import { HelpTip } from "./HelpTip";
-import { parameterFilterLabel, parameterText } from "../content/localizedText";
+import { parameterText } from "../content/localizedText";
 import {
   buildParameterRows,
-  filterParameterRows,
   groupParameterRows,
   parameterKey,
-  replaceComponentParams,
-  seedComponentFromFittedValues,
   setComponentFitState,
   type ComponentParameterGroup,
-  type ParameterFilter,
 } from "../model/parameterGrouping";
 
 function formatParameterNumber(v: number | undefined | null) {
@@ -96,41 +92,37 @@ function componentSummary(comp: ComponentSpec, language: Language) {
   return `${law} | ${form} | ${placement} | ${polarity}`;
 }
 
-function resetComponentInitials(model: ModelSpec, registry: FunctionDefinition[], group: ComponentParameterGroup) {
-  const definition = registry.find((item) => item.function_type === group.component.function_type);
-  if (!definition) return model;
-  return replaceComponentParams(model, group.location, group.component.id, buildParams(definition, nickname(group.component)));
-}
-
-const filters: ParameterFilter[] = ["all", "fitted", "fixed", "changed", "at_bounds", "main", "branches"];
-
 export function ParameterTable({
   result,
   model,
   registry,
   onModelChange,
   language,
+  canRestoreInitialValues = false,
+  onRestoreInitialValues,
 }: {
   result: FitResult | null;
   model: ModelSpec;
   registry: FunctionDefinition[];
   onModelChange: (model: ModelSpec) => void;
   language: Language;
+  canRestoreInitialValues?: boolean;
+  onRestoreInitialValues?: () => void;
 }) {
+  void registry;
   const [openKey, setOpenKey] = useState<string | null>(null);
-  const [filter, setFilter] = useState<ParameterFilter>("all");
   const allRows = buildParameterRows(model, result);
-  const rows = filterParameterRows(allRows, filter);
-  const grouped = groupParameterRows(rows);
+  const grouped = groupParameterRows(allRows);
 
   return <section className="card parameter-card">
     <h2>{t(language, "parameters")} <HelpTip text={parameterText("help", language)} /></h2>
-    <div className="parameter-filter-bar" role="toolbar" aria-label={parameterText("filterToolbar", language)}>
-      {filters.map((item) => <button key={item} type="button" className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>
-        {parameterFilterLabel(item, language)}
-      </button>)}
+    <div className="parameter-filter-bar" role="toolbar" aria-label={parameterText("restoreToolbar", language)}>
+      <button type="button" disabled={!canRestoreInitialValues || !onRestoreInitialValues} onClick={onRestoreInitialValues}>
+        {parameterText("restoreInitialValues", language)}
+      </button>
+      <span className="muted parameter-auto-seed-note">{parameterText("autoSeedNote", language)}</span>
     </div>
-    {allRows.length === 0 ? <p className="muted">{t(language, "runFitForParameters")}</p> : grouped.length === 0 ? <p className="muted">{parameterText("noFilterMatch", language)}</p> : grouped.map((placement) => <div className="parameter-placement-group" key={placement.id}>
+    {allRows.length === 0 ? <p className="muted">{t(language, "runFitForParameters")}</p> : grouped.map((placement) => <div className="parameter-placement-group" key={placement.id}>
       <h3>{placement.id === "main" ? t(language, "mainPath") : t(language, "branches")}</h3>
       <div className="table-wrap"><table className="parameter-table interactive-parameter-table compact-parameter-table">
           <thead><tr>
@@ -157,21 +149,16 @@ export function ParameterTable({
                   <label><input type="checkbox" checked={group.fittedCount === group.totalCount} onChange={(e) => onModelChange(setComponentFitState(model, group.location, group.component.id, e.target.checked))} /> {group.fittedCount === group.totalCount ? parameterText("batchFixAll", language) : parameterText("batchFitAll", language)}</label>
                 </div>
               </td>
-              <td className="desktop-detail">
-                <div className="parameter-batch-actions">
-                  <button type="button" onClick={() => onModelChange(resetComponentInitials(model, registry, group))}>{parameterText("batchResetInitials", language)}</button>
-                  <button type="button" disabled={!result} onClick={() => onModelChange(seedComponentFromFittedValues(model, result, group.location, group.component.id))}>{parameterText("batchSeedFromFitted", language)}</button>
-                </div>
-              </td>
+              <td className="desktop-detail"></td>
             </tr>;
-            const parameterRows = group.rows.map(({ location, component: comp, paramName, spec, isChanged, isAtBounds }) => {
+            const parameterRows = group.rows.map(({ location, component: comp, paramName, spec }) => {
             const key = parameterKey(comp.id, paramName);
             const open = openKey === key;
             const fitted = result?.parameters[key];
             const meaning = result ? parameterMeaning(result, key, language) : (spec.description ?? "");
             const short = result ? parameterShortAssessment(result, key, language) : (spec.description ?? "");
             return <Fragment key={key}>
-              <tr className={["parameter-summary-row", isChanged ? "changed" : "", isAtBounds ? "at-bounds" : ""].filter(Boolean).join(" ")}>
+              <tr className="parameter-summary-row">
                 <td title={key} onClick={() => setOpenKey(open ? null : key)}>{labelForModelParameter(model, comp.id, paramName)}</td>
                 <td><DraftNumberInput value={spec.value} title={parameterText("initialTitle", language)} onCommit={(value) => { if (value !== null) onModelChange(updateParameter(model, location, comp.id, paramName, { value })); }} /></td>
                 <td title={fitted ? String(fitted.value) : ""}>{fitted ? `${formatParameterNumber(fitted.value)} ${fitted.unit ?? spec.unit ?? ""}` : "-"}</td>

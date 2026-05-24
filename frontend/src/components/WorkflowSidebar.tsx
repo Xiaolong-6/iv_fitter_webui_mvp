@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 
@@ -14,6 +15,7 @@ export function WorkflowSidebar({
   onToggleCollapsed,
   language,
   onLanguageChange,
+  zoomControl,
 }: {
   activeView: AppView;
   onSelect: (view: AppView) => void;
@@ -22,6 +24,7 @@ export function WorkflowSidebar({
   onToggleCollapsed: () => void;
   language: Language;
   onLanguageChange: (language: Language) => void;
+  zoomControl?: ReactNode;
 }) {
   function labelFor(tab: AppView) {
     return t(language, tab);
@@ -55,6 +58,7 @@ export function WorkflowSidebar({
         <option value="en">{t(language, "english")}</option>
         <option value="zh">{t(language, "chinese")}</option>
       </select></label> : <button className="language-icon" title={t(language, "language")} onClick={() => onLanguageChange(language === "en" ? "zh" : "en")}>{language === "en" ? "ZH" : "EN"}</button>}
+      {zoomControl ? <div className="sidebar-zoom-slot">{zoomControl}</div> : null}
       <div className="sidebar-version">
         {!collapsed && <span>{t(language, "version")}</span>}
         <strong>v{version}</strong>

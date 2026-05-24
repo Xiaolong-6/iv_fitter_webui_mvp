@@ -1,18 +1,11 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.4.30**
+Current version: **1.4.33**
+
+> v1.4.33 workflow note: Desktop fit status and Run fit/Stop/Report controls remain at the top of Fit setup. Parameter initials now auto-seed from each completed fit, the old parameter filter tabs were removed, and the Parameters toolbar now exposes one Restore initial values action for the pre-fit values from the latest completed run. The global zoom control remains in the sidebar under the language control.
 
 
-
-
-
-
-
-
-
-
-
-> v1.4.30 workflow note: Parameters are now grouped by placement and component with component-level fit/fix/reset/seed actions. Model Builder is more compact, Model preview lives below the builder and starts collapsed, and user-facing text/localization content has started moving into dedicated content modules and documentation.
+> v1.4.30 workflow note: Parameters are grouped by placement and component. Model Builder is more compact, Model preview lives below the builder and starts collapsed, and user-facing text/localization content has started moving into dedicated content modules and documentation.
 
 > v1.4.29 audit/workflow note: Plots empty state now has an Import data shortcut; Run options include a 60 s default timeout with frontend abort and backend cooperative timeout; starting a run clears previous fit verdict/warnings; Parameters table uses scientific notation for extreme values; several backend/frontend audit issues were closed.
 
@@ -56,7 +49,7 @@ The in-app **User manual** now uses a tutorial-style structure adapted from the 
 3. Open **Workspace** and choose the fit range and objective settings.
 4. Build the model in **Model Builder**.
 5. Run the fit.
-6. Inspect status, plots, residuals, parameters, warnings, and equations.
+6. Inspect status, plots, residuals, parameters, warnings, and equations. After each completed fit, the fitted parameter values become the next initial values automatically; use Restore initial values in Parameters to recover the pre-fit seed values.
 7. Export a report only after the model, units, warnings, and residuals make sense.
 
 ## Current UI areas
