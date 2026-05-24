@@ -130,17 +130,12 @@ function AddRow(props: {
   bucket: BuilderBucket;
   definitions: FunctionDefinition[];
   selectedDefinition?: FunctionDefinition;
-  selectedPolarity?: string;
   language: Language;
   onSelectDefinition: (functionType: string) => void;
-  onSelectPolarity: (polarity: string) => void;
   onAdd: () => void;
   disabled?: boolean;
   disabledReason?: string;
 }) {
-  const polarities = allowedPolarities(props.selectedDefinition);
-  const selectedPolarity = props.selectedPolarity || props.selectedDefinition?.default_polarity || polarities[0] || "";
-
   return (
     <div className="add-row">
       <select
@@ -154,21 +149,6 @@ function AddRow(props: {
           </option>
         ))}
       </select>
-      {polarities.length ? (
-        <select
-          title={t(props.language, "polarityHelp")}
-          value={selectedPolarity}
-          onChange={(e) => props.onSelectPolarity(e.target.value)}
-        >
-          {polarities.map((polarity) => (
-            <option key={polarity} value={polarity}>{polarityLabel(props.language, polarity)}</option>
-          ))}
-        </select>
-      ) : (
-        <span className="polarity-none" title={t(props.language, "noPolarityHelp")}>
-          {t(props.language, "noPolarity")}
-        </span>
-      )}
       <button title={props.disabledReason || t(props.language, "addComponentHelp")} disabled={props.disabled} onClick={props.onAdd}>{t(props.language, "add")}</button>
     </div>
   );
@@ -178,13 +158,19 @@ function ComponentCard(props: {
   comp: ComponentSpec;
   location: ModelLocation;
   model: ModelSpec;
+  definition?: FunctionDefinition;
   language: Language;
   onChange: (model: ModelSpec) => void;
 }) {
-  const { comp, location, model, language, onChange } = props;
+  const { comp, location, model, definition, language, onChange } = props;
+  const polarities = allowedPolarities(definition);
 
   function updateMetadata(patch: Record<string, unknown>) {
     onChange(updateComponent(model, location, comp.id, { ...comp, metadata: { ...comp.metadata, ...patch } }));
+  }
+
+  function updatePolarity(nextPolarity: Polarity) {
+    onChange(updateComponent(model, location, comp.id, { ...comp, polarity: nextPolarity }));
   }
 
   return (
@@ -202,6 +188,18 @@ function ComponentCard(props: {
           {componentDisplayName(comp, language)}
         </strong>
         <div className="component-actions">
+          {polarities.length ? (
+            <select
+              className="component-polarity-select"
+              title={t(language, "polarityHelp")}
+              value={comp.polarity ?? definition?.default_polarity ?? polarities[0]}
+              onChange={(e) => updatePolarity(e.target.value as Polarity)}
+            >
+              {polarities.map((polarity) => (
+                <option key={polarity} value={polarity}>{polarityLabel(language, polarity)}</option>
+              ))}
+            </select>
+          ) : null}
           <button title={t(language, "removeComponentHelp")} onClick={() => onChange(removeComponent(model, location, comp.id))}>{t(language, "remove")}</button>
         </div>
       </div>
@@ -230,7 +228,6 @@ function canAddSecondaryDiode(model: ModelSpec) {
 
 export function ModelBuilder({ model, registry, onChange, language }: Props) {
   const [selected, setSelected] = useState<Record<string, string>>({});
-  const [polarity, setPolarity] = useState<Record<string, string>>({});
 
   const labels = {
     main: t(language, "mainPath"),
@@ -246,14 +243,24 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
     return definitions.find((item) => item.function_type === selected[bucket]) ?? definitions[0];
   }
 
+  function definitionForComponent(comp: ComponentSpec) {
+    return registry.find((definition) => definition.function_type === comp.function_type);
+  }
+
+  function addPolarityFor(bucket: BuilderBucket, definition: FunctionDefinition): Polarity | undefined {
+    const polarities = allowedPolarities(definition);
+    if (!polarities.length) return undefined;
+    const preferred = [definition.default_polarity, ...polarities].filter(Boolean) as Polarity[];
+    return preferred.find((candidate) => {
+      const pending = buildPendingComponent(model, bucket, definition, candidate);
+      return !isDuplicateBlocked(model, pending);
+    }) ?? preferred[0];
+  }
+
   function addFrom(bucket: BuilderBucket) {
     const definition = selectedDefinition(bucket);
     if (!definition) return;
-    const polarities = allowedPolarities(definition);
-    const selectedPolarity = polarities.length
-      ? (polarity[bucket] || definition.default_polarity || polarities[0]) as Polarity
-      : undefined;
-    const result = addDefinitionToModel(model, bucket, definition, selectedPolarity);
+    const result = addDefinitionToModel(model, bucket, definition, addPolarityFor(bucket, definition));
     if (!result.added) return;
     onChange(result.model);
   }
@@ -276,9 +283,7 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
         const definitions = definitionsForBucket(bucket);
         const definition = selectedDefinition(bucket);
         const components = bucketLocations[bucket].flatMap((location) => model[location].map((comp) => ({ location, comp })));
-        const polarities = definition ? allowedPolarities(definition) : [];
-        const pendingPolarity = polarities.length ? (polarity[bucket] || definition?.default_polarity || polarities[0]) as Polarity : undefined;
-        const pendingComponent = definition ? buildPendingComponent(model, bucket, definition, pendingPolarity) : null;
+        const pendingComponent = definition ? buildPendingComponent(model, bucket, definition, addPolarityFor(bucket, definition)) : null;
         const duplicateBlocked = pendingComponent ? isDuplicateBlocked(model, pendingComponent) : false;
         const equivalentBlocked = pendingComponent ? isSingleTraceEquivalentMainPathBlocked(model, pendingComponent) : false;
         const duplicateReason = equivalentBlocked
@@ -296,14 +301,10 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
               bucket={bucket}
               definitions={definitions}
               selectedDefinition={definition}
-              selectedPolarity={polarity[bucket]}
               language={language}
               onSelectDefinition={(functionType) => {
-                const next = definitions.find((item) => item.function_type === functionType);
                 setSelected((current) => ({ ...current, [bucket]: functionType }));
-                setPolarity((current) => ({ ...current, [bucket]: next?.default_polarity ?? next?.allowed_polarities?.[0] ?? "" }));
               }}
-              onSelectPolarity={(value) => setPolarity((current) => ({ ...current, [bucket]: value }))}
               onAdd={() => addFrom(bucket)}
               disabled={duplicateBlocked || equivalentBlocked}
               disabledReason={duplicateBlocked ? duplicateReason : undefined}
@@ -320,6 +321,7 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
                 comp={comp}
                 location={location}
                 model={model}
+                definition={definitionForComponent(comp)}
                 language={language}
                 onChange={onChange}
               />

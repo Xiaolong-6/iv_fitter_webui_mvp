@@ -9,6 +9,10 @@
 - Added component-level Fit all, Fix all, Reset initials, and Seed from fitted values controls without changing fitting math, parameter keys, JSON export/import shape, or report keys.
 - Made Model Builder more compact by editing nicknames directly on component cards and removing duplicated initial/bounds editors, parameter summaries, manual Advanced details expansion, and extra expand controls.
 - Reduced Model Builder component rows to nickname, component name, and Remove; detailed law/placement/role/polarity metadata now lives on component-name hover.
+- Tightened narrow-pane containment so Model Builder rows keep Remove visible and Model preview formulas scroll inside their cards instead of stretching the left pane.
+- Moved polarity selection from the Add row to each added component row, so each component instance can be adjusted independently after creation.
+- Made Model preview more beginner-friendly with step explanations, labeled formula blocks, and per-branch descriptions.
+- Defined `softplus(x)=ln(1+exp(x))` in Model preview and in manual formula cards that use softplus terms.
 - Moved Model preview below Model Builder and made it collapsed by default.
 - Added a draggable Workspace divider so users can manually resize the setup/model column and the results column on desktop layouts.
 - Changed Model preview formula cards to stack vertically so Junction voltage and Branch currents are not displayed side by side.

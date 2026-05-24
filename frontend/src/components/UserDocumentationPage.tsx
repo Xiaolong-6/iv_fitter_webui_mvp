@@ -420,6 +420,7 @@ function AdvancedFunctionDetails({ lawId, registry, language }: { lawId: string;
 
 function FunctionDocCard({ doc, registry, language }: { doc: FunctionDoc; registry: FunctionDefinition[]; language: Language }) {
   const t = language === "zh" ? doc.zh : doc.en;
+  const usesSoftplus = `${t.formula} ${t.advancedFormula ?? ""}`.includes("\\operatorname{softplus}");
   return <article className="manual-law-card user-law-card">
     <header className="manual-law-header">
       <div><h3>{t.name}</h3><p>{t.oneLine}</p></div>
@@ -433,7 +434,7 @@ function FunctionDocCard({ doc, registry, language }: { doc: FunctionDoc; regist
     </div>
     <section className="manual-parameter-table"><h4>{language === "zh" ? "参数" : "Parameters"}</h4><div>{t.parameters.map(([name, meaning]) => <div className="manual-parameter-row" key={name}><span>{name}</span><p>{meaning}</p></div>)}</div></section>
     <section className="manual-fit-advice"><h4>{language === "zh" ? "拟合建议" : "Fit advice"}</h4><p>{t.fitAdvice}</p></section>
-    <section className="manual-formula-view"><h4>{language === "zh" ? "公式" : "Formula"}</h4><MathFormula latex={t.formula} className="manual-formula" />{t.advancedFormula ? <details className="manual-advanced-formula"><summary>{language === "zh" ? "高级公式" : "Advanced formula"}</summary><MathFormula latex={t.advancedFormula} className="manual-formula" /></details> : null}</section>
+    <section className="manual-formula-view"><h4>{language === "zh" ? "公式" : "Formula"}</h4><MathFormula latex={t.formula} className="manual-formula" />{usesSoftplus ? <div className="manual-softplus-note"><strong>{language === "zh" ? "Softplus 定义：" : "Softplus definition:"}</strong> <InlineFormula latex="\\operatorname{softplus}(x)=\\ln(1+\\exp(x))" />. {language === "zh" ? "它是平滑阈值函数：低于阈值时接近零，高于阈值后近似线性增长。" : "It is a smooth threshold function: close to zero below the threshold and almost linear above it."}</div> : null}{t.advancedFormula ? <details className="manual-advanced-formula"><summary>{language === "zh" ? "高级公式" : "Advanced formula"}</summary><MathFormula latex={t.advancedFormula} className="manual-formula" /></details> : null}</section>
     <details className="manual-advanced-details"><summary>{language === "zh" ? "高级细节" : "Advanced details"}</summary><AdvancedFunctionDetails lawId={doc.lawId} registry={registry} language={language} /></details>
   </article>;
 }

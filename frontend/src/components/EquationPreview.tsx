@@ -38,10 +38,10 @@ function symbolFor(term: Term) {
   if (/^rs$/i.test(term.nick) || /^rs$/i.test(term.id)) return { r: "R_s", i: "I", v: "V_{Rs}" };
   if (/rsh|shunt/i.test(term.nick) || /rsh|shunt/i.test(term.id)) return { r: "R_{sh}", i: "I_{Rsh}", v: "V_j" };
   if (isDiode(term)) return { i: `I_{${safe || "D"}}`, r: "", v: "V_j" };
-  if (isPhotocurrentConstant(term) || isPhotocurrentVoltage(term)) return { i: `I_{ph}`, r: "", v: "V_j" };
-  if (isPhotoconductive(term)) return { i: `I_{pc}`, r: "", v: "V_j" };
-  if (isForwardPower(term)) return { i: `I_{fwd}`, r: "", v: "V_j" };
-  if (isBreakdown(term)) return { i: `I_{br}`, r: "", v: "V_j" };
+  if (isPhotocurrentConstant(term) || isPhotocurrentVoltage(term)) return { i: `I_{${safe || "ph"}}`, r: "", v: "V_j" };
+  if (isPhotoconductive(term)) return { i: `I_{${safe || "pc"}}`, r: "", v: "V_j" };
+  if (isForwardPower(term)) return { i: `I_{${safe || "fwd"}}`, r: "", v: "V_j" };
+  if (isBreakdown(term)) return { i: `I_{${safe || "br"}}`, r: "", v: "V_j" };
   return { i: `I_{${safe || "branch"}}`, r: `R_{${safe || "x"}}`, v: "V_j" };
 }
 function seriesDropLatex(series: Term[]) {
@@ -95,20 +95,55 @@ function termMeaning(term: Term, language: Language) {
   if (term.form === "current_branch" || term.placement.includes("branch")) return language === "zh" ? "并联支路电流，加入总电流" : "parallel branch current; adds to terminal current";
   return language === "zh" ? "模型项" : "model term";
 }
+function beginnerBranchMeaning(term: Term) {
+  if (isDiode(term)) return "Exponential diode-like current evaluated at the junction voltage.";
+  if (isOhmic(term)) return "Linear leakage path: higher Vj gives proportionally higher leakage current.";
+  if (isPhotoconductive(term)) return "Light-dependent conductance path that contributes current proportional to Vj.";
+  if (isPhotocurrentConstant(term)) return "Light-generated current with nearly constant magnitude.";
+  if (isPhotocurrentVoltage(term)) return "Light-generated current whose magnitude can change with voltage.";
+  if (isForwardPower(term)) return "Extra empirical current that turns on softly near a threshold.";
+  if (isBreakdown(term)) return "Reverse-bias leakage or soft breakdown contribution.";
+  return "This branch contributes one current term to the terminal current.";
+}
+
 function FormulaCards({ series, branches, language }: { series: Term[]; branches: Term[]; language: Language }) {
+  const usesSoftplus = [...series, ...branches].some((term) => isSeriesPowerDrop(term) || isConductanceModifier(term) || isForwardPower(term) || isBreakdown(term) || isPhotocurrentVoltage(term));
   return <>
+    {usesSoftplus ? <div className="equation-card formula-card softplus-definition-card">
+      <h3>{language === "zh" ? "Softplus 定义" : "Softplus definition"}</h3>
+      <p className="equation-explain">{language === "zh" ? "Softplus 是平滑阈值函数。低于阈值时接近零，高于阈值后近似线性增长，因此模型不会出现尖锐折角。" : "Softplus is a smooth threshold function. It stays near zero below the threshold and grows almost linearly above it, so the model avoids a sharp corner."}</p>
+      <div className="preview-formula-block">
+        <div className="preview-formula-head"><strong>{language === "zh" ? "数学定义" : "Mathematical definition"}</strong></div>
+        <MathFormula latex={"\\operatorname{softplus}(x)=\\ln(1+\\exp(x))"} />
+      </div>
+    </div> : null}
     <div className="equation-card formula-card">
       <h3>{language === "zh" ? "1. 结点电压" : "1. Junction voltage"}</h3>
-      <MathFormula latex={seriesDropLatex(series)} />
+      <p className="equation-explain">Start with the externally applied voltage, then subtract main-path voltage losses. The branches below see the remaining junction voltage Vj.</p>
+      <div className="preview-formula-block">
+        <div className="preview-formula-head"><strong>Voltage seen by junction branches</strong></div>
+        <MathFormula latex={seriesDropLatex(series)} />
+      </div>
     </div>
     <div className="equation-card formula-card">
       <h3>{language === "zh" ? "2. 支路电流" : "2. Branch currents"}</h3>
-      <MathFormula latex={totalCurrentLatex(branches)} />
-      <div className="branch-formula-list">{branches.map((b) => <MathFormula key={b.id} latex={branchCurrentLatex(b)} />)}</div>
+      <p className="equation-explain">Each branch calculates a current from Vj. The terminal current is the sum of all active branch currents.</p>
+      <div className="preview-formula-block">
+        <div className="preview-formula-head"><strong>Total current</strong></div>
+        <MathFormula latex={totalCurrentLatex(branches)} />
+      </div>
+      <div className="branch-formula-list">{branches.map((b) => <div className="preview-formula-block" key={b.id}>
+        <div className="preview-formula-head"><strong>{b.nick}</strong><span>{beginnerBranchMeaning(b)}</span></div>
+        <MathFormula latex={branchCurrentLatex(b)} />
+      </div>)}</div>
     </div>
     <div className="equation-card formula-card wide-equation">
       <h3>{language === "zh" ? "3. 当前模型的合并方程" : "3. Combined equation for this model"}</h3>
-      <MathFormula latex={concreteLatex(series, branches)} />
+      <p className="equation-explain">This is the same model after substituting the branch formulas into one equation.</p>
+      <div className="preview-formula-block">
+        <div className="preview-formula-head"><strong>Single-equation view</strong></div>
+        <MathFormula latex={concreteLatex(series, branches)} />
+      </div>
     </div>
   </>;
 }

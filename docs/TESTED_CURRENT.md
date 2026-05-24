@@ -20,6 +20,10 @@ Backend fitting math and serialization schemas were not intentionally changed in
 - Filters cover All, Fitted, Fixed, Changed, At bounds, Main path, and Junction branches.
 - Model Builder no longer duplicates initial values/bounds, parameter summaries, or manual Advanced details expansion.
 - Model Builder component rows show nickname, component name, and Remove only; law/placement/role/polarity details are available from hover text.
+- Narrow left-pane layouts keep Model Builder actions visible and contain long Model preview formulas inside their cards.
+- Model Builder polarity is edited per component instance after adding a model term, instead of being selected globally in the Add row.
+- Model preview explains the junction-voltage step, total branch-current sum, and each branch formula with a component-level description.
+- Model preview and the User Manual define `softplus(x)=ln(1+exp(x))` wherever softplus formulas appear.
 - Model preview is below Model Builder and collapsed by default.
 - Desktop Workspace has a draggable divider between setup/model controls and results; narrow/mobile layouts remain single-column.
 - Model preview formula cards are stacked vertically so Junction voltage and Branch currents are read in sequence.
