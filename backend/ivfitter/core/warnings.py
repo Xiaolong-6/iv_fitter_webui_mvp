@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from .model_spec import FitWarning
 
-PHOTOCURRENT_TYPES = {"photocurrent_constant", "photocurrent_voltage_dependent", "photoconductive_branch", "photo_modulated_main_path"}
+PHOTOCURRENT_TYPES = {"photocurrent_constant", "photocurrent_voltage_dependent"}
 
 
 def deprecated_config_warnings(config) -> list[FitWarning]:

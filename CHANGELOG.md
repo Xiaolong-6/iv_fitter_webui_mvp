@@ -20,6 +20,8 @@
 - Added a Main path softplus power-law voltage-drop component for current-activated high-current voltage loss, with backend evaluation, equation summaries, Model Builder labeling, and manual coverage.
 - Moved explanatory Parameters table guidance and fit-setup summary wording out of visible UI text and into hover/help or documentation.
 - Added localization/content extraction guidance and a first shared frontend content module so future translations can be handled as content work instead of component surgery.
+- Removed photo-specific aliases whose behavior duplicated existing mathematical forms: Photoconductive branch is covered by Ohmic branch/custom conductance, and Photo-modulated main path is covered by Ohmic main-path resistance/custom transport terms.
+- Preserved the previous fit result when editing Parameter-table initials, bounds, or fit/fixed state so fitted values remain available for inspection and seeding next initials.
 
 ### Tests
 - Added pure logic coverage for parameter grouping order, filters, batch fit/fix behavior, seed-from-fitted behavior, and unchanged serialization keys.

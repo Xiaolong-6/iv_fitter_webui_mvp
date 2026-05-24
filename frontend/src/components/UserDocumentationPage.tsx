@@ -319,62 +319,6 @@ const FUNCTION_DOCS: FunctionDoc[] = [
     },
   },
   {
-    lawId: "photoconductive_branch",
-    en: {
-      name: "Photoconductive branch",
-      oneLine: "Light-induced conductance added as a branch current.",
-      tags: ["light response", "conductance", "linear background"],
-      purpose: "Models illumination adding a conductive path, not a fixed current source.",
-      suitable: "The light curve has larger slope and the light-dark difference grows roughly with voltage.",
-      notSuitable: "If the light curve is mainly shifted, try constant photocurrent first.",
-      curveEffect: "Changes the linear or quasi-linear conductive background under illumination.",
-      fitAdvice: "Often easier to interpret than high-parameter voltage-dependent photocurrent.",
-      parameters: [["Gph", "Photoconductance."]],
-      formula: "I_{pc}=G_{ph}V_j",
-    },
-    zh: {
-      name: "光致电导支路",
-      oneLine: "光照增加的一条导电支路。",
-      tags: ["光响应", "电导", "线性背景"],
-      purpose: "描述光照增加导电通道，而不是固定电流源。",
-      suitable: "光照后斜率明显变大，light-dark 差值大致随电压增加。",
-      notSuitable: "如果光照曲线主要相对暗态整体平移，先用常数光电流。",
-      curveEffect: "改变光照下的线性或准线性导电背景。",
-      fitAdvice: "通常比高参数电压依赖光电流更容易解释。",
-      parameters: [["Gph", "光致电导。"]],
-      formula: "I_{pc}=G_{ph}V_j",
-    },
-  },
-  {
-    lawId: "photo_modulated_main_path",
-    en: {
-      name: "Photo-modulated main path",
-      oneLine: "Advanced interpretation of light-modified main-path resistance.",
-      tags: ["light response", "main path", "advanced"],
-      purpose: "Models light changing the main transport path, such as contact, channel, surface layer, or near-threshold transport.",
-      suitable: "Illumination mainly changes high-current slope, turn-on threshold, or near-threshold conduction.",
-      notSuitable: "If the light curve only shifts, use constant photocurrent. If light adds a parallel conductive path, use photoconductive branch.",
-      curveEffect: "Changes internal junction voltage and indirectly changes all branch currents.",
-      fitAdvice: "In single-trace fitting this is hard to distinguish from effective Rs. Use as advanced interpretation or future joint-fit term.",
-      parameters: [["R0", "Baseline main-path resistance."], ["photo_gain", "Light-induced conductance enhancement."]],
-      formula: "V_{drop}=IR_{eff}",
-      advancedFormula: "R_{eff}=R_0/(1+g_{ph})",
-    },
-    zh: {
-      name: "光调制主路传输",
-      oneLine: "光照改变主路等效电阻的高级解释。",
-      tags: ["光响应", "主路", "高级"],
-      purpose: "描述光照改变接触、通道、表面层或阈值附近的主路传输。",
-      suitable: "光照主要改变高电流斜率、开启阈值或临界导通状态。",
-      notSuitable: "整体平移用常数光电流；并联导电通道用光致电导支路。",
-      curveEffect: "改变内部结点电压，从而间接影响所有支路电流。",
-      fitAdvice: "单 trace 中通常难与等效 Rs 区分，应作为高级解释或未来联合拟合项。",
-      parameters: [["R0", "基准主路电阻。"], ["photo_gain", "光照增强电导。"]],
-      formula: "V_{drop}=IR_{eff}",
-      advancedFormula: "R_{eff}=R_0/(1+g_{ph})",
-    },
-  },
-  {
     lawId: "custom_expression",
     en: {
       name: "User-defined relation",
@@ -634,11 +578,11 @@ function renderManualSection(section: ManualSectionKey, registry: FunctionDefini
       return <ManualSection id="model" title={zh ? "4. Model Builder 概念" : "4. Model Builder concepts"} wide>
         {zh ? <>
           <p>用户界面中最重要的是 <strong>主路 Main path</strong> 和 <strong>结点支路 Junction branches</strong>。按角色理解：主路把外部电压映射到内部结点电压；支路在内部电压下产生电流。</p>
-          <ThreeColumnTable headers={["概念", "含义", "例子"]} rows={[["主路", "承载端口电流，并在支路看到电压前消耗电压。", "Rs、串联二极管势垒、电导调制"], ["结点支路", "在内部结点电压下产生电流并加入总电流。", "Shockley diode、Rsh 漏电、反向击穿、光电流"], ["昵称", "用户可读标签；Rs 和 Rsh 是角色标签，不是不同 law。", "Rs、Rsh、D1、Gph"]]} />
+          <ThreeColumnTable headers={["概念", "含义", "例子"]} rows={[["主路", "承载端口电流，并在支路看到电压前消耗电压。", "Rs、串联二极管势垒、电导调制"], ["结点支路", "在内部结点电压下产生电流并加入总电流。", "Shockley diode、Rsh 漏电、反向击穿、光电流"], ["昵称", "用户可读标签；Rs 和 Rsh 是角色标签，不是不同 law。", "Rs、Rsh、D1、I1"]]} />
           <p className="warning info"><strong>不要堆模型：</strong>增加组件会提高灵活性，也会增加不可辨识风险。只有残差形状需要且该项角色合理时才加入。</p>
         </> : <>
           <p>The user-facing model is organized into <strong>Main path</strong> and <strong>Junction branches</strong>. Think in terms of role: the main path maps external voltage to internal voltage; branches produce current at that internal voltage.</p>
-          <ThreeColumnTable headers={["Concept", "Meaning", "Examples"]} rows={[["Main path", "Carries terminal current and consumes voltage before branches see the remaining voltage.", "Ohmic Rs, series diode barrier, conductance modifier"], ["Junction branches", "Generate current at the internal junction voltage and sum to terminal current.", "Shockley diode, Rsh leakage, reverse breakdown, photocurrent"], ["Nickname", "Human-readable label; Rs and Rsh are role labels, not separate laws.", "Rs, Rsh, D1, Gph"]]} />
+          <ThreeColumnTable headers={["Concept", "Meaning", "Examples"]} rows={[["Main path", "Carries terminal current and consumes voltage before branches see the remaining voltage.", "Ohmic Rs, series diode barrier, conductance modifier"], ["Junction branches", "Generate current at the internal junction voltage and sum to terminal current.", "Shockley diode, Rsh leakage, reverse breakdown, photocurrent"], ["Nickname", "Human-readable label; Rs and Rsh are role labels, not separate laws.", "Rs, Rsh, D1, I1"]]} />
           <p className="warning info"><strong>Do not overbuild:</strong> adding a component increases flexibility but also non-identifiability. Add a term only when the residual pattern requires it and the term has a plausible role.</p>
         </>}
       </ManualSection>;
@@ -680,10 +624,10 @@ function renderManualSection(section: ManualSectionKey, registry: FunctionDefini
       return <ManualSection id="light-response" title={zh ? "11. 光响应建模" : "11. Light-response modeling"} wide>
         {zh ? <>
           <p>光响应项通常应在暗态 trace 已有合理拟合后再加入。否则光响应项可能补偿错误暗态模型，导致误导性的物理解释。</p>
-          <ThreeColumnTable headers={["光照现象", "优先模型", "何时升级"]} rows={[["光照曲线相对暗态整体平移", "常数光电流", "残差显示系统性偏压依赖。"], ["差值大致随电压线性增加", "光致电导支路", "出现阈值型增强或饱和。"], ["光响应在阈值或场辅助下增强", "电压依赖光电流", "暗态基线稳定且残差确实需要。"], ["光照改变高电流斜率或阈值", "光调制主路作为高级解释", "需要联合 light/dark 解释。"]]} />
+          <ThreeColumnTable headers={["光照现象", "优先模型", "何时升级"]} rows={[["光照曲线相对暗态整体平移", "常数光电流", "残差显示系统性偏压依赖。"], ["差值大致随电压线性增加", "欧姆支路或自定义电导", "出现阈值型增强或饱和。"], ["光响应在阈值或场辅助下增强", "电压依赖光电流", "暗态基线稳定且残差确实需要。"], ["光照改变高电流斜率或阈值", "欧姆主路或自定义传输项", "残差形状需要明确的数学项。"]]} />
         </> : <>
           <p>Light-response terms should normally be added only after the dark trace has a defensible fit. Otherwise, a light term may compensate for an incorrect dark model and produce misleading interpretation.</p>
-          <ThreeColumnTable headers={["Light behavior", "First model to try", "Escalate only if"]} rows={[["Light curve mostly shifts relative to dark", "Constant photocurrent", "Residuals show systematic bias dependence."], ["Light-dark difference grows roughly linearly with voltage", "Photoconductive branch", "There is threshold-like growth or saturation."], ["Light response strengthens near threshold or with field", "Voltage-dependent photocurrent", "Dark baseline is stable and residuals demand it."], ["Light changes high-current slope or threshold", "Photo-modulated main path as advanced interpretation", "A joint light/dark interpretation is needed."]]} />
+          <ThreeColumnTable headers={["Light behavior", "First model to try", "Escalate only if"]} rows={[["Light curve mostly shifts relative to dark", "Constant photocurrent", "Residuals show systematic bias dependence."], ["Light-dark difference grows roughly linearly with voltage", "Ohmic branch or custom conductance", "There is threshold-like growth or saturation."], ["Light response strengthens near threshold or with field", "Voltage-dependent photocurrent", "Dark baseline is stable and residuals demand it."], ["Light changes high-current slope or threshold", "Ohmic main-path or custom transport term", "The residual shape requires an explicit mathematical term."]]} />
         </>}
       </ManualSection>;
     case "troubleshooting":

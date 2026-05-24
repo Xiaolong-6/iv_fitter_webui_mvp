@@ -70,11 +70,6 @@ def photocurrent_voltage_dependent(vj: np.ndarray, comp: ComponentSpec) -> np.nd
     return direction_sign(comp) * magnitude * bias_activation(arr, comp.polarity)
 
 
-def photoconductive_branch(vj: np.ndarray, comp: ComponentSpec) -> np.ndarray:
-    arr = np.asarray(vj, dtype=float)
-    return param_value(comp, "Gph_S", 0.0) * arr * bias_activation(arr, comp.polarity)
-
-
 def series_diode_barrier_drop(current: np.ndarray, comp: ComponentSpec, temperature_K: float) -> np.ndarray:
     arr = np.asarray(current, dtype=float)
     sign = diode_polarity_sign(comp.polarity)
@@ -108,10 +103,6 @@ def series_resistance_effective(vj: np.ndarray, model) -> np.ndarray:
         if comp.function_type == "softplus_rs_modifier":
             boost = softplus_conductance_boost(arr, param_value(comp, "A", 0.0), param_value(comp, "Vt_V", 0.0), param_value(comp, "Vs_V", 1.0), comp.polarity or "symmetric")
             rs = apply_conductance_boost(rs, boost)
-        elif comp.function_type == "photo_modulated_main_path":
-            r0 = param_value(comp, "R0_ohm", 0.0)
-            gain = max(param_value(comp, "photo_gain", 0.0), -0.95)
-            rs = rs + r0 / (1.0 + gain)
         elif comp.function_type == "custom":
             expr = comp.metadata.get("expression", "A*softplus(u)")
             params = {name: spec.value for name, spec in comp.params.items()}
@@ -152,8 +143,6 @@ def branch_currents_at_vj(vj: np.ndarray, model) -> dict[str, np.ndarray]:
             out[comp.id] = photocurrent_constant(arr, comp)
         elif comp.function_type == "photocurrent_voltage_dependent":
             out[comp.id] = photocurrent_voltage_dependent(arr, comp)
-        elif comp.function_type == "photoconductive_branch":
-            out[comp.id] = photoconductive_branch(arr, comp)
         elif comp.function_type == "custom":
             expr = comp.metadata.get("expression", "s*A*softplus(u)**m")
             params = {name: spec.value for name, spec in comp.params.items()}

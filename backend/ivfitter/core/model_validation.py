@@ -83,8 +83,8 @@ def validate_component_against_registry(comp: ComponentSpec) -> list[FitWarning]
             warnings.append(_warn("parameter_above_upper", f"{comp.id}.{name} is above its upper bound.", "error"))
         if name in {"I0_A", "Vs_V", "Vslope_V", "w_V", "n", "Rsh_ohm"} and spec.value <= 0:
             warnings.append(_warn("nonpositive_physical_parameter", f"{comp.id}.{name} should be positive for a physically meaningful model.", "error"))
-    if comp.function_type in {"photocurrent_constant", "photocurrent_voltage_dependent", "photoconductive_branch"}:
-        for name in ("Iph0_A", "Gph_S", "Aph"):
+    if comp.function_type in {"photocurrent_constant", "photocurrent_voltage_dependent"}:
+        for name in ("Iph0_A", "Aph"):
             if name in comp.params and float(comp.params[name].value) < 0:
                 warnings.append(_warn(
                     "negative_photocurrent_parameter",
@@ -139,7 +139,7 @@ def validate_model_spec(model: ModelSpec) -> list[FitWarning]:
         warnings.append(_warn("no_core", "Model has no core junction component."))
     if not any(c.function_type == "constant_rs" for c in model.series):
         warnings.append(_warn("no_rs", "Model has no constant Rs baseline.", "info"))
-    if any(comp.function_type in {"photocurrent_constant", "photocurrent_voltage_dependent", "photoconductive_branch", "photo_modulated_main_path"} for _group, comp in _component_groups(model)):
+    if any(comp.function_type in {"photocurrent_constant", "photocurrent_voltage_dependent"} for _group, comp in _component_groups(model)):
         warnings.append(_warn(
             "photocurrent_dark_first_guidance",
             "Photocurrent components should normally be fitted after a dark-state baseline model is established.",

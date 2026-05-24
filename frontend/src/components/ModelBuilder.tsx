@@ -13,7 +13,7 @@ import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { HelpTip } from "./HelpTip";
 import { addDefinitionToModel, addSecondaryDiodeToModel, applyNicknameToParams, buildPendingComponent } from "../model-builder/mutations";
-import { allowedPolarities, bucketForComponent, bucketLocations, builderBuckets, definitionsForBucket as bucketDefinitions, isDuplicateBlocked, isSingleTraceEquivalentMainPathBlocked, nickname, type BuilderBucket, type ModelLocation } from "../model-builder/rules";
+import { allowedPolarities, bucketForComponent, bucketLocations, builderBuckets, definitionsForBucket as bucketDefinitions, isDuplicateBlocked, nickname, type BuilderBucket, type ModelLocation } from "../model-builder/rules";
 import { localizedFunctionLabel } from "../content/localizedText";
 
 function componentLawLabel(comp: ComponentSpec, language: Language) {
@@ -35,7 +35,7 @@ function componentDetailTitle(comp: ComponentSpec, language: Language) {
 
 function functionOptionLabel(definition: FunctionDefinition, language: Language, bucket?: BuilderBucket) {
   const advanced = new Set(["series_diode_barrier", "softplus_rs_modifier", "series_power_law_drop", "custom", "power_law", "soft_breakdown", "photocurrent_voltage_dependent"]);
-  const interpretive = new Set(["photo_modulated_main_path"]);
+  const interpretive = { has: (_functionType: string) => false };
   const prefix = interpretive.has(definition.function_type)
     ? (language === "zh" ? "解释性 · " : "Interpretive · ")
     : advanced.has(definition.function_type)
@@ -43,7 +43,6 @@ function functionOptionLabel(definition: FunctionDefinition, language: Language,
       : (language === "zh" ? "基础 · " : "Basic · ");
   if (definition.function_type === "series_diode_barrier") return prefix + (language === "zh" ? "串联二极管势垒" : "Series diode barrier");
   if (definition.function_type === "softplus_rs_modifier") return prefix + (language === "zh" ? "软开启传输调制" : "Softplus transport modifier");
-  if (definition.function_type === "photo_modulated_main_path") return prefix + (language === "zh" ? "光调制有效主路电阻" : "Photo-modulated effective main path");
   if (definition.function_type === "custom" && bucket === "main") return prefix + (language === "zh" ? "自定义传输调制" : "Custom transport modifier");
   if (definition.law_id === "ohmic") return prefix + (language === "zh" ? "有效欧姆电阻" : "Effective Ohmic resistance");
   return prefix + localizedFunctionLabel(definition.function_type, definition.display_name, language);
@@ -285,14 +284,9 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
         const components = bucketLocations[bucket].flatMap((location) => model[location].map((comp) => ({ location, comp })));
         const pendingComponent = definition ? buildPendingComponent(model, bucket, definition, addPolarityFor(bucket, definition)) : null;
         const duplicateBlocked = pendingComponent ? isDuplicateBlocked(model, pendingComponent) : false;
-        const equivalentBlocked = pendingComponent ? isSingleTraceEquivalentMainPathBlocked(model, pendingComponent) : false;
-        const duplicateReason = equivalentBlocked
-          ? (language === "zh"
-            ? "单条 I-V 中该主路项通常与已有有效串联电阻不可区分；请先删除等效项，或在未来 light/dark workflow 中使用。"
-            : "In a single I-V trace this main-path term is usually indistinguishable from the existing effective series resistance. Remove the equivalent term first, or reserve it for a future light/dark workflow.")
-          : (language === "zh"
-            ? "已存在相同数学形式、位置和极性的模型项；请改用不同极性，或使用明确的双二极管按钮，而不是普通重复 Add。"
-            : "This law/form/placement/polarity is already present. Use a different polarity, or use the explicit two-diode action instead of ordinary duplicate Add.");
+        const duplicateReason = language === "zh"
+          ? "已存在相同数学形式、位置和极性的模型项；请改用不同极性，或使用明确的双二极管按钮，而不是普通重复 Add。"
+          : "This law/form/placement/polarity is already present. Use a different polarity, or use the explicit two-diode action instead of ordinary duplicate Add.";
 
         return (
           <div className="model-group" key={bucket}>
@@ -306,7 +300,7 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
                 setSelected((current) => ({ ...current, [bucket]: functionType }));
               }}
               onAdd={() => addFrom(bucket)}
-              disabled={duplicateBlocked || equivalentBlocked}
+              disabled={duplicateBlocked}
               disabledReason={duplicateBlocked ? duplicateReason : undefined}
             />
             {components.length === 0 && <div className="empty-line">{t(language, "noComponents")}</div>}

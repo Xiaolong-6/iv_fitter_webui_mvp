@@ -14,8 +14,6 @@ def _component_equation(comp) -> str:
         return f"I_{nick} = direction_sign * Iph0"
     if comp.function_type == "photocurrent_voltage_dependent":
         return f"I_{nick}(V_j) = direction_sign * [Iph0*(1 + gain_per_V*|V_j|) + Aph*sp((|V_j|-Vt_ph)/Vs_ph)^m_ph]"
-    if comp.function_type == "photoconductive_branch":
-        return f"I_{nick} = Gph * V_j"
     if comp.function_type == "series_diode_barrier":
         return f"V_drop,{nick} = n V_T ln(I/I0 + 1)"
     if comp.function_type == "series_power_law_drop":
@@ -24,8 +22,6 @@ def _component_equation(comp) -> str:
         return f"R_eff,{nick} = R_base / [1 + A*sp((s*V_j - Vt)/Vs)]"
     if comp.function_type == "custom" and (comp.evaluation_form == "conductance_modifier" or comp.placement == "series_conductance_modifier"):
         return f"R_eff,{nick} = R_base / [1 + custom_modifier(V_j)]"
-    if comp.function_type == "photo_modulated_main_path":
-        return f"V_drop,{nick} = I * R0/(1 + photo_gain)"
     definition = registry_by_function().get(comp.function_type)
     return definition.equation_template if definition else comp.function_type
 
@@ -35,8 +31,6 @@ def _branch_symbol(comp) -> str:
     if comp.function_type == "diode":
         return f"I_{nick}"
     if comp.function_type in {"photocurrent_constant", "photocurrent_voltage_dependent"}:
-        return f"I_{nick}"
-    if comp.function_type == "photoconductive_branch":
         return f"I_{nick}"
     if comp.function_type in {"shunt", "constant_rs"}:
         return f"I_{nick}"

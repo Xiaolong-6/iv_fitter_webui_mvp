@@ -83,16 +83,8 @@ export function isDuplicateBlocked(model: ModelSpec, comp: ComponentSpec) {
   return allComponents(model).some((existing) => duplicateBaseKey(existing) === key);
 }
 
-export function isSingleTraceEquivalentMainPathBlocked(model: ModelSpec, comp: ComponentSpec) {
-  const mainTerms = model.series;
-  const isOhmicDrop = (c: ComponentSpec) => c.law_id === "ohmic" && (c.evaluation_form === "voltage_drop" || c.placement === "series_voltage_drop");
-  const isPhotoEffectiveDrop = (c: ComponentSpec) => c.function_type === "photo_modulated_main_path";
-  return (isPhotoEffectiveDrop(comp) && mainTerms.some(isOhmicDrop)) || (isOhmicDrop(comp) && mainTerms.some(isPhotoEffectiveDrop));
-}
-
 export function canAddComponent(model: ModelSpec, comp: ComponentSpec) {
   if (isDuplicateBlocked(model, comp)) return { ok: false, reason: "duplicate" as const };
-  if (isSingleTraceEquivalentMainPathBlocked(model, comp)) return { ok: false, reason: "single_trace_equivalent" as const };
   return { ok: true, reason: null };
 }
 

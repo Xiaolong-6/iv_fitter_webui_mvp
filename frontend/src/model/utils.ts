@@ -31,8 +31,6 @@ export function createComponentInLocation(def: FunctionDefinition, location: "co
     : def.function_type === "diode" ? "D1"
     : def.function_type === "photocurrent_constant" ? "Iph"
     : def.function_type === "photocurrent_voltage_dependent" ? "Iph(V)"
-    : def.function_type === "photoconductive_branch" ? "Gph"
-    : def.function_type === "photo_modulated_main_path" ? "Rphoto"
     : def.display_name.split(" ")[0];
   return { id: `${idBase}_${nextId++}`, location, function_type: def.function_type, law_id: def.law_id, evaluation_form, placement, polarity: polarity ?? def.default_polarity ?? null, mode: def.mode ?? null, params: buildParams(def, nickname), metadata: def.function_type === "custom" ? { nickname, expression: evaluation_form === "conductance_modifier" ? "A*softplus(u)" : "s*A*softplus(u)**m" } : { nickname } };
 }

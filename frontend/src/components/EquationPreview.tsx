@@ -29,8 +29,6 @@ function isForwardPower(term: Term) { return /forward|power/i.test(`${term.row} 
 function isBreakdown(term: Term) { return /break|reverse/i.test(`${term.row} ${term.id}`); }
 function isPhotocurrentConstant(term: Term) { return /photocurrent_constant/i.test(`${term.row} ${term.law} ${term.id}`); }
 function isPhotocurrentVoltage(term: Term) { return /photocurrent_voltage_dependent/i.test(`${term.row} ${term.law} ${term.id}`); }
-function isPhotoconductive(term: Term) { return /photoconductive_branch/i.test(`${term.row} ${term.law} ${term.id}`); }
-function isPhotoMainPath(term: Term) { return /photo_modulated_main_path/i.test(`${term.row} ${term.law} ${term.id}`); }
 function isConductanceModifier(term: Term) { return term.form === "conductance_modifier" || /conductance_modifier|softplus_rs_modifier|series-path modifier/i.test(`${term.row} ${term.law} ${term.id}`); }
 function isSeriesPowerDrop(term: Term) { return /softplus_power_law_voltage_drop|series_power_law_drop/i.test(`${term.row} ${term.law} ${term.id}`); }
 function symbolFor(term: Term) {
@@ -39,7 +37,6 @@ function symbolFor(term: Term) {
   if (/rsh|shunt/i.test(term.nick) || /rsh|shunt/i.test(term.id)) return { r: "R_{sh}", i: "I_{Rsh}", v: "V_j" };
   if (isDiode(term)) return { i: `I_{${safe || "D"}}`, r: "", v: "V_j" };
   if (isPhotocurrentConstant(term) || isPhotocurrentVoltage(term)) return { i: `I_{${safe || "ph"}}`, r: "", v: "V_j" };
-  if (isPhotoconductive(term)) return { i: `I_{${safe || "pc"}}`, r: "", v: "V_j" };
   if (isForwardPower(term)) return { i: `I_{${safe || "fwd"}}`, r: "", v: "V_j" };
   if (isBreakdown(term)) return { i: `I_{${safe || "br"}}`, r: "", v: "V_j" };
   return { i: `I_{${safe || "branch"}}`, r: `R_{${safe || "x"}}`, v: "V_j" };
@@ -49,7 +46,6 @@ function seriesDropLatex(series: Term[]) {
   const drops = series.map((term) => {
     const s = symbolFor(term);
     if (isOhmic(term)) return `I${s.r}`;
-    if (isPhotoMainPath(term)) return `I\\frac{R_0}{1+g_{ph}}`;
     if (isSeriesPowerDrop(term)) return `sA_V\\,\\operatorname{softplus}\\!\\left(\\frac{sI-I_t}{I_s}\\right)^m`;
     if (isConductanceModifier(term)) return `I R_{base}/[1 + A\\,\\operatorname{softplus}(u)]`;
     return `V_{${term.id.replace(/[^A-Za-z0-9]/g, "")}}(I)`;
@@ -98,7 +94,6 @@ function termMeaning(term: Term, language: Language) {
 function beginnerBranchMeaning(term: Term) {
   if (isDiode(term)) return "Exponential diode-like current evaluated at the junction voltage.";
   if (isOhmic(term)) return "Linear leakage path: higher Vj gives proportionally higher leakage current.";
-  if (isPhotoconductive(term)) return "Light-dependent conductance path that contributes current proportional to Vj.";
   if (isPhotocurrentConstant(term)) return "Light-generated current with nearly constant magnitude.";
   if (isPhotocurrentVoltage(term)) return "Light-generated current whose magnitude can change with voltage.";
   if (isForwardPower(term)) return "Extra empirical current that turns on softly near a threshold.";

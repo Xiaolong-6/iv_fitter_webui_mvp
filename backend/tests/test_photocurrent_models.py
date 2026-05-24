@@ -15,8 +15,8 @@ def test_registry_contains_photocurrent_laws():
     laws = {entry.law_id for entry in component_registry()}
     assert "photocurrent_constant" in laws
     assert "photocurrent_voltage_dependent" in laws
-    assert "photoconductive_branch" in laws
-    assert "photo_modulated_main_path" in laws
+    assert "photoconductive_branch" not in laws
+    assert "photo_modulated_main_path" not in laws
 
 
 def test_constant_photocurrent_branch_formula_and_prediction():
@@ -53,36 +53,12 @@ def test_voltage_dependent_photocurrent_branch_finite_prediction():
     assert abs(out[2]) > abs(out[1])
 
 
-def test_photoconductive_branch_finite_prediction():
-    model = ModelSpec(parallel=[ComponentSpec(
-        id="Gph", location="parallel", function_type="photoconductive_branch",
-        law_id="photoconductive_branch", evaluation_form="current_branch", placement="parallel_current_branch",
-        params={"Gph_S": p(2e-9)},
-    )])
-    out = predict_current([-1, 0, 1], model)
-    assert np.allclose(out, [-2e-9, 0.0, 2e-9])
-
-
-def test_photo_modulated_main_path_finite_prediction():
-    model = ModelSpec(
-        series=[ComponentSpec(
-            id="Rphoto", location="series", function_type="photo_modulated_main_path",
-            law_id="photo_modulated_main_path", evaluation_form="voltage_drop", placement="series_voltage_drop",
-            params={"R0_ohm": p(10.0), "photo_gain": p(9.0)},
-        )],
-        parallel=[ComponentSpec(
-            id="Rsh", location="parallel", function_type="shunt", law_id="ohmic",
-            evaluation_form="current_branch", placement="parallel_current_branch",
-            params={"Rsh_ohm": p(1e6)},
-        )],
-    )
-    out = predict_current([-1, 0, 1], model)
-    assert np.all(np.isfinite(out))
-    assert out[-1] > 0
-
-
 def test_implicit_solver_failure_still_returns_warning_and_nan_no_fallback(monkeypatch):
-    model = ModelSpec(parallel=[ComponentSpec(id="Iph", location="parallel", function_type="photoconductive_branch", params={"Gph_S": p(1e-9)})])
+    model = ModelSpec(parallel=[ComponentSpec(
+        id="Iph", location="parallel", function_type="photocurrent_constant",
+        law_id="photocurrent_constant", evaluation_form="current_branch", placement="parallel_current_branch",
+        params={"Iph0_A": p(1e-9), "direction_sign": p(-1.0)},
+    )])
     monkeypatch.setattr(fitting_engine, "solve_vj", lambda voltage, model: np.full(len(voltage), np.nan))
     trace = TraceData(voltage_V=[0.0, 0.1, 0.2, 0.3], current_A=[0.0, 0.0, 0.0, 0.0])
     result = fitting_engine.fit_trace(FitRequest(trace=trace, model=model, config=FitConfig(exclude_compliance=False)))

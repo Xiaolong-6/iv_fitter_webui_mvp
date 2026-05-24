@@ -15,8 +15,6 @@ const functionLabels: Record<string, LocalizedText> = {
   soft_breakdown: { en: "Soft reverse-breakdown current", zh: "软反向击穿电流" },
   photocurrent_constant: { en: "Constant photocurrent", zh: "常数光电流" },
   photocurrent_voltage_dependent: { en: "Voltage-dependent photocurrent", zh: "电压依赖光电流" },
-  photoconductive_branch: { en: "Photoconductive branch", zh: "光致电导支路" },
-  photo_modulated_main_path: { en: "Photo-modulated main path", zh: "光调制主路" },
   custom: { en: "Custom expression law", zh: "自定义表达式定律" },
 };
 

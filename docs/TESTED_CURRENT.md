@@ -29,6 +29,8 @@ Backend fitting math and serialization schemas were not intentionally changed in
 - Model preview formula cards are stacked vertically so Junction voltage and Branch currents are read in sequence.
 - Fit setup fields wrap to one column when the left Workspace pane is narrow.
 - Main path exposes a Softplus voltage drop option backed by a `series_power_law_drop` voltage-drop adapter.
+- Photo-specific duplicate aliases are no longer exposed when they are mathematically equivalent to existing Ohmic or custom circuit terms.
+- Editing Parameter-table initials, bounds, or fit/fixed state preserves the previous fit result, keeping fitted values visible and seed-from-fitted available.
 - Range/objective/run-option summaries and Parameters explanatory paragraphs are not visible inline in the Workspace UI.
 - Language/content extraction guidance is documented in `docs/LOCALIZATION_AND_TEXT.md`, and first shared frontend text lives in `frontend/src/content/localizedText.ts`.
 

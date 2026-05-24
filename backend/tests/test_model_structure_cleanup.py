@@ -76,12 +76,11 @@ def test_registry_exposes_advanced_main_path_transport_forms():
     custom = registry["custom"]
     assert "conductance_modifier" in custom.available_forms
     assert "series_conductance_modifier" in custom.allowed_placements
-    photo = registry["photo_modulated_main_path"]
-    assert photo.default_form == "voltage_drop"
-    assert "series_voltage_drop" in photo.allowed_placements
     series_power = registry["series_power_law_drop"]
     assert series_power.default_form == "voltage_drop"
     assert "series_voltage_drop" in series_power.allowed_placements
+    assert "photo_modulated_main_path" not in registry
+    assert "photoconductive_branch" not in registry
 
 
 def test_softplus_transport_modifier_predicts_finite_current_with_rs_baseline():

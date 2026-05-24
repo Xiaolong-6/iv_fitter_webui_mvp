@@ -49,6 +49,7 @@ function WorkspaceView(props: {
   setSelectedTraceId: (id: string) => void;
   model: ModelSpec;
   setModel: (model: ModelSpec) => void;
+  updateParameterModel: (model: ModelSpec) => void;
   config: FitConfig;
   setConfig: (config: FitConfig) => void;
   registry: FunctionDefinition[];
@@ -145,7 +146,7 @@ function WorkspaceView(props: {
       <div className="main-result-grid">
         <Section id="parameters" title={t(props.language, "parameters")}>
           <ErrorBoundary label="Parameter table">
-            <ParameterTable result={props.result} model={props.model} registry={props.registry} onModelChange={props.setModel} language={props.language} />
+            <ParameterTable result={props.result} model={props.model} registry={props.registry} onModelChange={props.updateParameterModel} language={props.language} />
           </ErrorBoundary>
         </Section>
       </div>
@@ -409,6 +410,7 @@ export function FittingPage() {
         setSelectedTraceId={(id) => { setSelectedTraceId(id); setResult(null); setReport(""); }}
         model={model}
         setModel={(next) => { setModel(next); setResult(null); setReport(""); }}
+        updateParameterModel={(next) => { setModel(next); setReport(""); }}
         config={config}
         setConfig={setConfig}
         registry={registry}

@@ -145,19 +145,22 @@ export function ParameterTable({
           </tr></thead>
           <tbody>{placement.groups.flatMap((group) => {
             const header = <tr className="parameter-component-divider" key={`${group.component.id}-header`}>
-              <td colSpan={8}>
-                <div className="parameter-component-inline">
-                  <div className="parameter-component-title">
-                    <strong>{nickname(group.component)}</strong>
-                    <span>{componentSummary(group.component, language)}</span>
-                    <span className="parameter-fit-count">{group.fittedCount}/{group.totalCount} {parameterText("fittedCountSuffix", language)}</span>
-                  </div>
-                  <div className="parameter-batch-actions">
-                    <button type="button" onClick={() => onModelChange(setComponentFitState(model, group.location, group.component.id, true))}>{parameterText("batchFitAll", language)}</button>
-                    <button type="button" onClick={() => onModelChange(setComponentFitState(model, group.location, group.component.id, false))}>{parameterText("batchFixAll", language)}</button>
-                    <button type="button" onClick={() => onModelChange(resetComponentInitials(model, registry, group))}>{parameterText("batchResetInitials", language)}</button>
-                    <button type="button" disabled={!result} onClick={() => onModelChange(seedComponentFromFittedValues(model, result, group.location, group.component.id))}>{parameterText("batchSeedFromFitted", language)}</button>
-                  </div>
+              <td colSpan={6}>
+                <div className="parameter-component-title">
+                  <strong>{nickname(group.component)}</strong>
+                  <span>{componentSummary(group.component, language)}</span>
+                  <span className="parameter-fit-count">{group.fittedCount}/{group.totalCount} {parameterText("fittedCountSuffix", language)}</span>
+                </div>
+              </td>
+              <td>
+                <div className="parameter-fit-batch-toggles">
+                  <label><input type="checkbox" checked={group.fittedCount === group.totalCount} onChange={(e) => onModelChange(setComponentFitState(model, group.location, group.component.id, e.target.checked))} /> {group.fittedCount === group.totalCount ? parameterText("batchFixAll", language) : parameterText("batchFitAll", language)}</label>
+                </div>
+              </td>
+              <td className="desktop-detail">
+                <div className="parameter-batch-actions">
+                  <button type="button" onClick={() => onModelChange(resetComponentInitials(model, registry, group))}>{parameterText("batchResetInitials", language)}</button>
+                  <button type="button" disabled={!result} onClick={() => onModelChange(seedComponentFromFittedValues(model, result, group.location, group.component.id))}>{parameterText("batchSeedFromFitted", language)}</button>
                 </div>
               </td>
             </tr>;
