@@ -12,6 +12,7 @@ from ivfitter.core.equations import generate_equations
 from ivfitter.core.topology_graph import assemble_graph, graph_text_summary
 from ivfitter.core.fitting_engine import fit_trace
 from ivfitter.core.model_spec import FitRequest, FitWarning, FitResult, ModelSpec
+from ivfitter.core.bounds_suggestion import BoundsSuggestionRequest, BoundsSuggestionResponse, suggest_bounds
 from ivfitter.core.model_validation import validate_model_spec
 from ivfitter.io.export_report import fit_result_markdown
 from ivfitter.io.import_trace import ImportCsvTextRequest, import_csv_text, import_csv_text_multi
@@ -68,6 +69,18 @@ def topology_preview(model: ModelSpec):
     """Return user-readable topology graph preview."""
     graph = assemble_graph(model)
     return {"graph": graph, "summary": graph_text_summary(graph)}
+
+
+@app.post("/api/suggest-bounds", response_model=BoundsSuggestionResponse)
+def suggest_bounds_endpoint(request: BoundsSuggestionRequest) -> BoundsSuggestionResponse:
+    """Return conservative data-aware bound suggestions for the selected trace/model."""
+    try:
+        _check_fit_size(FitRequest(trace=request.trace, model=request.model, config=request.config))
+        return suggest_bounds(request)
+    except (ValueError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 @app.post("/api/fit")
 def fit(request: FitRequest):

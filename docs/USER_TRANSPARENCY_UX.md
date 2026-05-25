@@ -24,3 +24,14 @@ The Web UI should expose enough information for scientific review without forcin
 - Unsupported combinations should be disabled or warned, never silently converted.
 - Duplicate model selections may disable Add, but the model dropdown itself must remain usable so the user can recover by choosing another term.
 - If a sentence mainly helps developers/agents, move it to hover help, details, or documentation rather than putting it in the main UI.
+
+
+## Data-aware bounds transparency
+
+The Parameter table may show bounds from four sources: registry default, data-suggested from the selected trace, user-edited, or fitted-as-initial for the initial value. Bounds suggestions are conservative optimizer search-window estimates. They are not physical proof that a parameter has that value or even that the component is identifiable.
+
+The backend recommendation layer uses only the selected trace, the active fit voltage range, the current model, and registry defaults. It does not change parameter keys, equations, JSON result shape, or report table structure.
+
+Recommended status/hover text must state the rule used. For example: Rs upper is estimated from the high-current dV/dI scale, with a fallback based on max(|V|)/high-percentile(|I|), then multiplied by a safety factor. Rsh is estimated from the low-voltage dV/dI scale with a deliberately wide range. I0/current amplitudes are limited by observed current scale. Softplus voltage thresholds/softness are bounded from the selected voltage span, and current thresholds/softness from the selected current magnitude. Ideality/exponent parameters remain registry-controlled unless the user edits them.
+
+Application policy: automatic or button-driven data bounds may overwrite only registry-default or previous data-suggested bounds. User-edited bounds must be preserved. Completed fitted values may still be written back as the next initial value; applying data bounds must not erase the fitted-as-initial workflow.

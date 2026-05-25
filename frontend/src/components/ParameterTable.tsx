@@ -4,6 +4,7 @@ import { fmtBounds } from "../model/format";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { parameterMeaning, parameterShortAssessment } from "../model/diagnostics";
+import { boundsSourceTitle, markParameterUserEdited } from "../model/boundsSuggestion";
 import { updateComponent } from "../model/utils";
 import { HelpTip } from "./HelpTip";
 import { parameterText } from "../content/localizedText";
@@ -101,6 +102,8 @@ export function ParameterTable({
   language,
   canRestoreInitialValues = false,
   onRestoreInitialValues,
+  onApplyDataBounds,
+  dataBoundsStatus,
   disabled = false,
 }: {
   result: FitResult | null;
@@ -110,6 +113,8 @@ export function ParameterTable({
   language: Language;
   canRestoreInitialValues?: boolean;
   onRestoreInitialValues?: () => void;
+  onApplyDataBounds?: () => void;
+  dataBoundsStatus?: string;
   disabled?: boolean;
 }) {
   void registry;
@@ -123,7 +128,10 @@ export function ParameterTable({
       <button type="button" disabled={disabled || !canRestoreInitialValues || !onRestoreInitialValues} onClick={onRestoreInitialValues}>
         {parameterText("restoreInitialValues", language)}
       </button>
-      <span className="muted parameter-auto-seed-note">{parameterText("autoSeedNote", language)}</span>
+      <button type="button" disabled={disabled || !onApplyDataBounds} onClick={onApplyDataBounds} title={language === "zh" ? "根据当前选中 trace 和拟合电压范围生成保守的 data-aware bounds；只覆盖仍为默认值或之前由数据建议生成的 bounds。" : "Generate conservative data-aware bounds from the selected trace and fit voltage range. Only default or previous data-suggested bounds are overwritten."}>
+        {language === "zh" ? "应用数据建议边界" : "Apply data bounds"}
+      </button>
+      <span className="muted parameter-auto-seed-note">{dataBoundsStatus ?? parameterText("autoSeedNote", language)}</span>
     </div>
     {allRows.length === 0 ? <p className="muted">{t(language, "runFitForParameters")}</p> : grouped.map((placement) => <div className="parameter-placement-group" key={placement.id}>
       <h3>{placement.id === "main" ? t(language, "mainPath") : t(language, "branches")}</h3>
@@ -163,17 +171,17 @@ export function ParameterTable({
             return <Fragment key={key}>
               <tr className="parameter-summary-row">
                 <td title={key} onClick={() => setOpenKey(open ? null : key)}>{labelForModelParameter(model, comp.id, paramName)}</td>
-                <td><DraftNumberInput disabled={disabled} value={spec.value} title={parameterText("initialTitle", language)} onCommit={(value) => { if (value !== null) onModelChange(updateParameter(model, location, comp.id, paramName, { value })); }} /></td>
+                <td><DraftNumberInput disabled={disabled} value={spec.value} title={parameterText("initialTitle", language)} onCommit={(value) => { if (value !== null) onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { value }), comp.id, paramName, "initial")); }} /></td>
                 <td title={fitted ? String(fitted.value) : ""}>{fitted ? `${formatParameterNumber(fitted.value)} ${fitted.unit ?? spec.unit ?? ""}` : "-"}</td>
                 <td className="desktop-detail" title={fitted?.stderr === null || fitted?.stderr === undefined ? "" : String(fitted.stderr)}>{fitted?.stderr === null || fitted?.stderr === undefined ? "-" : formatParameterNumber(fitted.stderr)}</td>
-                <td><DraftNumberInput disabled={disabled} value={spec.lower} placeholder="-" title={parameterText("lowerTitle", language)} onCommit={(value) => onModelChange(updateParameter(model, location, comp.id, paramName, { lower: value }))} /></td>
-                <td><DraftNumberInput disabled={disabled} value={spec.upper} placeholder="-" title={parameterText("upperTitle", language)} onCommit={(value) => onModelChange(updateParameter(model, location, comp.id, paramName, { upper: value }))} /></td>
+                <td><DraftNumberInput disabled={disabled} value={spec.lower} placeholder="-" title={`${parameterText("lowerTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`} onCommit={(value) => onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { lower: value }), comp.id, paramName, "bounds"))} /></td>
+                <td><DraftNumberInput disabled={disabled} value={spec.upper} placeholder="-" title={`${parameterText("upperTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`} onCommit={(value) => onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { upper: value }), comp.id, paramName, "bounds"))} /></td>
                 <td><label className="parameter-fit-toggle"><input type="checkbox" disabled={disabled} checked={spec.fit ?? true} onChange={(e) => onModelChange(updateParameter(model, location, comp.id, paramName, { fit: e.target.checked }))} /> {spec.fit ?? true ? t(language, "fitState") : t(language, "fixed")}</label></td>
                 <td className="parameter-meaning desktop-detail" title={meaning}>{short}</td>
               </tr>
               <tr className={open ? "parameter-mobile-detail open" : "parameter-mobile-detail"}>
                 <td colSpan={8}>
-                  <div><strong>{parameterText("currentBounds", language)}:</strong> {fmtBounds(spec.lower, spec.upper)}</div>
+                  <div title={boundsSourceTitle(model, comp.id, paramName, language)}><strong>{parameterText("currentBounds", language)}:</strong> {fmtBounds(spec.lower, spec.upper)}</div>
                   <div><strong>{t(language, "stdErr")}:</strong> {fitted?.stderr === null || fitted?.stderr === undefined ? "-" : formatParameterNumber(fitted.stderr)}</div>
                   <p title={meaning}>{short}</p>
                 </td>

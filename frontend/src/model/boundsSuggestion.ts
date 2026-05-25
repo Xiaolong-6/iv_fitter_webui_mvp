@@ -1,0 +1,109 @@
+import type { BoundsSuggestionResponse, FunctionDefinition, ModelSpec, ParameterBoundsSuggestion, ParameterSpec } from "./types";
+import { parameterKey } from "./parameterGrouping";
+
+type ParameterSource = "registry_default" | "data_suggested" | "user_edited" | "fit_derived_initial";
+
+function registryParam(registry: FunctionDefinition[], functionType: string, paramName: string) {
+  return registry.find((definition) => definition.function_type === functionType)?.parameters.find((param) => param.name === paramName);
+}
+
+function sameNumber(a: number | null | undefined, b: number | null | undefined) {
+  const aa = a ?? null;
+  const bb = b ?? null;
+  if (aa === null || bb === null) return aa === bb;
+  return Math.abs(aa - bb) <= Math.max(1e-30, Math.abs(bb) * 1e-12);
+}
+
+export function parameterSource(model: ModelSpec, componentId: string, paramName: string, kind: "bounds" | "initial"): ParameterSource | null {
+  const comp = [...model.series, ...model.core, ...model.parallel].find((item) => item.id === componentId);
+  const sources = comp?.metadata?.parameter_sources as Record<string, { bounds?: ParameterSource; initial?: ParameterSource; reason?: string }> | undefined;
+  return sources?.[paramName]?.[kind] ?? null;
+}
+
+function sourceReason(model: ModelSpec, componentId: string, paramName: string): string | null {
+  const comp = [...model.series, ...model.core, ...model.parallel].find((item) => item.id === componentId);
+  const sources = comp?.metadata?.parameter_sources as Record<string, { reason?: string }> | undefined;
+  return sources?.[paramName]?.reason ?? null;
+}
+
+export function boundsSourceTitle(model: ModelSpec, componentId: string, paramName: string, language: "en" | "zh") {
+  const source = parameterSource(model, componentId, paramName, "bounds") ?? "registry_default";
+  const reason = sourceReason(model, componentId, paramName);
+  const label = language === "zh"
+    ? source === "data_suggested" ? "边界来源：根据当前选中 trace 的数据范围建议。"
+      : source === "user_edited" ? "边界来源：用户手动修改。"
+      : source === "fit_derived_initial" ? "边界来源：拟合结果初值；边界本身未自动改变。"
+      : "边界来源：registry 默认值。"
+    : source === "data_suggested" ? "Bounds source: data-suggested from the selected trace."
+      : source === "user_edited" ? "Bounds source: user-edited."
+      : source === "fit_derived_initial" ? "Bounds source: fitted-as-initial; bounds themselves were not auto-changed."
+      : "Bounds source: registry default.";
+  return reason ? `${label}\n${reason}` : label;
+}
+
+function setParamSource(model: ModelSpec, componentId: string, paramName: string, patch: { bounds?: ParameterSource; initial?: ParameterSource; reason?: string }): ModelSpec {
+  const copy = structuredClone(model) as ModelSpec;
+  for (const location of ["series", "core", "parallel"] as const) {
+    copy[location] = copy[location].map((comp) => {
+      if (comp.id !== componentId) return comp;
+      const metadata = { ...(comp.metadata ?? {}) };
+      const existing = (metadata.parameter_sources as Record<string, unknown> | undefined) ?? {};
+      metadata.parameter_sources = {
+        ...existing,
+        [paramName]: { ...((existing[paramName] as object | undefined) ?? {}), ...patch },
+      };
+      return { ...comp, metadata };
+    });
+  }
+  return copy;
+}
+
+export function markParameterUserEdited(model: ModelSpec, componentId: string, paramName: string, field: "bounds" | "initial"): ModelSpec {
+  return setParamSource(model, componentId, paramName, field === "bounds" ? { bounds: "user_edited" } : { initial: "user_edited" });
+}
+
+export function markFittedInitial(model: ModelSpec, componentId: string, paramName: string): ModelSpec {
+  return setParamSource(model, componentId, paramName, { initial: "fit_derived_initial" });
+}
+
+function isDefaultBounds(spec: ParameterSpec, registryDefault: { lower?: number | null; upper?: number | null } | undefined) {
+  return sameNumber(spec.lower, registryDefault?.lower ?? null) && sameNumber(spec.upper, registryDefault?.upper ?? null);
+}
+
+function shouldApplyBounds(spec: ParameterSpec, registryDefault: { lower?: number | null; upper?: number | null } | undefined, source: ParameterSource | null) {
+  if (source === "user_edited") return false;
+  return source === "data_suggested" || isDefaultBounds(spec, registryDefault);
+}
+
+export function applyDataBoundsSuggestions(model: ModelSpec, registry: FunctionDefinition[], response: BoundsSuggestionResponse): { model: ModelSpec; applied: number; skipped: number } {
+  let applied = 0;
+  let skipped = 0;
+  const copy = structuredClone(model) as ModelSpec;
+  for (const location of ["series", "core", "parallel"] as const) {
+    copy[location] = copy[location].map((comp) => {
+      let nextComp = comp;
+      for (const [name, spec] of Object.entries(comp.params)) {
+        const suggestion: ParameterBoundsSuggestion | undefined = response.suggestions[parameterKey(comp.id, name)];
+        if (!suggestion) continue;
+        const sources = comp.metadata?.parameter_sources as Record<string, { bounds?: ParameterSource }> | undefined;
+        const boundSource = sources?.[name]?.bounds ?? null;
+        const reg = registryParam(registry, comp.function_type, name);
+        if (!shouldApplyBounds(spec, reg, boundSource)) {
+          skipped += 1;
+          continue;
+        }
+        applied += 1;
+        const params = { ...nextComp.params, [name]: { ...nextComp.params[name], lower: suggestion.lower ?? null, upper: suggestion.upper ?? null } };
+        const metadata = { ...(nextComp.metadata ?? {}) };
+        const existing = (metadata.parameter_sources as Record<string, unknown> | undefined) ?? {};
+        metadata.parameter_sources = {
+          ...existing,
+          [name]: { ...((existing[name] as object | undefined) ?? {}), bounds: "data_suggested", reason: suggestion.reason },
+        };
+        nextComp = { ...nextComp, params, metadata };
+      }
+      return nextComp;
+    });
+  }
+  return { model: copy, applied, skipped };
+}

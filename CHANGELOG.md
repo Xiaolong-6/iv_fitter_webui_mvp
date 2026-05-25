@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.35 - Data-aware bounds suggestions
+
+- Added a backend `bounds_suggestion` module and `/api/suggest-bounds` endpoint that estimates conservative lower/upper/initial suggestions from the selected trace and fit voltage range without changing model equations, parameter keys, or fit serialization.
+- Added a Parameter table action to apply data-aware bounds only to parameters whose bounds are still registry-default or already data-suggested; user-edited bounds are skipped.
+- Added transparent source reporting in parameter hover text and status messages: registry default, data-suggested from selected trace, user-edited, and fitted-as-initial.
+- Documented how Rs/Rsh/current-scale/softplus bounds are estimated and clarified that suggested bounds are search-window guidance, not physical proof.
+- Added backend tests for Rs/Rsh suggestion scaling, user-bound preservation policy, and unchanged fit/report structures.
+
+Tests: `cd backend && pytest tests/test_bounds_suggestion.py`
+
 ## v1.4.34 - Fit setup polish and documentation refresh
 
 - Reworked the Fit setup status/action dock into compact layers: status badges, action buttons, and contextual messages/diagnostics.

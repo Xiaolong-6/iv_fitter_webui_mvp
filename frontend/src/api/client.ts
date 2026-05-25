@@ -1,4 +1,4 @@
-import type { FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, EquationSummary, FitWarning } from "../model/types";
+import type { BoundsSuggestionResponse, FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, EquationSummary, FitWarning } from "../model/types";
 
 function resolveApiBase(): string {
   const configured = import.meta.env.VITE_API_BASE;
@@ -29,6 +29,7 @@ export async function getRegistry(): Promise<FunctionDefinition[]> {
 export async function validateModel(model: ModelSpec): Promise<FitWarning[]> { return postJson("/api/validate-model", model); }
 export async function equations(model: ModelSpec, signal?: AbortSignal): Promise<EquationSummary> { return postJson("/api/equations", model, { signal }); }
 export async function fitTrace(trace: TraceData, model: ModelSpec, config: FitConfig, signal?: AbortSignal): Promise<FitResult> { return postJson("/api/fit", { trace, model, config }, { signal }); }
+export async function suggestBounds(trace: TraceData, model: ModelSpec, config: FitConfig, signal?: AbortSignal): Promise<BoundsSuggestionResponse> { return postJson("/api/suggest-bounds", { trace, model, config }, { signal }); }
 export async function exportReport(result: FitResult): Promise<{ markdown: string }> { return postJson("/api/export-report", result); }
 
 export interface ImportQualitySummary {

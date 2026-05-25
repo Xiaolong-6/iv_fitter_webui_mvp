@@ -83,10 +83,27 @@ export function setComponentFitState(model: ModelSpec, location: Location, compo
 
 export function seedComponentFromFittedValues(model: ModelSpec, result: FitResult | null, location: Location, componentId: string): ModelSpec {
   if (!result) return model;
-  return updateComponentParams(model, location, componentId, (spec, paramName) => {
-    const fitted = result.parameters[parameterKey(componentId, paramName)];
-    return fitted ? { ...spec, value: fitted.value } : spec;
+  const copy = structuredClone(model) as ModelSpec;
+  copy[location] = copy[location].map((component) => {
+    if (component.id !== componentId) return component;
+    let changed = false;
+    const params = Object.fromEntries(Object.entries(component.params).map(([paramName, spec]) => {
+      const fitted = result.parameters[parameterKey(componentId, paramName)];
+      if (!fitted) return [paramName, spec];
+      changed = true;
+      return [paramName, { ...spec, value: fitted.value }];
+    }));
+    if (!changed) return component;
+    const metadata = { ...(component.metadata ?? {}) };
+    const existing = (metadata.parameter_sources as Record<string, unknown> | undefined) ?? {};
+    metadata.parameter_sources = Object.fromEntries(Object.entries(component.params).map(([paramName]) => {
+      const fitted = result.parameters[parameterKey(componentId, paramName)];
+      const previous = (existing[paramName] as object | undefined) ?? {};
+      return [paramName, fitted ? { ...previous, initial: "fit_derived_initial" } : previous];
+    }));
+    return { ...component, params, metadata };
   });
+  return copy;
 }
 
 export function seedModelFromFittedValues(model: ModelSpec, result: FitResult | null): ModelSpec {

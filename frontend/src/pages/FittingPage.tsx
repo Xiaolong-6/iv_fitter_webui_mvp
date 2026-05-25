@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent, ReactNode } from "react";
 import type { FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, EquationSummary, ComponentSpec } from "../model/types";
-import { equations, exportReport, fitTrace, getRegistry } from "../api/client";
+import { equations, exportReport, fitTrace, getRegistry, suggestBounds } from "../api/client";
 import { emptyTrace, estimateResidualFloorA, updateComponent } from "../model/utils";
 import { restoreModelParameterValues, seedModelFromFittedValues } from "../model/parameterGrouping";
+import { applyDataBoundsSuggestions } from "../model/boundsSuggestion";
 import { WorkflowSidebar, type AppView } from "../components/WorkflowSidebar";
 import { UserDocumentationPage } from "../components/UserDocumentationPage";
 import { ModelBuilder } from "../components/ModelBuilder";
@@ -69,6 +70,8 @@ function WorkspaceView(props: {
   fitStatus: ReactNode;
   fitActions: ReactNode;
   fitMessages: ReactNode;
+  onApplyDataBounds: () => void;
+  dataBoundsStatus: string;
   isFitting: boolean;
 }) {
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -169,7 +172,7 @@ function WorkspaceView(props: {
       <div className="main-result-grid">
         <Section id="parameters" title={t(props.language, "parameters")}>
           <ErrorBoundary label="Parameter table">
-            <ParameterTable result={props.result} model={props.model} registry={props.registry} onModelChange={props.updateParameterModel} language={props.language} canRestoreInitialValues={props.canRestoreInitialValues} onRestoreInitialValues={props.onRestoreInitialValues} disabled={props.isFitting} />
+            <ParameterTable result={props.result} model={props.model} registry={props.registry} onModelChange={props.updateParameterModel} language={props.language} canRestoreInitialValues={props.canRestoreInitialValues} onRestoreInitialValues={props.onRestoreInitialValues} onApplyDataBounds={props.onApplyDataBounds} dataBoundsStatus={props.dataBoundsStatus} disabled={props.isFitting} />
           </ErrorBoundary>
         </Section>
       </div>
@@ -251,6 +254,7 @@ export function FittingPage() {
     preview: false,
   });
   const [dismissedWarningKey, setDismissedWarningKey] = useState("");
+  const [dataBoundsStatus, setDataBoundsStatus] = useState("");
 
   useEffect(() => {
     getRegistry().then(setRegistry).catch((e) => setError(String(e)));
@@ -291,6 +295,7 @@ export function FittingPage() {
   }, [selectedTrace]);
 
   useEffect(() => {
+    setDataBoundsStatus("");
     if (!selectedTrace.voltage_V.length) return;
     const nextFloor = estimateResidualFloorA(selectedTrace);
     setConfig((current) => current.residual_floor_A === nextFloor ? current : { ...current, residual_floor_A: nextFloor });
@@ -324,6 +329,25 @@ export function FittingPage() {
     window.addEventListener("wheel", onWheel, { passive: false });
     return () => window.removeEventListener("wheel", onWheel);
   }, []);
+
+  async function applyDataBounds() {
+    if (!selectedTrace.voltage_V.length) {
+      setDataBoundsStatus(language === "zh" ? "没有选中 trace，无法推荐边界。" : "No selected trace; data bounds were not applied.");
+      return;
+    }
+    try {
+      const response = await suggestBounds(selectedTrace, model, config);
+      const applied = applyDataBoundsSuggestions(model, registry, response);
+      setModel(applied.model);
+      setReport("");
+      setDataBoundsStatus(language === "zh"
+        ? `数据建议边界：已应用 ${applied.applied} 个，跳过 ${applied.skipped} 个用户修改/非默认项。`
+        : `Data bounds: applied ${applied.applied}; skipped ${applied.skipped} user-edited/non-default item(s).`);
+      setOpenSections((current) => ({ ...current, parameters: true }));
+    } catch (e) {
+      setDataBoundsStatus(language === "zh" ? `边界推荐失败：${String(e)}` : `Bounds suggestion failed: ${String(e)}`);
+    }
+  }
 
   async function runFit() {
     if (isFitting) return;
@@ -443,6 +467,8 @@ export function FittingPage() {
           <button className={isFitting ? "danger-soft active" : "danger-soft"} disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止" : "Stop"}</button>
           <button disabled={!result || isFitting} onClick={makeReport}>{t(language, "report")}</button>
         </>}
+        onApplyDataBounds={applyDataBounds}
+        dataBoundsStatus={dataBoundsStatus}
         fitMessages={<>
           {!selectedTrace.voltage_V.length && !error ? <div className="fit-empty-info"><strong>{language === "zh" ? "还没有加载 trace。" : "No trace loaded."}</strong><span>{language === "zh" ? "请先导入数据文件，或者加载示例数据后再拟合。" : "Import a data file or load a synthetic example before fitting."}</span></div> : null}
           {result && warningDismissKey(result) !== dismissedWarningKey ? <FitDiagnostics result={result} language={language} onCheckLogIv={() => openAndScroll("plots")} onAdjustInitials={() => openAndScroll("model")} onClose={() => setDismissedWarningKey(warningDismissKey(result))} /> : null}

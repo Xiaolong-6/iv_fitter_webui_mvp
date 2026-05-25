@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.4.34**.
+Current package: **v1.4.35**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -76,12 +76,12 @@ For docs-only changes, still run the full set if dependency availability allows 
 After every change, provide a 3-step browser test that does not require reading source code. The user should be able to verify the change through the UI or visible files.
 
 
-## v1.4.34 validation caveat
+## v1.4.35 validation caveat
 
-- `npm.cmd run test:parameter-ui`, `npm.cmd run build`, backend `compileall`, and `git diff --check` passed for v1.4.34, with only normal CRLF conversion warnings from Git.
-- Backend fitting math was not intentionally changed in v1.4.34. Full backend pytest was not rerun in the Codex desktop validation environment because the bundled Python did not include `pytest`; the previous full-backend pytest caveat still applies.
+- `npm.cmd run test:parameter-ui`, `npm.cmd run build`, backend `compileall`, and `git diff --check` passed for v1.4.35, with only normal CRLF conversion warnings from Git.
+- Backend fitting math was not intentionally changed in v1.4.35. Full backend pytest was not rerun in the Codex desktop validation environment because the bundled Python did not include `pytest`; the previous full-backend pytest caveat still applies.
 
-## v1.4.34 Fit setup and Model Builder interaction note
+## v1.4.35 Fit setup and Model Builder interaction note
 
 - Fit setup must remain visually compact. Use small status badges for Ready/Running/Converged, warning counts, and error counts. Do not reintroduce full-width amber backgrounds for successful converged states.
 - Put residual caution and backend warnings inside one Diagnostics disclosure. Avoid separate persistent "Caution" and "Warnings" blocks.

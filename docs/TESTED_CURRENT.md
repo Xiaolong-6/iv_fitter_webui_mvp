@@ -1,3 +1,15 @@
+# Tested current package - v1.4.35
+
+## v1.4.35 validation
+
+Passed in this workspace:
+
+- `cd backend && python -m pytest tests/test_bounds_suggestion.py -q`
+- `npm run test:parameter-ui`
+- `npm run build` after installing Node dependencies
+
+Known caveat: full backend pytest currently has one pre-existing photocurrent solver-failure expectation mismatch in `tests/test_photocurrent_models.py::test_implicit_solver_failure_still_returns_warning_and_nan_no_fallback`. The new bounds-suggestion tests pass, and the data-aware bounds change does not intentionally alter fitting equations, parameter keys, exported result structure, or report table structure.
+
 # Tested current package - v1.4.34
 
 ## v1.4.34 validation
