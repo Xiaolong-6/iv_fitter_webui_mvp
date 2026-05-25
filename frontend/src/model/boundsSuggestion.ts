@@ -3,6 +3,30 @@ import { parameterKey } from "./parameterGrouping";
 
 type ParameterSource = "registry_default" | "data_suggested" | "user_edited" | "fit_derived_initial";
 
+export type DataBoundsAction = "applied" | "skipped";
+
+export interface DataBoundsApplicationDetail {
+  key: string;
+  componentId: string;
+  paramName: string;
+  action: DataBoundsAction;
+  previousLower?: number | null;
+  previousUpper?: number | null;
+  suggestedLower?: number | null;
+  suggestedUpper?: number | null;
+  currentLower?: number | null;
+  currentUpper?: number | null;
+  source: ParameterSource | "none";
+  reason: string;
+  skipReason?: string;
+}
+
+export interface DataBoundsApplicationReport {
+  applied: number;
+  skipped: number;
+  details: DataBoundsApplicationDetail[];
+}
+
 function registryParam(registry: FunctionDefinition[], functionType: string, paramName: string) {
   return registry.find((definition) => definition.function_type === functionType)?.parameters.find((param) => param.name === paramName);
 }
@@ -75,24 +99,59 @@ function shouldApplyBounds(spec: ParameterSpec, registryDefault: { lower?: numbe
   return source === "data_suggested" || isDefaultBounds(spec, registryDefault);
 }
 
-export function applyDataBoundsSuggestions(model: ModelSpec, registry: FunctionDefinition[], response: BoundsSuggestionResponse): { model: ModelSpec; applied: number; skipped: number } {
+function skipReason(spec: ParameterSpec, registryDefault: { lower?: number | null; upper?: number | null } | undefined, source: ParameterSource | null) {
+  if (source === "user_edited") return "Bounds were user-edited, so automatic suggestions did not overwrite them.";
+  if (!isDefaultBounds(spec, registryDefault)) return "Current bounds are not registry defaults and were not previous data suggestions.";
+  return "Automatic overwrite policy was not satisfied.";
+}
+
+export function applyDataBoundsSuggestions(model: ModelSpec, registry: FunctionDefinition[], response: BoundsSuggestionResponse): { model: ModelSpec; report: DataBoundsApplicationReport } {
   let applied = 0;
   let skipped = 0;
+  const details: DataBoundsApplicationDetail[] = [];
   const copy = structuredClone(model) as ModelSpec;
   for (const location of ["series", "core", "parallel"] as const) {
     copy[location] = copy[location].map((comp) => {
       let nextComp = comp;
       for (const [name, spec] of Object.entries(comp.params)) {
-        const suggestion: ParameterBoundsSuggestion | undefined = response.suggestions[parameterKey(comp.id, name)];
+        const key = parameterKey(comp.id, name);
+        const suggestion: ParameterBoundsSuggestion | undefined = response.suggestions[key];
         if (!suggestion) continue;
         const sources = comp.metadata?.parameter_sources as Record<string, { bounds?: ParameterSource }> | undefined;
         const boundSource = sources?.[name]?.bounds ?? null;
         const reg = registryParam(registry, comp.function_type, name);
         if (!shouldApplyBounds(spec, reg, boundSource)) {
           skipped += 1;
+          details.push({
+            key,
+            componentId: comp.id,
+            paramName: name,
+            action: "skipped",
+            currentLower: spec.lower ?? null,
+            currentUpper: spec.upper ?? null,
+            suggestedLower: suggestion.lower ?? null,
+            suggestedUpper: suggestion.upper ?? null,
+            source: boundSource ?? "none",
+            reason: suggestion.reason,
+            skipReason: skipReason(spec, reg, boundSource),
+          });
           continue;
         }
         applied += 1;
+        details.push({
+          key,
+          componentId: comp.id,
+          paramName: name,
+          action: "applied",
+          previousLower: spec.lower ?? null,
+          previousUpper: spec.upper ?? null,
+          currentLower: suggestion.lower ?? null,
+          currentUpper: suggestion.upper ?? null,
+          suggestedLower: suggestion.lower ?? null,
+          suggestedUpper: suggestion.upper ?? null,
+          source: boundSource ?? "registry_default",
+          reason: suggestion.reason,
+        });
         const params = { ...nextComp.params, [name]: { ...nextComp.params[name], lower: suggestion.lower ?? null, upper: suggestion.upper ?? null } };
         const metadata = { ...(nextComp.metadata ?? {}) };
         const existing = (metadata.parameter_sources as Record<string, unknown> | undefined) ?? {};
@@ -105,5 +164,5 @@ export function applyDataBoundsSuggestions(model: ModelSpec, registry: FunctionD
       return nextComp;
     });
   }
-  return { model: copy, applied, skipped };
+  return { model: copy, report: { applied, skipped, details } };
 }

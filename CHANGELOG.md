@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.37 - Data bounds detail visibility
+
+- Changed the Parameters information column label to `Information`.
+- Expanded Apply data bounds feedback so each affected parameter shows whether it was applied or skipped, the current/suggested bounds, the current source, skip reason, and data-derived basis.
+
+Tests: `npm run test:parameter-ui`, `npm run build`
+
 ## 1.4.36 - Synthetic IV trace generator
 
 - Added a Synthetic IV Trace generator to the Import Data workflow.

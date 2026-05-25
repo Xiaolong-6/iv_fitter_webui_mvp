@@ -4,7 +4,7 @@ import type { FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, Eq
 import { equations, exportReport, fitTrace, getRegistry, suggestBounds } from "../api/client";
 import { emptyTrace, estimateResidualFloorA, updateComponent } from "../model/utils";
 import { restoreModelParameterValues, seedModelFromFittedValues } from "../model/parameterGrouping";
-import { applyDataBoundsSuggestions } from "../model/boundsSuggestion";
+import { applyDataBoundsSuggestions, type DataBoundsApplicationReport } from "../model/boundsSuggestion";
 import { WorkflowSidebar, type AppView } from "../components/WorkflowSidebar";
 import { UserDocumentationPage } from "../components/UserDocumentationPage";
 import { ModelBuilder } from "../components/ModelBuilder";
@@ -72,6 +72,7 @@ function WorkspaceView(props: {
   fitMessages: ReactNode;
   onApplyDataBounds: () => void;
   dataBoundsStatus: string;
+  dataBoundsReport: DataBoundsApplicationReport | null;
   isFitting: boolean;
 }) {
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -172,7 +173,7 @@ function WorkspaceView(props: {
       <div className="main-result-grid">
         <Section id="parameters" title={t(props.language, "parameters")}>
           <ErrorBoundary label="Parameter table">
-            <ParameterTable result={props.result} model={props.model} registry={props.registry} onModelChange={props.updateParameterModel} language={props.language} canRestoreInitialValues={props.canRestoreInitialValues} onRestoreInitialValues={props.onRestoreInitialValues} onApplyDataBounds={props.onApplyDataBounds} dataBoundsStatus={props.dataBoundsStatus} disabled={props.isFitting} />
+            <ParameterTable result={props.result} model={props.model} registry={props.registry} onModelChange={props.updateParameterModel} language={props.language} canRestoreInitialValues={props.canRestoreInitialValues} onRestoreInitialValues={props.onRestoreInitialValues} onApplyDataBounds={props.onApplyDataBounds} dataBoundsStatus={props.dataBoundsStatus} dataBoundsReport={props.dataBoundsReport} disabled={props.isFitting} />
           </ErrorBoundary>
         </Section>
       </div>
@@ -255,6 +256,7 @@ export function FittingPage() {
   });
   const [dismissedWarningKey, setDismissedWarningKey] = useState("");
   const [dataBoundsStatus, setDataBoundsStatus] = useState("");
+  const [dataBoundsReport, setDataBoundsReport] = useState<DataBoundsApplicationReport | null>(null);
 
   useEffect(() => {
     getRegistry().then(setRegistry).catch((e) => setError(String(e)));
@@ -296,6 +298,7 @@ export function FittingPage() {
 
   useEffect(() => {
     setDataBoundsStatus("");
+    setDataBoundsReport(null);
     if (!selectedTrace.voltage_V.length) return;
     const nextFloor = estimateResidualFloorA(selectedTrace);
     setConfig((current) => current.residual_floor_A === nextFloor ? current : { ...current, residual_floor_A: nextFloor });
@@ -340,9 +343,10 @@ export function FittingPage() {
       const applied = applyDataBoundsSuggestions(model, registry, response);
       setModel(applied.model);
       setReport("");
+      setDataBoundsReport(applied.report);
       setDataBoundsStatus(language === "zh"
-        ? `数据建议边界：已应用 ${applied.applied} 个，跳过 ${applied.skipped} 个用户修改/非默认项。`
-        : `Data bounds: applied ${applied.applied}; skipped ${applied.skipped} user-edited/non-default item(s).`);
+        ? `Data bounds: applied ${applied.report.applied}; skipped ${applied.report.skipped}. See Information for each parameter.`
+        : `Data bounds: applied ${applied.report.applied}; skipped ${applied.report.skipped}. See Information for each parameter.`);
       setOpenSections((current) => ({ ...current, parameters: true }));
     } catch (e) {
       setDataBoundsStatus(language === "zh" ? `边界推荐失败：${String(e)}` : `Bounds suggestion failed: ${String(e)}`);
@@ -470,6 +474,7 @@ export function FittingPage() {
         </>}
         onApplyDataBounds={applyDataBounds}
         dataBoundsStatus={dataBoundsStatus}
+        dataBoundsReport={dataBoundsReport}
         fitMessages={<>
           {!selectedTrace.voltage_V.length && !error ? <div className="fit-empty-info"><strong>{language === "zh" ? "还没有加载 trace。" : "No trace loaded."}</strong><span>{language === "zh" ? "请先导入数据文件，或者加载示例数据后再拟合。" : "Import a data file or load a synthetic example before fitting."}</span></div> : null}
           {result && warningDismissKey(result) !== dismissedWarningKey ? <FitDiagnostics result={result} language={language} onCheckLogIv={() => openAndScroll("plots")} onAdjustInitials={() => openAndScroll("model")} onClose={() => setDismissedWarningKey(warningDismissKey(result))} /> : null}

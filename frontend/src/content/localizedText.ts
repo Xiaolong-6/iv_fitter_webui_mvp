@@ -71,7 +71,7 @@ export const parameterTableText = {
     zh: "拟合?",
   },
   meaningColumn: {
-    en: "What it is telling you",
+    en: "Information",
     zh: "这个参数在说什么",
   },
   initialTitle: {

@@ -1,3 +1,14 @@
+# Tested current package - v1.4.37
+
+## v1.4.37 validation
+
+Passed in this workspace:
+
+- `npm run test:parameter-ui`
+- `npm run build`
+
+Scope: frontend visibility improvement for Apply data bounds detail. Backend fitting math, parameter keys, and export/report schemas were not intentionally changed.
+
 # Tested current package - v1.4.36
 
 ## v1.4.36 validation

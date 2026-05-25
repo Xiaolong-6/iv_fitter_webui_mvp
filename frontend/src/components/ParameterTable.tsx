@@ -4,7 +4,7 @@ import { fmtBounds } from "../model/format";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { parameterMeaning, parameterShortAssessment } from "../model/diagnostics";
-import { boundsSourceTitle, markParameterUserEdited } from "../model/boundsSuggestion";
+import { boundsSourceTitle, markParameterUserEdited, type DataBoundsApplicationDetail, type DataBoundsApplicationReport } from "../model/boundsSuggestion";
 import { updateComponent } from "../model/utils";
 import { HelpTip } from "./HelpTip";
 import { parameterText } from "../content/localizedText";
@@ -27,6 +27,10 @@ function formatParameterNumber(v: number | undefined | null) {
 
 function num(v: number | undefined | null) {
   return formatParameterNumber(v);
+}
+
+function formatBoundsPair(lower: number | null | undefined, upper: number | null | undefined) {
+  return fmtBounds(lower ?? null, upper ?? null);
 }
 
 function isPartialNumber(text: string) {
@@ -94,6 +98,36 @@ function componentSummary(comp: ComponentSpec, language: Language) {
   return `${law} | ${form} | ${placement} | ${polarity}`;
 }
 
+function sourceLabel(source: DataBoundsApplicationDetail["source"]) {
+  if (source === "data_suggested") return "previous data suggestion";
+  if (source === "user_edited") return "user-edited";
+  if (source === "fit_derived_initial") return "fitted-as-initial";
+  if (source === "registry_default") return "registry default";
+  return "no stored source";
+}
+
+function dataBoundsTitle(detail: DataBoundsApplicationDetail) {
+  const applied = detail.action === "applied";
+  const rows = [
+    applied ? "Auto bounds applied" : "Auto bounds skipped",
+    applied
+      ? `Changed: ${formatBoundsPair(detail.previousLower, detail.previousUpper)} -> ${formatBoundsPair(detail.currentLower, detail.currentUpper)}`
+      : `Current: ${formatBoundsPair(detail.currentLower, detail.currentUpper)}; suggested: ${formatBoundsPair(detail.suggestedLower, detail.suggestedUpper)}`,
+    `Current source: ${sourceLabel(detail.source)}`,
+  ];
+  if (!applied && detail.skipReason) rows.push(`Skip reason: ${detail.skipReason}`);
+  rows.push(`Basis: ${detail.reason}`);
+  return rows.join("\n");
+}
+
+function DataBoundsDetail({ detail }: { detail?: DataBoundsApplicationDetail }) {
+  if (!detail) return null;
+  const applied = detail.action === "applied";
+  return <span className={applied ? "data-bounds-badge applied" : "data-bounds-badge skipped"} title={dataBoundsTitle(detail)}>
+    {applied ? "Auto bounds applied" : "Auto bounds skipped"}
+  </span>;
+}
+
 export function ParameterTable({
   result,
   model,
@@ -104,6 +138,7 @@ export function ParameterTable({
   onRestoreInitialValues,
   onApplyDataBounds,
   dataBoundsStatus,
+  dataBoundsReport,
   disabled = false,
 }: {
   result: FitResult | null;
@@ -115,6 +150,7 @@ export function ParameterTable({
   onRestoreInitialValues?: () => void;
   onApplyDataBounds?: () => void;
   dataBoundsStatus?: string;
+  dataBoundsReport?: DataBoundsApplicationReport | null;
   disabled?: boolean;
 }) {
   void registry;
@@ -164,6 +200,7 @@ export function ParameterTable({
             </tr>;
             const parameterRows = group.rows.map(({ location, component: comp, paramName, spec }) => {
             const key = parameterKey(comp.id, paramName);
+            const dataBoundsDetail = dataBoundsReport?.details.find((detail) => detail.key === key);
             const open = openKey === key;
             const fitted = result?.parameters[key];
             const meaning = result ? parameterMeaning(result, key, language) : (spec.description ?? "");
@@ -177,13 +214,14 @@ export function ParameterTable({
                 <td><DraftNumberInput disabled={disabled} value={spec.lower} placeholder="-" title={`${parameterText("lowerTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`} onCommit={(value) => onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { lower: value }), comp.id, paramName, "bounds"))} /></td>
                 <td><DraftNumberInput disabled={disabled} value={spec.upper} placeholder="-" title={`${parameterText("upperTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`} onCommit={(value) => onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { upper: value }), comp.id, paramName, "bounds"))} /></td>
                 <td><label className="parameter-fit-toggle"><input type="checkbox" disabled={disabled} checked={spec.fit ?? true} onChange={(e) => onModelChange(updateParameter(model, location, comp.id, paramName, { fit: e.target.checked }))} /> {spec.fit ?? true ? t(language, "fitState") : t(language, "fixed")}</label></td>
-                <td className="parameter-meaning desktop-detail" title={meaning}>{short}</td>
+                <td className="parameter-meaning desktop-detail" title={meaning}>{short}<DataBoundsDetail detail={dataBoundsDetail} /></td>
               </tr>
               <tr className={open ? "parameter-mobile-detail open" : "parameter-mobile-detail"}>
                 <td colSpan={8}>
                   <div title={boundsSourceTitle(model, comp.id, paramName, language)}><strong>{parameterText("currentBounds", language)}:</strong> {fmtBounds(spec.lower, spec.upper)}</div>
                   <div><strong>{t(language, "stdErr")}:</strong> {fitted?.stderr === null || fitted?.stderr === undefined ? "-" : formatParameterNumber(fitted.stderr)}</div>
                   <p title={meaning}>{short}</p>
+                  <DataBoundsDetail detail={dataBoundsDetail} />
                 </td>
               </tr>
             </Fragment>;
