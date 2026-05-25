@@ -34,10 +34,6 @@ export const parameterTableText = {
     en: "Restore initial values",
     zh: "恢复初始值",
   },
-  autoSeedNote: {
-    en: "Fitted values are auto-seeded as the next initials after each completed fit.",
-    zh: "每次拟合完成后，拟合值会自动作为下一次初值。",
-  },
   fittedCountSuffix: {
     en: "fitted",
     zh: "参与拟合",

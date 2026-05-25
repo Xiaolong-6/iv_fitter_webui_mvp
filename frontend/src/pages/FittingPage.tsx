@@ -352,6 +352,7 @@ export function FittingPage() {
     setError(null);
     setResult(null);
     setReport("");
+    setDataBoundsReport(null);
     setDismissedWarningKey("");
     setActiveView("workspace");
     if (!selectedTrace.voltage_V.length) {
@@ -381,6 +382,7 @@ export function FittingPage() {
       const fit = await fitTrace(selectedTrace, modelBeforeFit, { ...config, run_timeout_s: timeoutS }, controller.signal);
       if (cancelFitRef.current) return;
       setResult(fit);
+      setDataBoundsReport(null);
       setModel(seedModelFromFittedValues(modelBeforeFit, fit));
       setOpenSections((current) => ({ ...current, plots: true, parameters: true }));
     } catch (e) {
@@ -432,21 +434,21 @@ export function FittingPage() {
       {activeView === "data" ? <DataImportWorkspace
         traces={traces}
         selectedTraceId={selectedTraceId}
-        onTraces={(next) => { setTraces(next); setResult(null); setReport(""); }}
-        onSelectTrace={(id) => { setSelectedTraceId(id); setResult(null); setReport(""); setNoTraceRunAttempted(false); }}
+        onTraces={(next) => { setTraces(next); setResult(null); setReport(""); setDataBoundsReport(null); }}
+        onSelectTrace={(id) => { setSelectedTraceId(id); setResult(null); setReport(""); setDataBoundsReport(null); setNoTraceRunAttempted(false); }}
         model={model}
         language={language}
       /> : activeView === "workspace" ? <WorkspaceView
         traces={traces}
         selectedTrace={selectedTrace}
         selectedTraceId={selectedTraceId}
-        setTraces={(next) => { setTraces(next); setResult(null); setReport(""); setNoTraceRunAttempted(false); }}
-        setSelectedTraceId={(id) => { setSelectedTraceId(id); setResult(null); setReport(""); setNoTraceRunAttempted(false); }}
+        setTraces={(next) => { setTraces(next); setResult(null); setReport(""); setDataBoundsReport(null); setNoTraceRunAttempted(false); }}
+        setSelectedTraceId={(id) => { setSelectedTraceId(id); setResult(null); setReport(""); setDataBoundsReport(null); setNoTraceRunAttempted(false); }}
         model={model}
-        setModel={(next) => { setModel(next); setPreFitInitialModel(null); setResult(null); setReport(""); }}
-        updateParameterModel={(next) => { setModel(next); setReport(""); }}
+        setModel={(next) => { setModel(next); setPreFitInitialModel(null); setResult(null); setReport(""); setDataBoundsReport(null); }}
+        updateParameterModel={(next) => { setModel(next); setReport(""); setDataBoundsReport(null); }}
         canRestoreInitialValues={preFitInitialModel !== null}
-        onRestoreInitialValues={() => { if (preFitInitialModel) setModel((current) => restoreModelParameterValues(current, preFitInitialModel)); }}
+        onRestoreInitialValues={() => { if (preFitInitialModel) { setModel((current) => restoreModelParameterValues(current, preFitInitialModel)); setDataBoundsReport(null); } }}
         config={config}
         setConfig={setConfig}
         autoVoltageRange={autoVoltageRange}

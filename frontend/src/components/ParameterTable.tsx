@@ -165,7 +165,6 @@ export function ParameterTable({
       <button type="button" disabled={disabled || !onApplyDataBounds} onClick={onApplyDataBounds} title={language === "zh" ? "根据当前选中 trace 和拟合电压范围生成保守的 data-aware bounds；只覆盖仍为默认值或之前由数据建议生成的 bounds。" : "Generate conservative data-aware bounds from the selected trace and fit voltage range. Only default or previous data-suggested bounds are overwritten."}>
         {language === "zh" ? "应用数据建议边界" : "Apply data bounds"}
       </button>
-      <span className="muted parameter-auto-seed-note">{parameterText("autoSeedNote", language)}</span>
     </div>
     {allRows.length === 0 ? <p className="muted">{t(language, "runFitForParameters")}</p> : grouped.map((placement) => <div className="parameter-placement-group" key={placement.id}>
       <h3>{placement.id === "main" ? t(language, "mainPath") : t(language, "branches")}</h3>

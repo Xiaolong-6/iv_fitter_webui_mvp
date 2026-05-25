@@ -2567,9 +2567,3 @@ button.running { cursor: progress; opacity: 0.85; }
     grid-column: 1 / -1;
   }
 }
-
-/* v1.4.33 simplified Parameters restore toolbar. */
-.parameter-auto-seed-note {
-  align-self: center;
-  font-size: 0.86rem;
-}
