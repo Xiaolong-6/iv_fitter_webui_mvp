@@ -2357,24 +2357,25 @@ button.running { cursor: progress; opacity: 0.85; }
 .compact-quality-warnings {
   margin-top: 8px;
 }
-.data-bounds-badge {
-  display: inline-block;
+.data-bounds-note {
+  display: block;
   width: fit-content;
-  margin-top: 4px;
-  padding: 2px 6px;
-  border-radius: 6px;
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: 11px;
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 12px;
   line-height: 1.25;
-  font-weight: 650;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+  cursor: help;
   white-space: nowrap;
 }
-.data-bounds-badge.skipped {
-  border-color: #fed7aa;
-  background: #fff7ed;
-  color: #9a3412;
+.data-bounds-note.applied {
+  color: #1d4ed8;
+}
+.data-bounds-note.skipped {
+  color: #b45309;
 }
 @media (max-width: 920px) {
   .data-import-layout {

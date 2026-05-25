@@ -123,8 +123,8 @@ function dataBoundsTitle(detail: DataBoundsApplicationDetail) {
 function DataBoundsDetail({ detail }: { detail?: DataBoundsApplicationDetail }) {
   if (!detail) return null;
   const applied = detail.action === "applied";
-  return <span className={applied ? "data-bounds-badge applied" : "data-bounds-badge skipped"} title={dataBoundsTitle(detail)}>
-    {applied ? "Auto bounds applied" : "Auto bounds skipped"}
+  return <span className={applied ? "data-bounds-note applied" : "data-bounds-note skipped"} title={dataBoundsTitle(detail)}>
+    {applied ? "auto bounds applied" : "auto bounds skipped"}
   </span>;
 }
 
@@ -137,7 +137,6 @@ export function ParameterTable({
   canRestoreInitialValues = false,
   onRestoreInitialValues,
   onApplyDataBounds,
-  dataBoundsStatus,
   dataBoundsReport,
   disabled = false,
 }: {
@@ -149,7 +148,6 @@ export function ParameterTable({
   canRestoreInitialValues?: boolean;
   onRestoreInitialValues?: () => void;
   onApplyDataBounds?: () => void;
-  dataBoundsStatus?: string;
   dataBoundsReport?: DataBoundsApplicationReport | null;
   disabled?: boolean;
 }) {
@@ -167,7 +165,7 @@ export function ParameterTable({
       <button type="button" disabled={disabled || !onApplyDataBounds} onClick={onApplyDataBounds} title={language === "zh" ? "根据当前选中 trace 和拟合电压范围生成保守的 data-aware bounds；只覆盖仍为默认值或之前由数据建议生成的 bounds。" : "Generate conservative data-aware bounds from the selected trace and fit voltage range. Only default or previous data-suggested bounds are overwritten."}>
         {language === "zh" ? "应用数据建议边界" : "Apply data bounds"}
       </button>
-      <span className="muted parameter-auto-seed-note">{dataBoundsStatus ?? parameterText("autoSeedNote", language)}</span>
+      <span className="muted parameter-auto-seed-note">{parameterText("autoSeedNote", language)}</span>
     </div>
     {allRows.length === 0 ? <p className="muted">{t(language, "runFitForParameters")}</p> : grouped.map((placement) => <div className="parameter-placement-group" key={placement.id}>
       <h3>{placement.id === "main" ? t(language, "mainPath") : t(language, "branches")}</h3>
@@ -200,7 +198,8 @@ export function ParameterTable({
             </tr>;
             const parameterRows = group.rows.map(({ location, component: comp, paramName, spec }) => {
             const key = parameterKey(comp.id, paramName);
-            const dataBoundsDetail = dataBoundsReport?.details.find((detail) => detail.key === key);
+            const dataBoundsDetails = dataBoundsReport?.details.filter((detail) => detail.key === key) ?? [];
+            const dataBoundsDetail = dataBoundsDetails[dataBoundsDetails.length - 1];
             const open = openKey === key;
             const fitted = result?.parameters[key];
             const meaning = result ? parameterMeaning(result, key, language) : (spec.description ?? "");
@@ -214,7 +213,7 @@ export function ParameterTable({
                 <td><DraftNumberInput disabled={disabled} value={spec.lower} placeholder="-" title={`${parameterText("lowerTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`} onCommit={(value) => onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { lower: value }), comp.id, paramName, "bounds"))} /></td>
                 <td><DraftNumberInput disabled={disabled} value={spec.upper} placeholder="-" title={`${parameterText("upperTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`} onCommit={(value) => onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { upper: value }), comp.id, paramName, "bounds"))} /></td>
                 <td><label className="parameter-fit-toggle"><input type="checkbox" disabled={disabled} checked={spec.fit ?? true} onChange={(e) => onModelChange(updateParameter(model, location, comp.id, paramName, { fit: e.target.checked }))} /> {spec.fit ?? true ? t(language, "fitState") : t(language, "fixed")}</label></td>
-                <td className="parameter-meaning desktop-detail" title={meaning}>{short}<DataBoundsDetail detail={dataBoundsDetail} /></td>
+                <td className="parameter-meaning desktop-detail" title={meaning}><div>{short}</div><DataBoundsDetail detail={dataBoundsDetail} /></td>
               </tr>
               <tr className={open ? "parameter-mobile-detail open" : "parameter-mobile-detail"}>
                 <td colSpan={8}>

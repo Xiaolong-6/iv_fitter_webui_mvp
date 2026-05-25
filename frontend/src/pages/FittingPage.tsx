@@ -71,7 +71,6 @@ function WorkspaceView(props: {
   fitActions: ReactNode;
   fitMessages: ReactNode;
   onApplyDataBounds: () => void;
-  dataBoundsStatus: string;
   dataBoundsReport: DataBoundsApplicationReport | null;
   isFitting: boolean;
 }) {
@@ -173,7 +172,7 @@ function WorkspaceView(props: {
       <div className="main-result-grid">
         <Section id="parameters" title={t(props.language, "parameters")}>
           <ErrorBoundary label="Parameter table">
-            <ParameterTable result={props.result} model={props.model} registry={props.registry} onModelChange={props.updateParameterModel} language={props.language} canRestoreInitialValues={props.canRestoreInitialValues} onRestoreInitialValues={props.onRestoreInitialValues} onApplyDataBounds={props.onApplyDataBounds} dataBoundsStatus={props.dataBoundsStatus} dataBoundsReport={props.dataBoundsReport} disabled={props.isFitting} />
+            <ParameterTable result={props.result} model={props.model} registry={props.registry} onModelChange={props.updateParameterModel} language={props.language} canRestoreInitialValues={props.canRestoreInitialValues} onRestoreInitialValues={props.onRestoreInitialValues} onApplyDataBounds={props.onApplyDataBounds} dataBoundsReport={props.dataBoundsReport} disabled={props.isFitting} />
           </ErrorBoundary>
         </Section>
       </div>
@@ -255,7 +254,6 @@ export function FittingPage() {
     preview: false,
   });
   const [dismissedWarningKey, setDismissedWarningKey] = useState("");
-  const [dataBoundsStatus, setDataBoundsStatus] = useState("");
   const [dataBoundsReport, setDataBoundsReport] = useState<DataBoundsApplicationReport | null>(null);
 
   useEffect(() => {
@@ -297,7 +295,6 @@ export function FittingPage() {
   }, [selectedTrace]);
 
   useEffect(() => {
-    setDataBoundsStatus("");
     setDataBoundsReport(null);
     if (!selectedTrace.voltage_V.length) return;
     const nextFloor = estimateResidualFloorA(selectedTrace);
@@ -335,7 +332,7 @@ export function FittingPage() {
 
   async function applyDataBounds() {
     if (!selectedTrace.voltage_V.length) {
-      setDataBoundsStatus(language === "zh" ? "没有选中 trace，无法推荐边界。" : "No selected trace; data bounds were not applied.");
+      setError(language === "zh" ? "没有选中 trace，无法推荐边界。" : "No selected trace; data bounds were not applied.");
       return;
     }
     try {
@@ -344,12 +341,9 @@ export function FittingPage() {
       setModel(applied.model);
       setReport("");
       setDataBoundsReport(applied.report);
-      setDataBoundsStatus(language === "zh"
-        ? `Data bounds: applied ${applied.report.applied}; skipped ${applied.report.skipped}. See Information for each parameter.`
-        : `Data bounds: applied ${applied.report.applied}; skipped ${applied.report.skipped}. See Information for each parameter.`);
       setOpenSections((current) => ({ ...current, parameters: true }));
     } catch (e) {
-      setDataBoundsStatus(language === "zh" ? `边界推荐失败：${String(e)}` : `Bounds suggestion failed: ${String(e)}`);
+      setError(language === "zh" ? `边界推荐失败：${String(e)}` : `Bounds suggestion failed: ${String(e)}`);
     }
   }
 
@@ -473,7 +467,6 @@ export function FittingPage() {
           <button disabled={!result || isFitting} onClick={makeReport}>{t(language, "report")}</button>
         </>}
         onApplyDataBounds={applyDataBounds}
-        dataBoundsStatus={dataBoundsStatus}
         dataBoundsReport={dataBoundsReport}
         fitMessages={<>
           {!selectedTrace.voltage_V.length && !error ? <div className="fit-empty-info"><strong>{language === "zh" ? "还没有加载 trace。" : "No trace loaded."}</strong><span>{language === "zh" ? "请先导入数据文件，或者加载示例数据后再拟合。" : "Import a data file or load a synthetic example before fitting."}</span></div> : null}
