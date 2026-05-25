@@ -68,8 +68,9 @@ def validate_component_against_registry(comp: ComponentSpec) -> list[FitWarning]
     warnings.extend(_location_coherence_warnings(comp, placement, evaluation_form))
     if placement not in set(definition.allowed_placements):
         warnings.append(_warn("unsupported_placement", f"{comp.id}: {comp.function_type} cannot be placed as {placement!r}.", "error"))
-    if allowed and comp.polarity not in allowed:
-        warnings.append(_warn("unsupported_polarity", f"{comp.id}: {comp.function_type} does not allow polarity {comp.polarity!r}.", "error"))
+    effective_polarity = comp.polarity or definition.default_polarity
+    if allowed and effective_polarity not in allowed:
+        warnings.append(_warn("unsupported_polarity", f"{comp.id}: {comp.function_type} does not allow polarity {effective_polarity!r}.", "error"))
     expected = {p.name for p in definition.parameters}
     missing = expected - set(comp.params)
     for name in sorted(missing):

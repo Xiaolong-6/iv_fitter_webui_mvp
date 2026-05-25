@@ -1,3 +1,12 @@
+# v1.5.0 - Release build readiness
+
+- Promoted the Import CSV/TXT action in the Import Data workspace so real data import matches the primary no-data workspace action.
+- Labeled bundled sample and synthetic trace actions as test/debug utilities to separate them from normal user data import.
+- Added a Windows release build script that checks version consistency, runs frontend/backend validation, and packages tracked release files.
+- Unified release metadata across root package, frontend package, backend package, README, and backend API version.
+
+Tests: `npm run build`, `npm run test:parameter-ui`, `npm run test:synthetic-ui`, `.venv\Scripts\python.exe -m pytest -p no:cacheprovider backend/tests -q`, `python -m compileall -q backend/ivfitter backend/tests`, `.\05_release_build.bat`
+
 # v1.4.40 - No-data action hierarchy polish
 
 - Disabled Run fit and Report when no trace is loaded so the Fit setup panel no longer presents fitting as the primary action before data import.

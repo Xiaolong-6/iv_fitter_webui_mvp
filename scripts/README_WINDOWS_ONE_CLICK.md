@@ -27,6 +27,13 @@ Optional: `01a_install_node_lts.bat`
 5. `04_run_dev.bat`
    - Opens backend and frontend in separate windows.
 
+Release build:
+
+- `05_release_build.bat`
+  - Checks version consistency.
+  - Runs frontend build, frontend UI smoke tests, backend tests, and Python compile checks.
+  - Creates `release/iv-fitter-webui-v<version>.zip`.
+
 Optional split launchers:
 
 - `04a_run_backend_only.bat`

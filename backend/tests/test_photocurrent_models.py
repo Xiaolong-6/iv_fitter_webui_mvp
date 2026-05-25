@@ -55,9 +55,17 @@ def test_voltage_dependent_photocurrent_branch_finite_prediction():
 
 def test_implicit_solver_failure_still_returns_warning_and_nan_no_fallback(monkeypatch):
     model = ModelSpec(parallel=[ComponentSpec(
-        id="Iph", location="parallel", function_type="photocurrent_constant",
-        law_id="photocurrent_constant", evaluation_form="current_branch", placement="parallel_current_branch",
-        params={"Iph0_A": p(1e-9), "direction_sign": p(-1.0)},
+        id="IphV", location="parallel", function_type="photocurrent_voltage_dependent",
+        law_id="photocurrent_voltage_dependent", evaluation_form="current_branch", placement="parallel_current_branch",
+        params={
+            "Iph0_A": p(1e-9),
+            "gain_per_V": p(0.5),
+            "Aph": p(1e-12),
+            "Vt_ph_V": p(1.0),
+            "Vs_ph_V": p(0.5),
+            "m_ph": p(1.0),
+            "direction_sign": p(-1.0),
+        },
     )])
     monkeypatch.setattr(fitting_engine, "solve_vj", lambda voltage, model: np.full(len(voltage), np.nan))
     trace = TraceData(voltage_V=[0.0, 0.1, 0.2, 0.3], current_A=[0.0, 0.0, 0.0, 0.0])

@@ -486,6 +486,33 @@ th, td { border-bottom: 1px solid #e5e7eb; padding: 5px; text-align: left; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .file-button { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 10px; padding: 7px 10px; background: #fff; cursor: pointer; font-size: 0.9rem; }
 .file-button:hover { background: var(--soft); }
+.file-button.import-primary-action {
+  min-height: 36px;
+  padding: 8px 13px;
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.16);
+}
+.file-button.import-primary-action:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+.file-button.import-primary-action:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.22);
+  outline-offset: 2px;
+}
+.import-debug-action {
+  background: #f8fafc;
+  color: #475569;
+  border-color: #d7deea;
+  font-weight: 650;
+}
+.import-debug-action:hover {
+  background: #eef4fb;
+  color: #334155;
+}
 .compact-data-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .trace-list { display: none !important; }
 .inline-select, .trace-select-label, .language-switch { display: grid; gap: 5px; font-size: 0.86rem; color: var(--muted); }

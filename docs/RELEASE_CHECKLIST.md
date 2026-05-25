@@ -13,8 +13,16 @@
 ```powershell
 npm install
 npm run build
+npm run test:parameter-ui
+npm run test:synthetic-ui
 PYTHONPATH=backend python -m pytest backend/tests -q
 python -m compileall -q backend/ivfitter backend/tests
+```
+
+One-command Windows release build:
+
+```powershell
+.\05_release_build.bat
 ```
 
 ## Manual browser checks

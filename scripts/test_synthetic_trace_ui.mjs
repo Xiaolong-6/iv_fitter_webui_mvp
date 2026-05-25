@@ -48,7 +48,8 @@ assert.equal(appended.selectedTraceId, "synthetic");
 assert.equal(appended.traces[1].metadata.synthetic, true);
 
 const componentSource = fs.readFileSync("frontend/src/components/DataImportWorkspace.tsx", "utf8");
-assert.match(componentSource, /Generate synthetic trace/);
+assert.match(componentSource, /Debug: synthetic trace/);
+assert.match(componentSource, /Test: sample data/);
 assert.match(componentSource, /Synthetic IV Trace/);
 assert.match(componentSource, /Synthetic trace generated from the current Model Builder model/);
 

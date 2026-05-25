@@ -327,10 +327,10 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
         <div className="card-head"><h3>{language === "zh" ? "导入数据" : "Import data"}</h3><HelpTip text={t(language, "importCsvHelp")} /></div>
         <p className="muted">{language === "zh" ? "导入文件或加载内置 HappyMeasure 示例。" : "Import a file or load the bundled HappyMeasure sample."}</p>
         <div className="data-actions compact-data-actions">
-          <label className="file-button" htmlFor={fileId} title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`}>{t(language, "importCsv")}</label>
+          <label className="file-button import-primary-action" htmlFor={fileId} title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`}>{t(language, "importCsv")}</label>
           <input id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
-          <button title={t(language, "loadDemoHelp")} onClick={loadSampleData}>{t(language, "loadDemo")}</button>
-          <button title={language === "zh" ? "从当前 Model Builder 模型正向生成 IV trace。" : "Forward-simulate an IV trace from the current Model Builder model."} onClick={() => setSyntheticOpen(true)}>Generate synthetic trace</button>
+          <button className="import-debug-action" title={language === "zh" ? `${t(language, "loadDemoHelp")} 测试用示例数据。` : `${t(language, "loadDemoHelp")} Test fixture for import and fitting checks.`} onClick={loadSampleData}>{language === "zh" ? "测试：示例数据" : "Test: sample data"}</button>
+          <button className="import-debug-action" title={language === "zh" ? "调试用：从当前 Model Builder 模型正向生成 IV trace。" : "Debug utility: forward-simulate an IV trace from the current Model Builder model."} onClick={() => setSyntheticOpen(true)}>{language === "zh" ? "调试：合成 trace" : "Debug: synthetic trace"}</button>
         </div>
       </section>
 
