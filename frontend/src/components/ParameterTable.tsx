@@ -204,6 +204,8 @@ export function ParameterTable({
             const fitted = result?.parameters[key];
             const meaning = result ? parameterMeaning(result, key, language) : (spec.description ?? "");
             const short = result ? parameterShortAssessment(result, key, language) : (spec.description ?? "");
+            const information = dataBoundsReport ? <DataBoundsDetail detail={dataBoundsDetail} /> : short;
+            const informationTitle = dataBoundsReport ? (dataBoundsDetail ? dataBoundsTitle(dataBoundsDetail) : "") : meaning;
             return <Fragment key={key}>
               <tr className="parameter-summary-row">
                 <td title={key} onClick={() => setOpenKey(open ? null : key)}>{labelForModelParameter(model, comp.id, paramName)}</td>
@@ -213,14 +215,13 @@ export function ParameterTable({
                 <td><DraftNumberInput disabled={disabled} value={spec.lower} placeholder="-" title={`${parameterText("lowerTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`} onCommit={(value) => onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { lower: value }), comp.id, paramName, "bounds"))} /></td>
                 <td><DraftNumberInput disabled={disabled} value={spec.upper} placeholder="-" title={`${parameterText("upperTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`} onCommit={(value) => onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { upper: value }), comp.id, paramName, "bounds"))} /></td>
                 <td><label className="parameter-fit-toggle"><input type="checkbox" disabled={disabled} checked={spec.fit ?? true} onChange={(e) => onModelChange(updateParameter(model, location, comp.id, paramName, { fit: e.target.checked }))} /> {spec.fit ?? true ? t(language, "fitState") : t(language, "fixed")}</label></td>
-                <td className="parameter-meaning desktop-detail" title={meaning}><div>{short}</div><DataBoundsDetail detail={dataBoundsDetail} /></td>
+                <td className="parameter-meaning desktop-detail" title={informationTitle}>{information}</td>
               </tr>
               <tr className={open ? "parameter-mobile-detail open" : "parameter-mobile-detail"}>
                 <td colSpan={8}>
                   <div title={boundsSourceTitle(model, comp.id, paramName, language)}><strong>{parameterText("currentBounds", language)}:</strong> {fmtBounds(spec.lower, spec.upper)}</div>
                   <div><strong>{t(language, "stdErr")}:</strong> {fitted?.stderr === null || fitted?.stderr === undefined ? "-" : formatParameterNumber(fitted.stderr)}</div>
-                  <p title={meaning}>{short}</p>
-                  <DataBoundsDetail detail={dataBoundsDetail} />
+                  {dataBoundsReport ? <DataBoundsDetail detail={dataBoundsDetail} /> : <p title={meaning}>{short}</p>}
                 </td>
               </tr>
             </Fragment>;
