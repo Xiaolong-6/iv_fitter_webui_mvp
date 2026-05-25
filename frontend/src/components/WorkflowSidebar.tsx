@@ -5,7 +5,7 @@ import { t } from "../model/i18n";
 export type AppView = "data" | "workspace" | "usage";
 
 const tabIds: AppView[] = ["data", "workspace", "usage"];
-const tabIcons: Record<AppView, string> = { data: "D", workspace: "W", usage: "M" };
+const tabIcons: Record<AppView, string> = { data: "▦", workspace: "⚙", usage: "?" };
 
 export function WorkflowSidebar({
   activeView,
@@ -54,7 +54,7 @@ export function WorkflowSidebar({
       {!collapsed && <p className="muted sidebar-note">{language === "zh" ? "本地拟合，报告前复核。" : "Fit locally. Review before reporting."}</p>}
     </div>
     <div className="sidebar-footer">
-      {!collapsed ? <label className="language-switch"><span>{t(language, "language")}</span><select value={language} onChange={(e) => onLanguageChange(e.target.value as Language)}>
+      {!collapsed ? <label className="language-switch sidebar-control"><span>{t(language, "language")}</span><select value={language} onChange={(e) => onLanguageChange(e.target.value as Language)}>
         <option value="en">{t(language, "english")}</option>
         <option value="zh">{t(language, "chinese")}</option>
       </select></label> : <button className="language-icon" title={t(language, "language")} onClick={() => onLanguageChange(language === "en" ? "zh" : "en")}>{language === "en" ? "ZH" : "EN"}</button>}
@@ -63,6 +63,14 @@ export function WorkflowSidebar({
         {!collapsed && <span>{t(language, "version")}</span>}
         <strong>v{version}</strong>
       </div>
+      {!collapsed && <a
+        className="sidebar-release-link"
+        href="https://github.com/Xiaolong-6/iv_fitter_webui_mvp/releases"
+        target="_blank"
+        rel="noreferrer"
+      >
+        {language === "zh" ? "查看最新版本" : "Check newest version"}
+      </a>}
     </div>
   </aside>;
 }

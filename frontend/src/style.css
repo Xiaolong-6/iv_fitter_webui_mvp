@@ -131,8 +131,20 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
   width: 100%;
 }
 .sidebar-zoom-control {
+  width: 100%;
   max-width: 100%;
   justify-content: center;
+  border-color: rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+  color: #e5edf8;
+}
+.sidebar-zoom-control button {
+  border-color: rgba(255,255,255,0.18);
+  background: rgba(15, 23, 42, 0.22);
+  color: #fff;
+}
+.sidebar-zoom-control span {
+  color: #e5edf8;
 }
 .sidebar.collapsed .sidebar-zoom-control {
   display: grid;
@@ -289,6 +301,18 @@ th, td { border-bottom: 1px solid #e5e7eb; padding: 5px; text-align: left; }
   font-size: calc(12px * var(--app-zoom));
 }
 .sidebar-version strong { color: white; font-size: calc(13px * var(--app-zoom)); }
+.sidebar-release-link {
+  display: block;
+  margin-top: calc(6px * var(--app-zoom));
+  color: #bfdbfe;
+  font-size: calc(12px * var(--app-zoom));
+  font-weight: 700;
+  text-decoration: none;
+}
+.sidebar-release-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
 .doc-page {
   min-height: 0;
   overflow: auto;
@@ -467,7 +491,13 @@ th, td { border-bottom: 1px solid #e5e7eb; padding: 5px; text-align: left; }
 .inline-select, .trace-select-label, .language-switch { display: grid; gap: 5px; font-size: 0.86rem; color: var(--muted); }
 .inline-select select, .trace-select-label select, .language-switch select { min-width: 180px; border: 1px solid var(--border); border-radius: 10px; padding: 7px 9px; background: #fff; color: var(--text); }
 .sidebar-footer { border-top: 1px solid rgba(255,255,255,0.14); padding: 12px; display: grid; gap: 10px; }
-.language-switch select { min-width: 100%; background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.18); }
+.sidebar-control {
+  padding: 8px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+}
+.language-switch select { min-width: 100%; background: rgba(15, 23, 42, 0.22); color: #fff; border-color: rgba(255,255,255,0.18); }
 .language-switch span { color: rgba(255,255,255,0.68); }
 .sidebar.collapsed .sidebar-footer { padding: 8px; }
 .sidebar.collapsed .language-switch { display: none; }
@@ -726,8 +756,9 @@ html, body, #root { height: 100%; overflow: hidden; }
   height: 24px;
   border-radius: 8px;
   background: rgba(255,255,255,0.08);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
+  line-height: 1;
 }
 .tab-label { display: block; font-weight: 700; }
 .sidebar.collapsed .side-tab {
@@ -2469,8 +2500,8 @@ button.running { cursor: progress; opacity: 0.85; }
   color: #0f172a;
 }
 .language-icon {
-  color: #0f172a;
-  background: #ffffff;
+  color: #ffffff;
+  background: rgba(255,255,255,0.08);
 }
 
 

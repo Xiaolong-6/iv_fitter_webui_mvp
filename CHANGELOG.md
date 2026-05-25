@@ -3,6 +3,8 @@
 - Disabled Run fit and Report when no trace is loaded so the Fit setup panel no longer presents fitting as the primary action before data import.
 - Increased the visual weight of the empty Plots Import data action, making data import the primary next step in the no-data state.
 - Kept Run fit visually neutral and unavailable until a selected trace has voltage/current data.
+- Added a sidebar Releases link below the version label and replaced letter navigation markers with clearer visual icons.
+- Unified sidebar language and zoom controls so the footer reads as one control group.
 - Updated manual/transparency notes for the no-data workflow.
 
 Tests: `npm run build`, `npm run test:parameter-ui`, `npm run test:synthetic-ui`, `python -m compileall -q backend/ivfitter`
