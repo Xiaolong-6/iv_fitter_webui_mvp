@@ -25,6 +25,14 @@ One-command Windows release build:
 .\05_release_build.bat
 ```
 
+Windows portable app build:
+
+```powershell
+.\06_build_windows_portable.bat
+```
+
+Output: `release/portable-dist/IV-fitter-v<version>-win-portable.zip`.
+
 ## Manual browser checks
 
 - [ ] Import a CSV or pasted trace.

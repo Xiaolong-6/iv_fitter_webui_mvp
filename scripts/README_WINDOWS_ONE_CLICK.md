@@ -33,6 +33,10 @@ Release build:
   - Checks version consistency.
   - Runs frontend build, frontend UI smoke tests, backend tests, and Python compile checks.
   - Creates `release/iv-fitter-webui-v<version>.zip`.
+- `06_build_windows_portable.bat`
+  - Builds a Windows portable folder with `IV-fitter.exe`.
+  - Packages it as `release/portable-dist/IV-fitter-v<version>-win-portable.zip`.
+  - The portable app does not require users to install Python, Node.js, npm, or project dependencies.
 
 Optional split launchers:
 
