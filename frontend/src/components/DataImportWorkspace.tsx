@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import type { TraceData } from "../model/types";
-import { importCsvTextMulti } from "../api/client";
+import type { ModelSpec, SyntheticNoiseConfig, TraceData } from "../model/types";
+import { generateSyntheticTrace, importCsvTextMulti } from "../api/client";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { HelpTip } from "./HelpTip";
+import { appendSyntheticTrace, validateSyntheticTraceForm, type SyntheticTraceFormState } from "../model/syntheticTrace";
 
 type ImportQuality = {
   rows_in_file?: number;
@@ -104,15 +105,31 @@ function ImportQualityPanel({ quality, language }: { quality: ImportQuality | nu
   </div>;
 }
 
-export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelectTrace, language }: {
+export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelectTrace, model, language }: {
   traces: TraceData[];
   selectedTraceId: string | null;
   onTraces: (t: TraceData[]) => void;
   onSelectTrace: (id: string) => void;
+  model: ModelSpec;
   language: Language;
 }) {
   const [pasteText, setPasteText] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [syntheticOpen, setSyntheticOpen] = useState(false);
+  const [syntheticBusy, setSyntheticBusy] = useState(false);
+  const [syntheticError, setSyntheticError] = useState<string | null>(null);
+  const [syntheticForm, setSyntheticForm] = useState<SyntheticTraceFormState>({
+    traceName: "synthetic_trace",
+    voltageStart: "-1",
+    voltageStop: "1",
+    voltageStep: "0.02",
+    noiseMode: "none",
+    noiseLevelA: "1e-12",
+    relativeNoiseFraction: "0.01",
+    seed: "1",
+    complianceEnabled: false,
+    complianceCurrentA: "0.001",
+  });
   const selected = traces.find((tr) => tr.trace_id === selectedTraceId) ?? traces[0];
   const voltageUnit = String(selected?.metadata?.voltage_unit ?? "V");
   const currentUnit = String(selected?.metadata?.current_unit ?? "A");
@@ -216,8 +233,85 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
     }
   }
 
+  function updateSyntheticForm(patch: Partial<SyntheticTraceFormState>) {
+    setSyntheticForm((current) => ({ ...current, ...patch }));
+    setSyntheticError(null);
+  }
+
+  function syntheticPayload() {
+    const noise_config: SyntheticNoiseConfig = syntheticForm.noiseMode === "gaussian_absolute"
+      ? { mode: "gaussian_absolute", noise_level_A: Number(syntheticForm.noiseLevelA) }
+      : syntheticForm.noiseMode === "gaussian_relative"
+        ? { mode: "gaussian_relative", relative_noise_fraction: Number(syntheticForm.relativeNoiseFraction) }
+        : { mode: "none" };
+    return {
+      model,
+      voltage_start: Number(syntheticForm.voltageStart),
+      voltage_stop: Number(syntheticForm.voltageStop),
+      voltage_step: Number(syntheticForm.voltageStep),
+      noise_config,
+      artifact_config: {
+        compliance_enabled: syntheticForm.complianceEnabled,
+        compliance_current_A: syntheticForm.complianceEnabled ? Number(syntheticForm.complianceCurrentA) : null,
+      },
+      trace_name: safeTraceName(syntheticForm.traceName, "synthetic_trace"),
+      seed: syntheticForm.seed.trim() ? Number(syntheticForm.seed) : null,
+    };
+  }
+
+  async function generateAndImportSynthetic() {
+    const validation = validateSyntheticTraceForm(syntheticForm);
+    if (!validation.ok) {
+      setSyntheticError(validation.error);
+      return;
+    }
+    setSyntheticBusy(true);
+    setSyntheticError(null);
+    try {
+      const response = await generateSyntheticTrace(syntheticPayload());
+      const appended = appendSyntheticTrace(traces, response);
+      onTraces(appended.traces);
+      onSelectTrace(appended.selectedTraceId);
+      setSyntheticOpen(false);
+      setMessage(language === "zh"
+        ? "Synthetic trace generated from the current Model Builder model and imported as test data. Ground-truth parameters are stored in trace metadata."
+        : "Synthetic trace generated from the current Model Builder model and imported as test data. Ground-truth parameters are stored in trace metadata.");
+    } catch (err) {
+      setSyntheticError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSyntheticBusy(false);
+    }
+  }
+
+  async function generateSyntheticCsvOnly() {
+    const validation = validateSyntheticTraceForm(syntheticForm);
+    if (!validation.ok) {
+      setSyntheticError(validation.error);
+      return;
+    }
+    setSyntheticBusy(true);
+    setSyntheticError(null);
+    try {
+      const response = await generateSyntheticTrace(syntheticPayload());
+      const csv = ["Voltage_V,Current_A", ...response.voltage_V.map((v, idx) => `${v},${response.current_A[idx]}`)].join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${response.trace_name.replace(/[^a-z0-9_-]+/gi, "_")}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setMessage(language === "zh" ? "Synthetic CSV generated." : "Synthetic CSV generated.");
+    } catch (err) {
+      setSyntheticError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSyntheticBusy(false);
+    }
+  }
+
   const fileId = "data-workspace-file-input";
   const qualityWarnings = importQuality?.warnings ?? [];
+  const syntheticValidation = validateSyntheticTraceForm(syntheticForm);
   return <section className="data-workspace scroll-page">
     <div className="page-header-card">
       <div>
@@ -236,6 +330,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
           <label className="file-button" htmlFor={fileId} title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`}>{t(language, "importCsv")}</label>
           <input id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
           <button title={t(language, "loadDemoHelp")} onClick={loadSampleData}>{t(language, "loadDemo")}</button>
+          <button title={language === "zh" ? "从当前 Model Builder 模型正向生成 IV trace。" : "Forward-simulate an IV trace from the current Model Builder model."} onClick={() => setSyntheticOpen(true)}>Generate synthetic trace</button>
         </div>
       </section>
 
@@ -293,5 +388,44 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
         {selected && selected.voltage_V.length > previewRows.length && <p className="muted">{t(language, "previewLimited")}</p>}
       </section>
     </div>
+
+    {syntheticOpen ? <div className="drawer synthetic-drawer" role="dialog" aria-modal="true" aria-labelledby="synthetic-trace-title">
+      <div className="drawer-head">
+        <div>
+          <h2 id="synthetic-trace-title">Synthetic IV Trace</h2>
+          <p className="muted">Synthetic traces are forward-simulated from the selected model and known parameters. They are useful for testing fitting stability and parameter recovery. Successful recovery on synthetic data does not prove that the same model is physically correct for a real device.</p>
+        </div>
+        <button onClick={() => setSyntheticOpen(false)} disabled={syntheticBusy}>Cancel</button>
+      </div>
+
+      {syntheticError ? <div className="warning error">{syntheticError}</div> : null}
+      {!syntheticError && !syntheticValidation.ok ? <div className="warning error">{syntheticValidation.error}</div> : null}
+
+      <div className="synthetic-form">
+        <label><span>Model source</span><select value="current" disabled><option>Use current Model Builder model</option></select></label>
+        <label><span>Trace name</span><input value={syntheticForm.traceName} onChange={(e) => updateSyntheticForm({ traceName: e.target.value })} /></label>
+        <div className="synthetic-field-grid">
+          <label><span>V start</span><input type="number" step="any" value={syntheticForm.voltageStart} onChange={(e) => updateSyntheticForm({ voltageStart: e.target.value })} /></label>
+          <label><span>V stop</span><input type="number" step="any" value={syntheticForm.voltageStop} onChange={(e) => updateSyntheticForm({ voltageStop: e.target.value })} /></label>
+          <label><span>V step</span><input type="number" step="any" value={syntheticForm.voltageStep} onChange={(e) => updateSyntheticForm({ voltageStep: e.target.value })} /></label>
+        </div>
+        <p className="muted">Point count: {syntheticValidation.pointCount || "-"}</p>
+        <label><span>Noise</span><select value={syntheticForm.noiseMode} onChange={(e) => updateSyntheticForm({ noiseMode: e.target.value as SyntheticNoiseConfig["mode"] })}>
+          <option value="none">None</option>
+          <option value="gaussian_absolute">Gaussian absolute current noise</option>
+          <option value="gaussian_relative">Gaussian relative current noise</option>
+        </select></label>
+        {syntheticForm.noiseMode === "gaussian_absolute" ? <label><span>noise_level_A</span><input type="number" step="any" value={syntheticForm.noiseLevelA} onChange={(e) => updateSyntheticForm({ noiseLevelA: e.target.value })} /></label> : null}
+        {syntheticForm.noiseMode === "gaussian_relative" ? <label><span>relative_noise_fraction</span><input type="number" step="any" value={syntheticForm.relativeNoiseFraction} onChange={(e) => updateSyntheticForm({ relativeNoiseFraction: e.target.value })} /></label> : null}
+        <label><span>Random seed</span><input type="number" step="1" value={syntheticForm.seed} onChange={(e) => updateSyntheticForm({ seed: e.target.value })} /></label>
+        <label className="inline-check"><input type="checkbox" checked={syntheticForm.complianceEnabled} onChange={(e) => updateSyntheticForm({ complianceEnabled: e.target.checked })} /> <span>Current compliance</span></label>
+        {syntheticForm.complianceEnabled ? <label><span>compliance_current_A</span><input type="number" step="any" value={syntheticForm.complianceCurrentA} onChange={(e) => updateSyntheticForm({ complianceCurrentA: e.target.value })} /></label> : null}
+      </div>
+      <div className="synthetic-actions">
+        <button className="primary" disabled={syntheticBusy || !syntheticValidation.ok} onClick={generateAndImportSynthetic}>{syntheticBusy ? "Generating..." : "Generate and import"}</button>
+        <button disabled={syntheticBusy || !syntheticValidation.ok} onClick={generateSyntheticCsvOnly}>Generate CSV only</button>
+        <button disabled={syntheticBusy} onClick={() => setSyntheticOpen(false)}>Cancel</button>
+      </div>
+    </div> : null}
   </section>;
 }

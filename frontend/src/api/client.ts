@@ -1,4 +1,4 @@
-import type { BoundsSuggestionResponse, FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, EquationSummary, FitWarning } from "../model/types";
+import type { BoundsSuggestionResponse, FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, EquationSummary, FitWarning, SyntheticTraceRequest, SyntheticTraceResponse } from "../model/types";
 
 function resolveApiBase(): string {
   const configured = import.meta.env.VITE_API_BASE;
@@ -51,4 +51,8 @@ export interface ImportCsvTextMultiResponse {
 
 export async function importCsvTextMulti(text: string, traceId = "imported_trace"): Promise<ImportCsvTextMultiResponse> {
   return postJson("/api/import-csv-text-multi", { text, trace_id: traceId });
+}
+
+export async function generateSyntheticTrace(payload: SyntheticTraceRequest): Promise<SyntheticTraceResponse> {
+  return postJson("/api/generate-synthetic-trace", payload);
 }

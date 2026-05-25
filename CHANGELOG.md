@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.36 - Synthetic IV trace generator
+
+- Added a Synthetic IV Trace generator to the Import Data workflow.
+- The generator uses the current Model Builder model and existing backend model evaluation path instead of duplicating equations or model-builder logic.
+- Added voltage start/stop/step controls, optional Gaussian absolute/relative current noise, reproducible random seed, and optional current compliance clipping.
+- Generated traces are imported into the normal trace list as test data, with additive synthetic metadata containing generator settings, model snapshot, and ground-truth parameter values.
+- Added transparency/manual text clarifying that synthetic recovery is a fitting/debug validation tool, not physical proof for a real device.
+
+Tests: `cd backend && python -m pytest tests/test_synthetic_trace.py -q`, `npm run test:synthetic-ui`, `npm run build`
+
 ## 1.4.35 - Data-aware bounds suggestions
 
 - Added a backend `bounds_suggestion` module and `/api/suggest-bounds` endpoint that estimates conservative lower/upper/initial suggestions from the selected trace and fit voltage range without changing model equations, parameter keys, or fit serialization.

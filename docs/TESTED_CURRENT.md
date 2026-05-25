@@ -1,3 +1,16 @@
+# Tested current package - v1.4.36
+
+## v1.4.36 validation
+
+Passed in this workspace for the synthetic IV trace generator:
+
+- `cd backend && python -m pytest tests/test_synthetic_trace.py -q`
+- `npm run test:synthetic-ui`
+- `npm run test:parameter-ui`
+- `npm run build`
+
+Full backend pytest was also run. It still has the pre-existing photocurrent solver-failure expectation mismatch in `tests/test_photocurrent_models.py::test_implicit_solver_failure_still_returns_warning_and_nan_no_fallback`; no new synthetic-trace failures were observed.
+
 # Tested current package - v1.4.35
 
 ## v1.4.35 validation

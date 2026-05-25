@@ -19,5 +19,10 @@ export interface EquationSummary { title: string; voltage_relation: string[]; co
 export interface ParameterBoundsSuggestion { component_id: string; param_name: string; lower?: number | null; upper?: number | null; initial?: number | null; source: "registry_default" | "data_suggested" | "not_suggested"; reason: string; }
 export interface BoundsSuggestionResponse { suggestions: Record<string, ParameterBoundsSuggestion>; status: string; notes: string[]; }
 export interface FitResult { success: boolean; reportable: boolean; reportability_reason?: string; message: string; model: ModelSpec; config: FitConfig; parameters: Record<string, ParameterResult>; metrics: Record<string, number>; warnings: FitWarning[]; curves: FitCurves; equations: EquationSummary; software_version: string; }
+export type SyntheticNoiseMode = "none" | "gaussian_absolute" | "gaussian_relative";
+export interface SyntheticNoiseConfig { mode: SyntheticNoiseMode; noise_level_A?: number; relative_noise_fraction?: number; }
+export interface SyntheticArtifactConfig { compliance_enabled: boolean; compliance_current_A?: number | null; }
+export interface SyntheticTraceRequest { model: ModelSpec; voltage_start: number; voltage_stop: number; voltage_step: number; noise_config: SyntheticNoiseConfig; artifact_config: SyntheticArtifactConfig; trace_name: string; seed?: number | null; }
+export interface SyntheticTraceResponse { trace_name: string; voltage_V: number[]; current_A: number[]; metadata: Record<string, unknown>; }
 export interface ParameterDefinition { name: string; default: number; lower?: number | null; upper?: number | null; unit?: string | null; fit: boolean; description: string; }
 export interface FunctionDefinition { function_type: string; location: Location; display_name: string; role: string; law_id: string; law_name: string; canonical_equation: string; available_forms: EvaluationForm[]; default_form: EvaluationForm; allowed_placements: Placement[]; default_placement: Placement; allowed_polarities: Polarity[]; default_polarity?: Polarity | null; mode?: string | null; parameters: ParameterDefinition[]; equation_template: string; help_text: string; }

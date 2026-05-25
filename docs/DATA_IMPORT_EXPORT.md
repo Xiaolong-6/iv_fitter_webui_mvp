@@ -15,6 +15,17 @@ Every imported trace should show:
 
 Display unit selectors are preview/display-only. Internal fitting arrays remain SI units: V and A.
 
+## Synthetic data generator
+
+The Import Data workflow includes a Synthetic IV Trace generator for test and debugging data.
+
+- It uses the current Model Builder `ModelSpec`; the Data page does not contain a separate model editor.
+- It forward-simulates I(V) data over the requested voltage start, stop, and step.
+- Optional Gaussian absolute current noise, Gaussian relative current noise, reproducible random seed, and current compliance clipping can be applied.
+- The generated trace is imported into the same trace list as file-imported data and should behave like a normal imported trace.
+- Synthetic metadata is additive and stored under trace metadata, including `synthetic: true`, generator version, model snapshot, ground-truth parameters, voltage sweep settings, noise settings, artifact settings, seed, and creation timestamp.
+- Synthetic recovery is a fitting/debug validation tool. Recovering known parameters from synthetic data does not prove that the same model is physically correct for a real device.
+
 ## HappyMeasure compatibility
 
 IV-fitter should import HappyMeasure CSV v2 exports:

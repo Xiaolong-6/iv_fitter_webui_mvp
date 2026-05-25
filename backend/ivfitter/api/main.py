@@ -13,6 +13,7 @@ from ivfitter.core.topology_graph import assemble_graph, graph_text_summary
 from ivfitter.core.fitting_engine import fit_trace
 from ivfitter.core.model_spec import FitRequest, FitWarning, FitResult, ModelSpec
 from ivfitter.core.bounds_suggestion import BoundsSuggestionRequest, BoundsSuggestionResponse, suggest_bounds
+from ivfitter.core.synthetic_trace import SyntheticTraceRequest, SyntheticTraceResult, generate_synthetic_trace
 from ivfitter.core.model_validation import validate_model_spec
 from ivfitter.io.export_report import fit_result_markdown
 from ivfitter.io.import_trace import ImportCsvTextRequest, import_csv_text, import_csv_text_multi
@@ -82,6 +83,25 @@ def suggest_bounds_endpoint(request: BoundsSuggestionRequest) -> BoundsSuggestio
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
+@app.post("/api/generate-synthetic-trace", response_model=SyntheticTraceResult)
+def generate_synthetic_trace_endpoint(request: SyntheticTraceRequest) -> SyntheticTraceResult:
+    """Forward-simulate an IV trace from the supplied ModelSpec."""
+    try:
+        return generate_synthetic_trace(
+            model=request.model,
+            voltage_start=request.voltage_start,
+            voltage_stop=request.voltage_stop,
+            voltage_step=request.voltage_step,
+            noise_config=request.noise_config,
+            artifact_config=request.artifact_config,
+            trace_name=request.trace_name,
+            seed=request.seed,
+        )
+    except (ValueError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
 @app.post("/api/fit")
 def fit(request: FitRequest):
     """Run one local trace fit."""
@@ -143,4 +163,3 @@ def export_parameters_csv(result: FitResult) -> TextResponse:
 def version() -> dict[str, str]:
     """Return backend version and schema milestone."""
     return {"version": __version__, "schema": "ModelSpec/FitResult law-form-placement + HappyMeasure multi-trace"}
-

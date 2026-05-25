@@ -2301,6 +2301,46 @@ button.running { cursor: progress; opacity: 0.85; }
 .import-actions-card .data-actions {
   justify-content: flex-start;
 }
+.synthetic-drawer {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+.synthetic-form {
+  display: grid;
+  gap: 10px;
+}
+.synthetic-form label {
+  display: grid;
+  gap: 5px;
+}
+.synthetic-form label > span {
+  color: #475569;
+  font-weight: 650;
+}
+.synthetic-field-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.synthetic-form .inline-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.synthetic-form .inline-check span {
+  color: #1f2937;
+}
+.synthetic-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .synthetic-field-grid {
+    grid-template-columns: 1fr;
+  }
+}
 .paste-card,
 .spreadsheet-card {
   min-height: 360px;

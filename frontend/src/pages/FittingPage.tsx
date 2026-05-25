@@ -436,6 +436,7 @@ export function FittingPage() {
         selectedTraceId={selectedTraceId}
         onTraces={(next) => { setTraces(next); setResult(null); setReport(""); }}
         onSelectTrace={(id) => { setSelectedTraceId(id); setResult(null); setReport(""); setNoTraceRunAttempted(false); }}
+        model={model}
         language={language}
       /> : activeView === "workspace" ? <WorkspaceView
         traces={traces}

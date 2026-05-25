@@ -572,6 +572,8 @@ function renderManualSection(section: ManualSectionKey, registry: FunctionDefini
         </> : <>
           <p>The Data page is for importing and checking raw data. The Workspace page is for model construction and fitting. Keep these tasks separate: a clean import does not imply a clean physical model, and a good-looking fit does not fix a wrong trace selection.</p>
           <ul className="doc-steps"><li>Supported input: CSV/TXT/DAT, pasted tables, generic voltage/current columns, and HappyMeasure single- or multi-trace exports.</li><li>Column detection is heuristic. Always verify units and sign convention in the preview table.</li><li>Multi-trace files preserve trace identity. Fit only the selected trace unless a future joint-fit workflow is explicitly used.</li><li>Look for missing rows, duplicate voltage points, compliance plateaus, instrument limits, and obvious wiring/sign reversals.</li></ul>
+          <h3>Synthetic data generator</h3>
+          <p>Synthetic IV Trace uses the current Model Builder model and current parameter values to forward-simulate I(V) data. Set the voltage start, stop, and step, then optionally add Gaussian absolute current noise, Gaussian relative current noise, a reproducible random seed, and current-compliance clipping. The generated trace is imported into the normal trace list, with ground-truth parameters and generator settings stored in trace metadata for later comparison. It is a fitting/debug validation tool for stability and parameter recovery, not physical proof that the same model is correct for a real device.</p>
         </>}
       </ManualSection>;
     case "model":
