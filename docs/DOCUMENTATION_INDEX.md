@@ -38,6 +38,9 @@ This file is the stable entry point for IV-fitter Web UI documentation.
 - `docs/VALIDATION_HISTORY.md` — consolidated history of older `TESTED_*` files.
 - `docs/TESTED_CURRENT.md` — current package validation note.
 - `docs/NPM_TROUBLESHOOTING.md` — Node/Vite troubleshooting.
+- `docs/RELEASE_CHECKLIST.md` - release readiness checklist.
+- `docs/FITTING_PARITY_AND_DIAGNOSTICS.md` - fitting parity and diagnostics notes.
+- `docs/NUMERICAL_SANITY_AND_HOVER.md` - numerical sanity and hover diagnostics notes.
 - `docs/ROADMAP.md` — future work.
 - `docs/VERSION_CONTROL.md` — versioning and packaging conventions.
 

@@ -11,8 +11,10 @@ htmlcov/
 # Frontend dependencies/build outputs
 node_modules/
 frontend/node_modules/
+/.vite/
 frontend/dist/
 frontend/.vite/
+*.egg-info/
 # Local logs and temporary files
 *.log
 logs/
