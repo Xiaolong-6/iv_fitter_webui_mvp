@@ -123,3 +123,86 @@ def test_generate_synthetic_trace_api_response_schema():
     assert len(payload["current_A"]) == 3
     assert payload["metadata"]["synthetic"] is True
     assert payload["metadata"]["ground_truth_parameters"]["Rsh.Rsh_ohm"] == 1000.0
+
+
+def diode_rs_rsh_model() -> ModelSpec:
+    return ModelSpec(
+        core=[
+            ComponentSpec(
+                id="D1",
+                location="core",
+                function_type="diode",
+                law_id="shockley_diode",
+                evaluation_form="current_branch",
+                placement="junction_current_branch",
+                polarity="forward",
+                params={
+                    "I0_A": p(1e-12, True, 1e-30, 1.0, "A"),
+                    "n": p(1.5, True, 0.5, 10.0, None),
+                },
+            )
+        ],
+        series=[
+            ComponentSpec(
+                id="Rs",
+                location="series",
+                function_type="constant_rs",
+                law_id="ohmic",
+                evaluation_form="voltage_drop",
+                placement="series_voltage_drop",
+                params={"Rs_ohm": p(10.0, True, 0.0, 1e9, "ohm")},
+            )
+        ],
+        parallel=[
+            ComponentSpec(
+                id="Rsh",
+                location="parallel",
+                function_type="constant_rs",
+                law_id="ohmic",
+                evaluation_form="current_branch",
+                placement="parallel_current_branch",
+                params={"Rs_ohm": p(1e9, True, 1e3, 1e18, "ohm")},
+            )
+        ],
+        version="test",
+    )
+
+
+def test_noiseless_diode_rs_rsh_synthetic_matches_prediction_and_fits_back():
+    from ivfitter.core.fitting_engine import predict_current
+
+    model = diode_rs_rsh_model()
+    synthetic = generate(model=model, voltage_start=-1.0, voltage_stop=1.0, voltage_step=0.02)
+    predicted = predict_current(np.asarray(synthetic.voltage_V, dtype=float), model)
+    assert np.max(np.abs(predicted - np.asarray(synthetic.current_A, dtype=float))) == pytest.approx(0.0, abs=1e-30)
+
+    fit_result = fit_trace(FitRequest(
+        trace={
+            "voltage_V": synthetic.voltage_V,
+            "current_A": synthetic.current_A,
+            "trace_id": synthetic.trace_name,
+            "metadata": synthetic.metadata,
+        },
+        model=model,
+        config=FitConfig(max_nfev=200, exclude_compliance=True),
+    ))
+    assert fit_result.success is True
+    assert fit_result.reportable is True
+    assert fit_result.metrics["linear_rmse_A"] == pytest.approx(0.0, abs=1e-30)
+    assert fit_result.metrics["log_magnitude_mae_decades"] == pytest.approx(0.0, abs=1e-12)
+    assert fit_result.parameters["D1.I0_A"].value == pytest.approx(1e-12, rel=1e-12)
+    assert fit_result.parameters["D1.n"].value == pytest.approx(1.5, rel=1e-12)
+    assert fit_result.parameters["Rs.Rs_ohm"].value == pytest.approx(10.0, rel=1e-12)
+    assert fit_result.parameters["Rsh.Rs_ohm"].value == pytest.approx(1e9, rel=1e-12)
+    assert "compliance_excluded" not in {warning.code for warning in fit_result.warnings}
+    assert "synthetic_compliance_exclusion_skipped" in {warning.code for warning in fit_result.warnings}
+
+
+def test_synthetic_metadata_preserves_exact_diode_rs_rsh_ground_truth():
+    model = diode_rs_rsh_model()
+    synthetic = generate(model=model, voltage_start=-1.0, voltage_stop=1.0, voltage_step=0.5)
+    assert synthetic.metadata["artifact_config"]["compliance_enabled"] is False
+    assert synthetic.metadata["ground_truth_parameters"]["D1.I0_A"] == 1e-12
+    assert synthetic.metadata["ground_truth_parameters"]["D1.n"] == 1.5
+    assert synthetic.metadata["ground_truth_parameters"]["Rs.Rs_ohm"] == 10.0
+    assert synthetic.metadata["ground_truth_parameters"]["Rsh.Rs_ohm"] == 1e9

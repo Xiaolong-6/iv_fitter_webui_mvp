@@ -137,6 +137,8 @@ export function ParameterTable({
   canRestoreInitialValues = false,
   onRestoreInitialValues,
   onApplyDataBounds,
+  canSeedSyntheticGroundTruth = false,
+  onSeedSyntheticGroundTruth,
   dataBoundsReport,
   disabled = false,
 }: {
@@ -148,6 +150,8 @@ export function ParameterTable({
   canRestoreInitialValues?: boolean;
   onRestoreInitialValues?: () => void;
   onApplyDataBounds?: () => void;
+  canSeedSyntheticGroundTruth?: boolean;
+  onSeedSyntheticGroundTruth?: () => void;
   dataBoundsReport?: DataBoundsApplicationReport | null;
   disabled?: boolean;
 }) {
@@ -164,6 +168,9 @@ export function ParameterTable({
       </button>
       <button type="button" disabled={disabled || !onApplyDataBounds} onClick={onApplyDataBounds} title={language === "zh" ? "根据当前选中 trace 和拟合电压范围生成保守的 data-aware bounds；只覆盖仍为默认值或之前由数据建议生成的 bounds。" : "Generate conservative data-aware bounds from the selected trace and fit voltage range. Only default or previous data-suggested bounds are overwritten."}>
         {language === "zh" ? "应用数据建议边界" : "Apply data bounds"}
+      </button>
+      <button type="button" disabled={disabled || !canSeedSyntheticGroundTruth || !onSeedSyntheticGroundTruth} onClick={onSeedSyntheticGroundTruth} title={language === "zh" ? "从当前 synthetic trace metadata 中保存的真实参数恢复初值。不会改变模型结构或参数 key。" : "Restore initials from the ground-truth parameters stored in the active synthetic trace metadata. Model structure and parameter keys are not changed."}>
+        {language === "zh" ? "使用 synthetic 真值作为初值" : "Seed from synthetic ground truth"}
       </button>
     </div>
     {allRows.length === 0 ? <p className="muted">{t(language, "runFitForParameters")}</p> : grouped.map((placement) => <div className="parameter-placement-group" key={placement.id}>

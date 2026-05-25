@@ -1,3 +1,13 @@
+# v1.4.39 - Synthetic fit-back consistency
+
+- Fixed noiseless synthetic D1 + Rs + Rsh fit-back by optimizing broad positive scale parameters such as diode `I0_A` in internal log10 coordinates while preserving public parameter keys, bounds, equations, JSON shape, and reports. This prevents bounded `least_squares` from silently shifting tiny displayed starts such as `1e-12 A` toward `1e-10 A`.
+- Skipped generic compliance-point exclusion for synthetic traces whose metadata says no compliance artifact was applied, avoiding false high-current exclusions in clean simulated data.
+- Added quality-gated fitted-as-initial promotion: poor or non-reportable fits still display fitted values but do not silently overwrite trusted initials for the next run.
+- Added a Parameters action to seed initials from synthetic ground-truth metadata, using only matching parameter keys in the current model.
+- Added synthetic fit-back regression coverage for noiseless D1 + Rs + Rsh recovery and updated frontend parameter tests for synthetic ground-truth seeding.
+
+Tests: `PYTHONPATH=backend pytest -q backend/tests/test_fit_process_diagnostics.py backend/tests/test_bounds_suggestion.py backend/tests/test_synthetic_trace.py`, `npm run build`, `npm run test:parameter-ui`, `npm run test:synthetic-ui`
+
 # v1.4.38 - Fit process diagnostics transparency
 
 - Added additive backend `fit_diagnostics` metadata for each fit, including points used/excluded, free/fixed parameter counts, degrees of freedom, elapsed time, solver/mode, weighting/loss, optimizer status/message, function/Jacobian evaluations, cost/optimality, active bounds, and warning count.

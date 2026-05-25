@@ -25,6 +25,8 @@ The Import Data workflow includes a Synthetic IV Trace generator for test and de
 - The generated trace is imported into the same trace list as file-imported data and should behave like a normal imported trace.
 - Synthetic metadata is additive and stored under trace metadata, including `synthetic: true`, generator version, model snapshot, ground-truth parameters, voltage sweep settings, noise settings, artifact settings, seed, and creation timestamp.
 - Synthetic recovery is a fitting/debug validation tool. Recovering known parameters from synthetic data does not prove that the same model is physically correct for a real device.
+- Clean synthetic traces use the same backend prediction path as fitting. If no synthetic compliance artifact was applied, generic compliance-point exclusion is skipped during fitting to avoid falsely removing high-current simulated points.
+- The Parameters table can seed initials from stored synthetic ground-truth metadata. This restores only matching parameter keys in the current model and does not change model structure.
 
 ## HappyMeasure compatibility
 

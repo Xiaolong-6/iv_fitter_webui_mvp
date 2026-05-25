@@ -117,6 +117,46 @@ export function seedModelFromFittedValues(model: ModelSpec, result: FitResult | 
   return next;
 }
 
+
+export function seedModelFromGroundTruthParameters(model: ModelSpec, groundTruth: Record<string, unknown>): ModelSpec {
+  let next = model;
+  for (const location of ["series", "core", "parallel"] as const) {
+    for (const component of next[location]) {
+      next = updateComponentParams(next, location, component.id, (spec, paramName) => {
+        const raw = groundTruth[parameterKey(component.id, paramName)];
+        const value = typeof raw === "number" ? raw : Number(raw);
+        if (!Number.isFinite(value)) return spec;
+        return { ...spec, value };
+      });
+      next[location] = next[location].map((item) => {
+        if (item.id !== component.id) return item;
+        const metadata = { ...(item.metadata ?? {}) };
+        const existing = (metadata.parameter_sources as Record<string, Record<string, unknown>> | undefined) ?? {};
+        metadata.parameter_sources = Object.fromEntries(Object.entries(item.params).map(([paramName]) => {
+          const key = parameterKey(item.id, paramName);
+          const previous = existing[paramName] ?? {};
+          return [paramName, groundTruth[key] !== undefined ? { ...previous, initial: "synthetic_ground_truth" } : previous];
+        }));
+        return { ...item, metadata };
+      });
+    }
+  }
+  return next;
+}
+
+export function countGroundTruthMatches(model: ModelSpec, groundTruth: Record<string, unknown>): number {
+  let count = 0;
+  for (const location of ["series", "core", "parallel"] as const) {
+    for (const component of model[location]) {
+      for (const paramName of Object.keys(component.params)) {
+        const value = groundTruth[parameterKey(component.id, paramName)];
+        if (value !== undefined && Number.isFinite(typeof value === "number" ? value : Number(value))) count += 1;
+      }
+    }
+  }
+  return count;
+}
+
 export function restoreModelParameterValues(model: ModelSpec, snapshot: ModelSpec | null): ModelSpec {
   if (!snapshot) return model;
   const snapshotValues = new Map<string, number>();

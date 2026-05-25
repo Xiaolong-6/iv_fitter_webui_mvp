@@ -46,6 +46,75 @@ _multistart_candidates = multistart_candidates
 
 
 
+
+def _log_transform_enabled(key: str, name: str, value: float, lower: float, upper: float) -> bool:
+    """Return True for positive scale parameters that should be optimized in log10 space.
+
+    SciPy's bounded least_squares makes starts strictly feasible in linear
+    coordinates. For tiny positive scale parameters such as diode I0_A this can
+    move a displayed start of 1e-12 A to roughly 1e-10 A when bounds span from
+    1e-30 to 1 A. Optimizing these parameters in log10 space preserves the
+    effective start and improves multi-decade conditioning without changing
+    public parameter keys or model equations.
+    """
+    if not all(np.isfinite(x) for x in (value, lower, upper)):
+        return False
+    if value <= 0 or lower <= 0 or upper <= lower:
+        return False
+    # Only transform broad positive scale parameters, not shape parameters such
+    # as ideality factor n or exponent m.
+    if upper / lower < 1e6:
+        return False
+    lowered = name.lower()
+    scale_tokens = (
+        "i0", "i01", "i02", "ibr0", "iph", "afwd", "a_rev",
+        "_a", "current", "rsh", "rs_ohm", "resistance", "vs", "is",
+    )
+    return any(token in lowered for token in scale_tokens)
+
+
+def _build_internal_transform(records, x0: np.ndarray, lower: np.ndarray, upper: np.ndarray):
+    transforms: list[str] = []
+    y0: list[float] = []
+    y_lower: list[float] = []
+    y_upper: list[float] = []
+    for idx, ((key, _comp, name, _spec), value, lo, hi) in enumerate(zip(records, x0, lower, upper)):
+        if _log_transform_enabled(key, name, float(value), float(lo), float(hi)):
+            transforms.append("log10")
+            y0.append(float(np.log10(value)))
+            y_lower.append(float(np.log10(lo)))
+            y_upper.append(float(np.log10(hi)))
+        else:
+            transforms.append("linear")
+            y0.append(float(value))
+            y_lower.append(float(lo))
+            y_upper.append(float(hi))
+    return np.asarray(y0, dtype=float), np.asarray(y_lower, dtype=float), np.asarray(y_upper, dtype=float), transforms
+
+
+def _decode_internal_x(y: np.ndarray, transforms: list[str]) -> np.ndarray:
+    x = np.asarray(y, dtype=float).copy()
+    for idx, transform in enumerate(transforms):
+        if transform == "log10":
+            x[idx] = 10.0 ** x[idx]
+    return x
+
+
+def _external_jacobian(jac, x_external: np.ndarray, transforms: list[str]):
+    """Convert residual Jacobian columns from internal variables to public units."""
+    if jac is None:
+        return None
+    try:
+        out = np.asarray(jac, dtype=float).copy()
+        for idx, transform in enumerate(transforms):
+            if transform == "log10":
+                dx_dy = np.log(10.0) * float(x_external[idx])
+                if np.isfinite(dx_dy) and dx_dy != 0:
+                    out[:, idx] = out[:, idx] / dx_dy
+        return out
+    except Exception:
+        return jac
+
 def _current_at_vj(vj, model):
     return evaluation.current_at_vj(vj, model)
 
@@ -130,7 +199,18 @@ def fit_trace(request: FitRequest) -> FitResult:
 
     x0, lower, upper, records = _pack(request)
     v_fit, i_meas, range_mask = select_range(request)
-    excluded = compliance_mask(i_meas, request.config.exclude_compliance)
+    exclude_compliance = bool(request.config.exclude_compliance)
+    trace_metadata = getattr(request.trace, "metadata", {}) or {}
+    artifact_config = trace_metadata.get("artifact_config") if isinstance(trace_metadata, dict) else None
+    synthetic_without_compliance = bool(trace_metadata.get("synthetic")) and not (isinstance(artifact_config, dict) and artifact_config.get("compliance_enabled"))
+    if exclude_compliance and synthetic_without_compliance:
+        exclude_compliance = False
+        warnings.append(FitWarning(
+            code="synthetic_compliance_exclusion_skipped",
+            message="Compliance exclusion was skipped because this synthetic trace metadata says no compliance artifact was applied.",
+            severity="info",
+        ))
+    excluded = compliance_mask(i_meas, exclude_compliance)
     if excluded.any():
         warnings.append(FitWarning(code="compliance_excluded", message=f"Excluded {int(excluded.sum())} high-current point(s) as possible compliance points.", severity="warning"))
     use = ~excluded
@@ -162,10 +242,16 @@ def fit_trace(request: FitRequest) -> FitResult:
             starts = [x0]
             if request.config.multistart_enabled:
                 starts = multistart_candidates(x0, lower, upper, getattr(request.config, "multistart_n_seeds", 12))
+            y0, y_lower, y_upper, transforms = _build_internal_transform(records, x0, lower, upper)
+
+            def fun_internal(y):
+                return fun(_decode_internal_x(y, transforms))
+
             best = None
             for start in starts:
                 check_timeout()
-                res = least_squares(fun, start, bounds=(lower, upper), loss=request.config.loss, max_nfev=request.config.max_nfev)
+                y_start, _yl, _yu, _transforms = _build_internal_transform(records, np.asarray(start, dtype=float), lower, upper)
+                res = least_squares(fun_internal, y_start, bounds=(y_lower, y_upper), loss=request.config.loss, max_nfev=request.config.max_nfev)
                 optimizer_nfev_total += int(getattr(res, "nfev", 0) or 0)
                 optimizer_njev_total += int(getattr(res, "njev", 0) or 0)
                 cost = float(np.sum(res.fun**2))
@@ -173,13 +259,14 @@ def fit_trace(request: FitRequest) -> FitResult:
                     best = (cost, res)
             assert best is not None
             res = best[1]
-            _apply_x(records, res.x)
+            fitted_x = _decode_internal_x(res.x, transforms)
+            _apply_x(records, fitted_x)
             success = bool(res.success)
             message = str(res.message)
             if request.config.multistart_enabled:
                 message += f"; multistart tried {len(starts)} seed set(s)"
                 warnings.append(FitWarning(code="multistart", message=f"Multistart tried {len(starts)} seed set(s) using bounded/log-space sampling.", severity="info"))
-            fit_jac = res.jac
+            fit_jac = _external_jacobian(res.jac, fitted_x, transforms)
             fit_residual_vector = res.fun
             optimizer_status = int(getattr(res, "status", 0) or 0)
             optimizer_message = str(getattr(res, "message", message))

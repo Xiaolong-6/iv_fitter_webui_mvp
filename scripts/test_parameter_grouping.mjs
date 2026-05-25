@@ -17,6 +17,8 @@ const {
   parameterKey,
   seedComponentFromFittedValues,
   seedModelFromFittedValues,
+  seedModelFromGroundTruthParameters,
+  countGroundTruthMatches,
   restoreModelParameterValues,
   setComponentFitState,
 } = module.exports;
@@ -73,6 +75,14 @@ const seededModel = seedModelFromFittedValues(model, result);
 assert.equal(seededModel.series[0].params.Rs_ohm.value, 0);
 assert.equal(seededModel.core[0].params.I0_A.value, 2e-12);
 assert.equal(seededModel.parallel[0].params.Rs_ohm.value, 1e9);
+
+const groundTruth = { "D1.I0_A": 5e-13, "Rs.Rs_ohm": 42, "missing.param": 1 };
+const syntheticSeeded = seedModelFromGroundTruthParameters(model, groundTruth);
+assert.equal(syntheticSeeded.core[0].params.I0_A.value, 5e-13);
+assert.equal(syntheticSeeded.series[0].params.Rs_ohm.value, 42);
+assert.equal(syntheticSeeded.parallel[0].params.Rs_ohm.value, 1e9);
+assert.equal(countGroundTruthMatches(model, groundTruth), 2);
+assert.equal(syntheticSeeded.core[0].metadata.parameter_sources.I0_A.initial, "synthetic_ground_truth");
 
 const restoredValues = restoreModelParameterValues(seededModel, model);
 assert.equal(restoredValues.series[0].params.Rs_ohm.value, 10);

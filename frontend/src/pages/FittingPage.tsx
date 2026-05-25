@@ -3,7 +3,7 @@ import type { CSSProperties, PointerEvent, ReactNode } from "react";
 import type { ComponentSpec, EquationSummary, FitConfig, FitResult, FitSessionStats, FunctionDefinition, ModelSpec, TraceData } from "../model/types";
 import { equations, exportReport, fitTrace, getRegistry, suggestBounds } from "../api/client";
 import { emptyTrace, estimateResidualFloorA, updateComponent } from "../model/utils";
-import { restoreModelParameterValues, seedModelFromFittedValues } from "../model/parameterGrouping";
+import { countGroundTruthMatches, restoreModelParameterValues, seedModelFromFittedValues, seedModelFromGroundTruthParameters } from "../model/parameterGrouping";
 import { applyDataBoundsSuggestions, type DataBoundsApplicationReport } from "../model/boundsSuggestion";
 import { WorkflowSidebar, type AppView } from "../components/WorkflowSidebar";
 import { UserDocumentationPage } from "../components/UserDocumentationPage";
@@ -71,6 +71,8 @@ function WorkspaceView(props: {
   fitActions: ReactNode;
   fitMessages: ReactNode;
   onApplyDataBounds: () => void;
+  canSeedSyntheticGroundTruth: boolean;
+  onSeedSyntheticGroundTruth: () => void;
   dataBoundsReport: DataBoundsApplicationReport | null;
   isFitting: boolean;
   fitSessionStats: FitSessionStats;
@@ -173,7 +175,7 @@ function WorkspaceView(props: {
       <div className="main-result-grid">
         <Section id="parameters" title={t(props.language, "parameters")}>
           <ErrorBoundary label="Parameter table">
-            <ParameterTable result={props.result} model={props.model} registry={props.registry} onModelChange={props.updateParameterModel} language={props.language} canRestoreInitialValues={props.canRestoreInitialValues} onRestoreInitialValues={props.onRestoreInitialValues} onApplyDataBounds={props.onApplyDataBounds} dataBoundsReport={props.dataBoundsReport} disabled={props.isFitting} />
+            <ParameterTable result={props.result} model={props.model} registry={props.registry} onModelChange={props.updateParameterModel} language={props.language} canRestoreInitialValues={props.canRestoreInitialValues} onRestoreInitialValues={props.onRestoreInitialValues} onApplyDataBounds={props.onApplyDataBounds} canSeedSyntheticGroundTruth={props.canSeedSyntheticGroundTruth} onSeedSyntheticGroundTruth={props.onSeedSyntheticGroundTruth} dataBoundsReport={props.dataBoundsReport} disabled={props.isFitting} />
           </ErrorBoundary>
         </Section>
       </div>
@@ -214,6 +216,26 @@ function warningDismissKey(result: FitResult | null) {
   ].join("|") : "";
 }
 
+function selectedTraceGroundTruth(trace: TraceData): Record<string, unknown> | null {
+  const metadata = trace.metadata ?? {};
+  if (metadata.synthetic !== true) return null;
+  const raw = metadata.ground_truth_parameters;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  return raw as Record<string, unknown>;
+}
+
+function fitResultIsSafeToPromote(fit: FitResult): boolean {
+  if (!fit.success || !fit.reportable) return false;
+  const normalizedRmse = fit.metrics.normalized_rmse;
+  const logMae = fit.metrics.log_magnitude_mae_decades;
+  const severeWarnings = fit.warnings.some((warning) => warning.severity === "error" || ["parameter_bound", "model_not_reportable", "junction_solver_failed", "graph_solver_kcl_failed"].includes(warning.code));
+  if (severeWarnings) return false;
+  if (Number.isFinite(normalizedRmse) && normalizedRmse > 0.25) return false;
+  if (Number.isFinite(logMae) && logMae > 0.5) return false;
+  if ((fit.fit_diagnostics?.active_bounds?.length ?? 0) > 0 && (Number.isFinite(normalizedRmse) && normalizedRmse > 0.05)) return false;
+  return true;
+}
+
 function updateModelParameter(model: ModelSpec, componentId: string, paramName: string, patch: Partial<ComponentSpec["params"][string]>) {
   for (const location of ["core", "series", "parallel"] as const) {
     const comp = model[location].find((item) => item.id === componentId);
@@ -235,6 +257,7 @@ export function FittingPage() {
   const [advancedFitOptionsOpen, setAdvancedFitOptionsOpen] = useState(false);
   const [result, setResult] = useState<FitResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fitPromotionNotice, setFitPromotionNotice] = useState<string | null>(null);
   const [noTraceRunAttempted, setNoTraceRunAttempted] = useState(false);
   const [isFitting, setIsFitting] = useState(false);
   const [fitStartedAt, setFitStartedAt] = useState<number | null>(null);
@@ -277,6 +300,9 @@ export function FittingPage() {
 
 
   const selectedTrace = traces.find((t) => t.trace_id === selectedTraceId) ?? traces[0] ?? emptyTrace();
+  const syntheticGroundTruth = selectedTraceGroundTruth(selectedTrace);
+  const canSeedSyntheticGroundTruth = syntheticGroundTruth ? countGroundTruthMatches(model, syntheticGroundTruth) > 0 : false;
+
   const autoVoltageRange = useMemo(() => {
     const finite = selectedTrace.voltage_V.filter(Number.isFinite);
     if (!finite.length) return { vMin: null, vMax: null };
@@ -352,6 +378,7 @@ export function FittingPage() {
   async function runFit() {
     if (isFitting) return;
     setError(null);
+    setFitPromotionNotice(null);
     setResult(null);
     setReport("");
     setDataBoundsReport(null);
@@ -392,7 +419,14 @@ export function FittingPage() {
         totalRootSolverFailures: current.totalRootSolverFailures + Math.max(0, Math.round(diag?.root_solver_failures ?? 0)),
       }));
       setDataBoundsReport(null);
-      setModel(seedModelFromFittedValues(modelBeforeFit, fit));
+      if (fitResultIsSafeToPromote(fit)) {
+        setModel(seedModelFromFittedValues(modelBeforeFit, fit));
+        setFitPromotionNotice(null);
+      } else {
+        setFitPromotionNotice(language === "zh"
+          ? "本次拟合数值上结束，但质量门控未通过；fitted values 已显示，但没有自动写回下一次初值。可尝试恢复初值、应用数据建议边界，或使用 synthetic 真值作为初值。"
+          : "Fit ended numerically, but quality gating did not pass; fitted values are shown but were not promoted to the next initials. Try restoring initials, applying data bounds, or seeding from synthetic ground truth.");
+      }
       setOpenSections((current) => ({ ...current, plots: true, parameters: true }));
     } catch (e) {
       if (!cancelFitRef.current) {
@@ -418,6 +452,15 @@ export function FittingPage() {
     setError(language === "zh" ? "拟合已停止。本次结果不会写入界面。" : "Fit stopped. This run result will not update the workspace.");
   }
 
+
+  function seedFromSyntheticGroundTruth() {
+    const groundTruth = selectedTraceGroundTruth(selectedTrace);
+    if (!groundTruth) return;
+    setModel((current) => seedModelFromGroundTruthParameters(current, groundTruth));
+    setFitPromotionNotice(language === "zh" ? "已从当前 synthetic trace metadata 恢复初值。" : "Initial values restored from the active synthetic trace ground truth metadata.");
+    setDataBoundsReport(null);
+    setOpenSections((current) => ({ ...current, parameters: true }));
+  }
 
   async function makeReport() {
     if (!result) return;
@@ -478,9 +521,12 @@ export function FittingPage() {
           <button disabled={!result || isFitting} onClick={makeReport}>{t(language, "report")}</button>
         </>}
         onApplyDataBounds={applyDataBounds}
+        canSeedSyntheticGroundTruth={canSeedSyntheticGroundTruth}
+        onSeedSyntheticGroundTruth={seedFromSyntheticGroundTruth}
         dataBoundsReport={dataBoundsReport}
         fitMessages={<>
           {!selectedTrace.voltage_V.length && !error ? <div className="fit-empty-info"><strong>{language === "zh" ? "还没有加载 trace。" : "No trace loaded."}</strong><span>{language === "zh" ? "请先导入数据文件，或者加载示例数据后再拟合。" : "Import a data file or load a synthetic example before fitting."}</span></div> : null}
+          {fitPromotionNotice ? <div className="warning info">{fitPromotionNotice}</div> : null}
           {result ? <FitProcessDiagnostics result={result} language={language} sessionStats={fitSessionStats} /> : null}
           {result && warningDismissKey(result) !== dismissedWarningKey ? <FitDiagnostics result={result} language={language} onCheckLogIv={() => openAndScroll("plots")} onAdjustInitials={() => openAndScroll("model")} onClose={() => setDismissedWarningKey(warningDismissKey(result))} /> : null}
           {isFitting ? <div className="fit-running-banner">{language === "zh" ? `拟合正在运行…已用 ${elapsedSeconds} 秒。可以点击 Stop 忽略本次结果。` : `Fit is running… ${elapsedSeconds}s elapsed. Use Stop to ignore this run if needed.`}</div> : null}
