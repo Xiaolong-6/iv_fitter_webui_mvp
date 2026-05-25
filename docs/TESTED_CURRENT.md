@@ -1,3 +1,10 @@
+
+## v1.4.40 no-data action hierarchy check
+
+- With no trace loaded, Run fit and Report are disabled and rendered as neutral unavailable actions.
+- The empty Plots card uses a larger primary Import data button as the intended next action.
+- After a trace is imported or generated, Run fit returns to the normal primary action hierarchy.
+
 # IV-fitter Web UI agent handoff
 
 Current package: **v1.4.35**.

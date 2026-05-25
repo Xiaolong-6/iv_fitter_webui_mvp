@@ -300,6 +300,7 @@ export function FittingPage() {
 
 
   const selectedTrace = traces.find((t) => t.trace_id === selectedTraceId) ?? traces[0] ?? emptyTrace();
+  const hasSelectedTrace = selectedTrace.voltage_V.length > 0;
   const syntheticGroundTruth = selectedTraceGroundTruth(selectedTrace);
   const canSeedSyntheticGroundTruth = syntheticGroundTruth ? countGroundTruthMatches(model, syntheticGroundTruth) > 0 : false;
 
@@ -516,9 +517,14 @@ export function FittingPage() {
         setActiveView={setActiveView}
         fitStatus={<FitStatusBar result={result} language={language} isFitting={isFitting} elapsedSeconds={elapsedSeconds} />}
         fitActions={<>
-          <button className={isFitting ? "fit-progress-button running" : "primary"} disabled={isFitting} onClick={runFit}>{isFitting ? (language === "zh" ? `拟合中… ${elapsedSeconds}s` : `Fitting… ${elapsedSeconds}s`) : t(language, "runFit")}</button>
+          <button
+            className={isFitting ? "fit-progress-button running" : hasSelectedTrace ? "primary" : "fit-action-unavailable"}
+            disabled={isFitting || !hasSelectedTrace}
+            title={!hasSelectedTrace ? (language === "zh" ? "请先导入数据再运行拟合。" : "Import data before running a fit.") : undefined}
+            onClick={runFit}
+          >{isFitting ? (language === "zh" ? `拟合中… ${elapsedSeconds}s` : `Fitting… ${elapsedSeconds}s`) : t(language, "runFit")}</button>
           <button className={isFitting ? "danger-soft active" : "danger-soft"} disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止" : "Stop"}</button>
-          <button disabled={!result || isFitting} onClick={makeReport}>{t(language, "report")}</button>
+          <button disabled={!result || isFitting || !hasSelectedTrace} onClick={makeReport}>{t(language, "report")}</button>
         </>}
         onApplyDataBounds={applyDataBounds}
         canSeedSyntheticGroundTruth={canSeedSyntheticGroundTruth}
@@ -535,7 +541,7 @@ export function FittingPage() {
         isFitting={isFitting}
         fitSessionStats={fitSessionStats}
       /> : <UserDocumentationPage view={activeView} registry={registry} appVersion={APP_VERSION} language={language} />}
-      {activeView === "workspace" && <div className="mobile-action-bar"><button className={isFitting ? "primary running" : "primary"} disabled={isFitting} onClick={runFit}>{isFitting ? (language === "zh" ? "拟合中…" : "Fitting…") : t(language, "runFit")}</button><button className={isFitting ? "danger-soft active" : "danger-soft"} disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止" : "Stop"}</button></div>}
+      {activeView === "workspace" && <div className="mobile-action-bar"><button className={isFitting ? "primary running" : hasSelectedTrace ? "primary" : "fit-action-unavailable"} disabled={isFitting || !hasSelectedTrace} onClick={runFit}>{isFitting ? (language === "zh" ? "拟合中…" : "Fitting…") : t(language, "runFit")}</button><button className={isFitting ? "danger-soft active" : "danger-soft"} disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止" : "Stop"}</button></div>}
     </main>
   </div>;
 }

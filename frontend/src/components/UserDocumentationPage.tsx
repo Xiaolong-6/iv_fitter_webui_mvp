@@ -419,7 +419,7 @@ function ThreeColumnTable({ rows, headers }: { rows: Row[]; headers: [string, st
 }
 
 const englishSteps: Step[] = [
-  { n: "1", title: "Import data", text: "Use CSV/TXT/DAT, pasted tables, or HappyMeasure single/multi-trace exports. The app starts blank so a sample trace is never fitted by accident." },
+  { n: "1", title: "Import data", text: "Use CSV/TXT/DAT, pasted tables, HappyMeasure exports, or a generated synthetic trace. The app starts blank; Run fit stays disabled and Import data is the primary action until a trace is loaded." },
   { n: "2", title: "Select one trace", text: "Fitting, residuals, plots, and reports refer only to the selected trace. Multi-trace files are not silently merged." },
   { n: "3", title: "Inspect raw data", text: "Confirm columns, sign convention, point count, outliers, and trace identity before fitting." },
   { n: "4", title: "Start simple", text: "Use the smallest defensible model before adding empirical terms." },
@@ -429,7 +429,7 @@ const englishSteps: Step[] = [
 ];
 
 const chineseSteps: Step[] = [
-  { n: "1", title: "导入数据", text: "使用 CSV/TXT/DAT、粘贴表格或 HappyMeasure 单/多 trace 导出。应用默认空白启动，避免误拟合示例数据。" },
+  { n: "1", title: "导入数据", text: "使用 CSV/TXT/DAT、粘贴表格、HappyMeasure 导出或生成 synthetic trace。应用默认空白启动；没有 trace 时 Run fit 保持禁用，Import data 是主操作。" },
   { n: "2", title: "选择一条 trace", text: "拟合、残差、图表和报告都只对应选中 trace；多 trace 文件不会被偷偷合并。" },
   { n: "3", title: "检查原始数据", text: "确认列、符号、点数、异常点和 trace 身份。" },
   { n: "4", title: "从简单模型开始", text: "先用最小且物理上可辩护的模型，再根据残差加经验项。" },

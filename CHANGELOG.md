@@ -1,3 +1,12 @@
+# v1.4.40 - No-data action hierarchy polish
+
+- Disabled Run fit and Report when no trace is loaded so the Fit setup panel no longer presents fitting as the primary action before data import.
+- Increased the visual weight of the empty Plots Import data action, making data import the primary next step in the no-data state.
+- Kept Run fit visually neutral and unavailable until a selected trace has voltage/current data.
+- Updated manual/transparency notes for the no-data workflow.
+
+Tests: `npm run build`, `npm run test:parameter-ui`, `npm run test:synthetic-ui`, `python -m compileall -q backend/ivfitter`
+
 # v1.4.39 - Synthetic fit-back consistency
 
 - Fixed noiseless synthetic D1 + Rs + Rsh fit-back by optimizing broad positive scale parameters such as diode `I0_A` in internal log10 coordinates while preserving public parameter keys, bounds, equations, JSON shape, and reports. This prevents bounded `least_squares` from silently shifting tiny displayed starts such as `1e-12 A` toward `1e-10 A`.

@@ -38,7 +38,7 @@ export function PlotWorkspace({ traces, selectedTraceId, onSelectTrace, onImport
     <h2>{t(language, "plots")}</h2>
     <div className="empty-plot-state">
       <div className="warning info">{t(language, "noPlotData")}</div>
-      {onImportData ? <button type="button" className="primary" disabled={disabled} onClick={onImportData}>{language === "zh" ? "导入数据" : "Import data"}</button> : null}
+      {onImportData ? <button type="button" className="primary import-primary-empty" disabled={disabled} onClick={onImportData}>{language === "zh" ? "导入数据" : "Import data"}</button> : null}
     </div>
   </section>;
   const selected = traces.find((tr) => tr.trace_id === selectedTraceId) ?? traces[0];

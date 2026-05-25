@@ -2644,3 +2644,29 @@ button.running { cursor: progress; opacity: 0.85; }
     grid-template-columns: minmax(120px, 1fr) minmax(60px, auto);
   }
 }
+
+/* v1.4.40 no-data action hierarchy: import first, fitting unavailable until a trace is loaded. */
+button.fit-action-unavailable,
+button.fit-action-unavailable:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  border-color: #dbe4f0;
+  font-weight: 650;
+  box-shadow: none;
+}
+.empty-plot-state .import-primary-empty {
+  width: fit-content;
+  min-width: calc(138px * var(--app-zoom));
+  padding: calc(9px * var(--app-zoom)) calc(15px * var(--app-zoom));
+  font-size: calc(0.98rem * var(--app-zoom));
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.16);
+}
+.empty-plot-state .import-primary-empty:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.22);
+  outline-offset: 2px;
+}
+@media (max-width: 640px) {
+  .empty-plot-state .import-primary-empty {
+    width: 100%;
+  }
+}

@@ -40,6 +40,8 @@ Application policy: automatic or button-driven data bounds may overwrite only re
 
 Fit setup should show a compact disclosure after each fit with iterations/evaluations, elapsed time, points used, R²/log-R², weighted reduced chi-square, active bounds, optimizer status, and session totals. Keep the summary short; put full details behind the disclosure. Explain that weighted reduced chi-square is a weighting-dependent residual-scale diagnostic unless weights are calibrated measurement uncertainties.
 
+No-data state: Run fit and Report should be disabled and visually neutral until a trace is loaded. The Import data action should be the highest-visibility next step in the empty plot/workspace state. This prevents users from interpreting the app as ready to fit before data exists.
+
 ## Synthetic fit-back transparency
 
 For synthetic traces, the UI should expose when exact ground-truth parameters are available in trace metadata and provide an explicit `Seed from synthetic ground truth` action. Noiseless synthetic data is expected to fit back cleanly only when the same model structure, parameter snapshot, voltage range, and artifact settings are used. Numerical convergence alone is not enough; poor quality or bound-stuck fits must not be silently promoted as next-run initials.
