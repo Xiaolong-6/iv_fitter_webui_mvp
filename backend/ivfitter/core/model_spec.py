@@ -203,6 +203,44 @@ class EquationSummary(BaseModel):
     topology: list[str] = Field(default_factory=list)
 
 
+
+
+class FitDiagnosticsSummary(BaseModel):
+    """Numerical/process diagnostics for one fit run.
+
+    These fields are additive metadata for transparency. They describe the
+    optimizer and residual bookkeeping; they do not change the fitting math.
+    """
+
+    fit_run_id: str = "fit"
+    trace_name: str | None = None
+    model_signature: str | None = None
+    fit_mode: str | None = None
+    voltage_range_used: list[float | None] = Field(default_factory=list)
+    points_total: int = 0
+    points_in_selected_range: int = 0
+    points_used: int = 0
+    points_excluded: int = 0
+    free_parameter_count: int = 0
+    fixed_parameter_count: int = 0
+    degrees_of_freedom: int = 0
+    elapsed_s: float | None = None
+    solver_name: str | None = None
+    solver_mode: str | None = None
+    residual_weighting: str | None = None
+    loss_function: str | None = None
+    objective_name: str | None = None
+    optimizer_status: int | None = None
+    optimizer_message: str | None = None
+    function_evaluations: int | None = None
+    jacobian_evaluations: int | None = None
+    optimizer_steps: int | None = None
+    cost: float | None = None
+    optimality: float | None = None
+    active_bounds: list[str] = Field(default_factory=list)
+    root_solver_failures: int | None = None
+    warnings_count: int = 0
+
 class FitResult(BaseModel):
     """Reproducible fit result returned by the backend."""
 
@@ -215,6 +253,7 @@ class FitResult(BaseModel):
     parameters: dict[str, ParameterResult]
     metrics: dict[str, float]
     warnings: list[FitWarning]
+    fit_diagnostics: FitDiagnosticsSummary | None = None
     curves: FitCurves
     equations: EquationSummary
     software_version: str = "1.0.0"

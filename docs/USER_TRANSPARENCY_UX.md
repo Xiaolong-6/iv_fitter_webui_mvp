@@ -35,3 +35,7 @@ The backend recommendation layer uses only the selected trace, the active fit vo
 Recommended status/hover text must state the rule used. For example: Rs upper is estimated from the high-current dV/dI scale, with a fallback based on max(|V|)/high-percentile(|I|), then multiplied by a safety factor. Rsh is estimated from the low-voltage dV/dI scale with a deliberately wide range. I0/current amplitudes are limited by observed current scale. Softplus voltage thresholds/softness are bounded from the selected voltage span, and current thresholds/softness from the selected current magnitude. Ideality/exponent parameters remain registry-controlled unless the user edits them.
 
 Application policy: automatic or button-driven data bounds may overwrite only registry-default or previous data-suggested bounds. User-edited bounds must be preserved. Completed fitted values may still be written back as the next initial value; applying data bounds must not erase the fitted-as-initial workflow.
+
+## Fit-process disclosure
+
+Fit setup should show a compact disclosure after each fit with iterations/evaluations, elapsed time, points used, R²/log-R², weighted reduced chi-square, active bounds, optimizer status, and session totals. Keep the summary short; put full details behind the disclosure. Explain that weighted reduced chi-square is a weighting-dependent residual-scale diagnostic unless weights are calibrated measurement uncertainties.

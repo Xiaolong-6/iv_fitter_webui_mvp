@@ -1,3 +1,11 @@
+# v1.4.38 - Fit process diagnostics transparency
+
+- Added additive backend `fit_diagnostics` metadata for each fit, including points used/excluded, free/fixed parameter counts, degrees of freedom, elapsed time, solver/mode, weighting/loss, optimizer status/message, function/Jacobian evaluations, cost/optimality, active bounds, and warning count.
+- Added weighted chi-square, weighted reduced chi-square, log-magnitude R², MAE, max residual, points-used, and free-parameter metrics without changing fitting math or parameter keys.
+- Added a compact Fit setup disclosure for process and quality diagnostics near the existing diagnostics area, plus session totals for fit count, total function evaluations, total elapsed fit time, and root-solver failures.
+- Updated manual/reporting transparency text to explain that weighted reduced χ² is a residual-scale diagnostic unless weights represent calibrated measurement uncertainty.
+- Updated Markdown reports to include fit-process diagnostics.
+
 # Changelog
 
 ## 1.4.37 - Data bounds detail visibility

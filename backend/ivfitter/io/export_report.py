@@ -18,6 +18,22 @@ def fit_result_markdown(result: FitResult) -> str:
     for key, value in result.metrics.items():
         lines.append(f"- `{key}`: {value:.6g}")
     lines.append("")
+    if result.fit_diagnostics is not None:
+        d = result.fit_diagnostics
+        lines.append("## Fit process diagnostics")
+        lines.append(f"- Trace: `{d.trace_name or '—'}`")
+        lines.append(f"- Model signature: `{d.model_signature or '—'}`")
+        lines.append(f"- Mode / solver: `{d.fit_mode or '—'}` / `{d.solver_name or '—'}`")
+        lines.append(f"- Points used: `{d.points_used}` of `{d.points_in_selected_range}` selected (`{d.points_excluded}` excluded)")
+        lines.append(f"- Free parameters / DoF: `{d.free_parameter_count}` / `{d.degrees_of_freedom}`")
+        lines.append(f"- Elapsed: `{d.elapsed_s:.6g} s`" if d.elapsed_s is not None else "- Elapsed: `—`")
+        lines.append(f"- Function evaluations: `{d.function_evaluations}`")
+        lines.append(f"- Jacobian evaluations: `{d.jacobian_evaluations}`")
+        lines.append(f"- Optimizer status: `{d.optimizer_status}` — {d.optimizer_message or '—'}")
+        if d.active_bounds:
+            lines.append(f"- Active bounds: `{', '.join(d.active_bounds)}`")
+        lines.append("- Note: weighted reduced chi-square is statistically strict only when residual weights represent measurement uncertainty; otherwise it is a residual-scale diagnostic.")
+        lines.append("")
     lines.append("## Warnings")
     if result.warnings:
         for warning in result.warnings:

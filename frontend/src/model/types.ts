@@ -18,7 +18,45 @@ export interface FitCurves { voltage_V: number[]; current_measured_A: number[]; 
 export interface EquationSummary { title: string; voltage_relation: string[]; core: string[]; series: string[]; parallel: string[]; auxiliary: string[]; topology?: string[]; }
 export interface ParameterBoundsSuggestion { component_id: string; param_name: string; lower?: number | null; upper?: number | null; initial?: number | null; source: "registry_default" | "data_suggested" | "not_suggested"; reason: string; }
 export interface BoundsSuggestionResponse { suggestions: Record<string, ParameterBoundsSuggestion>; status: string; notes: string[]; }
-export interface FitResult { success: boolean; reportable: boolean; reportability_reason?: string; message: string; model: ModelSpec; config: FitConfig; parameters: Record<string, ParameterResult>; metrics: Record<string, number>; warnings: FitWarning[]; curves: FitCurves; equations: EquationSummary; software_version: string; }
+
+export interface FitDiagnosticsSummary {
+  fit_run_id: string;
+  trace_name?: string | null;
+  model_signature?: string | null;
+  fit_mode?: string | null;
+  voltage_range_used?: Array<number | null>;
+  points_total: number;
+  points_in_selected_range: number;
+  points_used: number;
+  points_excluded: number;
+  free_parameter_count: number;
+  fixed_parameter_count: number;
+  degrees_of_freedom: number;
+  elapsed_s?: number | null;
+  solver_name?: string | null;
+  solver_mode?: string | null;
+  residual_weighting?: string | null;
+  loss_function?: string | null;
+  objective_name?: string | null;
+  optimizer_status?: number | null;
+  optimizer_message?: string | null;
+  function_evaluations?: number | null;
+  jacobian_evaluations?: number | null;
+  optimizer_steps?: number | null;
+  cost?: number | null;
+  optimality?: number | null;
+  active_bounds?: string[];
+  root_solver_failures?: number | null;
+  warnings_count: number;
+}
+
+export interface FitSessionStats {
+  fitsRun: number;
+  totalFunctionEvaluations: number;
+  totalElapsedS: number;
+  totalRootSolverFailures: number;
+}
+export interface FitResult { success: boolean; reportable: boolean; reportability_reason?: string; message: string; model: ModelSpec; config: FitConfig; parameters: Record<string, ParameterResult>; metrics: Record<string, number>; warnings: FitWarning[]; fit_diagnostics?: FitDiagnosticsSummary | null; curves: FitCurves; equations: EquationSummary; software_version: string; }
 export type SyntheticNoiseMode = "none" | "gaussian_absolute" | "gaussian_relative";
 export interface SyntheticNoiseConfig { mode: SyntheticNoiseMode; noise_level_A?: number; relative_noise_fraction?: number; }
 export interface SyntheticArtifactConfig { compliance_enabled: boolean; compliance_current_A?: number | null; }

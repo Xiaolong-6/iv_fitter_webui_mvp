@@ -1,4 +1,4 @@
-import type { FitResult } from "../model/types";
+import type { FitResult, FitSessionStats } from "../model/types";
 import { fmtEng } from "../model/format";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
@@ -40,6 +40,18 @@ function frontendQualityFailure(result: FitResult): string | null {
   return null;
 }
 
+function fmtNumber(value: number | null | undefined, digits = 3) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  const abs = Math.abs(value);
+  if (abs !== 0 && (abs < 1e-3 || abs >= 1e4)) return value.toExponential(digits);
+  return Number(value.toPrecision(digits + 1)).toString();
+}
+
+function fmtMetric(value: number | null | undefined, unit = "") {
+  const text = fmtNumber(value, 3);
+  return unit && text !== "—" ? `${text} ${unit}` : text;
+}
+
 export function FitStatusBar({
   result,
   language,
@@ -79,6 +91,82 @@ export function FitStatusBar({
     <span className={backendWarn > 0 ? "fit-status-badge warning" : "fit-status-badge metric"}>{backendWarn} {language === "zh" ? "warning" : "warning"}</span>
     <span className={errors > 0 ? "fit-status-badge danger" : "fit-status-badge metric"}>{errors} error</span>
     {frontendFailure ? <span className="fit-status-badge danger">{t(language, "frontendSanity")}</span> : null}
+  </div>;
+}
+
+export function FitProcessDiagnostics({
+  result,
+  language,
+  sessionStats,
+}: {
+  result: FitResult | null;
+  language: Language;
+  sessionStats: FitSessionStats;
+}) {
+  if (!result) return null;
+  const d = result.fit_diagnostics;
+  const m = result.metrics ?? {};
+  const r2 = m.linear_r2;
+  const logR2 = m.log_magnitude_r2;
+  const reducedChi = m.reduced_chi_square;
+  const nfev = d?.function_evaluations ?? null;
+  const elapsed = d?.elapsed_s ?? null;
+  const points = d ? `${d.points_used}/${d.points_in_selected_range || d.points_total}` : "—";
+  const title = language === "zh"
+    ? "拟合过程与质量指标"
+    : "Fit process and quality metrics";
+  const chiLabel = language === "zh" ? "加权 reduced χ²" : "weighted reduced χ²";
+  const chiHelp = language === "zh"
+    ? "这里的 reduced χ² 使用当前 residual weighting 计算。只有当权重是真实测量不确定度时，它才有严格统计意义；否则主要是残差尺度诊断。"
+    : "This reduced χ² is computed from the active weighted residuals. It is strictly statistical only when weights are true measurement uncertainties; otherwise it is a residual-scale diagnostic.";
+
+  return <div className="fit-process-diagnostics" title={chiHelp}>
+    <details>
+      <summary>
+        <span>{title}</span>
+        <span className="fit-process-summary">{language === "zh" ? "点" : "pts"} {points}</span>
+        <span className="fit-process-summary">evals {fmtNumber(nfev, 0)}</span>
+        <span className="fit-process-summary">R² {fmtNumber(r2, 4)}</span>
+        <span className="fit-process-summary">χ²ν {fmtNumber(reducedChi, 3)}</span>
+      </summary>
+      <div className="fit-process-body">
+        <section>
+          <strong>{language === "zh" ? "质量指标" : "Quality metrics"}</strong>
+          <div className="fit-process-grid">
+            <span>RMSE</span><b>{fmtMetric(m.linear_rmse_A, "A")}</b>
+            <span>{language === "zh" ? "归一化 RMSE" : "Normalized RMSE"}</span><b>{fmtNumber(m.normalized_rmse, 4)}</b>
+            <span>{language === "zh" ? "线性 R²" : "Linear R²"}</span><b>{fmtNumber(r2, 5)}</b>
+            <span>{language === "zh" ? "log-magnitude R²" : "Log-magnitude R²"}</span><b>{fmtNumber(logR2, 5)}</b>
+            <span>{language === "zh" ? "log MAE" : "Log MAE"}</span><b>{fmtMetric(m.log_magnitude_mae_decades, "dec")}</b>
+            <span title={chiHelp}>{chiLabel}</span><b title={chiHelp}>{fmtNumber(reducedChi, 4)}</b>
+          </div>
+        </section>
+        <section>
+          <strong>{language === "zh" ? "求解器过程" : "Solver process"}</strong>
+          <div className="fit-process-grid">
+            <span>{language === "zh" ? "本次耗时" : "Elapsed"}</span><b>{fmtMetric(elapsed, "s")}</b>
+            <span>{language === "zh" ? "函数评估" : "Function evals"}</span><b>{fmtNumber(nfev, 0)}</b>
+            <span>{language === "zh" ? "Jacobian 评估" : "Jacobian evals"}</span><b>{fmtNumber(d?.jacobian_evaluations, 0)}</b>
+            <span>{language === "zh" ? "自由参数" : "Free parameters"}</span><b>{fmtNumber(d?.free_parameter_count, 0)}</b>
+            <span>{language === "zh" ? "自由度" : "DoF"}</span><b>{fmtNumber(d?.degrees_of_freedom, 0)}</b>
+            <span>{language === "zh" ? "优化状态" : "Optimizer status"}</span><b>{d?.optimizer_status ?? "—"}</b>
+            <span>{language === "zh" ? "Cost" : "Cost"}</span><b>{fmtNumber(d?.cost, 4)}</b>
+            <span>{language === "zh" ? "Optimality" : "Optimality"}</span><b>{fmtNumber(d?.optimality, 4)}</b>
+          </div>
+          {d?.active_bounds?.length ? <p className="fit-process-note"><strong>{language === "zh" ? "活跃边界：" : "Active bounds: "}</strong>{d.active_bounds.join(", ")}</p> : null}
+          {d?.optimizer_message ? <p className="fit-process-note"><strong>{language === "zh" ? "求解器消息：" : "Solver message: "}</strong>{d.optimizer_message}</p> : null}
+        </section>
+        <section>
+          <strong>{language === "zh" ? "本次会话" : "This session"}</strong>
+          <div className="fit-process-grid compact">
+            <span>{language === "zh" ? "已运行拟合" : "Fits run"}</span><b>{sessionStats.fitsRun}</b>
+            <span>{language === "zh" ? "总函数评估" : "Total evals"}</span><b>{sessionStats.totalFunctionEvaluations}</b>
+            <span>{language === "zh" ? "总拟合耗时" : "Total fit time"}</span><b>{fmtMetric(sessionStats.totalElapsedS, "s")}</b>
+            <span>{language === "zh" ? "root-solver failures" : "Root-solver failures"}</span><b>{sessionStats.totalRootSolverFailures}</b>
+          </div>
+        </section>
+      </div>
+    </details>
   </div>;
 }
 

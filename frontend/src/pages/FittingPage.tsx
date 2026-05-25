@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent, ReactNode } from "react";
-import type { FitConfig, FitResult, FunctionDefinition, ModelSpec, TraceData, EquationSummary, ComponentSpec } from "../model/types";
+import type { ComponentSpec, EquationSummary, FitConfig, FitResult, FitSessionStats, FunctionDefinition, ModelSpec, TraceData } from "../model/types";
 import { equations, exportReport, fitTrace, getRegistry, suggestBounds } from "../api/client";
 import { emptyTrace, estimateResidualFloorA, updateComponent } from "../model/utils";
 import { restoreModelParameterValues, seedModelFromFittedValues } from "../model/parameterGrouping";
@@ -9,7 +9,7 @@ import { WorkflowSidebar, type AppView } from "../components/WorkflowSidebar";
 import { UserDocumentationPage } from "../components/UserDocumentationPage";
 import { ModelBuilder } from "../components/ModelBuilder";
 import { PlotWorkspace } from "../components/PlotWorkspace";
-import { FitDiagnostics, FitStatusBar } from "../components/FitStatusBar";
+import { FitDiagnostics, FitProcessDiagnostics, FitStatusBar } from "../components/FitStatusBar";
 import { ParameterTable } from "../components/ParameterTable";
 import { DataImportWorkspace } from "../components/DataImportWorkspace";
 import { FitConfigPanel } from "../components/FitConfigPanel";
@@ -73,6 +73,7 @@ function WorkspaceView(props: {
   onApplyDataBounds: () => void;
   dataBoundsReport: DataBoundsApplicationReport | null;
   isFitting: boolean;
+  fitSessionStats: FitSessionStats;
 }) {
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [leftPaneWidth, setLeftPaneWidth] = useState(() => {
@@ -255,6 +256,7 @@ export function FittingPage() {
   });
   const [dismissedWarningKey, setDismissedWarningKey] = useState("");
   const [dataBoundsReport, setDataBoundsReport] = useState<DataBoundsApplicationReport | null>(null);
+  const [fitSessionStats, setFitSessionStats] = useState<FitSessionStats>({ fitsRun: 0, totalFunctionEvaluations: 0, totalElapsedS: 0, totalRootSolverFailures: 0 });
 
   useEffect(() => {
     getRegistry().then(setRegistry).catch((e) => setError(String(e)));
@@ -382,6 +384,13 @@ export function FittingPage() {
       const fit = await fitTrace(selectedTrace, modelBeforeFit, { ...config, run_timeout_s: timeoutS }, controller.signal);
       if (cancelFitRef.current) return;
       setResult(fit);
+      const diag = fit.fit_diagnostics;
+      setFitSessionStats((current) => ({
+        fitsRun: current.fitsRun + 1,
+        totalFunctionEvaluations: current.totalFunctionEvaluations + Math.max(0, Math.round(diag?.function_evaluations ?? 0)),
+        totalElapsedS: Number((current.totalElapsedS + Math.max(0, diag?.elapsed_s ?? 0)).toFixed(3)),
+        totalRootSolverFailures: current.totalRootSolverFailures + Math.max(0, Math.round(diag?.root_solver_failures ?? 0)),
+      }));
       setDataBoundsReport(null);
       setModel(seedModelFromFittedValues(modelBeforeFit, fit));
       setOpenSections((current) => ({ ...current, plots: true, parameters: true }));
@@ -472,11 +481,13 @@ export function FittingPage() {
         dataBoundsReport={dataBoundsReport}
         fitMessages={<>
           {!selectedTrace.voltage_V.length && !error ? <div className="fit-empty-info"><strong>{language === "zh" ? "还没有加载 trace。" : "No trace loaded."}</strong><span>{language === "zh" ? "请先导入数据文件，或者加载示例数据后再拟合。" : "Import a data file or load a synthetic example before fitting."}</span></div> : null}
+          {result ? <FitProcessDiagnostics result={result} language={language} sessionStats={fitSessionStats} /> : null}
           {result && warningDismissKey(result) !== dismissedWarningKey ? <FitDiagnostics result={result} language={language} onCheckLogIv={() => openAndScroll("plots")} onAdjustInitials={() => openAndScroll("model")} onClose={() => setDismissedWarningKey(warningDismissKey(result))} /> : null}
           {isFitting ? <div className="fit-running-banner">{language === "zh" ? `拟合正在运行…已用 ${elapsedSeconds} 秒。可以点击 Stop 忽略本次结果。` : `Fit is running… ${elapsedSeconds}s elapsed. Use Stop to ignore this run if needed.`}</div> : null}
           {error ? (isBackendConnectionError(error) ? <BackendConnectionBanner message={error} onRetry={runFit} /> : <div className={noTraceRunAttempted ? "warning error validation" : "warning error"}>{error}</div>) : null}
         </>}
         isFitting={isFitting}
+        fitSessionStats={fitSessionStats}
       /> : <UserDocumentationPage view={activeView} registry={registry} appVersion={APP_VERSION} language={language} />}
       {activeView === "workspace" && <div className="mobile-action-bar"><button className={isFitting ? "primary running" : "primary"} disabled={isFitting} onClick={runFit}>{isFitting ? (language === "zh" ? "拟合中…" : "Fitting…") : t(language, "runFit")}</button><button className={isFitting ? "danger-soft active" : "danger-soft"} disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止" : "Stop"}</button></div>}
     </main>
