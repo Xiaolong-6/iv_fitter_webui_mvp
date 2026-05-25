@@ -53,6 +53,7 @@ interface Props {
   registry: FunctionDefinition[];
   onChange: (model: ModelSpec) => void;
   language: Language;
+  disabled?: boolean;
 }
 
 function CircuitCard({ model, language }: { model: ModelSpec; language: Language }) {
@@ -132,13 +133,15 @@ function AddRow(props: {
   language: Language;
   onSelectDefinition: (functionType: string) => void;
   onAdd: () => void;
-  disabled?: boolean;
+  selectDisabled?: boolean;
+  addDisabled?: boolean;
   disabledReason?: string;
 }) {
   return (
     <div className="add-row">
       <select
         title={t(props.language, "functionSelectHelp")}
+        disabled={props.selectDisabled}
         value={props.selectedDefinition?.function_type ?? ""}
         onChange={(e) => props.onSelectDefinition(e.target.value)}
       >
@@ -148,7 +151,7 @@ function AddRow(props: {
           </option>
         ))}
       </select>
-      <button title={props.disabledReason || t(props.language, "addComponentHelp")} disabled={props.disabled} onClick={props.onAdd}>{t(props.language, "add")}</button>
+      <button title={props.disabledReason || t(props.language, "addComponentHelp")} disabled={props.addDisabled} onClick={props.onAdd}>{t(props.language, "add")}</button>
     </div>
   );
 }
@@ -160,8 +163,9 @@ function ComponentCard(props: {
   definition?: FunctionDefinition;
   language: Language;
   onChange: (model: ModelSpec) => void;
+  disabled?: boolean;
 }) {
-  const { comp, location, model, definition, language, onChange } = props;
+  const { comp, location, model, definition, language, onChange, disabled = false } = props;
   const polarities = allowedPolarities(definition);
 
   function updateMetadata(patch: Record<string, unknown>) {
@@ -179,6 +183,7 @@ function ComponentCard(props: {
           <input
             aria-label={t(language, "nickname")}
             title={t(language, "nicknameHelp")}
+            disabled={disabled}
             value={nickname(comp)}
             onChange={(e) => onChange(updateComponent(model, location, comp.id, applyNicknameToParams(comp, e.target.value)))}
           />
@@ -191,6 +196,7 @@ function ComponentCard(props: {
             <select
               className="component-polarity-select"
               title={t(language, "polarityHelp")}
+              disabled={disabled}
               value={comp.polarity ?? definition?.default_polarity ?? polarities[0]}
               onChange={(e) => updatePolarity(e.target.value as Polarity)}
             >
@@ -199,13 +205,13 @@ function ComponentCard(props: {
               ))}
             </select>
           ) : null}
-          <button title={t(language, "removeComponentHelp")} onClick={() => onChange(removeComponent(model, location, comp.id))}>{t(language, "remove")}</button>
+          <button disabled={disabled} title={t(language, "removeComponentHelp")} onClick={() => onChange(removeComponent(model, location, comp.id))}>{t(language, "remove")}</button>
         </div>
       </div>
       {comp.function_type === "custom" && (
         <label className="component-expression-edit" title={t(language, "expressionHelp")}>
           <span>{t(language, "expression")}</span>
-          <input title={t(language, "expressionHelp")} value={String(comp.metadata?.expression ?? "")} onChange={(e) => updateMetadata({ expression: e.target.value })} />
+          <input disabled={disabled} title={t(language, "expressionHelp")} value={String(comp.metadata?.expression ?? "")} onChange={(e) => updateMetadata({ expression: e.target.value })} />
         </label>
       )}
     </div>
@@ -225,7 +231,7 @@ function canAddSecondaryDiode(model: ModelSpec) {
   return forwardDiodes.length === 1 && !hasSecondaryForwardDiode(model);
 }
 
-export function ModelBuilder({ model, registry, onChange, language }: Props) {
+export function ModelBuilder({ model, registry, onChange, language, disabled = false }: Props) {
   const [selected, setSelected] = useState<Record<string, string>>({});
 
   const labels = {
@@ -239,7 +245,9 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
 
   function selectedDefinition(bucket: BuilderBucket) {
     const definitions = definitionsForBucket(bucket);
-    return definitions.find((item) => item.function_type === selected[bucket]) ?? definitions[0];
+    const explicit = definitions.find((item) => item.function_type === selected[bucket]);
+    if (explicit) return explicit;
+    return definitions.find((definition) => definitionHasAddableVariant(bucket, definition)) ?? definitions[0];
   }
 
   function definitionForComponent(comp: ComponentSpec) {
@@ -254,6 +262,13 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
       const pending = buildPendingComponent(model, bucket, definition, candidate);
       return !isDuplicateBlocked(model, pending);
     }) ?? preferred[0];
+  }
+
+  function definitionHasAddableVariant(bucket: BuilderBucket, definition: FunctionDefinition) {
+    const polarities = allowedPolarities(definition);
+    if (!polarities.length) return !isDuplicateBlocked(model, buildPendingComponent(model, bucket, definition));
+    const preferred = [definition.default_polarity, ...polarities].filter(Boolean) as Polarity[];
+    return preferred.some((polarity) => !isDuplicateBlocked(model, buildPendingComponent(model, bucket, definition, polarity)));
   }
 
   function addFrom(bucket: BuilderBucket) {
@@ -300,12 +315,13 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
                 setSelected((current) => ({ ...current, [bucket]: functionType }));
               }}
               onAdd={() => addFrom(bucket)}
-              disabled={duplicateBlocked}
-              disabledReason={duplicateBlocked ? duplicateReason : undefined}
+              selectDisabled={disabled}
+              addDisabled={disabled || duplicateBlocked}
+              disabledReason={disabled ? (language === "zh" ? "拟合运行中，暂时不能修改模型。" : "Fit is running; model edits are temporarily disabled.") : duplicateBlocked ? duplicateReason : undefined}
             />
             {components.length === 0 && <div className="empty-line">{t(language, "noComponents")}</div>}
             {bucket === "branches" && registry.some((definition) => definition.function_type === "diode") && canAddSecondaryDiode(model) ? (
-              <button type="button" className="secondary-diode-button" onClick={addSecondaryDiode} title={language === "zh" ? "添加带 secondary/recombination 角色的 D2，而不是普通重复 D1。" : "Add a role-aware D2 instead of an ordinary duplicate D1."}>
+              <button type="button" disabled={disabled} className="secondary-diode-button" onClick={addSecondaryDiode} title={language === "zh" ? "添加带 secondary/recombination 角色的 D2，而不是普通重复 D1。" : "Add a role-aware D2 instead of an ordinary duplicate D1."}>
                 {language === "zh" ? "添加双二极管 D2（secondary）" : "Add secondary diode D2"}
               </button>
             ) : null}
@@ -318,6 +334,7 @@ export function ModelBuilder({ model, registry, onChange, language }: Props) {
                 definition={definitionForComponent(comp)}
                 language={language}
                 onChange={onChange}
+                disabled={disabled}
               />
             ))}
           </div>

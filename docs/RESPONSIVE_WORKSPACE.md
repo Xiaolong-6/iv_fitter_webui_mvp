@@ -30,6 +30,7 @@ The app-local zoom changes UI density without requiring browser-level zoom. Curr
 ## Mobile interaction rules
 
 - Section headers need large tap targets, visible chevrons, and short status summaries.
-- Voltage range controls must stay compact; V min and V max should not consume excessive vertical space.
+- Voltage range controls must stay compact; V min and V max should not consume excessive vertical space. When blank, their placeholders should show the selected trace's concrete min/max voltage range so `auto` behavior is not ambiguous.
+- Fit setup status should stay layered and compact: status badges, action row, then a small contextual message/Diagnostics disclosure.
 - Backend connection failures should appear as user-facing banners with Retry/Help actions, not raw `TypeError: Failed to fetch` text.
 - Avoid decorative effects that slow fitting, hide warnings, or make the workflow less clear.

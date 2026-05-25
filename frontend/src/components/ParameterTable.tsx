@@ -39,7 +39,7 @@ function commitNumber(text: string): number | null | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-function DraftNumberInput({ value, placeholder, title, onCommit }: { value: number | null | undefined; placeholder?: string; title?: string; onCommit: (value: number | null) => void }) {
+function DraftNumberInput({ value, placeholder, title, disabled = false, onCommit }: { value: number | null | undefined; placeholder?: string; title?: string; disabled?: boolean; onCommit: (value: number | null) => void }) {
   const [draft, setDraft] = useState(num(value));
   function commitOrRevert() {
     const parsed = commitNumber(draft);
@@ -53,6 +53,7 @@ function DraftNumberInput({ value, placeholder, title, onCommit }: { value: numb
   return <input
     className="parameter-edit-input"
     title={title}
+    disabled={disabled}
     value={draft}
     placeholder={placeholder}
     onChange={(e) => { if (isPartialNumber(e.target.value)) setDraft(e.target.value); }}
@@ -100,6 +101,7 @@ export function ParameterTable({
   language,
   canRestoreInitialValues = false,
   onRestoreInitialValues,
+  disabled = false,
 }: {
   result: FitResult | null;
   model: ModelSpec;
@@ -108,6 +110,7 @@ export function ParameterTable({
   language: Language;
   canRestoreInitialValues?: boolean;
   onRestoreInitialValues?: () => void;
+  disabled?: boolean;
 }) {
   void registry;
   const [openKey, setOpenKey] = useState<string | null>(null);
@@ -117,7 +120,7 @@ export function ParameterTable({
   return <section className="card parameter-card">
     <h2>{t(language, "parameters")} <HelpTip text={parameterText("help", language)} /></h2>
     <div className="parameter-filter-bar" role="toolbar" aria-label={parameterText("restoreToolbar", language)}>
-      <button type="button" disabled={!canRestoreInitialValues || !onRestoreInitialValues} onClick={onRestoreInitialValues}>
+      <button type="button" disabled={disabled || !canRestoreInitialValues || !onRestoreInitialValues} onClick={onRestoreInitialValues}>
         {parameterText("restoreInitialValues", language)}
       </button>
       <span className="muted parameter-auto-seed-note">{parameterText("autoSeedNote", language)}</span>
@@ -146,7 +149,7 @@ export function ParameterTable({
               </td>
               <td>
                 <div className="parameter-fit-batch-toggles">
-                  <label><input type="checkbox" checked={group.fittedCount === group.totalCount} onChange={(e) => onModelChange(setComponentFitState(model, group.location, group.component.id, e.target.checked))} /> {group.fittedCount === group.totalCount ? parameterText("batchFixAll", language) : parameterText("batchFitAll", language)}</label>
+                  <label><input type="checkbox" disabled={disabled} checked={group.fittedCount === group.totalCount} onChange={(e) => onModelChange(setComponentFitState(model, group.location, group.component.id, e.target.checked))} /> {group.fittedCount === group.totalCount ? parameterText("batchFixAll", language) : parameterText("batchFitAll", language)}</label>
                 </div>
               </td>
               <td className="desktop-detail"></td>
@@ -160,12 +163,12 @@ export function ParameterTable({
             return <Fragment key={key}>
               <tr className="parameter-summary-row">
                 <td title={key} onClick={() => setOpenKey(open ? null : key)}>{labelForModelParameter(model, comp.id, paramName)}</td>
-                <td><DraftNumberInput value={spec.value} title={parameterText("initialTitle", language)} onCommit={(value) => { if (value !== null) onModelChange(updateParameter(model, location, comp.id, paramName, { value })); }} /></td>
+                <td><DraftNumberInput disabled={disabled} value={spec.value} title={parameterText("initialTitle", language)} onCommit={(value) => { if (value !== null) onModelChange(updateParameter(model, location, comp.id, paramName, { value })); }} /></td>
                 <td title={fitted ? String(fitted.value) : ""}>{fitted ? `${formatParameterNumber(fitted.value)} ${fitted.unit ?? spec.unit ?? ""}` : "-"}</td>
                 <td className="desktop-detail" title={fitted?.stderr === null || fitted?.stderr === undefined ? "" : String(fitted.stderr)}>{fitted?.stderr === null || fitted?.stderr === undefined ? "-" : formatParameterNumber(fitted.stderr)}</td>
-                <td><DraftNumberInput value={spec.lower} placeholder="-" title={parameterText("lowerTitle", language)} onCommit={(value) => onModelChange(updateParameter(model, location, comp.id, paramName, { lower: value }))} /></td>
-                <td><DraftNumberInput value={spec.upper} placeholder="-" title={parameterText("upperTitle", language)} onCommit={(value) => onModelChange(updateParameter(model, location, comp.id, paramName, { upper: value }))} /></td>
-                <td><label className="parameter-fit-toggle"><input type="checkbox" checked={spec.fit ?? true} onChange={(e) => onModelChange(updateParameter(model, location, comp.id, paramName, { fit: e.target.checked }))} /> {spec.fit ?? true ? t(language, "fitState") : t(language, "fixed")}</label></td>
+                <td><DraftNumberInput disabled={disabled} value={spec.lower} placeholder="-" title={parameterText("lowerTitle", language)} onCommit={(value) => onModelChange(updateParameter(model, location, comp.id, paramName, { lower: value }))} /></td>
+                <td><DraftNumberInput disabled={disabled} value={spec.upper} placeholder="-" title={parameterText("upperTitle", language)} onCommit={(value) => onModelChange(updateParameter(model, location, comp.id, paramName, { upper: value }))} /></td>
+                <td><label className="parameter-fit-toggle"><input type="checkbox" disabled={disabled} checked={spec.fit ?? true} onChange={(e) => onModelChange(updateParameter(model, location, comp.id, paramName, { fit: e.target.checked }))} /> {spec.fit ?? true ? t(language, "fitState") : t(language, "fixed")}</label></td>
                 <td className="parameter-meaning desktop-detail" title={meaning}>{short}</td>
               </tr>
               <tr className={open ? "parameter-mobile-detail open" : "parameter-mobile-detail"}>

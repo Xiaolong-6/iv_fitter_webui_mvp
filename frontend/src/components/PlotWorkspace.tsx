@@ -24,20 +24,21 @@ function mismatchRegions(voltage: number[], measured: number[], fitted: number[]
   return regions.slice(0, 4);
 }
 
-export function PlotWorkspace({ traces, selectedTraceId, onSelectTrace, onImportData, result, language }: {
+export function PlotWorkspace({ traces, selectedTraceId, onSelectTrace, onImportData, result, language, disabled = false }: {
   traces: TraceData[];
   selectedTraceId: string | null;
   onSelectTrace: (id: string) => void;
   onImportData?: () => void;
   result: FitResult | null;
   language: Language;
+  disabled?: boolean;
 }) {
   const [view, setView] = useState<PlotId>("all");
   if (!traces.length) return <section className="card plots">
     <h2>{t(language, "plots")}</h2>
     <div className="empty-plot-state">
       <div className="warning info">{t(language, "noPlotData")}</div>
-      {onImportData ? <button type="button" className="primary" onClick={onImportData}>{language === "zh" ? "导入数据" : "Import data"}</button> : null}
+      {onImportData ? <button type="button" className="primary" disabled={disabled} onClick={onImportData}>{language === "zh" ? "导入数据" : "Import data"}</button> : null}
     </div>
   </section>;
   const selected = traces.find((tr) => tr.trace_id === selectedTraceId) ?? traces[0];
@@ -55,7 +56,7 @@ export function PlotWorkspace({ traces, selectedTraceId, onSelectTrace, onImport
         <h2>{t(language, "plots")}</h2>
       </div>
       <div className="plot-toolbar">
-        <label className="inline-select plot-trace-select"><span>{t(language, "selectedTrace")}</span><select value={selected.trace_id} onChange={(e) => onSelectTrace(e.target.value)}>
+        <label className="inline-select plot-trace-select"><span>{t(language, "selectedTrace")}</span><select disabled={disabled} value={selected.trace_id} onChange={(e) => onSelectTrace(e.target.value)}>
           {traces.map((trace) => <option value={trace.trace_id} key={trace.trace_id}>{trace.trace_id}</option>)}
         </select></label>
         <label className="inline-select"><span>{t(language, "plotView")}</span><select value={view} onChange={(e) => setView(e.target.value as PlotId)}>

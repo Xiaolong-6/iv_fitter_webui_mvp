@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.4.33**.
+Current package: **v1.4.34**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -30,11 +30,7 @@ React/Vite frontend -> FastAPI API -> Python fitting core
 
 - HappyMeasure CSV v2 import compatibility for single, wide, and long exports, including current-source conversion.
 - Data workspace display units are display-only; internal fitting arrays remain SI V/A.
-- Photocurrent and light-response laws exist as first-class components:
-  - constant photocurrent
-  - voltage-dependent photocurrent
-  - photoconductive branch
-  - photo-modulated main path
+- The app is a general compact-circuit fitting tool. Avoid presenting the workflow as specific to one device family; domain-specific interpretations belong in the user's modeling/report narrative.
 - Model Builder equivalent-circuit preview uses a compact topology diagram with main path on top and branches below Vj.
 - Model Builder is compact: component nicknames are edited directly, and parameter initials/bounds/fixed state are handled in the Parameters table rather than duplicated in builder cards.
 - Parameters are displayed by placement and component instance. Keep parameter keys unchanged for fitting, save/load, JSON export/import, and reports. After a completed fit, fitted values are automatically written into the model as next-run initial values; the restore button should recover the pre-fit value snapshot only, not rename parameters or alter serialization.
@@ -42,7 +38,8 @@ React/Vite frontend -> FastAPI API -> Python fitting core
 - User-facing text should move toward content modules and translation-ready documents; start with `docs/LOCALIZATION_AND_TEXT.md` before adding new visible UI copy.
 - User manual Function Guide is user-facing by default. Internal schema terms are only allowed in collapsed Advanced details.
 - Mobile portrait layout has a sticky full-width run action, compact voltage range controls, and a backend connection banner.
-- Fitting has visible running feedback, Stop behavior for ignoring an in-flight result, and expanded app-local zoom.
+- Fit setup owns compact fitting status, Run fit/Stop/Report actions, no-trace validation, running feedback, and Diagnostics disclosure. Keep this area compact and layered: status badges, action row, then contextual messages.
+- Fitting has visible running feedback, Stop behavior for ignoring an in-flight result, and expanded app-local zoom. While fitting, disable model/parameter/setup/import/report edits but keep Stop available.
 - LAN testing helper `04c_run_lan_dev.bat` starts both backend and frontend and prints phone/tablet URLs.
 
 ## Known boundaries
@@ -79,10 +76,18 @@ For docs-only changes, still run the full set if dependency availability allows 
 After every change, provide a 3-step browser test that does not require reading source code. The user should be able to verify the change through the UI or visible files.
 
 
-## v1.4.33 validation caveat
+## v1.4.34 validation caveat
 
-- `npm run test:parameter-ui`, `frontend/npm run build`, and backend `compileall` passed for v1.4.33.
-- Full backend pytest currently has one unrelated photocurrent solver-failure expectation mismatch in `test_implicit_solver_failure_still_returns_warning_and_nan_no_fallback`; do not treat v1.4.33 as having changed backend fitting math. Resolve or update that backend test before claiming a fully green backend gate.
+- `npm.cmd run test:parameter-ui`, `npm.cmd run build`, backend `compileall`, and `git diff --check` passed for v1.4.34, with only normal CRLF conversion warnings from Git.
+- Backend fitting math was not intentionally changed in v1.4.34. Full backend pytest was not rerun in the Codex desktop validation environment because the bundled Python did not include `pytest`; the previous full-backend pytest caveat still applies.
+
+## v1.4.34 Fit setup and Model Builder interaction note
+
+- Fit setup must remain visually compact. Use small status badges for Ready/Running/Converged, warning counts, and error counts. Do not reintroduce full-width amber backgrounds for successful converged states.
+- Put residual caution and backend warnings inside one Diagnostics disclosure. Avoid separate persistent "Caution" and "Warnings" blocks.
+- Disabled Stop and Report should look neutral. Stop should be visually dangerous only while an actual fit is running.
+- `V min` / `V max` blank placeholders should show the selected trace's actual finite min/max voltage. Leaving them blank still means backend `v_min`/`v_max` are unset and the full selected trace range is used.
+- Duplicate model selections should disable only Add, not the model dropdown. Users must be able to change the dropdown away from a duplicate choice.
 
 ## v1.4.33 parameter auto-seeding and localization note
 
@@ -114,7 +119,7 @@ Main path now exposes advanced transport / voltage-drop forms in the Model Build
 - branch functions contribute current at `V_j`;
 - main-path functions consume voltage or modify effective series transport before branch currents are evaluated.
 
-Do not reframe branch current laws as main-path terms unless they have a clear voltage-drop or transport-modifier evaluation form. The photo-modulated main-path term is available as an interpretive advanced option, but the UI blocks pairing it with ordinary Ohmic series resistance in single-trace fitting because both collapse to an effective resistance.
+Do not reframe branch current laws as main-path terms unless they have a clear voltage-drop or transport-modifier evaluation form. Do not add device-specific aliases when the same math is already represented by an existing circuit term or custom expression.
 
 
 ## Stabilization note
@@ -142,7 +147,7 @@ The User Manual is intentionally a navigation-style reader rather than a long sc
 
 ## v1.4.29 workflow note
 
-Default D1 is now explicit forward-polarity with primary role metadata. Ordinary duplicate Add still blocks same law/form/placement/polarity; use the D2 role-aware action for a two-diode model. The Parameters table is interactive and edits the next-fit model parameters. Warnings are summarized at the top of Workspace with a dismiss button. Keep fit controls out of Data and User Manual views.
+Default D1 is now explicit forward-polarity with primary role metadata. Ordinary duplicate Add still blocks same law/form/placement/polarity; use the D2 role-aware action for a two-diode model. The Parameters table is interactive and edits the next-fit model parameters. Diagnostics live inside Fit setup. Keep fit controls out of Data and User Manual views.
 
 
 ## v1.4.29 layout note
@@ -152,12 +157,12 @@ The Parameters table is intentionally responsive: desktop/wide screens should al
 
 ## v1.4.29 compact-status note
 
-The Workspace top area should stay compact. Do not reintroduce stacked full-height status, verdict, and warning boxes. Keep detailed verdict and warning lists behind expandable controls.
+The Fit setup action area should stay compact. Do not reintroduce stacked full-height status, verdict, and warning boxes. Keep detailed verdict and warning lists behind one Diagnostics disclosure.
 
 
 ## v1.4.29 Parameters layout note
 
-Warnings now live in the Workspace-top banner, so the old two-column result grid should not constrain Parameters. Keep `.main-result-grid` single-column unless another persistent side panel is reintroduced.
+Persistent warnings no longer occupy a result-grid side panel, so the old two-column result grid should not constrain Parameters. Keep `.main-result-grid` single-column unless another persistent side panel is reintroduced.
 
 
 ## v1.4.29 Model Builder note

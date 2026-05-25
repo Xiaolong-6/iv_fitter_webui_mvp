@@ -9,8 +9,8 @@ The Web UI is an internal alpha/prototype with working local browser workflow:
 - Data import and pasted-data import.
 - HappyMeasure CSV v2 compatibility.
 - Model Builder with Law / Form / Placement functions.
-- Photocurrent and light-response terms.
 - Fit diagnostics, warnings, residual plots, and formula preview.
+- General compact-circuit terms with domain-specific interpretation left to the user's modeling/report narrative.
 - Mobile portrait improvements.
 - LAN phone/tablet testing helper.
 - User-facing Function Guide.

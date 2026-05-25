@@ -1,73 +1,70 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.4.33**
+Current version: **1.4.34**
 
-> v1.4.33 workflow note: Desktop fit status and Run fit/Stop/Report controls remain at the top of Fit setup. Parameter initials now auto-seed from each completed fit, the old parameter filter tabs were removed, and the Parameters toolbar now exposes one Restore initial values action for the pre-fit values from the latest completed run. The global zoom control remains in the sidebar under the language control.
-
-
-> v1.4.30 workflow note: Parameters are grouped by placement and component. Model Builder is more compact, Model preview lives below the builder and starts collapsed, and user-facing text/localization content has started moving into dedicated content modules and documentation.
-
-> v1.4.29 audit/workflow note: Plots empty state now has an Import data shortcut; Run options include a 60 s default timeout with frontend abort and backend cooperative timeout; starting a run clears previous fit verdict/warnings; Parameters table uses scientific notation for extreme values; several backend/frontend audit issues were closed.
-
-> v1.4.28 navigation note: the dock/sidebar now starts collapsed by default, and the language selector dropdown uses readable light-background option colors in the dark sidebar.
-
-> v1.4.27 mobile/data note: the Data page now contains the Spreadsheet preview inside an internal scroll area on mobile so it no longer stretches behind the bottom navigation. Navigation tabs are leaner, with no per-tab subtitles, and the sidebar note is shortened to “Fit locally. Review before reporting.”
-
-> v1.4.26 Data page note: the Data page now uses a two-row aligned layout: Import data aligns with Trace selection, and Paste data aligns with Spreadsheet preview. Trace-selection summary chips were deduplicated so V/I column names are not repeated in both facts and import-quality blocks.
-
-> v1.4.25 Model Builder note: duplicate-add guidance is no longer repeated as a visible inline message. Disabled Add buttons still expose the reason through the button hover/title.
-
-> v1.4.24 layout note: after moving warnings to the Workspace-top banner, the Parameters result section now spans the full right pane instead of being constrained to the old two-column result grid.
-
-> v1.4.23 layout note: the Workspace top area is now compact. Fit status is a single-line summary with expandable details, and warnings use a one-line dismissible summary instead of stacking multiple full-height boxes.
-
-> v1.4.22 layout note: the interactive Parameters table now auto-expands on wide screens so editable initials/bounds and interpretation columns use the available Workspace width instead of staying cramped with unnecessary horizontal scroll.
-
-> v1.4.21 workflow note: default D1 now carries explicit forward polarity, two-diode fitting uses a role-aware D2 action instead of ordinary duplicate Add, the Parameters table can edit next-fit initial values/bounds/fixed state, and warnings are summarized at the top of Workspace with a dismiss button.
-
-> v1.4.20 manual note: the User Manual is now a navigation-style reader. It shows one section at a time, uses a selector/detail Function Guide, and includes a Law/Form/Placement chapter explaining how model terms become physically meaningful.
-
-> v1.4.9 importer note: HappyMeasure combined wide-v2 files now import correctly even when the UI/API passes explicit selected columns. The package includes an anonymized regression fixture under `examples/testdata/`.
-
-IV-fitter Web UI is a local-first tool for importing I-V traces, building physically interpretable circuit models, running fits, checking residuals/warnings, and exporting defensible results.
+IV-fitter Web UI is a local-first browser app for fitting I-V traces with compact circuit models. It helps a user import voltage/current data, build a model from mathematical circuit terms, run a fit, inspect diagnostics, and export a result only after the residuals, warnings, parameters, and model structure make sense.
 
 ```text
 React/Vite frontend + FastAPI backend + Python fitting core
 ```
 
-It is a Web UI prototype for the IV-fitter workflow. It is not yet a full replacement for the legacy desktop/Tkinter workflow.
+The app is a working prototype for the IV-fitter workflow. It is not yet a full replacement for the mature desktop/Tkinter workflow, and fit results should still be reviewed before reporting.
 
-
-### v1.4.19 tutorial-style User Manual
-
-The in-app **User manual** now uses a tutorial-style structure adapted from the reviewed v1.4.18 manual draft. It explains what IV-fitter solves, how main-path and branch terms assemble into a self-consistent circuit equation, how fitting/residuals/reportability should be interpreted, and how to choose fitting recipes. English and Chinese are shown through the existing language selector rather than as a bilingual wall of text.
-
-## What users do in the app
+## What Users Do
 
 1. Open **Data** and import or paste a voltage/current trace.
-2. Confirm the selected dataset name and display units; fitting data remains V/A internally.
-3. Open **Workspace** and choose the fit range and objective settings.
+2. Confirm the selected trace and display units. Fitting data remains SI V/A internally.
+3. Open **Workspace** and set the voltage range and fitting objective.
 4. Build the model in **Model Builder**.
-5. Run the fit.
-6. Inspect status, plots, residuals, parameters, warnings, and equations. After each completed fit, the fitted parameter values become the next initial values automatically; use Restore initial values in Parameters to recover the pre-fit seed values.
-7. Export a report only after the model, units, warnings, and residuals make sense.
+5. Click **Run fit**.
+6. Inspect plots, residuals, diagnostics, parameters, and equations.
+7. Export a report only after the model, warnings, selected trace, voltage range, and residuals are defensible.
 
-## Current UI areas
+## Current UI Areas
 
-- **Data**: CSV/TXT/DAT import, pasted-data import, dataset naming, unit selection, trace selection, import-quality summary, and spreadsheet preview.
-- **Workspace**: fit setup, Model Builder, equivalent-circuit preview, plots, parameter diagnostics, warnings, Stop action, and formula preview.
-- **User manual**: user-facing workflow, Function Guide, fitting logic, convergence guidance, and reporting notes.
+- **Data:** CSV/TXT/DAT import, pasted-data import, dataset naming, unit selection, trace selection, import-quality summary, and spreadsheet preview.
+- **Workspace:** Fit setup, Model Builder, Model preview, plots, grouped Parameters table, diagnostics, and report generation.
+- **User manual:** tutorial-style workflow guide, Function Guide, fitting logic, convergence guidance, reporting notes, and glossary.
 
-## Current notable capabilities
+## Current Workflow Details
+
+- **Fit setup** keeps status, actions, and messages in three compact layers:
+  - status badges such as Ready, Running, Converged, warnings, and errors;
+  - action buttons with **Run fit** as the main idle action and **Stop** as the high-priority action only while fitting;
+  - contextual info/diagnostics below the buttons.
+- Empty data is shown as an informational state until the user tries to run a fit with no trace loaded.
+- If `V min` or `V max` is blank, the backend uses the full selected trace range. The empty input placeholder shows the concrete selected-trace min/max voltage instead of a vague `auto`.
+- Completed fits automatically write fitted values back into the model as the next initial values. Use **Restore initial values** in Parameters to recover the pre-fit values from the most recent run.
+- Diagnostics are compact by default. Residual cautions and warning details live inside one disclosure row instead of large persistent warning blocks.
+- During a running fit, model edits, parameter edits, fit setup inputs, data import actions, and report generation are disabled. **Stop** remains available.
+
+## Model Builder
+
+The user-facing model is organized as:
+
+- **Main path:** terms that consume voltage or modify the main current path before junction branches see the remaining voltage.
+- **Junction branches:** current-producing terms evaluated at the internal junction voltage and summed into terminal current.
+
+Model Builder rows are intentionally compact: each component shows an editable nickname, the component name, per-component polarity when relevant, and a Remove button. Detailed law/form/placement information is available through hover text and in the User manual rather than repeated inline.
+
+The app treats components as mathematical circuit terms. It should not require a user to frame the problem as a specific device family. Domain-specific interpretations belong in the user's modeling judgment, diagnostics, and report narrative.
+
+## Parameters
+
+The Parameters table is grouped first by placement, then by component instance. It keeps internal parameter keys unchanged for fitting, save/load, exported JSON, and reports. Component-level controls can fit or fix all parameters in that component without changing serialization.
+
+## Current Notable Capabilities
 
 - HappyMeasure CSV v2 import compatibility for single, wide, and long files, including current-source conversion.
-- Light-response model terms: constant photocurrent, voltage-dependent photocurrent, photoconductive branch, and photo-modulated main path.
+- Grouped parameter editing with next-fit initials, bounds, fit/fixed state, fitted values, uncertainty, and interpretation hints.
+- Main-path terms such as Ohmic resistance, series diode barrier, softplus transport modifier, custom transport modifier, and softplus voltage drop.
+- Branch terms such as Shockley diode, Ohmic leakage/shunt behavior, softplus power-law current, soft reverse breakdown, and custom expressions.
+- Model preview with beginner-friendly equation steps and softplus definition.
 - Mobile portrait layout with compact controls and sticky mobile Run fit action.
-- Backend connection banner for fetch failures.
-- LAN phone/tablet testing helper.
+- LAN phone/tablet testing helper for local network testing.
 - User-facing Function Guide with internal schema details hidden in Advanced details.
 
-## Windows quick start
+## Windows Quick Start
 
 Expected baseline:
 
@@ -93,20 +90,20 @@ Optional split launch:
 .\04b_run_frontend_only.bat
 ```
 
-## Test from a phone or tablet on the same Wi-Fi
+## Test From a Phone or Tablet
 
-For phone/tablet browser testing on your local network, use:
+For phone/tablet browser testing on the same local network, use:
 
 ```powershell
 .\04c_run_lan_dev.bat
 ```
 
-The LAN launcher starts both required services in separate windows: backend on `0.0.0.0:8000` and frontend on `0.0.0.0:5173`. It prints a phone URL such as `http://192.168.x.x:5173`, sets the frontend API base to the detected computer IP, and checks backend health before launching the frontend.
+The LAN launcher starts backend and frontend in separate windows, prints a phone URL such as `http://192.168.x.x:5173`, sets the frontend API base to the detected computer IP, and checks backend health before launching the frontend.
 
 Prerequisites:
 
 - Run `02_setup_dev.bat` first.
-- Put the computer and phone on the same Wi-Fi, or let the computer connect to the phone hotspot.
+- Put the computer and phone on the same Wi-Fi, or connect the computer to the phone hotspot.
 - Allow Windows Firewall access on **Private networks** if prompted.
 - Use the printed LAN URL on the phone, not `localhost`.
 - Keep both new PowerShell windows open while testing.
@@ -119,31 +116,13 @@ Troubleshooting `TypeError: Failed to fetch`:
 
 University or company Wi-Fi may block device-to-device access; a phone hotspot is usually the simplest fallback. This is a local development/testing helper only. It is not a public deployment mode.
 
-## Developer entry points
-
-Dependency manifests live at the repository root:
-
-```text
-requirements.txt
-package.json
-DEPENDENCIES.md
-```
-
-Source layout:
-
-```text
-frontend/   React UI
-backend/    FastAPI API and fitting core
-docs/       user, developer, agent, and validation documentation
-examples/   sample import data and fit requests
-```
-
-## Validation commands
+## Validation Commands
 
 Frontend:
 
 ```bash
 npm install
+npm run test:parameter-ui
 npm run build
 ```
 
@@ -154,7 +133,24 @@ PYTHONPATH=backend python -m pytest backend/tests -q
 python -m compileall -q backend/ivfitter backend/tests
 ```
 
-## Documentation map
+## Source Layout
+
+```text
+frontend/   React UI
+backend/    FastAPI API and fitting core
+docs/       user, developer, agent, and validation documentation
+examples/   sample import data and fit requests
+```
+
+Dependency manifests live at the repository root:
+
+```text
+requirements.txt
+package.json
+DEPENDENCIES.md
+```
+
+## Documentation Map
 
 Use `docs/DOCUMENTATION_INDEX.md` as the documentation entry point.
 
@@ -168,38 +164,18 @@ Most important files:
 - `docs/RESPONSIVE_WORKSPACE.md` — responsive layout, mobile behavior, and zoom.
 - `docs/ROADMAP.md` — current roadmap.
 
-Historical root-level `HANDOFF_*` files and old per-version `docs/TESTED_*` files were removed in v1.4.8. Their useful information is consolidated into the files above.
+## Known Limitations
 
-## Known limitations
-
-- Graph DC solver remains experimental; do not use it as report-grade default without additional validation.
+- Graph DC solver remains experimental and diagnostic-only unless explicitly validated for a reporting workflow.
 - Backend equation summaries are still partly string-based internally.
-- Fit-quality interpretation is improving, but users should still inspect residual plots and warnings before trusting a report.
-- Light/dark two-trace `ΔI(V)` preview and one-click light-response presets remain future features.
+- Fit-quality interpretation is improving, but users should still inspect residual plots and diagnostics before trusting a report.
+- Light/dark two-trace `Delta I(V)` preview and one-click light-response presets remain future features.
 
+## Sample Data
 
-### Sample data
-
-The Data page **Load sample data** button now loads a full anonymized HappyMeasure `combined-v2` / `wide-v2` CSV containing 14 traces. The bundled sample is stored in:
+The Data page **Load sample data** button loads an anonymized HappyMeasure combined/wide CSV containing 14 traces. The bundled sample is stored in:
 
 - `examples/testdata/happymeasure_combined_wide_v2_anonymized.csv`
 - `frontend/public/sample_data/happymeasure_combined_wide_v2_anonymized.csv`
 
-The sample preserves the original multi-trace row count and voltage/current data needed to test importer behavior, while removing sample identifiers, timestamps, port names, and trace fingerprints.
-
-### Plot trace selector
-
-The Workspace **Plots** section includes a trace selector in the plot header. This lets users switch the displayed trace directly from the plot area without returning to the Data tab. Switching traces follows the same selected-trace workflow used elsewhere: the next fit/report belongs to the newly selected trace.
-
-
-### v1.4.18 main-path transport options
-
-The Model Builder main path now includes more than an Ohmic resistance and a series diode barrier. It exposes:
-
-- **Basic · Effective Ohmic resistance**
-- **Advanced · Series diode barrier**
-- **Advanced · Softplus transport modifier**
-- **Advanced · Custom transport modifier**
-- **Interpretive · Photo-modulated effective main path**
-
-Main-path terms are still voltage-drop or transport-bottleneck terms. They are not copies of branch current laws. The photo-modulated effective main-path option is intentionally guarded against simultaneous use with an ordinary Ohmic series resistance in single-trace fitting, because those two are usually mathematically indistinguishable without a light/dark or optical-power workflow.
+The sample preserves the multi-trace row count and voltage/current data needed to test importer behavior, while removing sample identifiers, timestamps, port names, and trace fingerprints.

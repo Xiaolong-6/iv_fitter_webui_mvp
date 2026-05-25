@@ -8,9 +8,9 @@ The Web UI should expose enough information for scientific review without forcin
 2. **Model summary:** user-facing Main path and Branches, with nicknames such as Rs and Rsh where useful.
 3. **Function guide:** law purpose, typical use region, parameters, polarity, and advanced/internal details only behind disclosure controls.
 4. **Equation preview:** model-specific equivalent circuit and formatted formulas generated from the same model sent to the backend.
-5. **Fit setup:** all inputs/selectors have concise hover help without crowding the main UI.
+5. **Fit setup:** all inputs/selectors have concise hover help without crowding the main UI. Blank voltage-range inputs show the concrete selected-trace range that will be used.
 6. **Parameter table:** values, units, bounds, fit/fixed state, and uncertainty when available.
-7. **Warning/quality panels:** numerical warnings, possible physical/modeling causes, and actionable next steps.
+7. **Diagnostics disclosure:** numerical warnings, residual cautions, possible physical/modeling causes, and actionable next steps without permanent large warning panels.
 8. **Export metadata:** exact model, config, version, warnings, and import quality.
 
 ## UI wording rules
@@ -22,4 +22,5 @@ The Web UI should expose enough information for scientific review without forcin
 - Label empirical functions as empirical unless a physical mechanism has been independently established.
 - Display units beside parameter names.
 - Unsupported combinations should be disabled or warned, never silently converted.
+- Duplicate model selections may disable Add, but the model dropdown itself must remain usable so the user can recover by choosing another term.
 - If a sentence mainly helps developers/agents, move it to hover help, details, or documentation rather than putting it in the main UI.

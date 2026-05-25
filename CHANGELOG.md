@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.4.34 - Fit setup polish and documentation refresh
+
+- Reworked the Fit setup status/action dock into compact layers: status badges, action buttons, and contextual messages/diagnostics.
+- Replaced large warning blocks with a single lightweight Diagnostics disclosure that combines residual cautions and warning/error details.
+- Changed running-fit behavior so Run fit becomes a neutral disabled progress indicator while Stop becomes the only high-priority action.
+- Kept Stop and Report neutral when disabled, and changed the no-trace empty state to informational until the user tries to run a fit.
+- Disabled model, parameter, fit setup, import, and report controls while a fit is running, while keeping Stop available.
+- Kept Model Builder duplicate protection on Add only; duplicate selections no longer disable the model dropdown, so users can recover by choosing another term.
+- Changed blank Voltage range inputs to show the concrete selected-trace voltage min/max that the backend will use when `v_min`/`v_max` are unset.
+- Rewrote README as a standalone human-facing overview of the current app instead of a stack of historical workflow notes.
+- Updated current validation and handoff docs for the v1.4.34 UI workflow.
+
 ## v1.4.33 - Parameter auto-seeding and simplified restore workflow
 
 - After a completed fit, fitted parameter values are automatically written back into the model as the next-run initial values.

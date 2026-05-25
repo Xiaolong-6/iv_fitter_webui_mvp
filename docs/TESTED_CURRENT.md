@@ -1,4 +1,30 @@
-# Tested current package - v1.4.33
+# Tested current package - v1.4.34
+
+## v1.4.34 validation
+
+Validated the current frontend/UI/documentation package with:
+
+```powershell
+npm.cmd run test:parameter-ui
+npm.cmd run build
+git diff --check
+C:\Users\carll\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q backend/ivfitter backend/tests
+```
+
+Expected results: parameter grouping logic passes, frontend production build passes, backend files compile, and whitespace checks pass apart from the repository's normal CRLF conversion warnings.
+
+Backend pytest note: the bundled validation Python in this Codex desktop session did not include `pytest`, so full backend pytest was not rerun for v1.4.34. Backend fitting math, serialization keys, API schemas, and report keys were not intentionally changed.
+
+Browser-visible checks performed on `http://127.0.0.1:5173`:
+
+- Fit setup shows status badges, a compact action row, and contextual messages as separate layers.
+- No-trace state is blue/neutral informational text until Run fit is clicked; after clicking Run fit with no trace it becomes red validation.
+- Disabled Stop/Report use neutral disabled styling. Stop becomes visually dangerous only while fitting.
+- Diagnostics are presented as one compact disclosure instead of separate caution and warning blocks.
+- Model Builder duplicate protection disables only Add, not the model dropdown.
+- Empty Voltage range inputs show the selected trace's concrete voltage min/max range instead of the word `auto`.
+
+Backend fitting math, serialization keys, API schemas, and report keys were not intentionally changed in v1.4.34.
 
 ## v1.4.33 validation
 

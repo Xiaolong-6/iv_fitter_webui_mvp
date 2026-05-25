@@ -43,47 +43,95 @@ function frontendQualityFailure(result: FitResult): string | null {
 export function FitStatusBar({
   result,
   language,
-  onCheckLogIv,
-  onAdjustInitials,
+  isFitting = false,
+  elapsedSeconds = 0,
 }: {
   result: FitResult | null;
   language: Language;
-  onCheckLogIv?: () => void;
-  onAdjustInitials?: () => void;
+  isFitting?: boolean;
+  elapsedSeconds?: number;
 }) {
-  if (!result) return <div className="status">{t(language, "readyNoFit")}</div>;
+  if (isFitting) return <div className="fit-status-compact">
+    <span className="fit-status-badge info">{language === "zh" ? "运行中" : "Running"}</span>
+    <span className="fit-status-badge metric">{elapsedSeconds}s</span>
+  </div>;
+
+  if (!result) return <div className="fit-status-compact">
+    <span className="fit-status-badge info">{t(language, "readyNoFit")}</span>
+  </div>;
 
   const backendWarn = result.warnings.filter((w) => w.severity !== "error").length;
   const backendErrors = result.warnings.filter((w) => w.severity === "error").length;
   const frontendFailure = frontendQualityFailure(result);
   const errors = backendErrors;
   const rmse = result.metrics.linear_rmse_A;
-  const logExcluded = result.metrics.log_points_excluded ?? 0;
   const passed = (result.reportable ?? result.success) && result.success && errors === 0;
   const title = result.reportability_reason ?? result.message;
-  const verdict = fitQualityVerdict(result, language);
   const scale = currentDataScale(result.curves.current_measured_A);
   const rmseRatio = Number.isFinite(rmse) && scale > 0 ? rmse / scale : Infinity;
   const stateLabel = passed ? "Converged" : "Not reportable";
-  const statusClass = verdict.severity === "ok" ? "status ok" : verdict.severity === "warning" ? "status warn" : "status bad";
+  const statusClass = passed ? "fit-status-badge success" : "fit-status-badge danger";
 
   return <div className="fit-status-compact" title={title}>
-    <div className={statusClass}>
-      <strong>{language === "zh" ? (passed ? "已收敛" : "暂不可报告") : stateLabel}</strong>
-      <span>RMSE {fmtEng(rmse, 4)} A</span>
-      <span>{fmtEng(rmseRatio, 3)}× {language === "zh" ? "数据量级" : "scale"}</span>
-      <span>{backendWarn} {language === "zh" ? "warning" : "warning"}</span>
-      <span>{errors} error</span>
-      {frontendFailure ? <span>{t(language, "frontendSanity")}</span> : null}
-    </div>
-    <details className={`fit-verdict-compact ${verdict.severity}`}>
-      <summary>{verdict.title}</summary>
-      <p>{verdict.message}</p>
-      <p>{language === "zh" ? "Log MAE 排除近零点：" : "Log MAE near-zero exclusions:"} {Math.round(logExcluded)}</p>
-      <div className="fit-verdict-actions">
-        <button type="button" onClick={onCheckLogIv}>{language === "zh" ? "查看 Log I-V" : "Check log I-V"}</button>
-        <button type="button" onClick={onAdjustInitials}>{language === "zh" ? "调整初值" : "Adjust initials"}</button>
-      </div>
-    </details>
+    <span className={statusClass}>{language === "zh" ? (passed ? "已收敛" : "暂不可报告") : stateLabel}</span>
+    <span className="fit-status-badge metric">RMSE {fmtEng(rmse, 4)} A</span>
+    <span className="fit-status-badge metric">{fmtEng(rmseRatio, 3)}× {language === "zh" ? "数据量级" : "scale"}</span>
+    <span className={backendWarn > 0 ? "fit-status-badge warning" : "fit-status-badge metric"}>{backendWarn} {language === "zh" ? "warning" : "warning"}</span>
+    <span className={errors > 0 ? "fit-status-badge danger" : "fit-status-badge metric"}>{errors} error</span>
+    {frontendFailure ? <span className="fit-status-badge danger">{t(language, "frontendSanity")}</span> : null}
   </div>;
+}
+
+export function FitDiagnostics({
+  result,
+  language,
+  onCheckLogIv,
+  onAdjustInitials,
+  onClose,
+}: {
+  result: FitResult | null;
+  language: Language;
+  onCheckLogIv?: () => void;
+  onAdjustInitials?: () => void;
+  onClose?: () => void;
+}) {
+  if (!result) return null;
+  const verdict = fitQualityVerdict(result, language);
+  const warnings = result.warnings ?? [];
+  const errors = warnings.filter((w) => w.severity === "error").length;
+  const warningCount = warnings.length - errors;
+  if (verdict.severity === "ok" && warnings.length === 0) return null;
+
+  const logExcluded = result.metrics.log_points_excluded ?? 0;
+  const title = language === "zh"
+    ? `Diagnostics：${warningCount} warning，${errors} error`
+    : `Diagnostics: ${warningCount} warning(s), ${errors} error(s)`;
+
+  return (
+    <div className={`fit-diagnostics ${errors ? "error" : verdict.severity === "warning" || warningCount ? "warning" : "neutral"}`}>
+      <details>
+        <summary>
+          <span>{title}</span>
+          {onClose ? <button className="diagnostics-close" type="button" aria-label={language === "zh" ? "关闭 diagnostics" : "Close diagnostics"} onClick={(event) => { event.preventDefault(); event.stopPropagation(); onClose(); }}>×</button> : null}
+        </summary>
+        <div className="diagnostics-body">
+          {verdict.severity !== "ok" ? <section>
+            <strong>{verdict.title}</strong>
+            <p>{verdict.message}</p>
+            <p>{language === "zh" ? "Log MAE 排除近零点：" : "Log MAE near-zero exclusions:"} {Math.round(logExcluded)}</p>
+          </section> : null}
+          {warnings.length ? <section>
+            <strong>{language === "zh" ? "Warnings" : "Warnings"}</strong>
+            <ul>
+              {warnings.map((w) => <li key={`${w.code}-${w.message}`} title={`${w.code}: ${w.message}`} className={w.severity}><span>{w.code}</span>: {w.message}</li>)}
+            </ul>
+          </section> : null}
+          <div className="fit-verdict-actions">
+            <button type="button" onClick={onCheckLogIv}>{language === "zh" ? "查看 Log I-V" : "Check log I-V"}</button>
+            <button type="button" onClick={onAdjustInitials}>{language === "zh" ? "调整初值" : "Adjust initials"}</button>
+          </div>
+        </div>
+      </details>
+    </div>
+  );
 }

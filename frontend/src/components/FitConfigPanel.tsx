@@ -17,7 +17,15 @@ function commitNumber(text: string): number | null | undefined {
 function formatDraft(value: number | null | undefined) {
   return value === null || value === undefined ? "" : String(value);
 }
-function NumericInput({ label, value, placeholder, help, onCommit }: { label: string; value: number | null | undefined; placeholder?: string; help?: string; onCommit: (value: number | null) => void }) {
+
+function formatRangePlaceholder(value: number | null | undefined) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "no trace";
+  const abs = Math.abs(value);
+  if (abs !== 0 && (abs < 1e-4 || abs >= 1e5)) return value.toExponential(4);
+  return Number(value.toPrecision(7)).toString();
+}
+
+function NumericInput({ label, value, placeholder, help, disabled = false, onCommit }: { label: string; value: number | null | undefined; placeholder?: string; help?: string; disabled?: boolean; onCommit: (value: number | null) => void }) {
   const [draft, setDraft] = useState(formatDraft(value));
   useEffect(() => { setDraft(formatDraft(value)); }, [value]);
   function commitOrRevert() {
@@ -29,7 +37,7 @@ function NumericInput({ label, value, placeholder, help, onCommit }: { label: st
     onCommit(parsed);
     setDraft(formatDraft(parsed));
   }
-  return <label title={help}><span>{label}</span><input title={help} inputMode="decimal" placeholder={placeholder} value={draft} onChange={(e) => {
+  return <label title={help}><span>{label}</span><input title={help} disabled={disabled} inputMode="decimal" placeholder={placeholder} value={draft} onChange={(e) => {
     const text = e.target.value;
     if (!isPartialNumber(text)) return;
     setDraft(text);
@@ -39,7 +47,9 @@ function NumericInput({ label, value, placeholder, help, onCommit }: { label: st
   }} /></label>;
 }
 
-export function FitConfigPanel({ config, onChange, language, actionDock }: { config: FitConfig; onChange: (cfg: FitConfig) => void; language: Language; actionDock?: ReactNode }) {
+export function FitConfigPanel({ config, onChange, language, actionDock, disabled = false, advancedOpen, onAdvancedOpenChange, autoVoltageRange }: { config: FitConfig; onChange: (cfg: FitConfig) => void; language: Language; actionDock?: ReactNode; disabled?: boolean; advancedOpen: boolean; onAdvancedOpenChange: (open: boolean) => void; autoVoltageRange?: { vMin: number | null; vMax: number | null } }) {
+  const autoMin = formatRangePlaceholder(autoVoltageRange?.vMin);
+  const autoMax = formatRangePlaceholder(autoVoltageRange?.vMax);
   return <section className="card config-panel embedded-card">
     <div className="card-head">
       <h2>{t(language, "fitSetup")}</h2>
@@ -50,42 +60,46 @@ export function FitConfigPanel({ config, onChange, language, actionDock }: { con
     <div className="setup-section">
       <h3>{t(language, "voltageRange")} <HelpTip text={t(language, "numericHelp")} /></h3>
       <div className="setup-grid two-col">
-        <NumericInput label={t(language, "vMin")} help={t(language, "vMinHelp")} placeholder={t(language, "auto")} value={config.v_min} onCommit={(v) => onChange({ ...config, v_min: v })} />
-        <NumericInput label={t(language, "vMax")} help={t(language, "vMaxHelp")} placeholder={t(language, "auto")} value={config.v_max} onCommit={(v) => onChange({ ...config, v_max: v })} />
+        <NumericInput disabled={disabled} label={t(language, "vMin")} help={t(language, "vMinHelp")} placeholder={autoMin} value={config.v_min} onCommit={(v) => onChange({ ...config, v_min: v })} />
+        <NumericInput disabled={disabled} label={t(language, "vMax")} help={t(language, "vMaxHelp")} placeholder={autoMax} value={config.v_max} onCommit={(v) => onChange({ ...config, v_max: v })} />
       </div>
     </div>
 
-    <details className="advanced-objective">
-      <summary>{language === "zh" ? "高级目标函数和运行选项" : "Advanced objective and run options"}</summary>
-      <div className="setup-section">
-        <h3>{t(language, "objective")}</h3>
-        <div className="setup-grid">
-          <label title={t(language, "weightingHelp")}><span>{t(language, "weighting")}</span><select title={t(language, "weightingHelp")} value={config.weighting} onChange={(e) => onChange({ ...config, weighting: e.target.value })}><option value="symmetric_log_signed">symmetric log signed</option><option value="linear">linear</option></select></label>
-          <label title={t(language, "lossHelp")}><span>{t(language, "loss")}</span><select title={t(language, "lossHelp")} value={config.loss} onChange={(e) => onChange({ ...config, loss: e.target.value })}><option value="soft_l1">soft_l1</option><option value="linear">linear</option><option value="huber">huber</option></select></label>
-          <NumericInput label={t(language, "residualFloor")} help={t(language, "residualFloorHelp")} value={(config as any).residual_floor_A ?? 1e-15} onCommit={(v) => onChange({ ...config, residual_floor_A: v ?? 1e-15 })} />
+    <div className={`advanced-objective${advancedOpen ? " open" : ""}`}>
+      <button type="button" className="advanced-objective-summary" aria-expanded={advancedOpen} onClick={() => onAdvancedOpenChange(!advancedOpen)}>
+        {language === "zh" ? "高级目标函数和运行选项" : "Advanced objective and run options"}
+      </button>
+      {advancedOpen ? <div className="advanced-objective-body">
+        <div className="setup-section">
+          <h3>{t(language, "objective")}</h3>
+          <div className="setup-grid">
+            <label title={t(language, "weightingHelp")}><span>{t(language, "weighting")}</span><select disabled={disabled} title={t(language, "weightingHelp")} value={config.weighting} onChange={(e) => onChange({ ...config, weighting: e.target.value })}><option value="symmetric_log_signed">symmetric log signed</option><option value="linear">linear</option></select></label>
+            <label title={t(language, "lossHelp")}><span>{t(language, "loss")}</span><select disabled={disabled} title={t(language, "lossHelp")} value={config.loss} onChange={(e) => onChange({ ...config, loss: e.target.value })}><option value="soft_l1">soft_l1</option><option value="linear">linear</option><option value="huber">huber</option></select></label>
+            <NumericInput disabled={disabled} label={t(language, "residualFloor")} help={t(language, "residualFloorHelp")} value={(config as any).residual_floor_A ?? 1e-15} onCommit={(v) => onChange({ ...config, residual_floor_A: v ?? 1e-15 })} />
+          </div>
         </div>
-      </div>
 
-      <div className="setup-section">
-        <h3>{t(language, "runOptions")}</h3>
-        <div className="setup-grid">
-          <label title={t(language, "fitSpeedHelp")}><span>{t(language, "fitSpeed")}</span><select title={t(language, "fitSpeedHelp")} value={config.fit_speed} onChange={(e) => onChange({ ...config, fit_speed: e.target.value })}><option value="full">full</option><option value="quick">quick</option></select></label>
-          <NumericInput label={language === "zh" ? "运行超时 (s)" : "Run timeout (s)"} help={language === "zh" ? "超过这个时间会自动停止本次拟合。默认 60 秒。" : "Automatically stop this fit after this many seconds. Default is 60 s."} value={config.run_timeout_s ?? 60} onCommit={(v) => onChange({ ...config, run_timeout_s: Math.max(1, Math.round(v ?? 60)) })} />
-          <NumericInput label={t(language, "maxEvals")} help={t(language, "maxEvalsHelp")} value={config.max_nfev} onCommit={(v) => onChange({ ...config, max_nfev: Math.max(1, Math.round(v ?? 200)) })} />
+        <div className="setup-section">
+          <h3>{t(language, "runOptions")}</h3>
+          <div className="setup-grid">
+            <label title={t(language, "fitSpeedHelp")}><span>{t(language, "fitSpeed")}</span><select disabled={disabled} title={t(language, "fitSpeedHelp")} value={config.fit_speed} onChange={(e) => onChange({ ...config, fit_speed: e.target.value })}><option value="full">full</option><option value="quick">quick</option></select></label>
+            <NumericInput disabled={disabled} label={language === "zh" ? "运行超时 (s)" : "Run timeout (s)"} help={language === "zh" ? "超过这个时间会自动停止本次拟合。默认 60 秒。" : "Automatically stop this fit after this many seconds. Default is 60 s."} value={config.run_timeout_s ?? 60} onCommit={(v) => onChange({ ...config, run_timeout_s: Math.max(1, Math.round(v ?? 60)) })} />
+            <NumericInput disabled={disabled} label={t(language, "maxEvals")} help={t(language, "maxEvalsHelp")} value={config.max_nfev} onCommit={(v) => onChange({ ...config, max_nfev: Math.max(1, Math.round(v ?? 200)) })} />
+          </div>
+          <label className="check-row" title={t(language, "excludePlateausHelp")}><input disabled={disabled} title={t(language, "excludePlateausHelp")} type="checkbox" checked={config.exclude_compliance} onChange={(e) => onChange({ ...config, exclude_compliance: e.target.checked })} /> {t(language, "excludePlateaus")}</label>
+          <label className="check-row" title={t(language, "multistartHelp")}><input disabled={disabled} title={t(language, "multistartHelp")} type="checkbox" checked={(config as any).multistart_enabled ?? false} onChange={(e) => onChange({ ...config, multistart_enabled: e.target.checked })} /> {t(language, "multistart")}</label>
         </div>
-        <label className="check-row" title={t(language, "excludePlateausHelp")}><input title={t(language, "excludePlateausHelp")} type="checkbox" checked={config.exclude_compliance} onChange={(e) => onChange({ ...config, exclude_compliance: e.target.checked })} /> {t(language, "excludePlateaus")}</label>
-        <label className="check-row" title={t(language, "multistartHelp")}><input title={t(language, "multistartHelp")} type="checkbox" checked={(config as any).multistart_enabled ?? false} onChange={(e) => onChange({ ...config, multistart_enabled: e.target.checked })} /> {t(language, "multistart")}</label>
-      </div>
 
-      <div className="fit-config-section">
-        <h3>{t(language, "solver")}</h3>
-        <label title={t(language, "solverModeHelp")}>{t(language, "solverMode")}
-          <select title={t(language, "solverModeHelp")} value={config.solver_mode ?? "legacy_composite"} onChange={(e) => onChange({ ...config, solver_mode: e.target.value as any })}>
-            <option value="legacy_composite">{t(language, "legacySolver")}</option>
-            <option value="graph_dc">{t(language, "graphSolver")}</option>
-          </select>
-        </label>
-      </div>
-    </details>
+        <div className="fit-config-section">
+          <h3>{t(language, "solver")}</h3>
+          <label title={t(language, "solverModeHelp")}>{t(language, "solverMode")}
+            <select disabled={disabled} title={t(language, "solverModeHelp")} value={config.solver_mode ?? "legacy_composite"} onChange={(e) => onChange({ ...config, solver_mode: e.target.value as any })}>
+              <option value="legacy_composite">{t(language, "legacySolver")}</option>
+              <option value="graph_dc">{t(language, "graphSolver")}</option>
+            </select>
+          </label>
+        </div>
+      </div> : null}
+    </div>
   </section>;
 }
