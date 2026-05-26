@@ -61,4 +61,11 @@ assert.doesNotMatch(componentSource, /Display unit only/);
 assert.match(componentSource, /Synthetic IV Trace/);
 assert.match(componentSource, /Synthetic trace generated from the current Model Builder model/);
 
+const fittingPageSource = fs.readFileSync("frontend/src/pages/FittingPage.tsx", "utf8");
+assert.match(fittingPageSource, /Stop fit/);
+assert.match(fittingPageSource, /Fitting is in progress/);
+assert.match(fittingPageSource, /Available after a completed fit/);
+assert.doesNotMatch(fittingPageSource, /ignore this run/i);
+assert.doesNotMatch(fittingPageSource, /Fitting… \$\{elapsedSeconds\}s/);
+
 console.log("synthetic trace UI tests passed");

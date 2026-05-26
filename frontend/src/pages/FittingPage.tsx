@@ -406,7 +406,7 @@ export function FittingPage() {
       controller.abort();
       setIsFitting(false);
       setFitStartedAt(null);
-      setError(language === "zh" ? `拟合超过 ${timeoutS} 秒，已自动停止并忽略本次结果。` : `Fit exceeded ${timeoutS} s and was stopped; this run result was ignored.`);
+      setError(language === "zh" ? `拟合超过 ${timeoutS} 秒，已中止请求；本次结果不会写入界面。` : `Fit exceeded ${timeoutS} s. The request was stopped and this run result will not update the workspace.`);
     }, timeoutS * 1000);
     try {
       const fit = await fitTrace(selectedTrace, modelBeforeFit, { ...config, run_timeout_s: timeoutS }, controller.signal);
@@ -450,7 +450,7 @@ export function FittingPage() {
     abortFitRef.current?.abort();
     setIsFitting(false);
     setFitStartedAt(null);
-    setError(language === "zh" ? "拟合已停止。本次结果不会写入界面。" : "Fit stopped. This run result will not update the workspace.");
+    setError(language === "zh" ? "已停止当前拟合请求。本次结果不会写入界面。" : "Current fit request stopped. This run result will not update the workspace.");
   }
 
 
@@ -518,13 +518,13 @@ export function FittingPage() {
         fitStatus={<FitStatusBar result={result} language={language} isFitting={isFitting} elapsedSeconds={elapsedSeconds} />}
         fitActions={<>
           <button
-            className={isFitting ? "fit-progress-button running" : hasSelectedTrace ? "primary" : "fit-action-unavailable"}
+            className={hasSelectedTrace ? "primary" : "fit-action-unavailable"}
             disabled={isFitting || !hasSelectedTrace}
             title={!hasSelectedTrace ? (language === "zh" ? "请先导入数据再运行拟合。" : "Import data before running a fit.") : undefined}
             onClick={runFit}
-          >{isFitting ? (language === "zh" ? `拟合中… ${elapsedSeconds}s` : `Fitting… ${elapsedSeconds}s`) : t(language, "runFit")}</button>
-          <button className={isFitting ? "danger-soft active" : "danger-soft"} disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止" : "Stop"}</button>
-          <button disabled={!result || isFitting || !hasSelectedTrace} onClick={makeReport}>{t(language, "report")}</button>
+          >{t(language, "runFit")}</button>
+          <button className={isFitting ? "danger-soft active" : "danger-soft"} disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止拟合" : "Stop fit"}</button>
+          <button disabled={!result || isFitting || !hasSelectedTrace} title={!result || isFitting ? (language === "zh" ? "完成一次拟合后可生成报告。" : "Available after a completed fit.") : undefined} onClick={makeReport}>{t(language, "report")}</button>
         </>}
         onApplyDataBounds={applyDataBounds}
         canSeedSyntheticGroundTruth={canSeedSyntheticGroundTruth}
@@ -535,13 +535,13 @@ export function FittingPage() {
           {fitPromotionNotice ? <div className="warning info">{fitPromotionNotice}</div> : null}
           {result ? <FitProcessDiagnostics result={result} language={language} sessionStats={fitSessionStats} /> : null}
           {result && warningDismissKey(result) !== dismissedWarningKey ? <FitDiagnostics result={result} language={language} onCheckLogIv={() => openAndScroll("plots")} onAdjustInitials={() => openAndScroll("model")} onClose={() => setDismissedWarningKey(warningDismissKey(result))} /> : null}
-          {isFitting ? <div className="fit-running-banner">{language === "zh" ? `拟合正在运行…已用 ${elapsedSeconds} 秒。可以点击 Stop 忽略本次结果。` : `Fit is running… ${elapsedSeconds}s elapsed. Use Stop to ignore this run if needed.`}</div> : null}
+          {isFitting ? <div className="fit-running-banner">{language === "zh" ? "拟合正在运行。可以停止当前拟合请求；本次结果不会写入界面。" : "Fitting is in progress. You can stop the current fit request if needed; this run result will not update the workspace."}</div> : null}
           {error ? (isBackendConnectionError(error) ? <BackendConnectionBanner message={error} onRetry={runFit} /> : <div className={noTraceRunAttempted ? "warning error validation" : "warning error"}>{error}</div>) : null}
         </>}
         isFitting={isFitting}
         fitSessionStats={fitSessionStats}
       /> : <UserDocumentationPage view={activeView} registry={registry} appVersion={APP_VERSION} language={language} />}
-      {activeView === "workspace" && <div className="mobile-action-bar"><button className={isFitting ? "primary running" : hasSelectedTrace ? "primary" : "fit-action-unavailable"} disabled={isFitting || !hasSelectedTrace} onClick={runFit}>{isFitting ? (language === "zh" ? "拟合中…" : "Fitting…") : t(language, "runFit")}</button><button className={isFitting ? "danger-soft active" : "danger-soft"} disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止" : "Stop"}</button></div>}
+      {activeView === "workspace" && <div className="mobile-action-bar"><button className={hasSelectedTrace ? "primary" : "fit-action-unavailable"} disabled={isFitting || !hasSelectedTrace} onClick={runFit}>{t(language, "runFit")}</button><button className={isFitting ? "danger-soft active" : "danger-soft"} disabled={!isFitting} onClick={stopFit}>{language === "zh" ? "停止拟合" : "Stop fit"}</button></div>}
     </main>
   </div>;
 }

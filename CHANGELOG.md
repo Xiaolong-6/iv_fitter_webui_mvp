@@ -1,3 +1,12 @@
+# v1.5.5 - Fit running status wording
+
+- Reduced repeated running-state messaging in Fit setup by keeping elapsed time in the status badges and removing the disabled `Fitting... Ns` button text.
+- Renamed the active stop action to `Stop fit` and clarified that it stops the current fit request and prevents that run result from updating the workspace.
+- Added a tooltip explaining that Report is available after a completed fit.
+- Removed the ambiguous `ignore this run` wording from running-state text.
+
+Tests: `npm run build`, `npm run test:synthetic-ui`
+
 # v1.5.4 - Prefixed J-column import detection
 
 - Fixed publication/demo CSV auto-detection for paired columns such as `1.Dark.Voltage_V, 1.Dark.J_A, 2.Illumination.Voltage_V, 2.Illumination.J_A`.
