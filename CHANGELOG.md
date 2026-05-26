@@ -1,3 +1,12 @@
+# v1.5.3 - Import unit correction
+
+- Changed Data workspace unit selectors from display-only controls into imported-column unit correction controls.
+- Selecting mV/mA/uA/etc now rescales the selected trace into internal SI V/A arrays used by preview, plots, and fitting.
+- Kept spreadsheet preview headers fixed as V (V) and I (A) so users see the corrected fitting data directly.
+- Updated unit helper text and docs to clarify that these controls describe source/imported column units, not cosmetic display units.
+
+Tests: `npm run build`, `npm run test:synthetic-ui`, `npm run test:parameter-ui`, `python -m compileall -q backend/ivfitter`
+
 # v1.5.2 - Publication demo multi-trace import
 
 - Improved CSV/TXT auto-detection for publication/demo data with one voltage column and multiple current/current-density columns.

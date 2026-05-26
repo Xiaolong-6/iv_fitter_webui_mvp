@@ -13,7 +13,7 @@ Every imported trace should show:
 - voltage and current ranges;
 - warnings about repeated voltages, ambiguous columns, or non-finite rows.
 
-Display unit selectors are preview/display-only. Internal fitting arrays remain SI units: V and A.
+Data workspace unit selectors describe the imported voltage/current column units. Changing them rescales the selected trace to SI units, so preview, plots, and fitting all use V and A.
 
 ## Default import folder
 

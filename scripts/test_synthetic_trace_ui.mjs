@@ -52,6 +52,12 @@ assert.match(componentSource, /Debug: synthetic trace/);
 assert.match(componentSource, /Test: sample data/);
 assert.match(componentSource, /openImportFileDialog/);
 assert.match(componentSource, /importCsvTextMulti/);
+assert.match(componentSource, /Voltage column unit/);
+assert.match(componentSource, /Current column unit/);
+assert.match(componentSource, /Data is immediately converted to V\/A/);
+assert.match(componentSource, /unit_mode: "import_unit_to_si_internal"/);
+assert.match(componentSource, /<th>V \(V\)<\/th><th>I \(A\)<\/th>/);
+assert.doesNotMatch(componentSource, /Display unit only/);
 assert.match(componentSource, /Synthetic IV Trace/);
 assert.match(componentSource, /Synthetic trace generated from the current Model Builder model/);
 

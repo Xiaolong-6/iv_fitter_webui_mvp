@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.5.2**
+Current version: **1.5.3**
 
 IV-fitter Web UI is a local-first browser app for fitting I-V traces with compact circuit models. It helps a user import voltage/current data, build a model from mathematical circuit terms, run a fit, inspect diagnostics, and export a result only after the residuals, warnings, parameters, and model structure make sense.
 
@@ -13,7 +13,7 @@ The app is a working prototype for the IV-fitter workflow. It is not yet a full 
 ## What Users Do
 
 1. Open **Data** and import or paste a voltage/current trace.
-2. Confirm the selected trace and display units. Fitting data remains SI V/A internally.
+2. Confirm the selected trace and imported column units. The app converts imported values to SI V/A for preview, plots, and fitting.
 3. Open **Workspace** and set the voltage range and fitting objective.
 4. Build the model in **Model Builder**.
 5. Click **Run fit**.

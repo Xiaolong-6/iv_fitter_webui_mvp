@@ -36,7 +36,7 @@ React/Vite frontend -> FastAPI API -> Python fitting core
 ## Current important features
 
 - HappyMeasure CSV v2 import compatibility for single, wide, and long exports, including current-source conversion.
-- Data workspace display units are display-only; internal fitting arrays remain SI V/A.
+- Data workspace unit selectors describe the imported column units and rescale the trace to internal SI V/A.
 - The app is a general compact-circuit fitting tool. Avoid presenting the workflow as specific to one device family; domain-specific interpretations belong in the user's modeling/report narrative.
 - Model Builder equivalent-circuit preview uses a compact topology diagram with main path on top and branches below Vj.
 - Model Builder is compact: component nicknames are edited directly, and parameter initials/bounds/fixed state are handled in the Parameters table rather than duplicated in builder cards.

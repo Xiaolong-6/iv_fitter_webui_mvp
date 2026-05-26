@@ -66,7 +66,7 @@ export function syntheticResponseToTrace(response: SyntheticTraceResponse): Trac
       current_unit: "A",
       voltage_unit_factor_to_V: 1,
       current_unit_factor_to_A: 1,
-      unit_mode: "display_only_si_internal",
+      unit_mode: "import_unit_to_si_internal",
     },
   };
 }

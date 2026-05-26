@@ -56,16 +56,16 @@ function qualityForTrace(trace?: TraceData): ImportQuality | null {
   return quality && typeof quality === "object" ? quality as ImportQuality : null;
 }
 
-function withDefaultDisplayUnits(trace: TraceData): TraceData {
+function withDefaultImportedUnits(trace: TraceData): TraceData {
   return {
     ...trace,
     metadata: {
       ...trace.metadata,
       voltage_unit: String(trace.metadata?.voltage_unit ?? "V"),
       current_unit: String(trace.metadata?.current_unit ?? "A"),
-      voltage_unit_factor_to_V: 1,
-      current_unit_factor_to_A: 1,
-      unit_mode: "display_only_si_internal",
+      voltage_unit_factor_to_V: Number(trace.metadata?.voltage_unit_factor_to_V ?? 1),
+      current_unit_factor_to_A: Number(trace.metadata?.current_unit_factor_to_A ?? 1),
+      unit_mode: "import_unit_to_si_internal",
     },
   };
 }
@@ -134,25 +134,23 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   const selected = traces.find((tr) => tr.trace_id === selectedTraceId) ?? traces[0];
   const voltageUnit = String(selected?.metadata?.voltage_unit ?? "V");
   const currentUnit = String(selected?.metadata?.current_unit ?? "A");
-  const voltageDisplayFactor = unitFactor(voltageUnits, voltageUnit);
-  const currentDisplayFactor = unitFactor(currentUnits, currentUnit);
   const importQuality = qualityForTrace(selected);
   const unitHelp = language === "zh"
-    ? "这里是显示单位。内部拟合数据始终保持 V/A，不会因为切换显示单位而被重新缩放。"
-    : "Display unit only. Internal fitting arrays remain in V/A and are not rescaled when this selector changes.";
+    ? "选择原始导入列的实际单位。数据会立即换算成 V/A 用于预览、绘图和拟合。"
+    : "Select the actual unit of the imported column. Data is immediately converted to V/A for preview, plots, and fitting.";
 
   const previewRows = useMemo(() => {
     if (!selected) return [];
     const n = Math.min(200, selected.voltage_V.length, selected.current_A.length);
     return Array.from({ length: n }, (_, idx) => ({
       idx,
-      v: selected.voltage_V[idx] / voltageDisplayFactor,
-      i: selected.current_A[idx] / currentDisplayFactor,
+      v: selected.voltage_V[idx],
+      i: selected.current_A[idx],
     }));
-  }, [selected, voltageDisplayFactor, currentDisplayFactor]);
+  }, [selected]);
 
   function importedResponseToTraces(response: ImportCsvTextMultiResponse) {
-    const imported = response.traces.map((item) => withDefaultDisplayUnits({
+    const imported = response.traces.map((item) => withDefaultImportedUnits({
       ...item.trace,
       metadata: { ...item.trace.metadata, quality: item.quality },
     }));
@@ -234,15 +232,23 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   function changeUnit(kind: "voltage" | "current", nextUnit: string) {
     if (!selected) return;
     if (kind === "voltage") {
+      const currentFactor = Number(selected.metadata?.voltage_unit_factor_to_V ?? unitFactor(voltageUnits, voltageUnit));
+      const nextFactor = unitFactor(voltageUnits, nextUnit);
+      const scale = nextFactor / (Number.isFinite(currentFactor) && currentFactor !== 0 ? currentFactor : 1);
       replaceSelected({
         ...selected,
-        metadata: { ...selected.metadata, voltage_unit: nextUnit, voltage_unit_factor_to_V: unitFactor(voltageUnits, nextUnit), unit_mode: "display_only_si_internal" },
+        voltage_V: selected.voltage_V.map((value) => value * scale),
+        metadata: { ...selected.metadata, voltage_unit: nextUnit, voltage_unit_factor_to_V: nextFactor, unit_mode: "import_unit_to_si_internal" },
       });
       return;
     }
+    const currentFactor = Number(selected.metadata?.current_unit_factor_to_A ?? unitFactor(currentUnits, currentUnit));
+    const nextFactor = unitFactor(currentUnits, nextUnit);
+    const scale = nextFactor / (Number.isFinite(currentFactor) && currentFactor !== 0 ? currentFactor : 1);
     replaceSelected({
       ...selected,
-      metadata: { ...selected.metadata, current_unit: nextUnit, current_unit_factor_to_A: unitFactor(currentUnits, nextUnit), unit_mode: "display_only_si_internal" },
+      current_A: selected.current_A.map((value) => value * scale),
+      metadata: { ...selected.metadata, current_unit: nextUnit, current_unit_factor_to_A: nextFactor, unit_mode: "import_unit_to_si_internal" },
     });
   }
 
@@ -371,7 +377,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
           <div className="trace-facts compact-trace-facts">
             <span>{t(language, "importedTraces")}: <strong>{traces.length}</strong></span>
             <span>{t(language, "pointCount")}: <strong>{selected?.voltage_V.length ?? 0}</strong></span>
-            <span>{language === "zh" ? "显示/拟合单位" : "Units"}: <strong>{voltageUnit}/{currentUnit}</strong> display · <strong>V/A</strong> fit</span>
+            <span>{language === "zh" ? "原始列单位" : "Source units"}: <strong>{voltageUnit}/{currentUnit}</strong> {"->"} <strong>V/A</strong></span>
             {qualityWarnings.length ? <span>{language === "zh" ? "质量提示" : "Quality notes"}: <strong>{qualityWarnings.length}</strong></span> : null}
           </div>
           {qualityWarnings.length ? <div className="import-quality-warnings compact-quality-warnings">
@@ -383,13 +389,13 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
               <DatasetNameInput value={selected?.trace_id ?? ""} language={language} onCommit={renameSelected} />
             </label>
             <label title={unitHelp}>
-              <span>{language === "zh" ? "电压显示单位" : "Voltage display unit"}</span>
+              <span>{language === "zh" ? "电压列单位" : "Voltage column unit"}</span>
               <select value={voltageUnit} onChange={(e) => changeUnit("voltage", e.target.value)}>
                 {voltageUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
               </select>
             </label>
             <label title={unitHelp}>
-              <span>{language === "zh" ? "电流显示单位" : "Current display unit"}</span>
+              <span>{language === "zh" ? "电流列单位" : "Current column unit"}</span>
               <select value={currentUnit} onChange={(e) => changeUnit("current", e.target.value)}>
                 {currentUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
               </select>
@@ -409,7 +415,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
         <div className="card-head"><h3>{t(language, "dataPreview")}</h3><HelpTip text={t(language, "dataPreviewHelp")} /></div>
         {!selected ? <p className="warning info">{t(language, "noData")}</p> : <div className="spreadsheet-wrap" role="region" aria-label={t(language, "dataPreview")}>
           <table className="data-spreadsheet">
-            <thead><tr><th>#</th><th>V ({voltageUnit})</th><th>I ({currentUnit})</th></tr></thead>
+            <thead><tr><th>#</th><th>V (V)</th><th>I (A)</th></tr></thead>
             <tbody>{previewRows.map((row) => <tr key={row.idx}><td>{row.idx + 1}</td><td>{formatCell(row.v)}</td><td>{formatCell(row.i)}</td></tr>)}</tbody>
           </table>
         </div>}
