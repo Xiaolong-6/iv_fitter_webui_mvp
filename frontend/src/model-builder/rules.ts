@@ -56,7 +56,8 @@ export function allComponents(model: ModelSpec) {
 }
 
 export function duplicateBaseKey(comp: ComponentSpec) {
-  return [comp.law_id ?? comp.function_type, comp.evaluation_form ?? "auto", comp.placement ?? "auto", comp.polarity ?? "none"].join("|");
+  const polarity = comp.function_type === "series_diode_barrier" ? "none" : (comp.polarity ?? "none");
+  return [comp.law_id ?? comp.function_type, comp.evaluation_form ?? "auto", comp.placement ?? "auto", polarity].join("|");
 }
 
 export function componentRole(comp: ComponentSpec) {

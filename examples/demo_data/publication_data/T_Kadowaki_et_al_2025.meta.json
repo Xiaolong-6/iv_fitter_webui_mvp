@@ -1,0 +1,29 @@
+{
+  "title": "Uni-traveling-carrier photodiode based on MoS2/GaN van der Waals heterojunction for high-speed visible-light detection",
+  "authors": [
+    "Takuya Kadowaki",
+    "Takahiro Serikawa",
+    "Akihide Ichikawa",
+    "Yuji Ohmaki",
+    "Koji Usami",
+    "Yoichi Kawakami",
+    "Yoshihiro Iwasa",
+    "Hisashi Ogawa"
+  ],
+  "journal": "Nature Communications",
+  "year": "2025",
+  "doi": "10.1038/s41467-025-65483-8",
+  "source_url": "http://dx.doi.org/10.1038/s41467-025-65483-8",
+  "repository": "https://doi.org/10.6084/m9.figshare.29858483",
+  "license": "Creative Commons",
+  "license_url": "https://creativecommons.org/licenses/by-nc-nd/4.0",
+  "publisher": "Springer Science and Business Media LLC",
+  "intended_data_type": "JV",
+  "template_format": "wide_multi_trace",
+  "trace_count": 2,
+  "csv_file": "T_Kadowaki_et_al_2025.csv",
+  "notes": "Header-only CSV template; paste numerical data manually.",
+  "citation_required": true,
+  "created_by": "prepare_publication_demo_data.py",
+  "created_at_utc": "2026-05-26T10:40:29.418401+00:00"
+}

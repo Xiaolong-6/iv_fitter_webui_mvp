@@ -71,6 +71,8 @@ def validate_component_against_registry(comp: ComponentSpec) -> list[FitWarning]
     effective_polarity = comp.polarity or definition.default_polarity
     if allowed and effective_polarity not in allowed:
         warnings.append(_warn("unsupported_polarity", f"{comp.id}: {comp.function_type} does not allow polarity {effective_polarity!r}.", "error"))
+    if not allowed and comp.polarity is not None:
+        warnings.append(_warn("unsupported_polarity", f"{comp.id}: {comp.function_type} does not use polarity; remove stored polarity {comp.polarity!r}.", "error"))
     expected = {p.name for p in definition.parameters}
     missing = expected - set(comp.params)
     for name in sorted(missing):
@@ -108,7 +110,8 @@ def _duplicate_signature(comp: ComponentSpec):
     # Role-aware diode branches are the supported exception for an explicit two-diode model.
     form = comp.evaluation_form or "auto"
     placement = comp.placement or "auto"
-    polarity = comp.polarity or "none"
+    definition = registry_by_function().get(comp.function_type) or registry_by_key().get((comp.location, comp.function_type))
+    polarity = (comp.polarity or "none") if definition and definition.allowed_polarities else "none"
     law = comp.law_id or comp.function_type
     role = ""
     if comp.function_type == "diode" and form == "current_branch":

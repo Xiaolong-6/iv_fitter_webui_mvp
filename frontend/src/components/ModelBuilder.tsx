@@ -29,7 +29,7 @@ function componentDisplayName(comp: ComponentSpec, language: Language) {
 function componentDetailTitle(comp: ComponentSpec, language: Language) {
   const place = bucketForComponent(comp) === "main" ? t(language, "mainPath") : t(language, "branches");
   const role = typeof comp.metadata?.role === "string" && comp.metadata.role ? ` · ${comp.metadata.role}` : "";
-  const pol = comp.polarity ? ` · ${t(language, "polarity")}: ${polarityLabel(language, comp.polarity)}` : "";
+  const pol = comp.function_type !== "series_diode_barrier" && comp.polarity ? ` · ${t(language, "polarity")}: ${polarityLabel(language, comp.polarity)}` : "";
   return `${componentLawLabel(comp, language)} · ${place}${role}${pol}`;
 }
 

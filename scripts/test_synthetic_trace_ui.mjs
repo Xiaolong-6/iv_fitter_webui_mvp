@@ -68,4 +68,9 @@ assert.match(fittingPageSource, /Available after a completed fit/);
 assert.doesNotMatch(fittingPageSource, /ignore this run/i);
 assert.doesNotMatch(fittingPageSource, /Fitting… \$\{elapsedSeconds\}s/);
 
+const modelBuilderSource = fs.readFileSync("frontend/src/components/ModelBuilder.tsx", "utf8");
+assert.match(modelBuilderSource, /comp\.function_type !== "series_diode_barrier"/);
+const modelUtilsSource = fs.readFileSync("frontend/src/model/utils.ts", "utf8");
+assert.match(modelUtilsSource, /def\.allowed_polarities\.length \? \(polarity \?\? def\.default_polarity \?\? null\) : null/);
+
 console.log("synthetic trace UI tests passed");

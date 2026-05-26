@@ -1,3 +1,12 @@
+# v1.5.6 - Series barrier polarity cleanup
+
+- Removed polarity from the Main path `Series diode barrier` component; it is a voltage-drop form and no longer exposes a polarity selector.
+- New series barrier components are created with `polarity: null`.
+- Backend validation now flags stale stored polarity on series barriers, and prediction ignores any legacy polarity value so old `forward`/`reverse` fields do not change the series barrier behavior.
+- Kept branch Shockley diode polarity unchanged.
+
+Tests: `npm run build`, `npm run test:synthetic-ui`, `npm run test:parameter-ui`, `.venv\Scripts\python.exe -m pytest -p no:cacheprovider backend/tests/test_model_structure_cleanup.py backend/tests/test_model_validation.py backend/tests/test_backend_mvp.py -q`, `python -m compileall -q backend/ivfitter backend/tests`
+
 # v1.5.5 - Fit running status wording
 
 - Reduced repeated running-state messaging in Fit setup by keeping elapsed time in the status badges and removing the disabled `Fitting... Ns` button text.

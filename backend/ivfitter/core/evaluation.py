@@ -72,7 +72,7 @@ def photocurrent_voltage_dependent(vj: np.ndarray, comp: ComponentSpec) -> np.nd
 
 def series_diode_barrier_drop(current: np.ndarray, comp: ComponentSpec, temperature_K: float) -> np.ndarray:
     arr = np.asarray(current, dtype=float)
-    sign = diode_polarity_sign(comp.polarity)
+    sign = 1.0
     forward_current = np.maximum(sign * arr, 0.0)
     i0 = max(param_value(comp, "I0_A", 1e-12), 1e-300)
     n = max(param_value(comp, "n", 1.5), 1e-12)

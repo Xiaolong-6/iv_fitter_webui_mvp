@@ -32,7 +32,8 @@ export function createComponentInLocation(def: FunctionDefinition, location: "co
     : def.function_type === "photocurrent_constant" ? "Iph"
     : def.function_type === "photocurrent_voltage_dependent" ? "Iph(V)"
     : def.display_name.split(" ")[0];
-  return { id: `${idBase}_${nextId++}`, location, function_type: def.function_type, law_id: def.law_id, evaluation_form, placement, polarity: polarity ?? def.default_polarity ?? null, mode: def.mode ?? null, params: buildParams(def, nickname), metadata: def.function_type === "custom" ? { nickname, expression: evaluation_form === "conductance_modifier" ? "A*softplus(u)" : "s*A*softplus(u)**m" } : { nickname } };
+  const componentPolarity = def.allowed_polarities.length ? (polarity ?? def.default_polarity ?? null) : null;
+  return { id: `${idBase}_${nextId++}`, location, function_type: def.function_type, law_id: def.law_id, evaluation_form, placement, polarity: componentPolarity, mode: def.mode ?? null, params: buildParams(def, nickname), metadata: def.function_type === "custom" ? { nickname, expression: evaluation_form === "conductance_modifier" ? "A*softplus(u)" : "s*A*softplus(u)**m" } : { nickname } };
 }
 export function createComponent(def: FunctionDefinition, polarity?: Polarity): ComponentSpec { return createComponentInLocation(def, def.location, polarity); }
 export function cloneModel(model: ModelSpec): ModelSpec { return JSON.parse(JSON.stringify(model)); }
