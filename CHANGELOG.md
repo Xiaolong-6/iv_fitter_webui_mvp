@@ -1,3 +1,11 @@
+# v1.5.4 - Prefixed J-column import detection
+
+- Fixed publication/demo CSV auto-detection for paired columns such as `1.Dark.Voltage_V, 1.Dark.J_A, 2.Illumination.Voltage_V, 2.Illumination.J_A`.
+- Recognized prefixed `J_A` current-density columns as importable traces so multi-voltage-column publication files do not fall back to a single trace.
+- Added regression coverage using the prefixed `J_A` column pattern.
+
+Tests: `.venv\Scripts\python.exe -m pytest -p no:cacheprovider backend/tests/test_publication_demo_import.py backend/tests/test_happymeasure_import_multi.py backend/tests/test_import_export.py -q`, `python -m compileall -q backend/ivfitter backend/tests`
+
 # v1.5.3 - Import unit correction
 
 - Changed Data workspace unit selectors from display-only controls into imported-column unit correction controls.

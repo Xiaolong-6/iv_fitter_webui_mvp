@@ -84,7 +84,15 @@ def _current_metadata(header: object) -> dict | None:
     if _is_false_current_column(header) or _is_voltage_like(header) or _is_trace_group_col(header):
         return None
     key = _header_key(header)
-    is_density = "currentdensity" in key or "macm2" in key or key.startswith("j") or "jm" in key
+    is_density = (
+        "currentdensity" in key
+        or "macm2" in key
+        or key == "j"
+        or key.startswith("j")
+        or "jm" in key
+        or key.endswith("ja")
+        or key.endswith("jma")
+    )
     is_current = (
         is_density
         or key in {"i", "a", "ma", "ia", "current", "currenta", "measuredcurrenta", "smucurrenta", "ch1"}
@@ -97,7 +105,7 @@ def _current_metadata(header: object) -> dict | None:
         return None
     meta = {"y_quantity": "current_density" if is_density else "current"}
     if is_density:
-        meta["y_unit"] = "mA/cm2" if "macm2" in key else "current_density"
+        meta["y_unit"] = "mA/cm2" if "macm2" in key else ("A" if key.endswith("ja") else "current_density")
     elif key.endswith("ma") or "currentma" in key:
         meta["y_unit"] = "mA"
     elif key.endswith("a") or "currenta" in key or key == "i":

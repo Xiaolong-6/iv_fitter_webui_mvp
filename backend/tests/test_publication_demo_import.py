@@ -113,6 +113,24 @@ def test_wide_import_pairs_multiple_voltage_columns_when_possible():
     assert traces[0][0].metadata["import_summary"] == "Imported 2 traces from paired voltage/current columns."
 
 
+def test_wide_publication_import_recognizes_prefixed_j_a_columns():
+    text = (
+        "1.Dark.Voltage_V,1.Dark.J_A,2.Illumination.Voltage_V,2.Illumination.J_A\n"
+        "2,0.05273,2,0.06813\n"
+        "1.973,0.05022,1.973,0.06513\n"
+    )
+
+    traces = _import(text)
+
+    assert len(traces) == 2
+    assert traces[0][0].trace_id == "1.Dark.J A"
+    assert traces[1][0].trace_id == "2.Illumination.J A"
+    assert traces[0][0].metadata["y_quantity"] == "current_density"
+    assert traces[0][0].metadata["y_unit"] == "A"
+    assert traces[0][0].voltage_V == [2.0, 1.973]
+    assert traces[1][0].current_A == [0.06813, 0.06513]
+
+
 def test_import_api_returns_multi_trace_summary():
     response = TestClient(app).post(
         "/api/import-csv-text-multi",
