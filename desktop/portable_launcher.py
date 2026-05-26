@@ -68,7 +68,8 @@ def _open_browser_later(url: str) -> None:
 
 def main() -> int:
     dist = _frontend_dist()
-    port = _free_port()
+    requested_port = os.getenv("IVFITTER_PORT")
+    port = int(requested_port) if requested_port else _free_port()
     url = f"http://127.0.0.1:{port}"
     os.environ["IVFITTER_CORS_ORIGINS"] = url
 
@@ -78,7 +79,8 @@ def main() -> int:
 
     print(f"{APP_NAME} portable is starting at {url}")
     print("Close this window to stop the local app.")
-    _open_browser_later(url)
+    if os.getenv("IVFITTER_NO_BROWSER") != "1":
+        _open_browser_later(url)
     uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
     return 0
 

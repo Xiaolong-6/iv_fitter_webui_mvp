@@ -5,8 +5,9 @@ function resolveApiBase(): string {
   if (configured && configured.trim()) return configured.replace(/\/+$/, "");
 
   if (typeof window !== "undefined" && window.location?.hostname) {
-    const { protocol, hostname } = window.location;
+    const { protocol, hostname, port, origin } = window.location;
     if (protocol === "http:" || protocol === "https:") {
+      if (port !== "5173") return origin;
       return `${protocol}//${hostname}:8000`;
     }
   }
