@@ -169,7 +169,12 @@ def open_import_file_dialog() -> OpenImportFileDialogResponse:
     root.withdraw()
     root.update()
     try:
+        root.attributes("-topmost", True)
+        root.lift()
+        root.focus_force()
+        root.after(500, lambda: root.attributes("-topmost", False))
         selected = filedialog.askopenfilename(
+            parent=root,
             title="Import CSV/TXT",
             initialdir=str(default_dir) if default_dir else None,
             filetypes=[
