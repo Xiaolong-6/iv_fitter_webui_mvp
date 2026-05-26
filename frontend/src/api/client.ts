@@ -48,6 +48,8 @@ export interface ImportQualitySummary {
 
 export interface ImportCsvTextMultiResponse {
   traces: Array<{ trace: TraceData; quality: ImportQualitySummary }>;
+  summary?: string | null;
+  warnings?: string[];
 }
 
 export interface OpenImportFileDialogResponse extends ImportCsvTextMultiResponse {

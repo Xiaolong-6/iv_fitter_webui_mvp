@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.5.1**
+Current version: **1.5.2**
 
 IV-fitter Web UI is a local-first browser app for fitting I-V traces with compact circuit models. It helps a user import voltage/current data, build a model from mathematical circuit terms, run a fit, inspect diagnostics, and export a result only after the residuals, warnings, parameters, and model structure make sense.
 
@@ -22,7 +22,7 @@ The app is a working prototype for the IV-fitter workflow. It is not yet a full 
 
 ## Current UI Areas
 
-- **Data:** CSV/TXT/DAT import, pasted-data import, synthetic trace generation, dataset naming, unit selection, trace selection, import-quality summary, and spreadsheet preview.
+- **Data:** CSV/TXT/DAT import, publication/demo multi-trace auto-detection, pasted-data import, synthetic trace generation, dataset naming, unit selection, trace selection, import-quality summary, and spreadsheet preview.
 - **Workspace:** Fit setup, Model Builder, Model preview, plots, grouped Parameters table, diagnostics, and report generation.
 - **User manual:** tutorial-style workflow guide, Function Guide, fitting logic, convergence guidance, reporting notes, and glossary.
 
@@ -55,6 +55,7 @@ The Parameters table is grouped first by placement, then by component instance. 
 
 ## Current Notable Capabilities
 
+- Plain CSV/TXT import compatibility for single traces, wide publication/demo files with one voltage column and multiple current/current-density traces, and long trace-grouped files.
 - HappyMeasure CSV v2 import compatibility for single, wide, and long files, including current-source conversion.
 - Synthetic IV trace generation from the current Model Builder model, with voltage sweep controls, optional noise, seed, current compliance, and ground-truth metadata.
 - Grouped parameter editing with next-fit initials, bounds, fit/fixed state, fitted values, uncertainty, and interpretation hints.

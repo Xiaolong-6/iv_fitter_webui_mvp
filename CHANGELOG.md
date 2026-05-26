@@ -1,3 +1,13 @@
+# v1.5.2 - Publication demo multi-trace import
+
+- Improved CSV/TXT auto-detection for publication/demo data with one voltage column and multiple current/current-density columns.
+- Added plain long-format grouping by trace column, with invalid rows dropped per trace/group instead of forcing all traces onto shared valid rows.
+- Added current-density import metadata (`y_quantity`, `y_unit`) while preserving the existing internal imported value arrays and fitting math.
+- Ignored common summary/non-IV columns such as PCE, FF, Voc, Jsc, time, wavelength, and EQE during current-column detection.
+- Returned concise multi-trace import summaries so the Import Data workflow can report how many traces were imported from one voltage column.
+
+Tests: `npm run build`, `npm run test:parameter-ui`, `npm run test:synthetic-ui`, `.venv\Scripts\python.exe -m pytest -p no:cacheprovider backend/tests -q`, `python -m compileall -q backend/ivfitter backend/tests`
+
 # v1.5.1 - Demo data import folder
 
 - Reorganized `examples/` into user-facing demo data, synthetic examples, publication-data staging, and internal parser fixtures.

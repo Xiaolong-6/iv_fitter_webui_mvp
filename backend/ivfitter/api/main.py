@@ -131,6 +131,24 @@ class OpenImportFileDialogResponse(BaseModel):
     traces: list[object] = []
     selected_path: str | None = None
     default_dir: str | None = None
+    summary: str | None = None
+    warnings: list[str] = []
+
+
+def _multi_import_response(items) -> dict:
+    traces = [{"trace": trace, "quality": quality} for trace, quality in items]
+    warnings: list[str] = []
+    for _trace, quality in items:
+        for warning in getattr(quality, "warnings", []) or []:
+            if warning not in warnings:
+                warnings.append(warning)
+    summary = None
+    if len(items) > 1:
+        first_meta = getattr(items[0][0], "metadata", {}) or {}
+        summary = first_meta.get("import_summary") if isinstance(first_meta, dict) else None
+        if not summary:
+            summary = f"Imported {len(items)} traces."
+    return {"traces": traces, "summary": summary, "warnings": warnings}
 
 @app.post("/api/import-csv-text")
 def import_csv_text_endpoint(payload: ImportCsvTextRequest):
@@ -149,7 +167,7 @@ def import_csv_text_multi_endpoint(payload: ImportCsvTextRequest):
     """Import plain/HappyMeasure CSV text and return one or more traces."""
     try:
         _check_import_size(payload.text)
-        return {"traces": [{"trace": trace, "quality": quality} for trace, quality in import_csv_text_multi(payload)]}
+        return _multi_import_response(import_csv_text_multi(payload))
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
@@ -198,8 +216,14 @@ def open_import_file_dialog() -> OpenImportFileDialogResponse:
         with open(path, "r", encoding="utf-8-sig") as handle:
             text = handle.read()
         _check_import_size(text)
-        traces = [{"trace": trace, "quality": quality} for trace, quality in import_csv_text_multi(ImportCsvTextRequest(text=text, trace_id=os.path.basename(path)))]
-        return OpenImportFileDialogResponse(traces=traces, selected_path=path, default_dir=str(default_dir) if default_dir else None)
+        imported = _multi_import_response(import_csv_text_multi(ImportCsvTextRequest(text=text, trace_id=os.path.basename(path))))
+        return OpenImportFileDialogResponse(
+            traces=imported["traces"],
+            selected_path=path,
+            default_dir=str(default_dir) if default_dir else None,
+            summary=imported.get("summary"),
+            warnings=imported.get("warnings", []),
+        )
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:

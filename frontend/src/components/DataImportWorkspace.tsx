@@ -160,8 +160,13 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
     return imported;
   }
 
-  async function parseTextToTraces(text: string, name: string) {
-    return importedResponseToTraces(await importCsvTextMulti(text, name));
+  function importMessage(response: ImportCsvTextMultiResponse, count: number) {
+    return response.summary?.trim() || `${count} ${t(language, "tracesLoaded")}`;
+  }
+
+  async function parseTextImport(text: string, name: string) {
+    const response = await importCsvTextMulti(text, name);
+    return { response, imported: importedResponseToTraces(response) };
   }
 
   async function openImportPicker() {
@@ -172,7 +177,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
       const imported = importedResponseToTraces(response);
       onTraces(imported);
       if (imported[0]) onSelectTrace(imported[0].trace_id);
-      setMessage(`${imported.length} ${t(language, "tracesLoaded")}`);
+      setMessage(importMessage(response, imported.length));
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
       if (/Local file dialog is not available|Failed to fetch|NetworkError|Load failed/i.test(detail)) {
@@ -186,10 +191,10 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   async function loadFile(file: File) {
     try {
       const text = await file.text();
-      const imported = await parseTextToTraces(text, file.name);
+      const { response, imported } = await parseTextImport(text, file.name);
       onTraces(imported);
       if (imported[0]) onSelectTrace(imported[0].trace_id);
-      setMessage(`${imported.length} ${t(language, "tracesLoaded")}`);
+      setMessage(importMessage(response, imported.length));
     } catch (e) {
       setMessage(String(e));
     }
@@ -197,10 +202,10 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
 
   async function loadPaste() {
     try {
-      const imported = await parseTextToTraces(pasteText, "pasted-data");
+      const { response, imported } = await parseTextImport(pasteText, "pasted-data");
       onTraces(imported);
       if (imported[0]) onSelectTrace(imported[0].trace_id);
-      setMessage(`${imported.length} ${t(language, "tracesLoaded")}`);
+      setMessage(importMessage(response, imported.length));
     } catch (e) {
       setMessage(String(e));
     }
@@ -247,7 +252,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
       const response = await fetch("/sample_data/happymeasure_combined_wide_v2_anonymized.csv", { cache: "no-store" });
       if (!response.ok) throw new Error(`Sample file request failed (${response.status})`);
       const csvText = await response.text();
-      const nextTraces = await parseTextToTraces(csvText, "happymeasure_combined_wide_v2_anonymized.csv");
+      const { imported: nextTraces } = await parseTextImport(csvText, "happymeasure_combined_wide_v2_anonymized.csv");
       onTraces(nextTraces);
       onSelectTrace(nextTraces[0].trace_id);
       setMessage(`${t(language, "demoLoaded")} (${nextTraces.length} traces)`);

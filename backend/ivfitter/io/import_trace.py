@@ -37,6 +37,74 @@ class ImportQualitySummary(BaseModel):
     warnings: list[str]
 
 
+def _header_key(name: object) -> str:
+    raw = str(name).lower().strip()
+    raw = raw.replace("µ", "u").replace("μ", "u")
+    raw = raw.replace("ma/cm²", "macm2").replace("ma/cm2", "macm2")
+    raw = raw.replace("ma cm-2", "macm2").replace("ma cm^-2", "macm2")
+    raw = raw.replace("ma cm2", "macm2").replace("macm-2", "macm2")
+    keep = []
+    for ch in raw:
+        if ch.isalnum():
+            keep.append(ch)
+    return "".join(keep)
+
+
+def _trace_name_from_header(header: object) -> str:
+    cleaned = str(header).strip().replace("[", " ").replace("]", " ")
+    cleaned = " ".join(cleaned.replace("_", " ").split())
+    return cleaned or "imported trace"
+
+
+def _is_false_current_column(header: object) -> bool:
+    key = _header_key(header)
+    false_exact = {
+        "row", "rows", "index", "idx", "point", "pointindex", "time", "times", "elapsed",
+        "elapseds", "wavelength", "wavelengthnm", "lambda", "eqe", "pce", "efficiency",
+        "ff", "fillfactor", "voc", "v_oc", "jsc", "j_sc", "area", "temperature", "temp",
+    }
+    if key in false_exact:
+        return True
+    return any(token in key for token in ("wavelength", "eqe", "pce", "fillfactor", "efficiency", "voc", "jsc"))
+
+
+def _is_voltage_like(header: object) -> bool:
+    key = _header_key(header)
+    if key in {"v", "voltage", "voltagev", "vv", "bias", "biasv", "sourcev", "setv", "smuvoltagev", "measuredvoltagev"}:
+        return True
+    return ("voltage" in key or "bias" in key) and ("v" in key or "volt" in key)
+
+
+def _is_trace_group_col(header: object) -> bool:
+    key = _header_key(header)
+    return key in {"trace", "traceid", "traceindex", "tracename", "sample", "sampleid", "device", "deviceid"}
+
+
+def _current_metadata(header: object) -> dict | None:
+    if _is_false_current_column(header) or _is_voltage_like(header) or _is_trace_group_col(header):
+        return None
+    key = _header_key(header)
+    is_density = "currentdensity" in key or "macm2" in key or key.startswith("j") or "jm" in key
+    is_current = (
+        is_density
+        or key in {"i", "a", "ma", "ia", "current", "currenta", "measuredcurrenta", "smucurrenta", "ch1"}
+        or "current" in key
+        or key.endswith("currenta")
+        or key.endswith("ia")
+        or key.endswith("ma")
+    )
+    if not is_current:
+        return None
+    meta = {"y_quantity": "current_density" if is_density else "current"}
+    if is_density:
+        meta["y_unit"] = "mA/cm2" if "macm2" in key else "current_density"
+    elif key.endswith("ma") or "currentma" in key:
+        meta["y_unit"] = "mA"
+    elif key.endswith("a") or "currenta" in key or key == "i":
+        meta["y_unit"] = "A"
+    return meta
+
+
 def _infer_column(columns: list[str], kind: Literal["voltage", "current"], warnings: list[str] | None = None) -> str:
     candidates = {
         "voltage": [
@@ -55,6 +123,14 @@ def _infer_column(columns: list[str], kind: Literal["voltage", "current"], warni
         key = norm(cand)
         if key in normalized:
             return normalized[key]
+    if kind == "voltage":
+        for original in columns:
+            if _is_voltage_like(original):
+                return original
+    if kind == "current":
+        for original in columns:
+            if _current_metadata(original):
+                return original
     # HappyMeasure-style names often include units and role words. Prefer explicit measured columns.
     for key, original in normalized.items():
         if kind == "voltage" and "volt" in key and ("v" in key or "bias" in key or "source" in key or "measure" in key):
@@ -118,11 +194,18 @@ def import_csv_text(payload: ImportCsvTextRequest) -> tuple[TraceData, ImportQua
         current_max_A=float(np.max(i2)),
         warnings=warnings,
     )
+    current_meta = _current_metadata(icol) or {}
     trace = TraceData(
         voltage_V=v2.tolist(),
         current_A=i2.tolist(),
         trace_id=payload.trace_id,
-        metadata={"source": "text_upload", "voltage_col": vcol, "current_col": icol, "quality": quality.model_dump()},
+        metadata={
+            "source": "text_upload",
+            "voltage_col": vcol,
+            "current_col": icol,
+            "quality": quality.model_dump(),
+            **current_meta,
+        },
     )
     return trace, quality
 
@@ -208,6 +291,93 @@ def _build_trace_from_arrays(voltage, current, trace_id: str, *, metadata: dict 
     )
     return trace, quality
 
+
+def _plain_long_multi_trace(df: pd.DataFrame, payload: ImportCsvTextRequest) -> list[tuple[TraceData, ImportQualitySummary]] | None:
+    cols = list(df.columns)
+    trace_cols = [c for c in cols if _is_trace_group_col(c)]
+    voltage_cols = [c for c in cols if _is_voltage_like(c)]
+    current_cols = [c for c in cols if _current_metadata(c)]
+    if not trace_cols or not voltage_cols or not current_cols:
+        return None
+    trace_col = trace_cols[0]
+    vcol = payload.voltage_col or voltage_cols[0]
+    icol = payload.current_col or current_cols[0]
+    current_meta = _current_metadata(icol) or {}
+    out: list[tuple[TraceData, ImportQualitySummary]] = []
+    for key, group in df.groupby(trace_col, sort=False):
+        trace_id = _trace_name_from_header(key)
+        trace, quality = _build_trace_from_arrays(
+            group[vcol],
+            group[icol],
+            trace_id,
+            metadata={
+                "format": "plain-long",
+                "trace_col": str(trace_col),
+                "trace_group": str(key),
+                "voltage_col": str(vcol),
+                "current_col": str(icol),
+                **current_meta,
+            },
+        )
+        out.append((trace, quality))
+    return out or None
+
+
+def _plain_wide_multi_trace(df: pd.DataFrame, payload: ImportCsvTextRequest) -> list[tuple[TraceData, ImportQualitySummary]] | None:
+    cols = list(df.columns)
+    voltage_cols = [c for c in cols if _is_voltage_like(c)]
+    if not voltage_cols:
+        return None
+    if payload.voltage_col:
+        if payload.voltage_col not in cols:
+            raise ValueError(f"Selected voltage column not present: {payload.voltage_col!r}")
+        voltage_cols = [payload.voltage_col]
+    if payload.current_col:
+        current_cols = [payload.current_col]
+    else:
+        current_cols = [c for c in cols if c not in voltage_cols and _current_metadata(c)]
+    current_cols = [c for c in current_cols if c in cols and pd.to_numeric(df[c], errors="coerce").notna().any()]
+    if not current_cols:
+        return None
+
+    pair_specs: list[tuple[object, object]] = []
+    if len(voltage_cols) == 1:
+        pair_specs = [(voltage_cols[0], icol) for icol in current_cols]
+        summary = f"Imported {len(current_cols)} traces from one voltage column."
+        warning = f"Detected one voltage column and {len(current_cols)} current/current-density columns; importing each as a separate trace."
+    else:
+        for icol in current_cols:
+            current_idx = cols.index(icol)
+            prior_voltage_cols = [vcol for vcol in voltage_cols if cols.index(vcol) < current_idx]
+            if prior_voltage_cols:
+                pair_specs.append((prior_voltage_cols[-1], icol))
+        if len(pair_specs) != len(current_cols):
+            return None
+        summary = f"Imported {len(pair_specs)} traces from paired voltage/current columns."
+        warning = f"Detected {len(voltage_cols)} voltage columns and {len(current_cols)} current/current-density columns; importing matched pairs."
+
+    if len(pair_specs) == 1:
+        return None
+    out: list[tuple[TraceData, ImportQualitySummary]] = []
+    for vcol, icol in pair_specs:
+        current_meta = _current_metadata(icol) or {}
+        trace, quality = _build_trace_from_arrays(
+            df[vcol],
+            df[icol],
+            _trace_name_from_header(icol),
+            metadata={
+                "format": "plain-wide",
+                "voltage_col": str(vcol),
+                "current_col": str(icol),
+                "import_summary": summary,
+                **current_meta,
+            },
+        )
+        quality.warnings.append(warning)
+        trace.metadata["quality"] = quality.model_dump()
+        out.append((trace, quality))
+    return out
+
 def import_csv_text_multi(payload: ImportCsvTextRequest) -> list[tuple[TraceData, ImportQualitySummary]]:
     """Import plain or HappyMeasure single/wide/long CSV text as one or more traces."""
     comments = _metadata_lines(payload.text)
@@ -227,6 +397,9 @@ def import_csv_text_multi(payload: ImportCsvTextRequest) -> list[tuple[TraceData
 
     cols = list(df.columns)
     norm = {str(c).lower().strip().replace(" ", "_"): c for c in cols}
+    plain_long = _plain_long_multi_trace(df, payload)
+    if plain_long is not None:
+        return plain_long
     if fmt == "long-v2" or {"trace_index", "source_value", "measured_value"}.issubset(set(norm)):
         trace_col = norm.get("trace_index")
         name_col = norm.get("device_name")
@@ -299,6 +472,9 @@ def import_csv_text_multi(payload: ImportCsvTextRequest) -> list[tuple[TraceData
         if not out:
             raise ValueError("No HappyMeasure wide-v2 measured trace columns found.")
         return out
+    plain_wide = _plain_wide_multi_trace(df, payload)
+    if plain_wide is not None:
+        return plain_wide
     trace, quality = import_csv_text(payload)
     trace.metadata.update({"happymeasure_schema": schema, "happymeasure_format": fmt or "single-v2" if schema else "plain"})
     return [(trace, quality)]

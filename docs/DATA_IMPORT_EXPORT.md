@@ -21,6 +21,45 @@ The Import CSV/TXT action prefers `examples/demo_data/iv_traces/` as the local f
 
 Browser-only runtimes that cannot set a file-dialog starting directory fall back to the normal file picker. Selected files continue through the same import/parser pipeline.
 
+## Plain CSV/TXT formats
+
+Single-trace files can use one voltage-like column and one current-like column:
+
+```csv
+Voltage_V,Current_A
+0,0
+1,1e-9
+```
+
+Current-density columns are also accepted and kept as imported y-values, with additive metadata such as `y_quantity: current_density` and `y_unit: mA/cm2`:
+
+```csv
+Voltage_V,Current_density_mAcm2
+0,0
+1,12.3
+```
+
+Wide publication/demo files can use one voltage column followed by multiple current or current-density columns. Each detected current/current-density column becomes a separate imported trace:
+
+```csv
+Voltage_V,Fig2c_single_J_mAcm2,Fig3b_planar_J_mAcm2,Fig3b_nano_J_mAcm2
+0,0,0,0
+0.5,1.1,2.2,3.3
+1.0,1.4,2.5,3.6
+```
+
+Long publication/demo files can use a trace/group column. Each group becomes one imported trace:
+
+```csv
+Trace,Voltage_V,Current_A
+single,0,0
+single,1,1e-9
+planar,0,0
+planar,1,2e-9
+```
+
+For wide and long files, invalid rows are dropped per trace. Summary columns such as PCE, FF, Voc, Jsc, time, wavelength, and EQE are ignored during current-trace detection.
+
 ## Synthetic data generator
 
 The Import Data workflow includes a Synthetic IV Trace generator for test and debugging data.
