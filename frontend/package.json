@@ -1,6 +1,6 @@
 {
   "name": "iv-fitter-web-ui-mvp",
-  "version": "1.5.6",
+  "version": "1.5.8",
   "private": true,
   "type": "module",
   "scripts": {

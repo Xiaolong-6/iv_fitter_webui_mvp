@@ -1,3 +1,16 @@
+# v1.5.8 - Bottom-docked Fit setup panel
+
+- Moved the whole Fit setup card into a reserved bottom dock of the left setup pane, together with the fit-status footer.
+- Model Builder and Equation Preview now scroll above the dock; the Fit setup controls and status remain visible at the bottom without overlaying or hiding content.
+- Removed the previous full-viewport Fit setup card behavior that created a large blank region and pushed Model Builder below it.
+- Added responsive constraints so the bottom dock remains compact and internally scrollable when advanced run options are expanded.
+
+# v1.5.7 - Fit setup bottom status footer
+
+- Moved Fit setup state badges and status/warning messages out of the top action dock into a panel-local bottom status footer.
+- Kept Run fit / Stop fit / Report controls at the top while reserving layout space for the footer so status text does not overlay parameters or setup content.
+- Added a scroll-contained Fit setup body and compact footer message stack so long diagnostics remain visible without stealing the top control area.
+
 # v1.5.6 - Series barrier polarity cleanup
 
 - Removed polarity from the Main path `Series diode barrier` component; it is a voltage-drop form and no longer exposes a polarity selector.

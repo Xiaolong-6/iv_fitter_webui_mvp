@@ -126,35 +126,42 @@ function WorkspaceView(props: {
     className="content-grid workspace-split-grid"
     style={{ "--workspace-left-width": `${leftPaneWidth}px` } as CSSProperties}
   >
-    <aside className="control-stack">
-      <Section id="fitSetup" title={t(props.language, "fitSetup")}>
-        <ErrorBoundary label="Fit config panel">
-          <FitConfigPanel
-            config={props.config}
-            onChange={props.setConfig}
-            language={props.language}
-            disabled={props.isFitting}
-            advancedOpen={props.advancedFitOptionsOpen}
-            onAdvancedOpenChange={props.setAdvancedFitOptionsOpen}
-            autoVoltageRange={props.autoVoltageRange}
-            actionDock={<div className="fit-setup-action-dock" aria-label={props.language === "zh" ? "拟合状态和操作" : "Fit status and actions"}>
-              {props.fitStatus}
-              <div className="fit-action-row">{props.fitActions}</div>
-              {props.fitMessages ? <div className="fit-message-stack">{props.fitMessages}</div> : null}
-            </div>}
-          />
-        </ErrorBoundary>
-      </Section>
-      <Section id="model" title={t(props.language, "modelBuilder")}>
-        <ErrorBoundary label="Model builder">
-          <ModelBuilder model={props.model} registry={props.registry} onChange={props.setModel} language={props.language} disabled={props.isFitting} />
-        </ErrorBoundary>
-      </Section>
-      <Section id="preview" title={t(props.language, "equationPreview")}>
-        <ErrorBoundary label="Equation preview">
-          <EquationPreview equations={props.equationSummary} model={props.model} result={props.result} language={props.language} />
-        </ErrorBoundary>
-      </Section>
+    <aside className="control-stack control-stack-with-bottom-fit">
+      <div className="control-scroll-content">
+        <Section id="model" title={t(props.language, "modelBuilder")}>
+          <ErrorBoundary label="Model builder">
+            <ModelBuilder model={props.model} registry={props.registry} onChange={props.setModel} language={props.language} disabled={props.isFitting} />
+          </ErrorBoundary>
+        </Section>
+        <Section id="preview" title={t(props.language, "equationPreview")}>
+          <ErrorBoundary label="Equation preview">
+            <EquationPreview equations={props.equationSummary} model={props.model} result={props.result} language={props.language} />
+          </ErrorBoundary>
+        </Section>
+      </div>
+
+      <section id="section-fitSetup" className="workspace-section workspace-section-fitSetup fit-setup-bottom-dock open" aria-label={t(props.language, "fitSetup")}>
+        <div className="workspace-section-body">
+          <ErrorBoundary label="Fit config panel">
+            <FitConfigPanel
+              config={props.config}
+              onChange={props.setConfig}
+              language={props.language}
+              disabled={props.isFitting}
+              advancedOpen={props.advancedFitOptionsOpen}
+              onAdvancedOpenChange={props.setAdvancedFitOptionsOpen}
+              autoVoltageRange={props.autoVoltageRange}
+              actionDock={<div className="fit-setup-action-dock" aria-label={props.language === "zh" ? "拟合操作" : "Fit actions"}>
+                <div className="fit-action-row">{props.fitActions}</div>
+              </div>}
+              statusDock={<div className="fit-setup-footer-content" aria-label={props.language === "zh" ? "拟合状态" : "Fit status"}>
+                {props.fitStatus}
+                {props.fitMessages ? <div className="fit-message-stack">{props.fitMessages}</div> : null}
+              </div>}
+            />
+          </ErrorBoundary>
+        </div>
+      </section>
     </aside>
 
     <button

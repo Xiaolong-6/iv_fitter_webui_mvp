@@ -2728,3 +2728,169 @@ button.fit-action-unavailable:disabled {
     width: 100%;
   }
 }
+
+/* v1.5.7 panel-local bottom fit status footer. */
+.workspace-section-fitSetup > .workspace-section-body {
+  min-height: 0;
+}
+.fit-setup-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: calc(100dvh - 26px);
+  max-height: calc(100dvh - 26px);
+  overflow: hidden;
+}
+.fit-setup-panel-top {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.fit-setup-scroll-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+  padding-bottom: calc(6px * var(--app-zoom));
+}
+.fit-setup-status-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 9;
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  margin-top: calc(8px * var(--app-zoom));
+  padding: calc(7px * var(--app-zoom));
+  border: 1px solid #dbe4f0;
+  border-radius: calc(12px * var(--app-zoom));
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 -8px 22px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(8px);
+}
+.fit-setup-footer-content {
+  display: grid;
+  gap: calc(5px * var(--app-zoom));
+  min-width: 0;
+}
+.fit-setup-footer-content .fit-status-compact {
+  align-items: center;
+}
+.fit-setup-footer-content .fit-message-stack {
+  max-height: min(34dvh, 260px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.fit-setup-action-dock {
+  position: static;
+  margin-bottom: calc(8px * var(--app-zoom));
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+@media (max-width: 850px), (orientation: portrait) {
+  .fit-setup-panel {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+  .fit-setup-scroll-body {
+    overflow: visible;
+  }
+  .fit-setup-status-footer {
+    position: sticky;
+    bottom: calc(var(--mobile-bottom-nav, 74px) + var(--mobile-action-bar, 0px) + 8px);
+  }
+}
+
+/* v1.5.8 left-pane bottom Fit setup dock.
+   The whole Fit setup card now lives in a reserved bottom slot of the left pane,
+   together with its status footer. The Model Builder / preview content scrolls
+   above it, so the bottom dock stays visible without overlaying content. */
+.control-stack.control-stack-with-bottom-fit {
+  display: flex;
+  flex-direction: column;
+  align-content: stretch;
+  gap: calc(8px * var(--app-zoom));
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding-right: 2px;
+}
+.control-stack-with-bottom-fit .control-scroll-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  display: grid;
+  align-content: start;
+  gap: calc(8px * var(--app-zoom));
+  padding-right: calc(6px * var(--app-zoom));
+}
+.fit-setup-bottom-dock {
+  flex: 0 0 auto;
+  min-width: 0;
+  max-height: min(48dvh, 430px);
+  overflow: hidden;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: calc(12px * var(--app-zoom));
+  background: #fff;
+  box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.10);
+}
+.fit-setup-bottom-dock > .workspace-section-body {
+  padding: calc(8px * var(--app-zoom));
+  border-top: 0;
+}
+.fit-setup-bottom-dock .fit-setup-panel {
+  height: auto;
+  max-height: min(46dvh, 410px);
+  min-height: 0;
+  overflow: hidden;
+}
+.fit-setup-bottom-dock .fit-setup-panel-top {
+  flex: 0 0 auto;
+}
+.fit-setup-bottom-dock .fit-setup-scroll-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: min(22dvh, 190px);
+  overflow-y: auto;
+  padding-right: 2px;
+  padding-bottom: calc(4px * var(--app-zoom));
+}
+.fit-setup-bottom-dock .fit-setup-status-footer {
+  position: static;
+  flex: 0 0 auto;
+  margin-top: calc(6px * var(--app-zoom));
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.fit-setup-bottom-dock .fit-setup-footer-content .fit-message-stack {
+  max-height: min(18dvh, 150px);
+}
+
+@media (max-width: 850px), (orientation: portrait) {
+  .control-stack.control-stack-with-bottom-fit {
+    height: calc(100dvh - var(--mobile-bottom-nav, 74px) - 16px);
+    max-height: calc(100dvh - var(--mobile-bottom-nav, 74px) - 16px);
+    overflow: hidden;
+  }
+  .control-stack-with-bottom-fit .control-scroll-content {
+    overflow-y: auto;
+  }
+  .fit-setup-bottom-dock {
+    max-height: min(52dvh, 470px);
+  }
+  .fit-setup-bottom-dock .fit-setup-panel {
+    max-height: min(50dvh, 450px);
+    overflow: hidden;
+  }
+  .fit-setup-bottom-dock .fit-setup-scroll-body {
+    overflow-y: auto;
+    max-height: min(24dvh, 210px);
+  }
+  .fit-setup-bottom-dock .fit-setup-status-footer {
+    position: static;
+    bottom: auto;
+  }
+}

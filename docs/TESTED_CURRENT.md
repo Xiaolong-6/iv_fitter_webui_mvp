@@ -1,3 +1,30 @@
+## v1.5.8 bottom-docked Fit setup panel check
+
+Scope: repair the v1.5.7 layout regression where the Fit setup card occupied a full viewport-height section, created a large blank area, and pushed Model Builder below the status footer.
+
+Expected behavior:
+- The entire Fit setup card, including Run/Stop/Report, voltage range, advanced options, and fit-status footer, is reserved at the bottom of the left setup pane.
+- Model Builder and Equation Preview scroll in the area above the bottom dock.
+- The bottom dock is panel-local, same width as the left pane, not a full-window overlay.
+- The dock does not cover or hide Model Builder content; layout space is reserved by flexbox.
+- Advanced options can scroll inside the dock when expanded.
+
+Validation run in this package:
+- `PYTHONPATH=backend python -m pytest backend/tests -q`
+- `python -m compileall -q backend/ivfitter backend/tests`
+
+Frontend build was not rerun in this container because node dependencies are not installed. Run locally with:
+- `cd frontend`
+- `npm install`
+- `npm run build`
+
+## v1.5.7 fit setup bottom status footer check
+
+- Moved Fit setup status badges/messages into a panel-local bottom footer with reserved space, while keeping Run fit / Stop fit / Report at the top.
+- The Fit setup panel now uses a flex-column shell: top action area, scroll-contained setup body, and bottom status footer.
+- Backend validation passed: `PYTHONPATH=backend python -m pytest backend/tests -q` and `python -m compileall -q backend/ivfitter backend/tests`.
+- Frontend build could not be completed in this container because `node_modules` / React type packages were not installed; run `npm install` then `npm run build` in the frontend or root package before release.
+
 
 ## v1.4.40 no-data action hierarchy check
 

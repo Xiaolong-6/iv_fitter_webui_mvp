@@ -47,17 +47,20 @@ function NumericInput({ label, value, placeholder, help, disabled = false, onCom
   }} /></label>;
 }
 
-export function FitConfigPanel({ config, onChange, language, actionDock, disabled = false, advancedOpen, onAdvancedOpenChange, autoVoltageRange }: { config: FitConfig; onChange: (cfg: FitConfig) => void; language: Language; actionDock?: ReactNode; disabled?: boolean; advancedOpen: boolean; onAdvancedOpenChange: (open: boolean) => void; autoVoltageRange?: { vMin: number | null; vMax: number | null } }) {
+export function FitConfigPanel({ config, onChange, language, actionDock, statusDock, disabled = false, advancedOpen, onAdvancedOpenChange, autoVoltageRange }: { config: FitConfig; onChange: (cfg: FitConfig) => void; language: Language; actionDock?: ReactNode; statusDock?: ReactNode; disabled?: boolean; advancedOpen: boolean; onAdvancedOpenChange: (open: boolean) => void; autoVoltageRange?: { vMin: number | null; vMax: number | null } }) {
   const autoMin = formatRangePlaceholder(autoVoltageRange?.vMin);
   const autoMax = formatRangePlaceholder(autoVoltageRange?.vMax);
-  return <section className="card config-panel embedded-card">
-    <div className="card-head">
-      <h2>{t(language, "fitSetup")}</h2>
+  return <section className="card config-panel embedded-card fit-setup-panel">
+    <div className="fit-setup-panel-top">
+      <div className="card-head">
+        <h2>{t(language, "fitSetup")}</h2>
+      </div>
+
+      {actionDock}
     </div>
 
-    {actionDock}
-
-    <div className="setup-section">
+    <div className="fit-setup-scroll-body">
+      <div className="setup-section">
       <h3>{t(language, "voltageRange")} <HelpTip text={t(language, "numericHelp")} /></h3>
       <div className="setup-grid two-col">
         <NumericInput disabled={disabled} label={t(language, "vMin")} help={t(language, "vMinHelp")} placeholder={autoMin} value={config.v_min} onCommit={(v) => onChange({ ...config, v_min: v })} />
@@ -101,5 +104,8 @@ export function FitConfigPanel({ config, onChange, language, actionDock, disable
         </div>
       </div> : null}
     </div>
+    </div>
+
+    {statusDock ? <div className="fit-setup-status-footer" aria-live="polite">{statusDock}</div> : null}
   </section>;
 }
