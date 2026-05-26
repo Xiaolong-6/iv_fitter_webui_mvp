@@ -50,8 +50,18 @@ export interface ImportCsvTextMultiResponse {
   traces: Array<{ trace: TraceData; quality: ImportQualitySummary }>;
 }
 
+export interface OpenImportFileDialogResponse extends ImportCsvTextMultiResponse {
+  canceled: boolean;
+  selected_path?: string | null;
+  default_dir?: string | null;
+}
+
 export async function importCsvTextMulti(text: string, traceId = "imported_trace"): Promise<ImportCsvTextMultiResponse> {
   return postJson("/api/import-csv-text-multi", { text, trace_id: traceId });
+}
+
+export async function openImportFileDialog(): Promise<OpenImportFileDialogResponse> {
+  return postJson("/api/open-import-file-dialog", {});
 }
 
 export async function generateSyntheticTrace(payload: SyntheticTraceRequest): Promise<SyntheticTraceResponse> {

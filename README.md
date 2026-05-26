@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.5.0**
+Current version: **1.5.1**
 
 IV-fitter Web UI is a local-first browser app for fitting I-V traces with compact circuit models. It helps a user import voltage/current data, build a model from mathematical circuit terms, run a fit, inspect diagnostics, and export a result only after the residuals, warnings, parameters, and model structure make sense.
 
@@ -176,7 +176,9 @@ Most important files:
 
 The Data page **Load sample data** button loads an anonymized HappyMeasure combined/wide CSV containing 14 traces. The bundled sample is stored in:
 
-- `examples/testdata/happymeasure_combined_wide_v2_anonymized.csv`
+- `examples/parser_fixtures/happymeasure/happymeasure_combined_wide_v2_anonymized.csv`
 - `frontend/public/sample_data/happymeasure_combined_wide_v2_anonymized.csv`
 
 The sample preserves the multi-trace row count and voltage/current data needed to test importer behavior, while removing sample identifiers, timestamps, port names, and trace fingerprints.
+
+User-facing demo IV traces live under `examples/demo_data/iv_traces/`. In the local app, Import CSV/TXT opens that folder by default when the runtime supports local OS file dialogs; users can still browse anywhere.

@@ -94,7 +94,7 @@ Elapsed_s,Current_A,T001 A [Voltage_V],T002 B [Voltage_V]
 
 
 def test_happymeasure_combined_wide_fixture_imports_all_traces():
-    fixture = Path(__file__).resolve().parents[2] / "examples" / "testdata" / "happymeasure_combined_wide_v2_anonymized.csv"
+    fixture = Path(__file__).resolve().parents[2] / "examples" / "parser_fixtures" / "happymeasure" / "happymeasure_combined_wide_v2_anonymized.csv"
     text = fixture.read_text(encoding="utf-8")
     traces = import_csv_text_multi(ImportCsvTextRequest(text=text, trace_id="hm-wide-fixture"))
     assert len(traces) == 14
@@ -108,7 +108,7 @@ def test_happymeasure_combined_wide_fixture_imports_all_traces():
 
 
 def test_happymeasure_combined_wide_selected_columns_use_data_section_not_metadata_table():
-    fixture = Path(__file__).resolve().parents[2] / "examples" / "testdata" / "happymeasure_combined_wide_v2_anonymized.csv"
+    fixture = Path(__file__).resolve().parents[2] / "examples" / "parser_fixtures" / "happymeasure" / "happymeasure_combined_wide_v2_anonymized.csv"
     text = fixture.read_text(encoding="utf-8")
     trace, quality = import_csv_text(ImportCsvTextRequest(
         text=text,
@@ -124,7 +124,7 @@ def test_happymeasure_combined_wide_selected_columns_use_data_section_not_metada
 
 
 def test_happymeasure_fixture_is_full_length_and_anonymized():
-    fixture = Path(__file__).resolve().parents[2] / "examples" / "testdata" / "happymeasure_combined_wide_v2_anonymized.csv"
+    fixture = Path(__file__).resolve().parents[2] / "examples" / "parser_fixtures" / "happymeasure" / "happymeasure_combined_wide_v2_anonymized.csv"
     text = fixture.read_text(encoding="utf-8")
     public_fixture = Path(__file__).resolve().parents[2] / "frontend" / "public" / "sample_data" / "happymeasure_combined_wide_v2_anonymized.csv"
     assert public_fixture.read_text(encoding="utf-8") == text

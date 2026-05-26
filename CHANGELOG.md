@@ -1,3 +1,13 @@
+# v1.5.1 - Demo data import folder
+
+- Reorganized `examples/` into user-facing demo data, synthetic examples, publication-data staging, and internal parser fixtures.
+- Added a shared default import directory resolver that prefers `examples/demo_data/iv_traces/` and safely falls back when examples are unavailable.
+- Updated the existing Import CSV/TXT action to use a local OS file picker starting in the demo IV traces folder when supported, with the browser file input preserved as fallback.
+- Kept selected files on the existing import/parser pipeline; no file is hard-coded or auto-imported.
+- Documented optional `.meta.json` citation/license metadata for publication-derived example data.
+
+Tests: `npm run build`, `npm run test:parameter-ui`, `npm run test:synthetic-ui`, `.venv\Scripts\python.exe -m pytest -p no:cacheprovider backend/tests -q`, `python -m compileall -q backend/ivfitter backend/tests`
+
 # v1.5.0 - Release build readiness
 
 - Promoted the Import CSV/TXT action in the Import Data workspace so real data import matches the primary no-data workspace action.

@@ -16,7 +16,7 @@ This file is the stable entry point for IV-fitter Web UI documentation.
 ### User-facing behavior
 
 - `README.md` — concise project overview and launch instructions.
-- `docs/DATA_IMPORT_EXPORT.md` — import/export expectations, including HappyMeasure CSV compatibility and the synthetic data generator.
+- `docs/DATA_IMPORT_EXPORT.md` — import/export expectations, example-data layout, HappyMeasure CSV compatibility, and the synthetic data generator.
 - `docs/REPORTING.md` — report/export requirements and reproducibility expectations.
 - `docs/RESPONSIVE_WORKSPACE.md` — responsive layout, mobile behavior, and app-local zoom.
 - `docs/USER_DOCUMENTATION_POLICY.md` — how user-facing docs should be written.

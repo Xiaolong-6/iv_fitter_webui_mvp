@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ModelSpec, SyntheticNoiseConfig, TraceData } from "../model/types";
-import { generateSyntheticTrace, importCsvTextMulti } from "../api/client";
+import { generateSyntheticTrace, importCsvTextMulti, openImportFileDialog, type ImportCsvTextMultiResponse } from "../api/client";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { HelpTip } from "./HelpTip";
@@ -118,6 +118,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   const [syntheticOpen, setSyntheticOpen] = useState(false);
   const [syntheticBusy, setSyntheticBusy] = useState(false);
   const [syntheticError, setSyntheticError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [syntheticForm, setSyntheticForm] = useState<SyntheticTraceFormState>({
     traceName: "synthetic_trace",
     voltageStart: "-1",
@@ -150,14 +151,36 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
     }));
   }, [selected, voltageDisplayFactor, currentDisplayFactor]);
 
-  async function parseTextToTraces(text: string, name: string) {
-    const response = await importCsvTextMulti(text, name);
+  function importedResponseToTraces(response: ImportCsvTextMultiResponse) {
     const imported = response.traces.map((item) => withDefaultDisplayUnits({
       ...item.trace,
       metadata: { ...item.trace.metadata, quality: item.quality },
     }));
     if (!imported.length) throw new Error(language === "zh" ? "未找到可导入的有限 V/I 数据。" : "No finite V/I traces were imported.");
     return imported;
+  }
+
+  async function parseTextToTraces(text: string, name: string) {
+    return importedResponseToTraces(await importCsvTextMulti(text, name));
+  }
+
+  async function openImportPicker() {
+    setMessage(null);
+    try {
+      const response = await openImportFileDialog();
+      if (response.canceled) return;
+      const imported = importedResponseToTraces(response);
+      onTraces(imported);
+      if (imported[0]) onSelectTrace(imported[0].trace_id);
+      setMessage(`${imported.length} ${t(language, "tracesLoaded")}`);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      if (/Local file dialog is not available|Failed to fetch|NetworkError|Load failed/i.test(detail)) {
+        fileInputRef.current?.click();
+        return;
+      }
+      setMessage(detail);
+    }
   }
 
   async function loadFile(file: File) {
@@ -327,8 +350,8 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
         <div className="card-head"><h3>{language === "zh" ? "导入数据" : "Import data"}</h3><HelpTip text={t(language, "importCsvHelp")} /></div>
         <p className="muted">{language === "zh" ? "导入文件或加载内置 HappyMeasure 示例。" : "Import a file or load the bundled HappyMeasure sample."}</p>
         <div className="data-actions compact-data-actions">
-          <label className="file-button import-primary-action" htmlFor={fileId} title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`}>{t(language, "importCsv")}</label>
-          <input id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
+          <button type="button" className="file-button import-primary-action" title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`} onClick={openImportPicker}>{t(language, "importCsv")}</button>
+          <input ref={fileInputRef} id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
           <button className="import-debug-action" title={language === "zh" ? `${t(language, "loadDemoHelp")} 测试用示例数据。` : `${t(language, "loadDemoHelp")} Test fixture for import and fitting checks.`} onClick={loadSampleData}>{language === "zh" ? "测试：示例数据" : "Test: sample data"}</button>
           <button className="import-debug-action" title={language === "zh" ? "调试用：从当前 Model Builder 模型正向生成 IV trace。" : "Debug utility: forward-simulate an IV trace from the current Model Builder model."} onClick={() => setSyntheticOpen(true)}>{language === "zh" ? "调试：合成 trace" : "Debug: synthetic trace"}</button>
         </div>

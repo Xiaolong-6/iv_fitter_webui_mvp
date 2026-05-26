@@ -16,6 +16,7 @@ from ivfitter.core.bounds_suggestion import BoundsSuggestionRequest, BoundsSugge
 from ivfitter.core.synthetic_trace import SyntheticTraceRequest, SyntheticTraceResult, generate_synthetic_trace
 from ivfitter.core.model_validation import validate_model_spec
 from ivfitter.io.export_report import fit_result_markdown
+from ivfitter.io.default_import_dir import resolve_default_import_dir
 from ivfitter.io.import_trace import ImportCsvTextRequest, import_csv_text, import_csv_text_multi
 from ivfitter.io.export_result import fit_result_json_text, parameter_csv_text
 
@@ -125,6 +126,12 @@ class ImportTraceResponse(BaseModel):
 class TextResponse(BaseModel):
     text: str
 
+class OpenImportFileDialogResponse(BaseModel):
+    canceled: bool = False
+    traces: list[object] = []
+    selected_path: str | None = None
+    default_dir: str | None = None
+
 @app.post("/api/import-csv-text")
 def import_csv_text_endpoint(payload: ImportCsvTextRequest):
     """Import CSV/TXT text and return TraceData plus import-quality summary."""
@@ -143,6 +150,51 @@ def import_csv_text_multi_endpoint(payload: ImportCsvTextRequest):
     try:
         _check_import_size(payload.text)
         return {"traces": [{"trace": trace, "quality": quality} for trace, quality in import_csv_text_multi(payload)]}
+    except (ValueError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+@app.post("/api/open-import-file-dialog", response_model=OpenImportFileDialogResponse)
+def open_import_file_dialog() -> OpenImportFileDialogResponse:
+    """Open a local file picker at the demo IV traces folder when supported."""
+    default_dir = resolve_default_import_dir()
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+    except Exception as exc:
+        raise HTTPException(status_code=501, detail=f"Local file dialog is not available: {exc}") from exc
+
+    root = tk.Tk()
+    root.withdraw()
+    root.update()
+    try:
+        selected = filedialog.askopenfilename(
+            title="Import CSV/TXT",
+            initialdir=str(default_dir) if default_dir else None,
+            filetypes=[
+                ("IV trace files", "*.csv *.txt *.dat"),
+                ("CSV files", "*.csv"),
+                ("Text files", "*.txt"),
+                ("DAT files", "*.dat"),
+                ("All files", "*.*"),
+            ],
+        )
+    finally:
+        root.destroy()
+
+    if not selected:
+        return OpenImportFileDialogResponse(canceled=True, default_dir=str(default_dir) if default_dir else None)
+
+    path = os.path.abspath(selected)
+    if not path.lower().endswith((".csv", ".txt", ".dat")):
+        raise HTTPException(status_code=422, detail="Selected file must be CSV, TXT, or DAT.")
+    try:
+        with open(path, "r", encoding="utf-8-sig") as handle:
+            text = handle.read()
+        _check_import_size(text)
+        traces = [{"trace": trace, "quality": quality} for trace, quality in import_csv_text_multi(ImportCsvTextRequest(text=text, trace_id=os.path.basename(path)))]
+        return OpenImportFileDialogResponse(traces=traces, selected_path=path, default_dir=str(default_dir) if default_dir else None)
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:

@@ -106,7 +106,7 @@ After every change, provide a 3-step browser test that does not require reading 
 
 ## v1.4.9 selected-column HappyMeasure fix
 
-HappyMeasure combined wide-v2 files contain a trace-metadata table before the actual `# section,data` table. The generic single-trace importer must read the explicit data section before applying user-selected `voltage_col` / `current_col`; otherwise selected columns such as `Voltage_V` and `T001 Device_14 [Current_A]` are reported as missing. Keep the anonymized fixture in `examples/testdata/` for regression coverage.
+HappyMeasure combined wide-v2 files contain a trace-metadata table before the actual `# section,data` table. The generic single-trace importer must read the explicit data section before applying user-selected `voltage_col` / `current_col`; otherwise selected columns such as `Voltage_V` and `T001 Device_14 [Current_A]` are reported as missing. Keep the anonymized fixture in `examples/parser_fixtures/happymeasure/` for regression coverage.
 
 
 ## Sample data note

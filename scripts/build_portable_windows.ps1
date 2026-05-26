@@ -59,6 +59,11 @@ if (-not (Test-Path (Join-Path $frontendDist "index.html"))) {
   throw "Frontend dist/index.html was not found. Run npm run build first."
 }
 $frontendData = "$frontendDist${separator}frontend_dist"
+$examplesDir = Join-Path $Root "examples"
+if (-not (Test-Path $examplesDir)) {
+  throw "examples folder was not found."
+}
+$examplesData = "$examplesDir${separator}examples"
 $iconPath = Join-Path $Root "desktop/assets/iv_fitter_icon.ico"
 if (-not (Test-Path $iconPath)) {
   throw "Windows icon was not found at $iconPath."
@@ -75,7 +80,10 @@ Invoke-Native "Build portable Windows executable" $python @(
   "--workpath", $buildRoot,
   "--specpath", $buildRoot,
   "--icon", $iconPath,
+  "--hidden-import", "tkinter",
+  "--hidden-import", "tkinter.filedialog",
   "--add-data", $frontendData,
+  "--add-data", $examplesData,
   "desktop/portable_launcher.py"
 )
 

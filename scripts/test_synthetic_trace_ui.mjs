@@ -50,6 +50,8 @@ assert.equal(appended.traces[1].metadata.synthetic, true);
 const componentSource = fs.readFileSync("frontend/src/components/DataImportWorkspace.tsx", "utf8");
 assert.match(componentSource, /Debug: synthetic trace/);
 assert.match(componentSource, /Test: sample data/);
+assert.match(componentSource, /openImportFileDialog/);
+assert.match(componentSource, /importCsvTextMulti/);
 assert.match(componentSource, /Synthetic IV Trace/);
 assert.match(componentSource, /Synthetic trace generated from the current Model Builder model/);
 
