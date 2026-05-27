@@ -3,13 +3,13 @@ setlocal
 
 cd /d "%~dp0"
 
-set "SCRIPT=%~dp0scripts\prepare_publication_demo_data.py"
+set "SCRIPT=%~dp0tools\prepare_publication_demo_data.py"
 
 if not exist "%SCRIPT%" (
     echo ERROR: Cannot find:
     echo   %SCRIPT%
     echo.
-    echo Put prepare_publication_demo_data.py in the scripts folder.
+    echo Put prepare_publication_demo_data.py in the tools folder.
     pause
     exit /b 1
 )

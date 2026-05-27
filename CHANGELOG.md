@@ -1,3 +1,27 @@
+# v1.5.13 - User documentation content refactor
+
+- Extracted user manual function-guide content from UserDocumentationPage.tsx into frontend/src/content/userDocumentationContent.ts.
+- Kept UserDocumentationPage.tsx focused on rendering, navigation, and section composition.
+- Preserved bilingual function-guide text, formulas, tags, and law/form/placement registry mapping.
+- Left the UI behavior and route structure unchanged.
+- Bumped version metadata to v1.5.13.
+
+# v1.5.12 - Offline tools and packaging cleanup
+
+- Moved prepare_publication_demo_data.py from scripts/ to tools/ to mark it as an optional offline helper, not runtime code.
+- Added tools/README.md with usage and scope notes.
+- Updated the one-click publication-demo-data launcher to call tools/prepare_publication_demo_data.py.
+- Updated documentation references from scripts/ to tools/.
+- Bumped version metadata to v1.5.12.
+
+# v1.5.11 - Conservative unused UI cleanup
+
+- Removed verified unused CSS selectors from frontend/src/style.css without changing runtime component logic.
+- Removed 57 unused static i18n dictionary entries while preserving dynamic sidebar tab keys.
+- Removed obsolete manual Node .mjs test scripts that duplicated automated coverage.
+- Kept publication demo-data helper and deprecated compatibility guards for later dedicated cleanup passes.
+- Bumped version metadata to v1.5.11.
+
 # v1.5.10 - Local API and diagnostics hardening
 
 - Added optional API-token protection for `/api/*` routes when `IVFITTER_API_TOKEN` is configured; `/api/health` and `/api/version` remain open for diagnostics.

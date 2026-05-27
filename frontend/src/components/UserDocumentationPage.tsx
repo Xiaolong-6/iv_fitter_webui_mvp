@@ -3,6 +3,7 @@ import type { AppView } from "./WorkflowSidebar";
 import type { FunctionDefinition } from "../model/types";
 import type { Language } from "../model/i18n";
 import { MathFormula } from "./MathFormula";
+import { USER_FUNCTION_DOCS, type UserFunctionDoc } from "../content/userDocumentationContent";
 
 function ManualSection({ id, title, children, wide = false }: { id: string; title: string; children: ReactNode; wide?: boolean }) {
   return <section id={id} className={wide ? "card doc-card wide-card manual-section" : "card doc-card manual-section"}>
@@ -54,299 +55,6 @@ function InlineNav({ language }: { language: Language }) {
   return <div className="manual-toc">{items.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}</div>;
 }
 
-type Copy = {
-  name: string;
-  oneLine: string;
-  tags: string[];
-  purpose: string;
-  suitable: string;
-  notSuitable: string;
-  curveEffect: string;
-  fitAdvice: string;
-  parameters: [string, string][];
-  formula: string;
-  advancedFormula?: string;
-};
-
-type FunctionDoc = { lawId: string; en: Copy; zh: Copy };
-
-const FUNCTION_DOCS: FunctionDoc[] = [
-  {
-    lawId: "shockley_diode",
-    en: {
-      name: "Shockley diode",
-      oneLine: "Branch current from a p-n, barrier, or equivalent junction.",
-      tags: ["junction", "forward turn-on", "start simple"],
-      purpose: "Models exponential current through a p-n junction, barrier junction, or equivalent junction.",
-      suitable: "Low-to-medium forward bias before series resistance, high injection, breakdown, extra channels, or compliance dominate.",
-      notSuitable: "High-forward extra conduction, abrupt jumps, strong series limitation, or reverse breakdown.",
-      curveEffect: "Sets the exponential slope and apparent turn-on behavior.",
-      fitAdvice: "Fit D1 first over a narrow forward range. Add Rs, leakage, or empirical branches only after the residual pattern requires them.",
-      parameters: [["I₀", "Current scale."], ["n", "Ideality factor; larger values rise more slowly with voltage."], ["Polarity", "Forward or reverse branch direction."]],
-      formula: "I_D=I_0[\\exp(\\frac{V_j}{nV_T})-1]",
-    },
-    zh: {
-      name: "二极管指数电流",
-      oneLine: "描述 p-n 结、势垒结或等效结的支路指数电流。",
-      tags: ["结电流", "正向开启", "优先起点"],
-      purpose: "描述普通 p-n 结、势垒结或等效结的指数型导通电流。",
-      suitable: "低到中等正向偏压区，尚未被串联电阻、高注入、击穿、额外导通通道或测量合规限制主导。",
-      notSuitable: "高正向额外导通、跳变、强串联限制或反向击穿区。",
-      curveEffect: "决定指数斜率和表观开启行为。",
-      fitAdvice: "先在窄正向范围拟合 D1。只有残差明确需要时，再加入 Rs、漏电或经验支路。",
-      parameters: [["I₀", "电流尺度。"], ["n", "理想因子；越大表示电流随电压上升越慢。"], ["极性", "正向或反向支路方向。"]],
-      formula: "I_D=I_0[\\exp(\\frac{V_j}{nV_T})-1]",
-    },
-  },
-  {
-    lawId: "shockley_diode_series",
-    en: {
-      name: "Series diode barrier",
-      oneLine: "Main-path voltage drop from a diode-like contact or injection barrier.",
-      tags: ["main path", "barrier", "advanced"],
-      purpose: "Represents a diode-like barrier in the main current path rather than an independent branch current.",
-      suitable: "A contact, injection barrier, or back-to-back junction acts as a transport bottleneck.",
-      notSuitable: "An ordinary parallel junction current; use a branch diode for that role.",
-      curveEffect: "Adds nonlinear voltage drop, shifts apparent turn-on, and can limit transport without adding a branch.",
-      fitAdvice: "Advanced term. Compare against simpler Rs plus branch-diode models before freeing extra parameters.",
-      parameters: [["I₀", "Barrier current scale."], ["n", "Controls voltage-drop growth."], ["Polarity", "Current direction mainly resisted."]],
-      formula: "V_{drop}=nV_T\\ln(|I|/I_0+1)",
-    },
-    zh: {
-      name: "串联二极管势垒",
-      oneLine: "主路中由接触或注入势垒产生的二极管式压降。",
-      tags: ["主路", "势垒", "高级"],
-      purpose: "描述主电流路径中的二极管式势垒，而不是独立并联电流支路。",
-      suitable: "接触、注入势垒或背靠背结表现为串联传输瓶颈。",
-      notSuitable: "普通并联结电流；这种情况应使用支路二极管。",
-      curveEffect: "增加非线性压降，改变表观开启，并可能限制传输。",
-      fitAdvice: "高级项。先与更简单的 Rs 加支路二极管模型比较，再释放额外参数。",
-      parameters: [["I₀", "势垒电流尺度。"], ["n", "控制压降增长。"], ["极性", "主要阻碍的电流方向。"]],
-      formula: "V_{drop}=nV_T\\ln(|I|/I_0+1)",
-    },
-  },
-  {
-    lawId: "ohmic",
-    en: {
-      name: "Ohmic resistance",
-      oneLine: "Linear resistance used as a main-path drop or leakage branch.",
-      tags: ["series resistance", "leakage", "linear"],
-      purpose: "Describes linear resistance. Rs and Rsh are nicknames for the same law in different roles.",
-      suitable: "Main path for contact, wire, conductive-layer, or channel resistance; branch for leakage or bypass current.",
-      notSuitable: "Do not use a main-path resistance to represent an added parallel current, or a branch resistance to explain high-current voltage drop.",
-      curveEffect: "Main-path Ohmic bends high-current behavior; branch Ohmic changes low-bias or reverse leakage background.",
-      fitAdvice: "Use Rs for high-current roll-off. Use Rsh for nearly linear leakage in low-current or reverse-bias regions.",
-      parameters: [["R", "Resistance value."], ["Nickname", "Usually Rs in the main path and Rsh as a branch."]],
-      formula: "V_{drop}=IR_s",
-      advancedFormula: "I_{leak}=\\frac{V_j}{R_{sh}}",
-    },
-    zh: {
-      name: "欧姆电阻",
-      oneLine: "可作为主路压降或漏电支路的线性电阻。",
-      tags: ["串联电阻", "漏电", "线性"],
-      purpose: "描述线性电阻。Rs 和 Rsh 是同一数学关系在不同角色下的昵称。",
-      suitable: "主路中用于接触、导线、导电层或通道电阻；支路中用于漏电或旁路电流。",
-      notSuitable: "不要用主路电阻表示新增并联电流，也不要用支路电阻解释高电流主路压降。",
-      curveEffect: "主路 Ohmic 影响高电流弯折；支路 Ohmic 改变低偏压或反向漏电背景。",
-      fitAdvice: "高电流 roll-off 用 Rs。低电流或反向区近似线性漏电用 Rsh。",
-      parameters: [["R", "电阻值。"], ["昵称", "主路常叫 Rs，支路常叫 Rsh。"]],
-      formula: "V_{drop}=IR_s",
-      advancedFormula: "I_{leak}=\\frac{V_j}{R_{sh}}",
-    },
-  },
-  {
-    lawId: "softplus_conductance_modifier",
-    en: {
-      name: "Bias-dependent conductance modifier",
-      oneLine: "Softly changes main-path conductance with bias.",
-      tags: ["main path", "high bias", "soft threshold"],
-      purpose: "Models a main transport path whose conductance changes with bias.",
-      suitable: "High-bias slope change or soft threshold in the main path that simple Rs cannot describe.",
-      notSuitable: "If the missing behavior is an additional parallel current, use a branch law instead.",
-      curveEffect: "Changes high-current slope and curvature through the main-path voltage drop.",
-      fitAdvice: "Use only after a simpler Rs model is inadequate. Keep shape parameters fixed unless residuals require them.",
-      parameters: [["A", "Modulation strength."], ["Vt", "Onset voltage."], ["Vs", "Softness."], ["shape", "Optional exponent/shape terms."]],
-      formula: "R_{eff}=R_{base}/[1+A\\,\\operatorname{softplus}(\\frac{V_j-V_t}{V_s})]",
-    },
-    zh: {
-      name: "偏压相关主路电导调制",
-      oneLine: "随偏压软开启地改变主路电导。",
-      tags: ["主路", "高偏压", "软阈值"],
-      purpose: "描述主路传输随偏压改变，例如通道、接触或传输路径软开启。",
-      suitable: "高偏压区出现普通 Rs 无法描述的斜率变化或软阈值。",
-      notSuitable: "如果缺失行为是新增并联电流，应使用支路电流关系。",
-      curveEffect: "通过主路压降改变高电流区斜率和曲率。",
-      fitAdvice: "只有简单 Rs 不够时再用。形状参数默认固定，除非残差明确需要。",
-      parameters: [["A", "调制强度。"], ["Vt", "开启电压。"], ["Vs", "软开启宽度。"], ["形状", "可选指数或形状参数。"]],
-      formula: "R_{eff}=R_{base}/[1+A\\,\\operatorname{softplus}(\\frac{V_j-V_t}{V_s})]",
-    },
-  },
-  {
-    lawId: "softplus_power_law_voltage_drop",
-    en: {
-      name: "Softplus power-law voltage drop",
-      oneLine: "Empirical main-path voltage loss that softly turns on with current.",
-      tags: ["main path", "voltage drop", "high current"],
-      purpose: "Models an extra current-activated voltage drop in the main path when a constant Rs is too simple.",
-      suitable: "High-current roll-off or transport loss that behaves like an additional main-path voltage loss.",
-      notSuitable: "If the missing behavior is an added parallel current, use the branch softplus power-law current instead.",
-      curveEffect: "Consumes more external voltage near and above the current threshold, reducing the voltage seen by junction branches.",
-      fitAdvice: "Use after Rs is inadequate. Keep current threshold and softness bounded to avoid overfitting.",
-      parameters: [["A_V", "Voltage-drop scale."], ["It", "Turn-on current."], ["Is", "Softness current."], ["m", "Growth exponent."], ["Polarity", "Current direction."]],
-      formula: "V_{drop}=\\pm A_V\\,\\operatorname{softplus}(\\frac{\\pm I-I_t}{I_s})^m",
-    },
-    zh: {
-      name: "Softplus power-law voltage drop",
-      oneLine: "Empirical main-path voltage loss that softly turns on with current.",
-      tags: ["main path", "voltage drop", "high current"],
-      purpose: "Models an extra current-activated voltage drop in the main path when a constant Rs is too simple.",
-      suitable: "Use for high-current roll-off that behaves like an additional main-path voltage loss.",
-      notSuitable: "If the missing behavior is an added parallel current, use the branch softplus power-law current instead.",
-      curveEffect: "Consumes more external voltage near and above the current threshold.",
-      fitAdvice: "Use after Rs is inadequate. Keep current threshold and softness bounded.",
-      parameters: [["A_V", "Voltage-drop scale."], ["It", "Turn-on current."], ["Is", "Softness current."], ["m", "Growth exponent."], ["Polarity", "Current direction."]],
-      formula: "V_{drop}=\\pm A_V\\,\\operatorname{softplus}(\\frac{\\pm I-I_t}{I_s})^m",
-    },
-  },
-  {
-    lawId: "softplus_power_law_current",
-    en: {
-      name: "Softplus power-law current",
-      oneLine: "Empirical extra current branch that softly turns on at high bias.",
-      tags: ["extra branch", "threshold-like", "high bias"],
-      purpose: "Models an additional empirical current path such as non-ideal, trap-assisted, or threshold-like conduction.",
-      suitable: "A clear extra current appears after a threshold and behaves like a branch contribution.",
-      notSuitable: "If high-current behavior is simply series-limited, use main-path Rs first.",
-      curveEffect: "Adds current near and above threshold, making the high-bias curve turn upward or softly open.",
-      fitAdvice: "Use after diode/Rs/Rsh fail. Keep bounds physically meaningful and inspect residuals for overfitting.",
-      parameters: [["A", "Current scale."], ["Vt", "Turn-on voltage."], ["Vs", "Softness."], ["m", "Growth exponent."], ["Polarity", "Bias direction."]],
-      formula: "I_{extra}=\\pm A\\,\\operatorname{softplus}(\\frac{\\pm V_j-V_t}{V_s})^m",
-    },
-    zh: {
-      name: "高偏压额外导通支路",
-      oneLine: "在高偏压下软开启的经验电流支路。",
-      tags: ["额外支路", "阈值型", "高偏压"],
-      purpose: "描述非理想导通、陷阱辅助导通或阈值型导通等额外经验电流通道。",
-      suitable: "某偏压后出现明显额外电流，且表现为支路贡献。",
-      notSuitable: "如果高电流区只是串联限制，应先用主路 Rs。",
-      curveEffect: "阈值附近开始增加额外电流，使高偏压曲线上翘或软开启。",
-      fitAdvice: "简单 diode/Rs/Rsh 不足后再用；保持物理合理边界并检查过拟合。",
-      parameters: [["A", "电流尺度。"], ["Vt", "开启电压。"], ["Vs", "软开启宽度。"], ["m", "增长指数。"], ["极性", "作用偏压方向。"]],
-      formula: "I_{extra}=\\pm A\\,\\operatorname{softplus}(\\frac{\\pm V_j-V_t}{V_s})^m",
-    },
-  },
-  {
-    lawId: "soft_reverse_breakdown_current",
-    en: {
-      name: "Smooth reverse breakdown",
-      oneLine: "Reverse-bias leakage or soft breakdown onset.",
-      tags: ["reverse bias", "leakage", "breakdown"],
-      purpose: "Models reverse-bias leakage or soft breakdown that gradually turns on.",
-      suitable: "Reverse data show a repeatable current increase near an onset voltage.",
-      notSuitable: "Linear leakage should use branch Ohmic. Noisy reverse data without an onset should not get a breakdown term early.",
-      curveEffect: "Increases high-magnitude reverse current after onset.",
-      fitAdvice: "Fit the reverse range deliberately. Keep parameters fixed or tightly bounded when the onset is weak.",
-      parameters: [["I₀", "Current scale."], ["VBR", "Onset voltage."], ["Vslope", "Exponential slope."], ["w", "Smooth width."]],
-      formula: "I_{BR}=-I_0[\\exp(\\frac{|V_j|-V_{BR}}{V_{slope}})-1]S(\\frac{|V_j|-V_{BR}}{w})",
-    },
-    zh: {
-      name: "平滑反向击穿或漏电开启",
-      oneLine: "反向偏压下逐渐开启的漏电或软击穿电流。",
-      tags: ["反向偏压", "漏电", "击穿"],
-      purpose: "描述反向偏压下逐渐开启的漏电或软击穿电流。",
-      suitable: "反向区某个电压附近出现可重复电流增加，但不是硬阶跃。",
-      notSuitable: "线性漏电用支路 Ohmic。无明显开启的噪声数据不要过早加入击穿项。",
-      curveEffect: "主要增加反向高电压区电流。",
-      fitAdvice: "有意识选择反向范围；开启不强时固定或收紧边界。",
-      parameters: [["I₀", "电流尺度。"], ["VBR", "开启电压。"], ["Vslope", "指数斜率。"], ["w", "平滑宽度。"]],
-      formula: "I_{BR}=-I_0[\\exp(\\frac{|V_j|-V_{BR}}{V_{slope}})-1]S(\\frac{|V_j|-V_{BR}}{w})",
-    },
-  },
-  {
-    lawId: "photocurrent_constant",
-    en: {
-      name: "Constant photocurrent",
-      oneLine: "Bias-independent light-generated current source.",
-      tags: ["light response", "photodiode", "first approximation"],
-      purpose: "Models photocurrent that is approximately independent of bias.",
-      suitable: "Light-dark difference is nearly constant over the selected voltage range.",
-      notSuitable: "Strongly bias-dependent light response, threshold-like response, or high-current slope change.",
-      curveEffect: "Shifts the light I-V curve up or down relative to the dark curve.",
-      fitAdvice: "Fit the dark trace first; then fix or seed dark parameters and add this term to the light trace.",
-      parameters: [["Iph0", "Photocurrent magnitude."], ["Direction", "Sign convention and wiring direction."]],
-      formula: "I_{ph}=\\pm I_{ph0}",
-    },
-    zh: {
-      name: "常数光电流",
-      oneLine: "近似不随偏压变化的光生电流。",
-      tags: ["光响应", "光电二极管", "第一近似"],
-      purpose: "描述近似不随偏压变化的光生电流。",
-      suitable: "light-dark 差值在选定电压范围内近似为常数。",
-      notSuitable: "光响应强烈依赖偏压、在阈值附近开启或明显改变高电流斜率。",
-      curveEffect: "使光照 I-V 相对暗态曲线上下平移。",
-      fitAdvice: "先拟合暗态；再固定或继承暗态参数，并在光照 trace 中加入该项。",
-      parameters: [["Iph0", "光电流大小。"], ["方向", "由软件符号约定和接线决定。"]],
-      formula: "I_{ph}=\\pm I_{ph0}",
-    },
-  },
-  {
-    lawId: "photocurrent_voltage_dependent",
-    en: {
-      name: "Voltage-dependent photocurrent",
-      oneLine: "Photocurrent that changes with junction voltage.",
-      tags: ["light response", "field-assisted", "photogain"],
-      purpose: "Models bias-dependent photocurrent such as field-assisted collection, trap-assisted gain, photoconductive gain, or sub-bandgap response.",
-      suitable: "Light-dark difference strengthens, saturates, or rises after a threshold.",
-      notSuitable: "Sparse, noisy, or weak light-dark differences can overfit; try simpler light terms first.",
-      curveEffect: "Makes light-generated current bias-dependent instead of a simple shift.",
-      fitAdvice: "Fit dark first. In light data, free base magnitude and linear gain first; keep threshold terms fixed unless residuals demand them.",
-      parameters: [["Iph0", "Base photocurrent."], ["gain", "Linear bias enhancement."], ["Aph", "Threshold scale."], ["Vt, Vs, m", "Threshold location, softness, and growth."], ["Direction", "Photocurrent direction."]],
-      formula: "I_{ph}(V_j)=\\pm I_{ph0}(1+a|V_j|)",
-      advancedFormula: "I_{ph}(V_j)=\\pm[I_{ph0}(1+a|V_j|)+A_{ph}\\operatorname{softplus}(\\frac{|V_j|-V_{t,ph}}{V_{s,ph}})^{m_{ph}}]",
-    },
-    zh: {
-      name: "电压依赖光电流",
-      oneLine: "随结点电压变化的光生电流。",
-      tags: ["光响应", "场辅助", "光增益"],
-      purpose: "描述电场辅助收集、陷阱辅助增益、光电导增益或 sub-bandgap 光响应等偏压相关光电流。",
-      suitable: "light-dark 差值随电压增强、饱和或阈值后快速增加。",
-      notSuitable: "数据少、噪声大或差异弱时容易过拟合，应先用更简单的光响应项。",
-      curveEffect: "让光生电流随偏压改变，而不只是整体平移。",
-      fitAdvice: "先拟合暗态。光照数据中先释放基础大小和线性增益；阈值项只有残差需要时再释放。",
-      parameters: [["Iph0", "基础光电流。"], ["gain", "线性偏压增强。"], ["Aph", "阈值项尺度。"], ["Vt, Vs, m", "阈值位置、软开启宽度和增长指数。"], ["方向", "光电流方向。"]],
-      formula: "I_{ph}(V_j)=\\pm I_{ph0}(1+a|V_j|)",
-      advancedFormula: "I_{ph}(V_j)=\\pm[I_{ph0}(1+a|V_j|)+A_{ph}\\operatorname{softplus}(\\frac{|V_j|-V_{t,ph}}{V_{s,ph}})^{m_{ph}}]",
-    },
-  },
-  {
-    lawId: "custom_expression",
-    en: {
-      name: "User-defined relation",
-      oneLine: "Advanced custom expression for testing a new empirical model.",
-      tags: ["advanced", "experimental", "custom"],
-      purpose: "Lets advanced users test an empirical relation not yet built in.",
-      suitable: "Exploring a new empirical relation or temporarily checking a hypothesis.",
-      notSuitable: "Routine fitting, final reporting, or model stacks without a clear physical explanation.",
-      curveEffect: "Depends entirely on the supplied expression and remains exploratory until documented and validated.",
-      fitAdvice: "Record the full expression and parameter definitions in any report. Prefer built-in laws when possible.",
-      parameters: [["Expression", "User-supplied relation."], ["User parameters", "Definitions required for reproducibility."]],
-      formula: "\\text{User-defined expression}",
-    },
-    zh: {
-      name: "自定义数学关系",
-      oneLine: "用于测试新经验模型的高级自定义表达式。",
-      tags: ["高级", "实验性", "自定义"],
-      purpose: "给高级用户测试尚未内置的经验关系。",
-      suitable: "探索新经验模型或临时验证假设。",
-      notSuitable: "普通拟合流程、最终报告或无明确物理解释的模型堆叠。",
-      curveEffect: "完全取决于用户表达式，记录和验证前都应视为探索性。",
-      fitAdvice: "报告中必须记录完整表达式和参数定义。能用内置项时优先内置项。",
-      parameters: [["Expression", "用户表达式。"], ["用户参数", "为可复现性必须定义。"]],
-      formula: "\\text{User-defined expression}",
-    },
-  },
-];
-
 function AdvancedFunctionDetails({ lawId, registry, language }: { lawId: string; registry: FunctionDefinition[]; language: Language }) {
   const items = registry.filter((item) => item.law_id === lawId || (lawId === "shockley_diode_series" && item.function_type === "series_diode_barrier"));
   if (!items.length) return <p className="muted">{language === "zh" ? "当前函数库未加载此项。" : "This item is not currently loaded from the backend registry."}</p>;
@@ -362,7 +70,7 @@ function AdvancedFunctionDetails({ lawId, registry, language }: { lawId: string;
   </div>;
 }
 
-function FunctionDocCard({ doc, registry, language }: { doc: FunctionDoc; registry: FunctionDefinition[]; language: Language }) {
+function UserFunctionDocCard({ doc, registry, language }: { doc: UserFunctionDoc; registry: FunctionDefinition[]; language: Language }) {
   const t = language === "zh" ? doc.zh : doc.en;
   const usesSoftplus = `${t.formula} ${t.advancedFormula ?? ""}`.includes("\\operatorname{softplus}");
   return <article className="manual-law-card user-law-card">
@@ -384,11 +92,11 @@ function FunctionDocCard({ doc, registry, language }: { doc: FunctionDoc; regist
 }
 
 function RegistryGuide({ registry, language }: { registry: FunctionDefinition[]; language: Language }) {
-  const [selectedLawId, setSelectedLawId] = useState(FUNCTION_DOCS[0]?.lawId ?? "");
-  const selected = FUNCTION_DOCS.find((doc) => doc.lawId === selectedLawId) ?? FUNCTION_DOCS[0];
+  const [selectedLawId, setSelectedLawId] = useState(USER_FUNCTION_DOCS[0]?.lawId ?? "");
+  const selected = USER_FUNCTION_DOCS.find((doc) => doc.lawId === selectedLawId) ?? USER_FUNCTION_DOCS[0];
   return <div className="manual-function-reader">
     <nav className="manual-function-list" aria-label={language === "zh" ? "函数列表" : "Function list"}>
-      {FUNCTION_DOCS.map((doc) => {
+      {USER_FUNCTION_DOCS.map((doc) => {
         const t = language === "zh" ? doc.zh : doc.en;
         return <button
           key={doc.lawId}
@@ -402,7 +110,7 @@ function RegistryGuide({ registry, language }: { registry: FunctionDefinition[];
       })}
     </nav>
     <div className="manual-function-detail">
-      <FunctionDocCard doc={selected} registry={registry} language={language} />
+      <UserFunctionDocCard doc={selected} registry={registry} language={language} />
     </div>
   </div>;
 }

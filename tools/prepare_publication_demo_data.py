@@ -416,10 +416,10 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=textwrap.dedent(
             """
             Examples:
-              python scripts/prepare_publication_demo_data.py https://doi.org/10.1038/s41560-026-02068-9
-              python scripts/prepare_publication_demo_data.py 10.1038/s41560-026-02068-9 --data-type JV
-              python scripts/prepare_publication_demo_data.py --data-type JV --trace-count 6 --no-fetch
-              python scripts/prepare_publication_demo_data.py --self-test
+              python tools/prepare_publication_demo_data.py https://doi.org/10.1038/s41560-026-02068-9
+              python tools/prepare_publication_demo_data.py 10.1038/s41560-026-02068-9 --data-type JV
+              python tools/prepare_publication_demo_data.py --data-type JV --trace-count 6 --no-fetch
+              python tools/prepare_publication_demo_data.py --self-test
             """
         ),
     )
