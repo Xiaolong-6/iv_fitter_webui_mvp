@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.5.18**
+Current version: **1.5.19**
 
 IV-fitter Web UI is a local-first browser app for fitting I-V traces with compact circuit models. It helps a user import voltage/current data, build a model from mathematical circuit terms, run a fit, inspect diagnostics, and export a result only after the residuals, warnings, parameters, and model structure make sense.
 
@@ -14,7 +14,7 @@ The app is a working prototype for the IV-fitter workflow. It is not yet a full 
 
 1. Open **Data** and import or paste a voltage/current trace.
 2. Confirm the selected trace and imported column units. The app converts imported values to SI V/A for preview, plots, and fitting.
-3. Open **Workspace** and set the voltage range and fitting objective.
+3. Open **Workspace** and set the voltage range and fitting objective in the bottom Fit setup dock.
 4. Build the model in **Model Builder**.
 5. Click **Run fit**.
 6. Inspect plots, residuals, diagnostics, parameters, and equations.
@@ -23,19 +23,19 @@ The app is a working prototype for the IV-fitter workflow. It is not yet a full 
 ## Current UI Areas
 
 - **Data:** CSV/TXT/DAT import, publication/demo multi-trace auto-detection, pasted-data import, synthetic trace generation, dataset naming, unit selection, trace selection, import-quality summary, and spreadsheet preview.
-- **Workspace:** Fit setup, Model Builder, Model preview, plots, grouped Parameters table, diagnostics, and report generation.
+- **Workspace:** Model Builder, Model preview, plots, grouped Parameters table, diagnostics, report generation, and a full-width bottom Fit setup dock.
 - **User manual:** tutorial-style workflow guide, Function Guide, fitting logic, convergence guidance, reporting notes, and glossary.
 
 ## Current Workflow Details
 
-- **Fit setup** keeps status, actions, and messages in three compact layers:
+- **Fit setup** lives in a full-width bottom dock so Model Builder keeps its vertical space. It keeps status, actions, and messages in compact layers:
   - status badges such as Ready, Running, Converged, warnings, and errors;
   - action buttons with **Run fit** as the main idle action and **Stop** as the high-priority action only while fitting;
   - contextual info/diagnostics below the buttons.
 - Empty data is shown as an informational state until the user tries to run a fit with no trace loaded.
 - If `V min` or `V max` is blank, the backend uses the full selected trace range. The empty input placeholder shows the concrete selected-trace min/max voltage instead of a vague `auto`.
 - Completed fits automatically write fitted values back into the model as the next initial values. Use **Restore initial values** in Parameters to recover the pre-fit values from the most recent run.
-- Diagnostics are compact by default. Residual cautions and warning details live inside one disclosure row instead of large persistent warning blocks.
+- Diagnostics are compact by default. Residual cautions and warning details open upward from the bottom dock instead of occupying persistent Model Builder space.
 - During a running fit, model edits, parameter edits, fit setup inputs, data import actions, and report generation are disabled. **Stop** remains available.
 
 ## Model Builder
@@ -188,6 +188,13 @@ The sample preserves the multi-trace row count and voltage/current data needed t
 
 User-facing demo IV traces live under `examples/demo_data/iv_traces/`. In the local app, Import CSV/TXT opens that folder by default when the runtime supports local OS file dialogs; users can still browse anywhere.
 
+
+### v1.5.19 full-width bottom Fit setup dock
+
+- Moved Fit setup out of the left Model Builder pane and into an app-level bottom dock spanning the workspace.
+- Restored vertical scrolling space for Model Builder and Model preview.
+- Added a shared upward drawer for Advanced run options and Status Details.
+- Kept fit lifecycle, report export, backend API, saved models, and numerical behavior unchanged.
 
 ### v1.5.18 semantic component label cleanup
 

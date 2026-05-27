@@ -46,7 +46,7 @@ import {
 } from "../components/FitStatusBar";
 import { ParameterTable } from "../components/ParameterTable";
 import { DataImportWorkspace } from "../components/DataImportWorkspace";
-import { FitConfigPanel } from "../components/FitConfigPanel";
+import { FitConfigPanel, type FitDrawerMode } from "../components/FitConfigPanel";
 import { EquationPreview } from "../components/EquationPreview";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import type { Language } from "../model/i18n";
@@ -155,8 +155,8 @@ function WorkspaceView(props: {
   config: FitConfig;
   setConfig: (config: FitConfig) => void;
   autoVoltageRange: { vMin: number | null; vMax: number | null };
-  advancedFitOptionsOpen: boolean;
-  setAdvancedFitOptionsOpen: (open: boolean) => void;
+  fitDrawerMode: FitDrawerMode;
+  setFitDrawerMode: (mode: FitDrawerMode) => void;
   registry: FunctionDefinition[];
   result: FitResult | null;
   report: string;
@@ -172,6 +172,8 @@ function WorkspaceView(props: {
   fitStatus: ReactNode;
   fitActions: ReactNode;
   fitMessages: ReactNode;
+  fitDetails: ReactNode;
+  hasFitDetails: boolean;
   onApplyDataBounds: () => void;
   canSeedSyntheticGroundTruth: boolean;
   onSeedSyntheticGroundTruth: () => void;
@@ -251,13 +253,14 @@ function WorkspaceView(props: {
     );
   }
   return (
-    <div
-      ref={gridRef}
-      className="content-grid workspace-split-grid"
-      style={
-        { "--workspace-left-width": `${leftPaneWidth}px` } as CSSProperties
-      }
-    >
+    <div className="workspace-fit-shell">
+      <div
+        ref={gridRef}
+        className="content-grid workspace-split-grid"
+        style={
+          { "--workspace-left-width": `${leftPaneWidth}px` } as CSSProperties
+        }
+      >
       <aside className="control-stack control-stack-with-bottom-fit">
         <div className="control-scroll-content">
           <Section id="model" title={t(props.language, "modelBuilder")}>
@@ -282,51 +285,6 @@ function WorkspaceView(props: {
             </ErrorBoundary>
           </Section>
         </div>
-
-        <section
-          id="section-fitSetup"
-          className="workspace-section workspace-section-fitSetup fit-setup-bottom-dock open"
-          aria-label={t(props.language, "fitSetup")}
-        >
-          <div className="workspace-section-body">
-            <ErrorBoundary label="Fit config panel">
-              <FitConfigPanel
-                config={props.config}
-                onChange={props.setConfig}
-                language={props.language}
-                disabled={props.isFitting}
-                advancedOpen={props.advancedFitOptionsOpen}
-                onAdvancedOpenChange={props.setAdvancedFitOptionsOpen}
-                autoVoltageRange={props.autoVoltageRange}
-                actionDock={
-                  <div
-                    className="fit-setup-action-dock"
-                    aria-label={
-                      props.language === "zh" ? "拟合操作" : "Fit actions"
-                    }
-                  >
-                    <div className="fit-action-row">{props.fitActions}</div>
-                  </div>
-                }
-                statusDock={
-                  <div
-                    className="fit-setup-footer-content"
-                    aria-label={
-                      props.language === "zh" ? "拟合状态" : "Fit status"
-                    }
-                  >
-                    {props.fitStatus}
-                    {props.fitMessages ? (
-                      <div className="fit-message-stack">
-                        {props.fitMessages}
-                      </div>
-                    ) : null}
-                  </div>
-                }
-              />
-            </ErrorBoundary>
-          </div>
-        </section>
       </aside>
 
       <button
@@ -391,6 +349,24 @@ function WorkspaceView(props: {
           </section>
         )}
       </section>
+      </div>
+
+      <ErrorBoundary label="Fit config panel">
+        <FitConfigPanel
+          config={props.config}
+          onChange={props.setConfig}
+          language={props.language}
+          disabled={props.isFitting}
+          drawerMode={props.fitDrawerMode}
+          onDrawerModeChange={props.setFitDrawerMode}
+          autoVoltageRange={props.autoVoltageRange}
+          actionDock={<div className="fit-action-row">{props.fitActions}</div>}
+          statusDock={props.fitStatus}
+          messageDock={props.fitMessages}
+          detailsDock={props.fitDetails}
+          hasDetails={props.hasFitDetails}
+        />
+      </ErrorBoundary>
     </div>
   );
 }
@@ -508,7 +484,7 @@ export function FittingPage() {
   const [preFitInitialModel, setPreFitInitialModel] =
     useState<ModelSpec | null>(null);
   const [config, setConfig] = useState<FitConfig>(initialConfig);
-  const [advancedFitOptionsOpen, setAdvancedFitOptionsOpen] = useState(false);
+  const [fitDrawerMode, setFitDrawerMode] = useState<FitDrawerMode>("none");
   const [result, setResult] = useState<FitResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fitPromotionNotice, setFitPromotionNotice] = useState<string | null>(
@@ -994,8 +970,8 @@ export function FittingPage() {
             config={config}
             setConfig={setConfig}
             autoVoltageRange={autoVoltageRange}
-            advancedFitOptionsOpen={advancedFitOptionsOpen}
-            setAdvancedFitOptionsOpen={setAdvancedFitOptionsOpen}
+            fitDrawerMode={fitDrawerMode}
+            setFitDrawerMode={setFitDrawerMode}
             registry={registry}
             result={result}
             report={report}
@@ -1111,43 +1087,37 @@ export function FittingPage() {
                     </div>
                   )
                 ) : null}
-                {result || fitPromotionNotice ? (
-                  <details className="fit-details-drawer">
-                    <summary>
-                      {language === "zh"
-                        ? "Details / diagnostics"
-                        : "Details / diagnostics"}
-                    </summary>
-                    <div className="fit-details-drawer-body">
-                      {fitPromotionNotice ? (
-                        <div className="fit-full-note">
-                          {fitPromotionNotice}
-                        </div>
-                      ) : null}
-                      {result ? (
-                        <FitProcessDiagnostics
-                          result={result}
-                          language={language}
-                          sessionStats={fitSessionStats}
-                        />
-                      ) : null}
-                      {result &&
-                      warningDismissKey(result) !== dismissedWarningKey ? (
-                        <FitDiagnostics
-                          result={result}
-                          language={language}
-                          onCheckLogIv={() => openAndScroll("plots")}
-                          onAdjustInitials={() => openAndScroll("model")}
-                          onClose={() =>
-                            setDismissedWarningKey(warningDismissKey(result))
-                          }
-                        />
-                      ) : null}
-                    </div>
-                  </details>
+              </>
+            }
+            fitDetails={
+              <>
+                {fitPromotionNotice ? (
+                  <div className="fit-full-note">
+                    {fitPromotionNotice}
+                  </div>
+                ) : null}
+                {result ? (
+                  <FitProcessDiagnostics
+                    result={result}
+                    language={language}
+                    sessionStats={fitSessionStats}
+                  />
+                ) : null}
+                {result &&
+                warningDismissKey(result) !== dismissedWarningKey ? (
+                  <FitDiagnostics
+                    result={result}
+                    language={language}
+                    onCheckLogIv={() => openAndScroll("plots")}
+                    onAdjustInitials={() => openAndScroll("model")}
+                    onClose={() =>
+                      setDismissedWarningKey(warningDismissKey(result))
+                    }
+                  />
                 ) : null}
               </>
             }
+            hasFitDetails={Boolean(result || fitPromotionNotice)}
             isFitting={isFitting}
             fitSessionStats={fitSessionStats}
             fitLifecycle={fitLifecycle}

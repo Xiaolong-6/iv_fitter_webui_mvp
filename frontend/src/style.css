@@ -2718,6 +2718,189 @@ button.fit-action-unavailable:disabled {
   }
 }
 
+/* v1.5.19 app-level full-width Fit setup dock. */
+.workspace-fit-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  gap: calc(8px * var(--app-zoom));
+}
+.workspace-fit-shell > .workspace-split-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.control-stack.control-stack-with-bottom-fit {
+  gap: 0;
+}
+.control-stack-with-bottom-fit .control-scroll-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.fit-bottom-dock {
+  flex: 0 0 auto;
+  min-width: 0;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: calc(10px * var(--app-zoom));
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 -8px 22px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+.fit-bottom-dock-drawer {
+  max-height: 34vh;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: calc(10px * var(--app-zoom)) calc(12px * var(--app-zoom));
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  background: #f8fafc;
+}
+.fit-bottom-dock-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(8px * var(--app-zoom));
+  margin-bottom: calc(6px * var(--app-zoom));
+}
+.fit-bottom-dock-drawer-head h2,
+.fit-bottom-dock-title h2 {
+  margin: 0;
+  white-space: nowrap;
+}
+.fit-bottom-dock-row {
+  min-height: calc(56px * var(--app-zoom));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(8px * var(--app-zoom));
+  padding: calc(8px * var(--app-zoom)) calc(10px * var(--app-zoom));
+  min-width: 0;
+}
+.fit-bottom-dock-title {
+  flex: 0 0 auto;
+}
+.fit-bottom-dock-actions {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.fit-bottom-dock-actions .fit-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(6px * var(--app-zoom));
+  align-items: center;
+}
+.fit-bottom-voltage {
+  flex: 0 1 330px;
+  min-width: min(100%, 250px);
+  display: grid;
+  gap: calc(3px * var(--app-zoom));
+}
+.fit-bottom-voltage-title {
+  color: #475569;
+  font-size: calc(11.5px * var(--app-zoom));
+  font-weight: 800;
+}
+.fit-bottom-voltage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(92px, 1fr));
+  gap: calc(6px * var(--app-zoom));
+  min-width: 0;
+}
+.fit-bottom-voltage label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: calc(5px * var(--app-zoom));
+  min-width: 0;
+}
+.fit-bottom-voltage label span {
+  color: #64748b;
+  font-size: calc(11.5px * var(--app-zoom));
+  font-weight: 800;
+  white-space: nowrap;
+}
+.fit-bottom-voltage input {
+  width: 100%;
+}
+.fit-bottom-dock-toggle {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-weight: 800;
+}
+.fit-bottom-dock-toggle.active {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.fit-bottom-status {
+  flex: 1 1 280px;
+  min-width: 220px;
+  display: grid;
+  gap: calc(4px * var(--app-zoom));
+  overflow: hidden;
+}
+.fit-bottom-message-stack {
+  display: grid;
+  gap: calc(4px * var(--app-zoom));
+  min-width: 0;
+}
+.fit-bottom-details-body {
+  max-height: none;
+  margin-top: 0;
+  padding-right: 2px;
+}
+.fit-bottom-dock-drawer .advanced-objective-body {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: calc(10px * var(--app-zoom));
+  align-items: start;
+}
+.fit-bottom-dock-drawer .setup-section,
+.fit-bottom-dock-drawer .fit-config-section {
+  margin: 0;
+}
+.fit-bottom-dock-drawer .setup-section h3,
+.fit-bottom-dock-drawer .fit-config-section h3 {
+  margin-top: 0;
+}
+@media (max-width: 1100px) {
+  .fit-bottom-dock-drawer .advanced-objective-body {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+}
+@media (max-width: 850px), (orientation: portrait) {
+  .workspace-fit-shell {
+    overflow: visible;
+  }
+  .workspace-fit-shell > .workspace-split-grid {
+    flex: 0 0 auto;
+  }
+  .fit-bottom-dock {
+    position: static;
+  }
+  .fit-bottom-dock-row {
+    align-items: stretch;
+  }
+  .fit-bottom-dock-title,
+  .fit-bottom-dock-actions,
+  .fit-bottom-voltage,
+  .fit-bottom-status,
+  .fit-bottom-dock-toggle {
+    flex: 1 1 100%;
+  }
+  .fit-bottom-dock-drawer {
+    max-height: 38vh;
+  }
+  .fit-bottom-dock-drawer .advanced-objective-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fit-bottom-status {
+    min-width: 0;
+  }
+}
+
 .parameter-status-pill {
   display: inline-flex;
   align-items: center;

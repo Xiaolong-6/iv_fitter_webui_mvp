@@ -1,3 +1,11 @@
+# v1.5.19 - Full-width bottom Fit setup dock
+
+- Move Fit setup from the left Model Builder pane into an app-level full-width bottom dock.
+- Restore vertical space for the Model Builder pane.
+- Make Advanced run options and Status Details expand upward from the bottom dock using a shared mutually exclusive drawer.
+- Preserve fit lifecycle, report export, backend API, and fitting behavior.
+- Updated version metadata to v1.5.19.
+
 # v1.5.18 - Semantic component label cleanup
 
 - Renamed several user-facing component labels to describe mathematical form and circuit placement more accurately.
