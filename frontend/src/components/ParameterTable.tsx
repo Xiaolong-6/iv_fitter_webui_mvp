@@ -71,7 +71,17 @@ function labelForModelParameter(model: ModelSpec, componentId: string, paramName
   if (!comp) return `${componentId}.${paramName}`;
   const nick = String(comp.metadata?.nickname ?? comp.id);
   const param = comp.params[paramName];
-  return `${nick}.${param?.label ?? paramName}`;
+  const neutralBiasLabels: Record<string, string> = {
+    Iph0_A: "I0",
+    Aph: "A",
+    Vt_ph_V: "Vt",
+    Vs_ph_V: "Vs",
+    m_ph: "m",
+  };
+  const label = comp.function_type === "bias_dependent_current" || comp.function_type === "photocurrent_voltage_dependent" || comp.function_type === "voltage_dependent_photocurrent"
+    ? (neutralBiasLabels[paramName] ?? param?.label ?? paramName)
+    : (param?.label ?? paramName);
+  return `${nick}.${label}`;
 }
 
 function updateParameter(model: ModelSpec, location: Location, componentId: string, paramName: string, patch: Partial<ParameterSpec>) {
@@ -86,7 +96,9 @@ function nickname(comp: ComponentSpec) {
 }
 
 function componentSummary(comp: ComponentSpec, language: Language) {
-  const law = comp.law_id ?? comp.function_type;
+  const law = comp.function_type === "photocurrent_voltage_dependent" || comp.function_type === "voltage_dependent_photocurrent" || comp.law_id === "photocurrent_voltage_dependent" || comp.law_id === "voltage_dependent_photocurrent"
+    ? "bias_dependent_current"
+    : comp.law_id ?? comp.function_type;
   const form = comp.evaluation_form ?? "auto";
   const placement = comp.placement ?? "auto";
   const polarity = comp.polarity ? `${parameterText("polarity", language)}: ${comp.polarity}` : parameterText("noPolarity", language);

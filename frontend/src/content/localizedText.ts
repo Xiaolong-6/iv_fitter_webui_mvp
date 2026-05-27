@@ -7,12 +7,14 @@ function pick(text: LocalizedText, language: Language) {
 
 const functionLabels: Record<string, LocalizedText> = {
   diode: { en: "Shockley diode", zh: "二极管指数电流" },
-  series_diode_barrier: { en: "Series diode barrier", zh: "串联二极管势垒" },
-  softplus_rs_modifier: { en: "Softplus transport modifier", zh: "软开启传输调制" },
-  power_law: { en: "Softplus power-law current", zh: "软开启幂律电流" },
-  soft_breakdown: { en: "Soft reverse-breakdown current", zh: "软反向击穿电流" },
+  series_diode_barrier: { en: "Diode-like series barrier drop", zh: "类二极管串联势垒压降" },
+  softplus_rs_modifier: { en: "Bias-dependent series conductance modifier", zh: "偏压相关串联电导调制" },
+  power_law: { en: "Soft-threshold power-law current branch", zh: "软阈值幂律电流支路" },
+  soft_breakdown: { en: "Reverse leakage / soft-breakdown current", zh: "反向漏电 / 软击穿电流" },
   photocurrent_constant: { en: "Constant photocurrent", zh: "常数光电流" },
-  photocurrent_voltage_dependent: { en: "Voltage-dependent photocurrent", zh: "电压依赖光电流" },
+  bias_dependent_current: { en: "Bias-dependent current branch", zh: "偏压相关电流支路" },
+  photocurrent_voltage_dependent: { en: "Bias-dependent current branch", zh: "偏压相关电流支路" },
+  voltage_dependent_photocurrent: { en: "Bias-dependent current branch", zh: "偏压相关电流支路" },
   custom: { en: "Custom expression law", zh: "自定义表达式定律" },
 };
 

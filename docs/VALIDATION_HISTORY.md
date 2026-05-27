@@ -25,6 +25,7 @@ Use `docs/TESTED_CURRENT.md` for the exact commands and result status of the cur
 | 1.4.5 | Run-state feedback, Stop action, zoom limit | Added visible fitting status, Stop behavior, and expanded UI zoom limit. |
 | 1.4.6–1.4.7 | User-facing Function Guide rewrite | Moved internal schema wording into Advanced details and added a regression check for default Function Guide wording. |
 | 1.4.8 | Documentation cleanup | Removed stale per-version handoff/tested files and consolidated documentation entry points. |
+| 1.5.18 | Bias-dependent current branch rename | Added canonical neutral naming and legacy alias coverage for the former voltage-dependent photocurrent component. |
 
 ## Policy for future validation docs
 

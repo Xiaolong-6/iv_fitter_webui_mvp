@@ -12,7 +12,7 @@ The fitting engine owns scientific behavior. FastAPI is an adapter. React is the
 
 The current model architecture is **Law / Form / Placement**.
 
-- **Law**: the mathematical relation, such as Shockley diode, Ohmic resistance, softplus power-law current, soft reverse breakdown, or a custom expression.
+- **Law**: the mathematical relation, such as Shockley diode, Ohmic resistance, soft-threshold power-law current, reverse leakage / soft-breakdown current, or a custom expression.
 - **Form**: how the relation participates numerically, such as `current_branch` or `voltage_drop`.
 - **Placement**: where the relation appears in the user model, primarily **Main path** or **Branches**.
 

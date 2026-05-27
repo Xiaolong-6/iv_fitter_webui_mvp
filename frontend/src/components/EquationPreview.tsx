@@ -28,7 +28,7 @@ function isDiode(term: Term) { return /diode|shockley|D\d/i.test(`${term.row} ${
 function isForwardPower(term: Term) { return /forward|power/i.test(`${term.row} ${term.id}`) && !isDiode(term); }
 function isBreakdown(term: Term) { return /break|reverse/i.test(`${term.row} ${term.id}`); }
 function isPhotocurrentConstant(term: Term) { return /photocurrent_constant/i.test(`${term.row} ${term.law} ${term.id}`); }
-function isPhotocurrentVoltage(term: Term) { return /photocurrent_voltage_dependent/i.test(`${term.row} ${term.law} ${term.id}`); }
+function isBiasDependentCurrent(term: Term) { return /bias_dependent_current|photocurrent_voltage_dependent|voltage_dependent_photocurrent/i.test(`${term.row} ${term.law} ${term.id}`); }
 function isConductanceModifier(term: Term) { return term.form === "conductance_modifier" || /conductance_modifier|softplus_rs_modifier|series-path modifier/i.test(`${term.row} ${term.law} ${term.id}`); }
 function isSeriesPowerDrop(term: Term) { return /softplus_power_law_voltage_drop|series_power_law_drop/i.test(`${term.row} ${term.law} ${term.id}`); }
 function symbolFor(term: Term) {
@@ -36,7 +36,8 @@ function symbolFor(term: Term) {
   if (/^rs$/i.test(term.nick) || /^rs$/i.test(term.id)) return { r: "R_s", i: "I", v: "V_{Rs}" };
   if (/rsh|shunt/i.test(term.nick) || /rsh|shunt/i.test(term.id)) return { r: "R_{sh}", i: "I_{Rsh}", v: "V_j" };
   if (isDiode(term)) return { i: `I_{${safe || "D"}}`, r: "", v: "V_j" };
-  if (isPhotocurrentConstant(term) || isPhotocurrentVoltage(term)) return { i: `I_{${safe || "ph"}}`, r: "", v: "V_j" };
+  if (isPhotocurrentConstant(term)) return { i: `I_{${safe || "ph"}}`, r: "", v: "V_j" };
+  if (isBiasDependentCurrent(term)) return { i: `I_{${safe || "bias"}}`, r: "", v: "V_j" };
   if (isForwardPower(term)) return { i: `I_{${safe || "fwd"}}`, r: "", v: "V_j" };
   if (isBreakdown(term)) return { i: `I_{${safe || "br"}}`, r: "", v: "V_j" };
   return { i: `I_{${safe || "branch"}}`, r: `R_{${safe || "x"}}`, v: "V_j" };
@@ -58,6 +59,7 @@ function branchCurrentLatex(branch: Term) {
   if (isOhmic(branch)) return `${s.i} = \\frac{V_j}{${s.r}}`;
   if (isForwardPower(branch)) return `${s.i} = A_{fwd}\\,\\operatorname{softplus}\\!\\left(\\frac{V_j - V_t}{V_s}\\right)^{m}`;
   if (isBreakdown(branch)) return `${s.i} = I_{br0}\\,\\operatorname{softplus}\\!\\left(\\frac{-V_j - V_{br}}{V_s}\\right)^{m}`;
+  if (isBiasDependentCurrent(branch)) return `${s.i} = I_0(1+a|V_j|)+A\\,\\operatorname{softplus}\\!\\left(\\frac{|V_j|-V_t}{V_s}\\right)^m`;
   return `${s.i} = f_{${branch.id.replace(/[^A-Za-z0-9]/g, "")}}(V_j)`;
 }
 function totalCurrentLatex(branches: Term[]) {
@@ -78,6 +80,7 @@ function concreteLatex(series: Term[], branches: Term[]) {
     if (isOhmic(b)) return `\\frac{${vj}}{${s.r}}`;
     if (isForwardPower(b)) return `A_{fwd}\\,\\operatorname{softplus}\\!\\left(\\frac{${vj}-V_t}{V_s}\\right)^m`;
     if (isBreakdown(b)) return `I_{br0}\\,\\operatorname{softplus}\\!\\left(\\frac{-${vj}-V_{br}}{V_s}\\right)^m`;
+    if (isBiasDependentCurrent(b)) return `I_0(1+a|${vj}|)+A\\,\\operatorname{softplus}\\!\\left(\\frac{|${vj}|-V_t}{V_s}\\right)^m`;
     return `f_{${b.id.replace(/[^A-Za-z0-9]/g, "")}}(${vj})`;
   });
   return `I = ${pieces.length ? pieces.join(" + ") : "0"}`;
@@ -86,7 +89,7 @@ function residualLatex(branches: Term[]) {
   return `F(I;V_{ext}) = I - \\left(${branches.map((b) => symbolFor(b).i).join(" + ") || "0"}\\right) = 0`;
 }
 function termMeaning(term: Term, language: Language) {
-  if (term.form === "conductance_modifier" || term.placement.includes("series_conductance_modifier")) return language === "zh" ? "主路传输调制，改变有效主路电阻" : "main-path transport modifier; changes effective series resistance";
+  if (term.form === "conductance_modifier" || term.placement.includes("series_conductance_modifier")) return language === "zh" ? "串联电导调制，改变有效主路电阻" : "series conductance modifier; changes effective main-path resistance";
   if (term.form === "voltage_drop" || term.placement.includes("series")) return language === "zh" ? "主路电压降，改变结点电压" : "main-path voltage drop; modifies junction voltage";
   if (term.form === "current_branch" || term.placement.includes("branch")) return language === "zh" ? "并联支路电流，加入总电流" : "parallel branch current; adds to terminal current";
   return language === "zh" ? "模型项" : "model term";
@@ -95,14 +98,14 @@ function beginnerBranchMeaning(term: Term) {
   if (isDiode(term)) return "Exponential diode-like current evaluated at the junction voltage.";
   if (isOhmic(term)) return "Linear leakage path: higher Vj gives proportionally higher leakage current.";
   if (isPhotocurrentConstant(term)) return "Light-generated current with nearly constant magnitude.";
-  if (isPhotocurrentVoltage(term)) return "Light-generated current whose magnitude can change with voltage.";
+  if (isBiasDependentCurrent(term)) return "Empirical branch current whose magnitude can change with bias.";
   if (isForwardPower(term)) return "Extra empirical current that turns on softly near a threshold.";
   if (isBreakdown(term)) return "Reverse-bias leakage or soft breakdown contribution.";
   return "This branch contributes one current term to the terminal current.";
 }
 
 function FormulaCards({ series, branches, language }: { series: Term[]; branches: Term[]; language: Language }) {
-  const usesSoftplus = [...series, ...branches].some((term) => isSeriesPowerDrop(term) || isConductanceModifier(term) || isForwardPower(term) || isBreakdown(term) || isPhotocurrentVoltage(term));
+  const usesSoftplus = [...series, ...branches].some((term) => isSeriesPowerDrop(term) || isConductanceModifier(term) || isForwardPower(term) || isBreakdown(term) || isBiasDependentCurrent(term));
   return <>
     {usesSoftplus ? <div className="equation-card formula-card softplus-definition-card">
       <h3>{language === "zh" ? "Softplus 定义" : "Softplus definition"}</h3>

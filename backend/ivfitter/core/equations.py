@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .component_aliases import BIAS_DEPENDENT_CURRENT_TYPES, canonical_law_id
 from .model_spec import EquationSummary, ModelSpec
 from .topology_graph import assemble_graph, graph_text_summary
 from .component_registry import registry_by_function
@@ -12,8 +13,8 @@ def _component_equation(comp) -> str:
     nick = comp.metadata.get("nickname") or comp.id
     if comp.function_type == "photocurrent_constant":
         return f"I_{nick} = direction_sign * Iph0"
-    if comp.function_type == "photocurrent_voltage_dependent":
-        return f"I_{nick}(V_j) = direction_sign * [Iph0*(1 + gain_per_V*|V_j|) + Aph*sp((|V_j|-Vt_ph)/Vs_ph)^m_ph]"
+    if comp.function_type in BIAS_DEPENDENT_CURRENT_TYPES:
+        return f"I_{nick}(V_j) = direction_sign * [I0*(1 + gain_per_V*|V_j|) + A*sp((|V_j|-Vt)/Vs)^m]"
     if comp.function_type == "series_diode_barrier":
         return f"V_drop,{nick} = n V_T ln(I/I0 + 1)"
     if comp.function_type == "series_power_law_drop":
@@ -32,7 +33,7 @@ def _branch_symbol(comp) -> str:
 
 def _law_line(comp) -> str:
     definition = registry_by_function().get(comp.function_type)
-    law = comp.law_id or (definition.law_id if definition else comp.function_type)
+    law = canonical_law_id(comp.law_id or (definition.law_id if definition else None), comp.function_type)
     form = comp.evaluation_form or (definition.default_form if definition else "auto")
     placement = comp.placement or (definition.default_placement if definition else "auto")
     equation = _component_equation(comp)

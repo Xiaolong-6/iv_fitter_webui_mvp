@@ -13,6 +13,7 @@ from scipy.optimize import root
 from ivfitter.components.diode import diode_current
 from ivfitter.components.parallel import shunt_current, power_law_current, soft_breakdown_current
 from ivfitter.components.custom import evaluate_custom_expression
+from .component_aliases import BIAS_DEPENDENT_CURRENT_TYPES
 from .model_spec import GraphComponent, ModelSpec
 from .model_params import param_value
 from .topology_graph import assemble_graph
@@ -32,6 +33,24 @@ def _edge_current(comp: GraphComponent, v_component: np.ndarray, temperature_K: 
         return power_law_current(v_component, param_value(comp, "A", 0.0), param_value(comp, "Vt_V", 0.0), param_value(comp, "Vs_V", 1.0), param_value(comp, "m", 1.0), comp.polarity or "forward")
     if ft == "soft_breakdown":
         return soft_breakdown_current(v_component, param_value(comp, "I0_A", 0.0), param_value(comp, "Vbr_V", 10.0), param_value(comp, "Vslope_V", 1.0), param_value(comp, "w_V", 0.5))
+    if ft in BIAS_DEPENDENT_CURRENT_TYPES:
+        arr = np.asarray(v_component, dtype=float)
+        mode = comp.polarity or "symmetric"
+        if mode == "forward":
+            active = (arr >= 0.0).astype(float)
+        elif mode == "reverse":
+            active = (arr <= 0.0).astype(float)
+        else:
+            active = np.ones_like(arr, dtype=float)
+        sign = 1.0 if param_value(comp, "direction_sign", -1.0) > 0 else -1.0
+        base = param_value(comp, "Iph0_A", 0.0)
+        gain = param_value(comp, "gain_per_V", 0.0)
+        threshold_amp = param_value(comp, "Aph", 0.0)
+        vt = param_value(comp, "Vt_ph_V", 0.0)
+        vs = max(param_value(comp, "Vs_ph_V", 1.0), 1e-30)
+        m = param_value(comp, "m_ph", 1.0)
+        threshold = threshold_amp * np.power(np.logaddexp(0.0, (np.abs(arr) - vt) / vs), m)
+        return sign * np.maximum(base * (1.0 + gain * np.abs(arr)) + threshold, 0.0) * active
     if ft == "custom":
         expr = comp.metadata.get("expression", "s*A*softplus(u)**m")
         params = {name: spec.value for name, spec in comp.params.items()}

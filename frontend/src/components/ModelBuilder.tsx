@@ -34,15 +34,15 @@ function componentDetailTitle(comp: ComponentSpec, language: Language) {
 }
 
 function functionOptionLabel(definition: FunctionDefinition, language: Language, bucket?: BuilderBucket) {
-  const advanced = new Set(["series_diode_barrier", "softplus_rs_modifier", "series_power_law_drop", "custom", "power_law", "soft_breakdown", "photocurrent_voltage_dependent"]);
+  const advanced = new Set(["series_diode_barrier", "softplus_rs_modifier", "series_power_law_drop", "custom", "power_law", "soft_breakdown", "bias_dependent_current", "photocurrent_voltage_dependent", "voltage_dependent_photocurrent"]);
   const interpretive = { has: (_functionType: string) => false };
   const prefix = interpretive.has(definition.function_type)
     ? (language === "zh" ? "解释性 · " : "Interpretive · ")
     : advanced.has(definition.function_type)
       ? (language === "zh" ? "高级 · " : "Advanced · ")
       : (language === "zh" ? "基础 · " : "Basic · ");
-  if (definition.function_type === "series_diode_barrier") return prefix + (language === "zh" ? "串联二极管势垒" : "Series diode barrier");
-  if (definition.function_type === "softplus_rs_modifier") return prefix + (language === "zh" ? "软开启传输调制" : "Softplus transport modifier");
+  if (definition.function_type === "series_diode_barrier") return prefix + (language === "zh" ? "类二极管串联势垒压降" : "Diode-like series barrier drop");
+  if (definition.function_type === "softplus_rs_modifier") return prefix + (language === "zh" ? "偏压相关串联电导调制" : "Bias-dependent series conductance modifier");
   if (definition.function_type === "custom" && bucket === "main") return prefix + (language === "zh" ? "自定义传输调制" : "Custom transport modifier");
   if (definition.law_id === "ohmic") return prefix + (language === "zh" ? "有效欧姆电阻" : "Effective Ohmic resistance");
   return prefix + localizedFunctionLabel(definition.function_type, definition.display_name, language);
@@ -251,7 +251,10 @@ export function ModelBuilder({ model, registry, onChange, language, disabled = f
   }
 
   function definitionForComponent(comp: ComponentSpec) {
-    return registry.find((definition) => definition.function_type === comp.function_type);
+    const functionType = comp.function_type === "photocurrent_voltage_dependent" || comp.function_type === "voltage_dependent_photocurrent"
+      ? "bias_dependent_current"
+      : comp.function_type;
+    return registry.find((definition) => definition.function_type === functionType);
   }
 
   function addPolarityFor(bucket: BuilderBucket, definition: FunctionDefinition): Polarity | undefined {

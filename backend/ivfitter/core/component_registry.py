@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from .component_aliases import LEGACY_ALT_VOLTAGE_DEPENDENT_PHOTOCURRENT, LEGACY_VOLTAGE_DEPENDENT_PHOTOCURRENT
+
 
 class ParameterDefinition(BaseModel):
     """Default parameter definition for a registered law adapter."""
@@ -90,10 +92,10 @@ def component_registry() -> list[FunctionDefinition]:
         FunctionDefinition(
             function_type="softplus_rs_modifier",
             location="series",
-            display_name="Softplus transport modifier",
+            display_name="Bias-dependent series conductance modifier",
             role="conductance_modifier_law",
             law_id="softplus_conductance_modifier",
-            law_name="Bias-dependent main-path transport modifier",
+            law_name="Bias-dependent series conductance modifier",
             canonical_equation="R_eff = R_base / [1 + A softplus(u)]",
             available_forms=["conductance_modifier"],
             default_form="conductance_modifier",
@@ -108,12 +110,12 @@ def component_registry() -> list[FunctionDefinition]:
                 ParameterDefinition(name="Vs_V", default=0.5, lower=1e-9, upper=100.0, unit="V", description="Softness voltage."),
             ],
             equation_template="R_eff <- R_eff/(1 + A sp(u))",
-            help_text="Advanced main-path transport modifier. It changes the effective series resistance; it is not an added current branch.",
+            help_text="Modifies effective main-path series transport as a function of bias. This is a series-path conductance modifier, not a separate current branch.",
         ),
         FunctionDefinition(
             function_type="shunt",
             location="parallel",
-            display_name="Ohmic law, branch adapter",
+            display_name="Ohmic leakage/current branch",
             role="ohmic_law_adapter_legacy_branch",
             law_id="ohmic",
             law_name="Ohmic linear law",
@@ -124,15 +126,15 @@ def component_registry() -> list[FunctionDefinition]:
             default_placement="parallel_current_branch",
             parameters=[ParameterDefinition(name="Rsh_ohm", default=1e9, lower=1e-9, upper=1e18, unit="Ω", description="Resistance value. Name is legacy; mathematically this is the same ohmic R.")],
             equation_template="current_branch: I = V/R; voltage_drop: V_drop = I R",
-            help_text="Compatibility adapter for the same Ohmic law when used as a leakage/current branch. New UI explains it as law=form+placement rather than a separate function category.",
+            help_text="Uses the Ohmic law as a branch current contribution, I = V/R. Typical use: shunt resistance or linear leakage path.",
         ),
         FunctionDefinition(
             function_type="power_law",
             location="parallel",
-            display_name="Softplus power-law current law",
+            display_name="Soft-threshold power-law current branch",
             role="empirical_current_law",
             law_id="softplus_power_law_current",
-            law_name="Softplus power-law current relation",
+            law_name="Soft-threshold power-law current branch",
             canonical_equation="I = s A softplus((sV - Vt)/Vs)^m",
             available_forms=["current_branch"],
             default_form="current_branch",
@@ -147,7 +149,7 @@ def component_registry() -> list[FunctionDefinition]:
                 ParameterDefinition(name="m", default=1.0, lower=0.05, upper=10.0, unit="", description="Power-law exponent."),
             ],
             equation_template="I = s A sp(u)^m",
-            help_text="Empirical high-bias current contribution. Placement decides which node voltage drives this branch.",
+            help_text="Adds an empirical current branch with smooth threshold behavior and power-law growth. Depending on polarity, it can model extra forward conduction, reverse leakage onset, or high-field conduction.",
         ),
         FunctionDefinition(
             function_type="series_power_law_drop",
@@ -175,10 +177,10 @@ def component_registry() -> list[FunctionDefinition]:
         FunctionDefinition(
             function_type="soft_breakdown",
             location="parallel",
-            display_name="Soft reverse-breakdown current law",
+            display_name="Reverse leakage / soft-breakdown current",
             role="empirical_current_law",
             law_id="soft_reverse_breakdown_current",
-            law_name="Smooth reverse-breakdown current relation",
+            law_name="Reverse leakage / soft-breakdown current",
             canonical_equation="I = -I0 [exp((-V - Vbr)/Vslope)-1] S((-V - Vbr)/w)",
             available_forms=["current_branch"],
             default_form="current_branch",
@@ -187,13 +189,13 @@ def component_registry() -> list[FunctionDefinition]:
             allowed_polarities=["reverse"],
             default_polarity="reverse",
             parameters=[
-                ParameterDefinition(name="I0_A", default=1e-12, lower=0.0, upper=1.0, unit="A", description="Breakdown current scale."),
-                ParameterDefinition(name="Vbr_V", default=10.0, lower=0.0, upper=500.0, unit="V", description="Breakdown onset magnitude."),
+                ParameterDefinition(name="I0_A", default=1e-12, lower=0.0, upper=1.0, unit="A", description="Reverse leakage current scale."),
+                ParameterDefinition(name="Vbr_V", default=10.0, lower=0.0, upper=500.0, unit="V", description="Reverse-bias onset magnitude."),
                 ParameterDefinition(name="Vslope_V", default=1.0, lower=1e-9, upper=100.0, unit="V", description="Exponential slope."),
                 ParameterDefinition(name="w_V", default=0.5, lower=1e-9, upper=100.0, unit="V", fit=False, description="Gate smoothing width."),
             ],
             equation_template="I_BR = -I0[exp((-V-Vbr)/Vslope)-1] S((-V-Vbr)/w)",
-            help_text="Smooth reverse-bias leakage or breakdown onset current law.",
+            help_text="Models a repeatable reverse-bias current onset. It may represent reverse leakage, trap-assisted leakage, or soft breakdown; do not interpret it automatically as avalanche or Zener breakdown.",
         ),
 
         FunctionDefinition(
@@ -218,13 +220,13 @@ def component_registry() -> list[FunctionDefinition]:
             help_text="Bias-independent light-generated current branch. Use for photodiode-like light current that is approximately constant with voltage.",
         ),
         FunctionDefinition(
-            function_type="photocurrent_voltage_dependent",
+            function_type="bias_dependent_current",
             location="parallel",
-            display_name="Voltage-dependent photocurrent",
-            role="photo_current_law",
-            law_id="photocurrent_voltage_dependent",
-            law_name="Voltage-dependent photocurrent relation",
-            canonical_equation="I_ph(Vj) = s [Iph0(1+a |Vj|) + Aph softplus((|Vj|-Vt)/Vs)^m]",
+            display_name="Bias-dependent current branch",
+            role="empirical_current_law",
+            law_id="bias_dependent_current",
+            law_name="Bias-dependent current branch",
+            canonical_equation="I_bias(Vj) = s [I0(1+a |Vj|) + A softplus((|Vj|-Vt)/Vs)^m]",
             available_forms=["current_branch"],
             default_form="current_branch",
             allowed_placements=["parallel_current_branch", "junction_current_branch"],
@@ -232,21 +234,21 @@ def component_registry() -> list[FunctionDefinition]:
             allowed_polarities=["forward", "reverse", "symmetric"],
             default_polarity="symmetric",
             parameters=[
-                ParameterDefinition(name="Iph0_A", default=1e-9, lower=0.0, upper=1e3, unit="A", description="Zero-bias photocurrent scale."),
-                ParameterDefinition(name="gain_per_V", default=0.0, lower=-1e6, upper=1e6, unit="1/V", description="Linear voltage-dependent collection/gain coefficient."),
-                ParameterDefinition(name="Aph", default=0.0, lower=0.0, upper=1e3, unit="A", fit=False, description="Optional threshold photocurrent amplitude; fixed by default to avoid overfitting."),
-                ParameterDefinition(name="Vt_ph_V", default=1.0, lower=0.0, upper=500.0, unit="V", fit=False, description="Optional threshold voltage; fixed by default."),
-                ParameterDefinition(name="Vs_ph_V", default=1.0, lower=1e-9, upper=100.0, unit="V", fit=False, description="Optional threshold softness; fixed by default."),
-                ParameterDefinition(name="m_ph", default=1.0, lower=0.05, upper=10.0, unit="", fit=False, description="Optional threshold exponent; fixed by default."),
+                ParameterDefinition(name="Iph0_A", default=1e-9, lower=0.0, upper=1e3, unit="A", description="Zero-bias current scale. Serialized key is retained for compatibility."),
+                ParameterDefinition(name="gain_per_V", default=0.0, lower=-1e6, upper=1e6, unit="1/V", description="Linear bias-dependent gain or leakage coefficient."),
+                ParameterDefinition(name="Aph", default=0.0, lower=0.0, upper=1e3, unit="A", fit=False, description="Optional threshold current amplitude. Serialized key is retained for compatibility."),
+                ParameterDefinition(name="Vt_ph_V", default=1.0, lower=0.0, upper=500.0, unit="V", fit=False, description="Optional threshold bias. Serialized key is retained for compatibility."),
+                ParameterDefinition(name="Vs_ph_V", default=1.0, lower=1e-9, upper=100.0, unit="V", fit=False, description="Optional threshold softness. Serialized key is retained for compatibility."),
+                ParameterDefinition(name="m_ph", default=1.0, lower=0.05, upper=10.0, unit="", fit=False, description="Optional threshold exponent. Serialized key is retained for compatibility."),
                 ParameterDefinition(name="direction_sign", default=-1.0, lower=-1.0, upper=1.0, unit="", fit=False, description="Current direction: +1 adds positive terminal current; -1 subtracts it."),
             ],
-            equation_template="I_ph(Vj) = s[Iph0(1+a|Vj|)+Aph sp((|Vj|-Vt)/Vs)^m]",
-            help_text="Photocurrent branch for field-assisted collection or trap-assisted photogain. Advanced threshold parameters are fixed by default to keep the first fit identifiable.",
+            equation_template="I_bias(Vj) = s[I0(1+a|Vj|)+A sp((|Vj|-Vt)/Vs)^m]",
+            help_text="Adds an empirical current branch whose magnitude depends on bias. Depending on the experiment, it may represent voltage-dependent leakage, dark current, trap-assisted current, photocurrent gain, or another non-ideal branch current.",
         ),
         FunctionDefinition(
             function_type="series_diode_barrier",
             location="series",
-            display_name="Series diode barrier",
+            display_name="Diode-like series barrier drop",
             role="series_barrier_voltage_drop",
             law_id="shockley_diode",
             law_name="Shockley diode voltage-drop form",
@@ -260,7 +262,7 @@ def component_registry() -> list[FunctionDefinition]:
                 ParameterDefinition(name="n", default=1.5, lower=0.5, upper=10.0, unit="", description="Ideality factor for the series barrier voltage drop."),
             ],
             equation_template="V_drop = n VT ln(I/I0 + 1)",
-            help_text="Advanced main-path voltage-drop form of the Shockley law. Use for a series contact or injection barrier, not as a parallel current branch.",
+            help_text="Adds a diode-like voltage drop in the main series path, useful for injection/contact-barrier-like behavior.",
         ),
         FunctionDefinition(
             function_type="custom",
@@ -290,9 +292,15 @@ def component_registry() -> list[FunctionDefinition]:
 
 def registry_by_function() -> dict[str, FunctionDefinition]:
     """Return registry keyed by function_type."""
-    return {item.function_type: item for item in component_registry()}
+    items = {item.function_type: item for item in component_registry()}
+    items[LEGACY_VOLTAGE_DEPENDENT_PHOTOCURRENT] = items["bias_dependent_current"]
+    items[LEGACY_ALT_VOLTAGE_DEPENDENT_PHOTOCURRENT] = items["bias_dependent_current"]
+    return items
 
 
 def registry_by_key() -> dict[tuple[str, str], FunctionDefinition]:
     """Legacy registry keyed by (location, function_type)."""
-    return {(item.location, item.function_type): item for item in component_registry()}
+    items = {(item.location, item.function_type): item for item in component_registry()}
+    items[("parallel", LEGACY_VOLTAGE_DEPENDENT_PHOTOCURRENT)] = registry_by_function()[LEGACY_VOLTAGE_DEPENDENT_PHOTOCURRENT]
+    items[("parallel", LEGACY_ALT_VOLTAGE_DEPENDENT_PHOTOCURRENT)] = registry_by_function()[LEGACY_ALT_VOLTAGE_DEPENDENT_PHOTOCURRENT]
+    return items

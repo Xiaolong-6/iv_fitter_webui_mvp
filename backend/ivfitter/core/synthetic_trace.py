@@ -14,6 +14,7 @@ import numpy as np
 from pydantic import BaseModel, Field
 
 from ivfitter import __version__
+from .component_aliases import BIAS_DEPENDENT_CURRENT_TYPES
 from .evaluation import predict_current
 from .model_spec import ComponentSpec, ModelSpec
 
@@ -73,7 +74,7 @@ def _validate_component_support(model: ModelSpec) -> None:
             "power_law",
             "soft_breakdown",
             "photocurrent_constant",
-            "photocurrent_voltage_dependent",
+            *BIAS_DEPENDENT_CURRENT_TYPES,
             "custom",
         },
     }

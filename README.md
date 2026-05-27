@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.5.17**
+Current version: **1.5.18**
 
 IV-fitter Web UI is a local-first browser app for fitting I-V traces with compact circuit models. It helps a user import voltage/current data, build a model from mathematical circuit terms, run a fit, inspect diagnostics, and export a result only after the residuals, warnings, parameters, and model structure make sense.
 
@@ -59,8 +59,8 @@ The Parameters table is grouped first by placement, then by component instance. 
 - HappyMeasure CSV v2 import compatibility for single, wide, and long files, including current-source conversion.
 - Synthetic IV trace generation from the current Model Builder model, with voltage sweep controls, optional noise, seed, current compliance, and ground-truth metadata.
 - Grouped parameter editing with next-fit initials, bounds, fit/fixed state, fitted values, uncertainty, and interpretation hints.
-- Main-path terms such as Ohmic resistance, series diode barrier, softplus transport modifier, custom transport modifier, and softplus voltage drop.
-- Branch terms such as Shockley diode, Ohmic leakage/shunt behavior, softplus power-law current, soft reverse breakdown, and custom expressions.
+- Main-path terms such as Ohmic resistance, diode-like series barrier drop, bias-dependent series conductance modifier, custom transport modifier, and softplus voltage drop.
+- Branch terms such as Shockley diode, Ohmic leakage/shunt behavior, soft-threshold power-law current branch, reverse leakage / soft-breakdown current, and custom expressions.
 - Model preview with beginner-friendly equation steps and softplus definition.
 - Mobile portrait layout with compact controls and sticky mobile Run fit action.
 - LAN phone/tablet testing helper for local network testing.
@@ -188,6 +188,14 @@ The sample preserves the multi-trace row count and voltage/current data needed t
 
 User-facing demo IV traces live under `examples/demo_data/iv_traces/`. In the local app, Import CSV/TXT opens that folder by default when the runtime supports local OS file dialogs; users can still browse anywhere.
 
+
+### v1.5.18 semantic component label cleanup
+
+- Renamed advanced component labels to emphasize mathematical form and circuit placement rather than a single physical interpretation.
+- Renamed the advanced voltage-dependent current law to **Bias-dependent current branch** in the Model Builder, equation preview, parameter display, and user manual.
+- Clarified **Reverse leakage / soft-breakdown current**, **Soft-threshold power-law current branch**, **Bias-dependent series conductance modifier**, and **Diode-like series barrier drop** wording.
+- Added canonical `bias_dependent_current` registry/law id while keeping legacy `photocurrent_voltage_dependent` saved models loadable and fit-compatible.
+- Kept serialized parameter keys unchanged for old JSON/report compatibility, but changed display descriptions to neutral current-scale/bias wording.
 
 ### v1.5.17 internal stability refactor
 

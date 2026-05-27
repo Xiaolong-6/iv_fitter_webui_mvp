@@ -1,15 +1,15 @@
 # Tested current version
 
-Version: v1.5.17
+Version: v1.5.18
 
 Validated in this package:
 
 - Backend pytest suite.
 - Backend compileall.
-- Frontend Vitest suite.
-- Frontend production build.
+- Frontend Vitest suite: pending local dependency repair.
+- Frontend production build: pending local dependency repair.
 
-Key change: internal frontend stability refactor. Fit lifecycle and report artifact rules are now centralized in pure helpers and covered by regression tests; existing UI behavior is preserved.
+Key change: user-facing component labels now describe mathematical form and circuit placement more neutrally. The advanced voltage-dependent current component is exposed as **Bias-dependent current branch** with canonical `bias_dependent_current` ids. Legacy `photocurrent_voltage_dependent` saved models remain supported as aliases.
 
 Commands run:
 
@@ -25,11 +25,11 @@ Expected result:
 
 - Backend tests pass.
 - Backend package and tests compile.
-- Frontend unit tests pass.
-- Frontend production build passes.
+- Frontend unit tests pass when frontend dev dependencies are installed.
+- Frontend production build passes when frontend dev dependencies are installed.
 
 Manual checks recommended:
 
-1. Run a normal fit and confirm status, Parameters table, and Report behavior match v1.5.16.
-2. Start a fit, press Stop fit, then start a new fit; confirm late/old results do not overwrite the workspace.
-3. Generate and download reports; confirm filenames still use the selected trace label and timestamp.
+1. Open Model Builder and confirm the renamed advanced options, including **Bias-dependent current branch**, **Reverse leakage / soft-breakdown current**, and **Bias-dependent series conductance modifier**.
+2. Load or construct a legacy `photocurrent_voltage_dependent` model and confirm it still validates/fits.
+3. Check the User manual Function Guide and equation preview for neutral bias-dependent current wording.

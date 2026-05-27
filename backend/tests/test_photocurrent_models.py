@@ -4,6 +4,7 @@ from ivfitter.core.component_registry import component_registry
 from ivfitter.core.equations import generate_equations
 from ivfitter.core import fitting_engine
 from ivfitter.core.fitting_engine import predict_current, fit_trace
+from ivfitter.core.model_validation import validate_model_spec
 from ivfitter.core.model_spec import ComponentSpec, FitConfig, FitRequest, ModelSpec, ParameterSpec, TraceData
 
 
@@ -14,7 +15,8 @@ def p(value, fit=False, lower=None, upper=None, unit=None):
 def test_registry_contains_photocurrent_laws():
     laws = {entry.law_id for entry in component_registry()}
     assert "photocurrent_constant" in laws
-    assert "photocurrent_voltage_dependent" in laws
+    assert "bias_dependent_current" in laws
+    assert "photocurrent_voltage_dependent" not in laws
     assert "photoconductive_branch" not in laws
     assert "photo_modulated_main_path" not in laws
 
@@ -33,19 +35,23 @@ def test_constant_photocurrent_branch_formula_and_prediction():
     assert "I_Iph" in joined or "Iph" in joined
 
 
-def test_voltage_dependent_photocurrent_branch_finite_prediction():
+def bias_dependent_params():
+    return {
+        "Iph0_A": p(1e-9),
+        "gain_per_V": p(0.5),
+        "Aph": p(1e-12),
+        "Vt_ph_V": p(1.0),
+        "Vs_ph_V": p(0.5),
+        "m_ph": p(1.0),
+        "direction_sign": p(-1.0),
+    }
+
+
+def test_bias_dependent_current_branch_finite_prediction():
     model = ModelSpec(parallel=[ComponentSpec(
-        id="IphV", location="parallel", function_type="photocurrent_voltage_dependent",
-        law_id="photocurrent_voltage_dependent", evaluation_form="current_branch", placement="parallel_current_branch",
-        params={
-            "Iph0_A": p(1e-9),
-            "gain_per_V": p(0.5),
-            "Aph": p(1e-12),
-            "Vt_ph_V": p(1.0),
-            "Vs_ph_V": p(0.5),
-            "m_ph": p(1.0),
-            "direction_sign": p(-1.0),
-        },
+        id="Ibias", location="parallel", function_type="bias_dependent_current",
+        law_id="bias_dependent_current", evaluation_form="current_branch", placement="parallel_current_branch",
+        params=bias_dependent_params(),
     )])
     out = predict_current([-2, 0, 2], model)
     assert np.all(np.isfinite(out))
@@ -53,19 +59,25 @@ def test_voltage_dependent_photocurrent_branch_finite_prediction():
     assert abs(out[2]) > abs(out[1])
 
 
+def test_legacy_voltage_dependent_photocurrent_model_still_validates_and_fits():
+    model = ModelSpec(parallel=[ComponentSpec(
+        id="legacy", location="parallel", function_type="photocurrent_voltage_dependent",
+        law_id="photocurrent_voltage_dependent", evaluation_form="current_branch", placement="parallel_current_branch",
+        params=bias_dependent_params(),
+    )])
+    warnings = validate_model_spec(model)
+    assert not any(w.severity == "error" for w in warnings)
+    trace = TraceData(voltage_V=[-1.0, 0.0, 1.0, 2.0], current_A=[-2e-9, -1e-9, -2e-9, -3e-9])
+    result = fit_trace(FitRequest(trace=trace, model=model, config=FitConfig(max_nfev=5, exclude_compliance=False)))
+    assert "legacy.Iph0_A" in result.parameters
+    assert np.all(np.isfinite(result.curves.current_fit_A))
+
+
 def test_implicit_solver_failure_still_returns_warning_and_nan_no_fallback(monkeypatch):
     model = ModelSpec(parallel=[ComponentSpec(
-        id="IphV", location="parallel", function_type="photocurrent_voltage_dependent",
-        law_id="photocurrent_voltage_dependent", evaluation_form="current_branch", placement="parallel_current_branch",
-        params={
-            "Iph0_A": p(1e-9),
-            "gain_per_V": p(0.5),
-            "Aph": p(1e-12),
-            "Vt_ph_V": p(1.0),
-            "Vs_ph_V": p(0.5),
-            "m_ph": p(1.0),
-            "direction_sign": p(-1.0),
-        },
+        id="Ibias", location="parallel", function_type="bias_dependent_current",
+        law_id="bias_dependent_current", evaluation_form="current_branch", placement="parallel_current_branch",
+        params=bias_dependent_params(),
     )])
     monkeypatch.setattr(fitting_engine, "solve_vj", lambda voltage, model: np.full(len(voltage), np.nan))
     trace = TraceData(voltage_V=[0.0, 0.1, 0.2, 0.3], current_A=[0.0, 0.0, 0.0, 0.0])
@@ -85,10 +97,7 @@ def test_photocurrent_bound_and_dark_first_guidance_warnings():
     result = fit_trace(FitRequest(trace=trace, model=model, config=FitConfig(max_nfev=10, exclude_compliance=False)))
     codes = {w.code for w in result.warnings}
     assert "photocurrent_dark_first_guidance" in codes
-    assert "photocurrent_parameter_near_bound" in codes
-
-from ivfitter.core.model_validation import validate_model_spec
-
+    assert "current_branch_parameter_near_bound" in codes
 
 def test_negative_photocurrent_parameter_rejected():
     model = ModelSpec(parallel=[ComponentSpec(
@@ -97,7 +106,7 @@ def test_negative_photocurrent_parameter_rejected():
         params={"Iph0_A": p(-1e-9), "direction_sign": p(-1.0)},
     )])
     warnings = validate_model_spec(model)
-    assert any(w.code == "negative_photocurrent_parameter" and w.severity == "error" for w in warnings)
+    assert any(w.code == "negative_current_magnitude_parameter" and w.severity == "error" for w in warnings)
 
 
 def test_direction_sign_zero_rejected():
@@ -120,16 +129,16 @@ def test_photocurrent_dark_first_guidance_is_validation_warning():
     assert any(w.code == "photocurrent_dark_first_guidance" and w.severity == "warning" for w in warnings)
 
 
-def test_voltage_dependent_photocurrent_negative_gain_cannot_flip_direction():
+def test_bias_dependent_current_negative_gain_cannot_flip_direction():
     import numpy as np
-    from ivfitter.core.evaluation import photocurrent_voltage_dependent
+    from ivfitter.core.evaluation import bias_dependent_current
     from ivfitter.core.model_spec import ComponentSpec, ParameterSpec
 
     comp = ComponentSpec(
-        id="iphv",
+        id="ibias",
         location="parallel",
-        function_type="photocurrent_voltage_dependent",
-        law_id="photocurrent_voltage_dependent",
+        function_type="bias_dependent_current",
+        law_id="bias_dependent_current",
         evaluation_form="current_branch",
         placement="parallel_current_branch",
         polarity="symmetric",
@@ -143,6 +152,6 @@ def test_voltage_dependent_photocurrent_negative_gain_cannot_flip_direction():
             "direction_sign": ParameterSpec(value=1.0, lower=-1.0, upper=1.0, fit=False),
         },
     )
-    current = photocurrent_voltage_dependent(np.array([0.0, 0.1, 1.0]), comp)
+    current = bias_dependent_current(np.array([0.0, 0.1, 1.0]), comp)
     assert np.all(current >= 0.0)
     assert current[-1] == 0.0

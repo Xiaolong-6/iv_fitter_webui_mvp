@@ -1,3 +1,17 @@
+# v1.5.18 - Semantic component label cleanup
+
+- Renamed several user-facing component labels to describe mathematical form and circuit placement more accurately.
+- Renamed the advanced voltage-dependent current component to **Bias-dependent current branch** across the registry, Model Builder, equation preview, parameter display, and user manual.
+- Clarified reverse leakage / soft-breakdown wording and soft-threshold power-law current branch wording.
+- Renamed **Softplus transport modifier** to **Bias-dependent series conductance modifier**.
+- Removed developer-facing "adapter" terminology from Ohmic branch UI text.
+- Added canonical `bias_dependent_current` function/law id for new models.
+- Kept legacy `photocurrent_voltage_dependent` saved models loadable and fit-compatible through backend aliases.
+- Preserved serialized parameter keys such as `Iph0_A`, `Aph`, `Vt_ph_V`, `Vs_ph_V`, and `m_ph` for JSON/report compatibility while changing display descriptions to neutral current/bias language.
+- Added regression tests for the new label, legacy alias validation/fitting, and absence of the old label from user-facing frontend source.
+- No equation or fitting-behavior changes.
+- Updated version metadata to v1.5.18.
+
 # v1.5.17 - Internal stability refactor
 
 - Extracted frontend fit lifecycle helpers for run-id sequencing, stale-result acceptance, cancelled/timeout/error lifecycle states, derived UI state, and report availability.

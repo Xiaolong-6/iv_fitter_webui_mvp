@@ -19,6 +19,19 @@ export function nickname(comp: ComponentSpec) {
   return String(comp.metadata?.nickname ?? comp.id);
 }
 
+function canonicalFunctionType(functionType: string) {
+  return functionType === "photocurrent_voltage_dependent" || functionType === "voltage_dependent_photocurrent"
+    ? "bias_dependent_current"
+    : functionType;
+}
+
+function canonicalLawId(comp: ComponentSpec) {
+  const law = comp.law_id ?? comp.function_type;
+  return law === "photocurrent_voltage_dependent" || law === "voltage_dependent_photocurrent"
+    ? "bias_dependent_current"
+    : law;
+}
+
 export function userDefinitions(registry: FunctionDefinition[]) {
   const seen = new Set<string>();
   return registry.filter((definition) => {
@@ -57,7 +70,7 @@ export function allComponents(model: ModelSpec) {
 
 export function duplicateBaseKey(comp: ComponentSpec) {
   const polarity = comp.function_type === "series_diode_barrier" ? "none" : (comp.polarity ?? "none");
-  return [comp.law_id ?? comp.function_type, comp.evaluation_form ?? "auto", comp.placement ?? "auto", polarity].join("|");
+  return [canonicalLawId(comp) || canonicalFunctionType(comp.function_type), comp.evaluation_form ?? "auto", comp.placement ?? "auto", polarity].join("|");
 }
 
 export function componentRole(comp: ComponentSpec) {

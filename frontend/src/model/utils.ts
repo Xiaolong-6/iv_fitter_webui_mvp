@@ -3,7 +3,16 @@ let nextId = 1;
 export function buildParams(def: FunctionDefinition, nickname?: string): Record<string, ParameterSpec> {
   const params: Record<string, ParameterSpec> = {};
   for (const p of def.parameters) {
-    const label = def.law_id === "ohmic" ? (nickname ?? "R") : p.name;
+    const neutralBiasLabels: Record<string, string> = {
+      Iph0_A: "I0",
+      Aph: "A",
+      Vt_ph_V: "Vt",
+      Vs_ph_V: "Vs",
+      m_ph: "m",
+    };
+    const label = def.law_id === "ohmic" ? (nickname ?? "R")
+      : def.function_type === "bias_dependent_current" || def.function_type === "photocurrent_voltage_dependent" || def.function_type === "voltage_dependent_photocurrent" ? (neutralBiasLabels[p.name] ?? p.name)
+      : p.name;
     params[p.name] = { value: p.default, lower: p.lower ?? null, upper: p.upper ?? null, fit: p.fit, unit: p.unit ?? null, label, description: p.description };
   }
   return params;
@@ -30,7 +39,7 @@ export function createComponentInLocation(def: FunctionDefinition, location: "co
     : def.function_type === "series_power_law_drop" ? "Softplus1"
     : def.function_type === "diode" ? "D1"
     : def.function_type === "photocurrent_constant" ? "Iph"
-    : def.function_type === "photocurrent_voltage_dependent" ? "Iph(V)"
+    : def.function_type === "bias_dependent_current" || def.function_type === "photocurrent_voltage_dependent" || def.function_type === "voltage_dependent_photocurrent" ? "Ibias(V)"
     : def.display_name.split(" ")[0];
   const componentPolarity = def.allowed_polarities.length ? (polarity ?? def.default_polarity ?? null) : null;
   return { id: `${idBase}_${nextId++}`, location, function_type: def.function_type, law_id: def.law_id, evaluation_form, placement, polarity: componentPolarity, mode: def.mode ?? null, params: buildParams(def, nickname), metadata: def.function_type === "custom" ? { nickname, expression: evaluation_form === "conductance_modifier" ? "A*softplus(u)" : "s*A*softplus(u)**m" } : { nickname } };

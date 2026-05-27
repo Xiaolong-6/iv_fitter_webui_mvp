@@ -15,6 +15,7 @@ from ivfitter.components.diode import diode_current
 from ivfitter.components.common import thermal_voltage
 from ivfitter.components.parallel import power_law_current, shunt_current, soft_breakdown_current
 from ivfitter.components.series import apply_conductance_boost, softplus_conductance_boost
+from .component_aliases import BIAS_DEPENDENT_CURRENT_TYPES
 from .graph_solver import solve_graph_current
 from .model_spec import ComponentSpec
 from .model_params import param_value
@@ -50,7 +51,7 @@ def photocurrent_constant(vj: np.ndarray, comp: ComponentSpec) -> np.ndarray:
     return direction_sign(comp) * param_value(comp, "Iph0_A", 0.0) * bias_activation(arr, comp.polarity)
 
 
-def photocurrent_voltage_dependent(vj: np.ndarray, comp: ComponentSpec) -> np.ndarray:
+def bias_dependent_current(vj: np.ndarray, comp: ComponentSpec) -> np.ndarray:
     arr = np.asarray(vj, dtype=float)
     base = param_value(comp, "Iph0_A", 0.0)
     gain = param_value(comp, "gain_per_V", 0.0)
@@ -61,10 +62,13 @@ def photocurrent_voltage_dependent(vj: np.ndarray, comp: ComponentSpec) -> np.nd
     threshold = threshold_amp * np.power(softplus((np.abs(arr) - vt) / vs), m)
     # ``direction_sign`` is the only current-direction control. Negative linear
     # gain values may reduce the voltage-dependent magnitude, but the computed
-    # photocurrent magnitude must never become negative for imported/bypassed
+    # branch-current magnitude must never become negative for imported/bypassed
     # configurations.
     magnitude = np.maximum(base * (1.0 + gain * np.abs(arr)) + threshold, 0.0)
     return direction_sign(comp) * magnitude * bias_activation(arr, comp.polarity)
+
+
+photocurrent_voltage_dependent = bias_dependent_current
 
 
 def series_diode_barrier_drop(current: np.ndarray, comp: ComponentSpec, temperature_K: float) -> np.ndarray:
@@ -142,8 +146,8 @@ def branch_currents_at_vj(vj: np.ndarray, model) -> dict[str, np.ndarray]:
             out[comp.id] = soft_breakdown_current(arr, param_value(comp, "I0_A", 0.0), param_value(comp, "Vbr_V", 10.0), param_value(comp, "Vslope_V", 1.0), param_value(comp, "w_V", 0.5))
         elif comp.function_type == "photocurrent_constant":
             out[comp.id] = photocurrent_constant(arr, comp)
-        elif comp.function_type == "photocurrent_voltage_dependent":
-            out[comp.id] = photocurrent_voltage_dependent(arr, comp)
+        elif comp.function_type in BIAS_DEPENDENT_CURRENT_TYPES:
+            out[comp.id] = bias_dependent_current(arr, comp)
         elif comp.function_type == "custom":
             expr = comp.metadata.get("expression", "s*A*softplus(u)**m")
             params = {name: spec.value for name, spec in comp.params.items()}

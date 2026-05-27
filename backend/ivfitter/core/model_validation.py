@@ -6,6 +6,7 @@ from collections import Counter
 from math import isfinite
 
 from .component_registry import registry_by_key, registry_by_function
+from .component_aliases import BIAS_DEPENDENT_CURRENT_TYPES, canonical_law_id
 from .model_spec import ComponentSpec, FitWarning, ModelSpec
 
 
@@ -86,11 +87,11 @@ def validate_component_against_registry(comp: ComponentSpec) -> list[FitWarning]
             warnings.append(_warn("parameter_above_upper", f"{comp.id}.{name} is above its upper bound.", "error"))
         if name in {"I0_A", "Vs_V", "Vslope_V", "w_V", "n", "Rsh_ohm"} and spec.value <= 0:
             warnings.append(_warn("nonpositive_physical_parameter", f"{comp.id}.{name} should be positive for a physically meaningful model.", "error"))
-    if comp.function_type in {"photocurrent_constant", "photocurrent_voltage_dependent"}:
+    if comp.function_type == "photocurrent_constant" or comp.function_type in BIAS_DEPENDENT_CURRENT_TYPES:
         for name in ("Iph0_A", "Aph"):
             if name in comp.params and float(comp.params[name].value) < 0:
                 warnings.append(_warn(
-                    "negative_photocurrent_parameter",
+                    "negative_current_magnitude_parameter",
                     f"{comp.id}.{name} must be non-negative; use direction_sign/polarity to control current direction.",
                     "error",
                 ))
@@ -112,7 +113,7 @@ def _duplicate_signature(comp: ComponentSpec):
     placement = comp.placement or "auto"
     definition = registry_by_function().get(comp.function_type) or registry_by_key().get((comp.location, comp.function_type))
     polarity = (comp.polarity or "none") if definition and definition.allowed_polarities else "none"
-    law = comp.law_id or comp.function_type
+    law = canonical_law_id(comp.law_id, comp.function_type)
     role = ""
     if comp.function_type == "diode" and form == "current_branch":
         raw_role = comp.metadata.get("role", "")
@@ -143,7 +144,7 @@ def validate_model_spec(model: ModelSpec) -> list[FitWarning]:
         warnings.append(_warn("no_core", "Model has no core junction component."))
     if not any(c.function_type == "constant_rs" for c in model.series):
         warnings.append(_warn("no_rs", "Model has no constant Rs baseline.", "info"))
-    if any(comp.function_type in {"photocurrent_constant", "photocurrent_voltage_dependent"} for _group, comp in _component_groups(model)):
+    if any(comp.function_type == "photocurrent_constant" for _group, comp in _component_groups(model)):
         warnings.append(_warn(
             "photocurrent_dark_first_guidance",
             "Photocurrent components should normally be fitted after a dark-state baseline model is established.",
