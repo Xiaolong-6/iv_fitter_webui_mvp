@@ -12,15 +12,12 @@ from scipy.optimize import brentq
 
 from ivfitter.components.custom import evaluate_custom_expression
 from ivfitter.components.diode import diode_current
+from ivfitter.components.common import thermal_voltage
 from ivfitter.components.parallel import power_law_current, shunt_current, soft_breakdown_current
 from ivfitter.components.series import apply_conductance_boost, softplus_conductance_boost
 from .graph_solver import solve_graph_current
 from .model_spec import ComponentSpec
-
-
-def param_value(comp: ComponentSpec, name: str, default: float = 0.0) -> float:
-    spec = comp.params.get(name)
-    return float(spec.value) if spec is not None else default
+from .model_params import param_value
 
 
 def direction_sign(comp: ComponentSpec) -> float:
@@ -42,10 +39,6 @@ def softplus(x: np.ndarray) -> np.ndarray:
     mask = arr >= -500.0
     out[mask] = np.logaddexp(0.0, arr[mask])
     return out
-
-
-def thermal_voltage(temperature_K: float) -> float:
-    return 8.617333262145e-5 * float(temperature_K)
 
 
 def diode_polarity_sign(polarity: str | None) -> float:
@@ -75,12 +68,16 @@ def photocurrent_voltage_dependent(vj: np.ndarray, comp: ComponentSpec) -> np.nd
 
 
 def series_diode_barrier_drop(current: np.ndarray, comp: ComponentSpec, temperature_K: float) -> np.ndarray:
+    """Return the forward-only series diode barrier voltage drop.
+
+    The series barrier is a main-path voltage-drop form, not a polarity-aware
+    current branch. Stored legacy polarity values are intentionally ignored.
+    """
     arr = np.asarray(current, dtype=float)
-    sign = 1.0
-    forward_current = np.maximum(sign * arr, 0.0)
+    forward_current = np.maximum(arr, 0.0)
     i0 = max(param_value(comp, "I0_A", 1e-12), 1e-300)
     n = max(param_value(comp, "n", 1.5), 1e-12)
-    return sign * n * thermal_voltage(temperature_K) * np.log1p(forward_current / i0)
+    return n * thermal_voltage(temperature_K) * np.log1p(forward_current / i0)
 
 
 def series_power_law_drop(current: np.ndarray, comp: ComponentSpec) -> np.ndarray:

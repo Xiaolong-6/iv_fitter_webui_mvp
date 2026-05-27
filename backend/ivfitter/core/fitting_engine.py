@@ -115,22 +115,19 @@ def _external_jacobian(jac, x_external: np.ndarray, transforms: list[str]):
     except Exception:
         return jac
 
-def _current_at_vj(vj, model):
-    return evaluation.current_at_vj(vj, model)
+def solve_vj(voltage_v, model) -> np.ndarray:
+    return evaluation.solve_vj(voltage_v, model, rs_eff_fn=_series_rs_eff)
 
 
 def _solve_single_vj(v_ext: float, model) -> float:
     return evaluation.solve_single_vj(v_ext, model, rs_eff_fn=_series_rs_eff)
-
-def solve_vj(voltage_v, model) -> np.ndarray:
-    return evaluation.solve_vj(voltage_v, model, rs_eff_fn=_series_rs_eff)
 
 
 def predict_current(voltage_v, model, solver_mode: str = "legacy_composite") -> np.ndarray:
     if solver_mode == "graph_dc":
         return evaluation.predict_current(voltage_v, model, solver_mode)
     vj = solve_vj(voltage_v, model)
-    return _current_at_vj(vj, model)
+    return evaluation.current_at_vj(vj, model)
 
 
 def _all_fit_params(request: FitRequest):
@@ -341,18 +338,6 @@ def fit_trace(request: FitRequest) -> FitResult:
     metrics["residual_degrees_of_freedom"] = float(degrees_of_freedom)
     metrics["free_parameter_count"] = float(free_parameter_count)
     metrics["points_used"] = float(points_used)
-
-    # Log-magnitude R² complements linear R² for multi-decade IV curves.
-    floor = max(float(request.config.residual_floor_A), 1e-30)
-    log_mask = (np.abs(i_all) > floor) & np.isfinite(i_all) & np.isfinite(i_pred)
-    if np.any(log_mask):
-        log_fit = np.log10(np.maximum(np.abs(i_pred[log_mask]), floor))
-        log_meas = np.log10(np.maximum(np.abs(i_all[log_mask]), floor))
-        log_ss_res = float(np.sum((log_fit - log_meas) ** 2))
-        log_ss_tot = float(np.sum((log_meas - np.mean(log_meas)) ** 2))
-        metrics["log_magnitude_r2"] = 1.0 - log_ss_res / log_ss_tot if log_ss_tot else float("nan")
-    else:
-        metrics["log_magnitude_r2"] = float("nan")
 
     quality_ok, quality_warnings = evaluate_fit_quality(i_pred, i_all, metrics.get("linear_rmse_A"))
     warnings.extend(quality_warnings)

@@ -14,28 +14,24 @@ from ivfitter.components.diode import diode_current
 from ivfitter.components.parallel import shunt_current, power_law_current, soft_breakdown_current
 from ivfitter.components.custom import evaluate_custom_expression
 from .model_spec import GraphComponent, ModelSpec
+from .model_params import param_value
 from .topology_graph import assemble_graph
-
-
-def _p(comp: GraphComponent, name: str, default: float = 0.0) -> float:
-    spec = comp.params.get(name)
-    return float(spec.value) if spec is not None else default
 
 
 def _edge_current(comp: GraphComponent, v_component: np.ndarray, temperature_K: float) -> np.ndarray:
     ft = comp.function_type
     if ft == "diode":
-        return diode_current(v_component, _p(comp, "I0_A", 1e-12), _p(comp, "n", 1.5), temperature_K)
+        return diode_current(v_component, param_value(comp, "I0_A", 1e-12), param_value(comp, "n", 1.5), temperature_K)
     if ft == "shunt":
-        return shunt_current(v_component, _p(comp, "Rsh_ohm", _p(comp, "Rs_ohm", 1e30)))
+        return shunt_current(v_component, param_value(comp, "Rsh_ohm", param_value(comp, "Rs_ohm", 1e30)))
     if ft == "constant_rs":
         # Registry parameter name retained as Rs_ohm even when used as a generic ohmic law.
-        r = max(_p(comp, "Rs_ohm", _p(comp, "Rsh_ohm", 1e30)), 1e-30)
+        r = max(param_value(comp, "Rs_ohm", param_value(comp, "Rsh_ohm", 1e30)), 1e-30)
         return v_component / r
     if ft == "power_law":
-        return power_law_current(v_component, _p(comp, "A", 0.0), _p(comp, "Vt_V", 0.0), _p(comp, "Vs_V", 1.0), _p(comp, "m", 1.0), comp.polarity or "forward")
+        return power_law_current(v_component, param_value(comp, "A", 0.0), param_value(comp, "Vt_V", 0.0), param_value(comp, "Vs_V", 1.0), param_value(comp, "m", 1.0), comp.polarity or "forward")
     if ft == "soft_breakdown":
-        return soft_breakdown_current(v_component, _p(comp, "I0_A", 0.0), _p(comp, "Vbr_V", 10.0), _p(comp, "Vslope_V", 1.0), _p(comp, "w_V", 0.5))
+        return soft_breakdown_current(v_component, param_value(comp, "I0_A", 0.0), param_value(comp, "Vbr_V", 10.0), param_value(comp, "Vslope_V", 1.0), param_value(comp, "w_V", 0.5))
     if ft == "custom":
         expr = comp.metadata.get("expression", "s*A*softplus(u)**m")
         params = {name: spec.value for name, spec in comp.params.items()}

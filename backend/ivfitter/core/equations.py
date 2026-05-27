@@ -28,12 +28,6 @@ def _component_equation(comp) -> str:
 
 def _branch_symbol(comp) -> str:
     nick = comp.metadata.get("nickname") or comp.id
-    if comp.function_type == "diode":
-        return f"I_{nick}"
-    if comp.function_type in {"photocurrent_constant", "photocurrent_voltage_dependent"}:
-        return f"I_{nick}"
-    if comp.function_type in {"shunt", "constant_rs"}:
-        return f"I_{nick}"
     return f"I_{nick}"
 
 def _law_line(comp) -> str:

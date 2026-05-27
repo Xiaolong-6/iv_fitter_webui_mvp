@@ -19,13 +19,18 @@ def fit_metrics(y_fit, y_meas, floor_A: float = 1e-15):
         log_meas = np.log10(np.maximum(np.abs(y_meas[log_mask]), floor))
         log_res = log_fit - log_meas
         log_mae = float(np.mean(np.abs(log_res)))
+        log_ss_res = float(np.sum(log_res**2))
+        log_ss_tot = float(np.sum((log_meas - np.mean(log_meas))**2))
+        log_r2 = 1.0 - log_ss_res / log_ss_tot if log_ss_tot else float("nan")
     else:
         log_mae = float("nan")
+        log_r2 = float("nan")
     return {
         "linear_rmse_A": rmse,
         "normalized_rmse": rmse / denom if denom else float("nan"),
         "linear_r2": 1.0 - ss_res / ss_tot if ss_tot else float("nan"),
         "log_magnitude_mae_decades": log_mae,
+        "log_magnitude_r2": log_r2,
         "log_points_excluded": float(log_points_excluded),
         "log_floor_A": floor,
     }
@@ -38,8 +43,12 @@ def parameter_stderr(records, jac, residual_vector):
         n_obs, n_params = jac.shape
         dof = max(n_obs - n_params, 1)
         sigma2 = float(np.sum(np.asarray(residual_vector, dtype=float) ** 2) / dof)
-        jtj = jac.T @ jac
-        cov = sigma2 * np.linalg.pinv(jtj)
+        _u, singular_values, vh = np.linalg.svd(np.asarray(jac, dtype=float), full_matrices=False)
+        if singular_values.size == 0:
+            return {}
+        tol = np.finfo(float).eps * max(n_obs, n_params) * float(singular_values[0])
+        inv_s2 = np.array([1.0 / (s * s) if s > tol else 0.0 for s in singular_values], dtype=float)
+        cov = sigma2 * ((vh.T * inv_s2) @ vh)
         return {key: float(np.sqrt(max(cov[idx, idx], 0.0))) for idx, (key, *_rest) in enumerate(records)}
     except Exception:
         return {}

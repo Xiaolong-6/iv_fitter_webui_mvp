@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.4.35**.
+Current package: **v1.5.17**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -76,10 +76,10 @@ For docs-only changes, still run the full set if dependency availability allows 
 After every change, provide a 3-step browser test that does not require reading source code. The user should be able to verify the change through the UI or visible files.
 
 
-## v1.4.35 validation caveat
+## Current validation note
 
-- `npm.cmd run test:parameter-ui`, `npm.cmd run build`, backend `compileall`, and `git diff --check` passed for v1.4.35, with only normal CRLF conversion warnings from Git.
-- Backend fitting math was not intentionally changed in v1.4.35. Full backend pytest was not rerun in the Codex desktop validation environment because the bundled Python did not include `pytest`; the previous full-backend pytest caveat still applies.
+- v1.5.17 validation is recorded in `docs/TESTED_CURRENT.md`.
+- Current expected validation commands are backend pytest, backend compileall, frontend Vitest, and frontend production build.
 
 ## v1.4.35 Fit setup and Model Builder interaction note
 

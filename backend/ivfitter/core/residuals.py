@@ -5,6 +5,9 @@ from __future__ import annotations
 import numpy as np
 from .model_spec import FitRequest
 
+COMPLIANCE_QUANTILE = 0.98
+COMPLIANCE_MARGIN = 0.995
+
 
 def select_range(request: FitRequest):
     v = np.asarray(request.trace.voltage_V, dtype=float)
@@ -21,10 +24,10 @@ def compliance_mask(i: np.ndarray, enabled: bool) -> np.ndarray:
     if not enabled or len(i) < 8:
         return np.zeros(i.shape, dtype=bool)
     a = np.abs(i)
-    high = np.quantile(a, 0.98)
+    high = np.quantile(a, COMPLIANCE_QUANTILE)
     if high <= 0:
         return np.zeros(i.shape, dtype=bool)
-    return a >= 0.995 * high
+    return a >= COMPLIANCE_MARGIN * high
 
 
 def weighted_residual(y_fit, y_meas, weighting: str, floor_A: float = 1e-15):

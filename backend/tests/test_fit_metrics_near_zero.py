@@ -9,4 +9,12 @@ def test_log_mae_excludes_near_zero_points():
     metrics = fit_metrics(y_fit, y_meas, floor_A=1e-12)
     assert metrics["log_points_excluded"] == 2.0
     assert metrics["log_magnitude_mae_decades"] < 0.1
+    assert metrics["log_magnitude_r2"] > 0.99
     assert metrics["log_floor_A"] == 1e-12
+
+
+def test_log_r2_is_computed_with_log_metrics():
+    y_meas = np.array([1e-12, 1e-9, 1e-6])
+    y_fit = np.array([1e-12, 1e-9, 1e-6])
+    metrics = fit_metrics(y_fit, y_meas, floor_A=1e-15)
+    assert metrics["log_magnitude_r2"] == 1.0
