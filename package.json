@@ -1,6 +1,6 @@
 {
   "name": "iv-fitter-webui-mvp-root",
-  "version": "1.5.9",
+  "version": "1.5.14",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,9 +8,7 @@
     "build": "tsc -p frontend/tsconfig.json && vite build",
     "preview": "vite preview",
     "release:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release_build.ps1",
-    "portable:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_portable_windows.ps1",
-    "test:parameter-ui": "node scripts/test_parameter_grouping.mjs",
-    "test:synthetic-ui": "node scripts/test_synthetic_trace_ui.mjs"
+    "portable:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_portable_windows.ps1"
   },
   "dependencies": {
     "react": "^19.0.0",

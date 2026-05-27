@@ -1,3 +1,17 @@
+# v1.5.14 - Fit lifecycle hardening
+
+- Added a frontend fit-run lifecycle guard with monotonic run ids so stale/late fit responses cannot overwrite the current workspace after Stop, timeout, or a newer run.
+- Made Stop fit and timeout transitions explicit: cancelled and timeout states now have compact status-footer summaries and keep old results out of Report generation.
+- Cleared previous fit results, reports, warnings, and promotion notices at the start of each run before the new request is issued.
+- Kept delayed aborted-request errors from replacing the current state after a newer run has started.
+- Updated version metadata to v1.5.14.
+
+Validation:
+- `PYTHONPATH=backend python -m pytest backend/tests -q`
+- `python -m compileall -q backend/ivfitter backend/tests`
+- `npm ci`
+- `npm run build`
+
 # v1.5.13 - User documentation content refactor
 
 - Extracted user manual function-guide content from UserDocumentationPage.tsx into frontend/src/content/userDocumentationContent.ts.
