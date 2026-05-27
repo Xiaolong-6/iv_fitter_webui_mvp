@@ -73,7 +73,10 @@ def test_css_model_builder_rules_are_split_out():
     style = root / "frontend" / "src" / "style.css"
     extracted = root / "frontend" / "src" / "styles" / "model-builder.css"
     assert extracted.exists()
-    assert '@import "./styles/model-builder.css";' in style.read_text(encoding="utf-8")
+    style_text = style.read_text(encoding="utf-8")
+    base_text = (root / "frontend" / "src" / "styles" / "base-shell.css").read_text(encoding="utf-8")
+    assert '@import "./styles/base-shell.css";' in style_text
+    assert '@import "./model-builder.css";' in base_text
     assert ".circuit-panel-v2" in extracted.read_text(encoding="utf-8")
 
 

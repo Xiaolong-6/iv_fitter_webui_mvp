@@ -49,3 +49,12 @@ Automated tests do not prove pixel-level layout. Each CSS/layout change needs a 
 ## 10. Mathematical changes require regression tests
 
 Any change to fitting transforms, bounds logic, compliance exclusion, residual weighting, reportability, fitted-as-initial promotion, model validation, or component evaluation must include targeted backend tests and, where relevant, frontend tests. Keep public metric/report keys stable unless a versioned schema migration is deliberate.
+
+
+## CSS ownership rule
+
+`frontend/src/style.css` must stay as a small import manifest. New page-level styles belong in the owning module under `frontend/src/styles/`. Do not solve layout regressions by adding broad late overrides or `!important`; fix the module owner and cascade order first.
+
+## FittingPage coordinator rule
+
+`frontend/src/pages/FittingPage.tsx` should coordinate workflow state only. New large UI blocks, report renderers, action clusters, helper functions, and layout behaviors should be extracted into components, hooks, or model helpers.

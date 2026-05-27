@@ -1,3 +1,37 @@
+## v1.5.36 — Structural-debt-cleaned release candidate
+
+- Added a fresh external-style release-candidate audit for the CSS/FittingPage structural cleanup series.
+- Synchronized README, package metadata, backend metadata, handoff, documentation index, validation docs, and changelog to v1.5.36.
+- Confirmed `style.css` is now an import manifest, normal frontend CSS has zero `!important` usage, and `FittingPage.tsx` is reduced to a workflow coordinator.
+- Preserved fitting math, backend APIs, report schemas, saved-model compatibility, and user-facing workflow behavior from v1.5.31.
+
+## v1.5.35 — Stylesheet ownership documentation and CSS override cleanup
+
+- Added `docs/FRONTEND_STYLESHEET_ARCHITECTURE.md` to define CSS module ownership, cascade order, and future layout-change rules.
+- Updated handoff and development-principles docs so agents do not reintroduce monolithic CSS or broad `!important` overrides.
+- Removed normal `!important` usage from frontend CSS while preserving order-based cascade behavior.
+- Kept `frontend/src/style.css` as a small import manifest.
+
+## v1.5.34 — Workflow layout and fit action extraction
+
+- Extracted workflow layout state into `useWorkflowLayoutState`.
+- Extracted Fit action buttons and fitting message rendering into focused page components.
+- Kept the main `FittingPage.tsx` as a workflow coordinator rather than a large mixed UI/state component.
+- Preserved fitting math, APIs, report exports, and user-visible workflow behavior.
+
+## v1.5.33 — FittingPage helper extraction
+
+- Extracted backend connection UI and fitting-page utility helpers from `FittingPage.tsx`.
+- Kept fitting behavior, API calls, report exports, model semantics, and layout behavior unchanged.
+- Reduced `FittingPage.tsx` to roughly 800 lines as an intermediate refactor checkpoint.
+
+## v1.5.32 — CSS containment and workflow-page component extraction
+
+- Split frontend CSS into ordered module files under `frontend/src/styles/` while keeping `frontend/src/style.css` as a small import manifest.
+- Removed nearly all `!important` overrides through order-preserving stylesheet restructuring.
+- Extracted default model/config, workflow status/start/model/fitting/report page sections, and zoom/pane-resize hooks out of `FittingPage.tsx`.
+- Reduced `FittingPage.tsx` from about 2010 lines to about 900 lines without changing fitting math, backend APIs, or report schemas.
+
 ## v1.5.31 — fitting release-candidate UI polish and external audit
 
 - Tightened Fitting page height containment: Fit setup now uses full available pane height with a scrollable objective/run-options body instead of a fixed short scroll box.

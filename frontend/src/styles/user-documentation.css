@@ -300,7 +300,7 @@
 }
 .manual-section-select,
 .manual-reader-heading {
-  display: none !important;
+  display: none;
 }
 .manual-reader-shell {
   height: 100%;

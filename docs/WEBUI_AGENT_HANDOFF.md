@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.5.31**.
+Current package: **v1.5.36**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -89,9 +89,16 @@ For docs-only changes, still run the full set if dependency availability allows 
 After every change, provide a 3-step browser test that does not require reading source code. The user should be able to verify the change through the UI or visible files.
 
 
+
+## Current frontend structure note
+
+- `frontend/src/pages/FittingPage.tsx` is now a workflow coordinator. Page sections, report rendering, fit actions/messages, layout state, pane resizing, and default model/config are extracted into focused modules. Avoid moving large JSX blocks back into the page.
+- `frontend/src/style.css` is an import manifest. Add CSS to the owning module under `frontend/src/styles/` and follow `docs/FRONTEND_STYLESHEET_ARCHITECTURE.md`.
+- The current release-candidate target is to keep `FittingPage.tsx` under roughly 800 lines and avoid normal `!important` usage in CSS.
+
 ## Current validation note
 
-- v1.5.31 validation is recorded in `docs/TESTED_CURRENT.md`.
+- v1.5.36 validation is recorded in `docs/TESTED_CURRENT.md`.
 - Current expected validation commands are backend pytest, backend compileall, frontend Vitest, and frontend production build.
 
 ## v1.4.35 Fit setup and Model Builder interaction note

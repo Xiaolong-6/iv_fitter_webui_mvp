@@ -1,5 +1,9 @@
 # Validation history
 
+## v1.5.36
+
+Structural-debt cleanup release candidate. Full backend pytest, backend compileall, frontend Vitest, and frontend production build passed. See `docs/TESTED_CURRENT.md`.
+
 This document replaces the old collection of many per-version `TESTED_*` files. It keeps the useful history without forcing future readers to open dozens of stale documents.
 
 ## Current validation record

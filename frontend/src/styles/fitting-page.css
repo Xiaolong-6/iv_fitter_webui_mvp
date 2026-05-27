@@ -1,0 +1,976 @@
+.fitting-control-column,
+
+.fitting-results-column {
+  min-height: 0;
+  overflow: auto;
+
+}
+.fitting-results-column {
+  display: grid;
+  grid-template-rows: minmax(360px, 0.62fr) minmax(220px, 0.38fr);
+  gap: calc(10px * var(--app-zoom));
+  overflow: hidden;
+}
+.fitting-results-column > .workspace-section {
+  min-height: 0;
+  overflow: hidden;
+}
+.fitting-results-column > .workspace-section > .workspace-section-body {
+  min-height: 0;
+  overflow: hidden;
+}
+.fitting-results-column > .workspace-section:nth-child(2) .workspace-section-body,
+.fitting-results-column .parameter-card {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.parameter-card {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+.parameter-placement-group {
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.parameter-placement-group .table-wrap,
+.parameter-card .table-wrap {
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+}
+.interactive-parameter-table td[title] {
+  cursor: help;
+}
+
+.fit-config-panel {
+  max-height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, auto);
+}
+.fit-config-row {
+  align-content: start;
+}
+.fit-config-drawer {
+  max-height: min(58vh, 560px);
+  overflow: auto;
+}
+.fit-config-panel .setup-grid,
+.fit-config-panel .advanced-objective-body,
+.fit-config-panel .fit-config-section {
+  min-width: 0;
+}
+.fit-config-panel label,
+.fit-config-panel select,
+.fit-config-panel input {
+  min-width: 0;
+  width: 100%;
+}
+
+.report-page-two-column.resizable-report-grid {
+  min-height: 0;
+}
+.report-side-column {
+  min-width: 0;
+}
+.report-text-preview {
+  min-height: 220px;
+  max-height: min(66vh, 760px);
+}
+.report-export-sidebar-card {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+@media (orientation: portrait), (max-width: 900px) {
+  .workflow-context-bar {
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    line-height: 1.3;
+  }
+  .minimal-hero h2 {
+    font-size: clamp(32px, 10vw, 48px);
+  }
+  .minimal-workflow-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .data-import-layout,
+  .workflow-two-column.resizable-workflow-grid,
+  .report-page-two-column.resizable-report-grid,
+  .fitting-workflow-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: none;
+    height: auto;
+  }
+  .pane-resizer {
+    display: none;
+  }
+  .data-import-layout {
+    min-height: 0;
+    grid-template-rows: none;
+  }
+  .data-import-layout > .card,
+  .fitting-control-column,
+  .fitting-results-column,
+  .report-main-column,
+  .report-side-column {
+    min-height: 0;
+    overflow: visible;
+  }
+  .fitting-results-column {
+    grid-template-rows: auto auto;
+    overflow: visible;
+  }
+  .plot-review-card .trace-plot-review-grid,
+  .trace-plot-review-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .spreadsheet-card .spreadsheet-wrap {
+    max-height: 45vh;
+  }
+  .parameter-card .table-wrap {
+    max-height: 48vh;
+  }
+  .report-export-sidebar-card {
+    position: static;
+  }
+}
+
+/* v1.5.27: landscape-safe workflow containment and model-page sticky panes. */
+.workflow-shell {
+  min-height: 0;
+  overflow: hidden;
+}
+.workflow-page {
+  min-height: 0;
+  min-width: 0;
+}
+.model-page.workflow-page {
+  height: 100%;
+  overflow: hidden;
+}
+.model-page .resizable-workflow-grid {
+  height: 100%;
+  min-height: 0;
+}
+.model-page .workspace-section {
+  min-height: 0;
+  overflow: hidden;
+}
+.model-page .workspace-section-body {
+  min-height: 0;
+  overflow: auto;
+}
+.model-page .model-builder {
+  min-height: 0;
+}
+.model-page .equation-preview {
+  min-height: 0;
+}
+
+/* Keep the Fitting page stable in desktop/landscape: plots keep their panel,
+   parameters scroll internally, and the whole page does not produce a second
+   horizontal layout failure. */
+.fitting-page.workflow-page {
+  height: 100%;
+  overflow: hidden;
+}
+.fitting-page .fitting-workflow-grid {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.fitting-page .fitting-control-column,
+.fitting-page .fitting-results-column {
+  min-height: 0;
+  overflow: auto;
+}
+.fitting-page .fitting-results-column {
+  overflow: hidden;
+  grid-template-rows: minmax(300px, 0.62fr) minmax(180px, 0.38fr);
+}
+.fitting-page .plots {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+}
+.fitting-page .plot-grid {
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+}
+.fitting-page .simple-chart svg {
+  max-height: min(26vh, 260px);
+}
+.fitting-page .parameter-card {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.fitting-page .parameter-placement-group .table-wrap,
+.fitting-page .parameter-card .table-wrap {
+  overflow: auto;
+}
+
+/* Series barrier polarity selector and long labels should never blow up rows. */
+.component-polarity-select {
+  max-width: calc(118px * var(--app-zoom));
+  min-width: calc(92px * var(--app-zoom));
+}
+.component-actions {
+  flex: 0 1 auto;
+}
+.model-group-main .component-card,
+.model-group-main .compact-model-row {
+  background: rgba(239, 246, 255, 0.72);
+}
+.model-group-branches .component-card,
+.model-group-branches .compact-model-row {
+  background: rgba(240, 253, 244, 0.72);
+}
+
+/* Parameter hover targets: show help cursor only when the tooltip is explanatory. */
+.parameter-summary-row > td:first-child,
+.parameter-component-title span,
+.parameter-meaning {
+  cursor: help;
+}
+
+/* Report page containment for landscape and resized panes. */
+.report-page.workflow-page {
+  height: 100%;
+  overflow: hidden;
+}
+.report-page-two-column.resizable-report-grid {
+  height: 100%;
+  overflow: hidden;
+}
+.report-main-column,
+.report-side-column {
+  overflow: auto;
+  min-height: 0;
+}
+
+@media (orientation: landscape) and (max-height: 820px) {
+  .workflow-context-bar {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  .fitting-workflow-grid {
+    grid-template-columns: minmax(280px, 0.42fr) minmax(620px, 1.58fr);
+  }
+  .fit-config-panel .fit-config-row {
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+  .fit-config-drawer {
+    max-height: min(50vh, 420px);
+  }
+  .fitting-page .simple-chart svg {
+    max-height: min(23vh, 220px);
+  }
+  .fitting-page .fitting-results-column {
+    grid-template-rows: minmax(260px, 0.6fr) minmax(160px, 0.4fr);
+  }
+}
+
+@media (max-width: 1100px) {
+  .model-page.workflow-page,
+  .fitting-page.workflow-page,
+  .report-page.workflow-page {
+    height: auto;
+    overflow: auto;
+  }
+  .model-page .resizable-workflow-grid,
+  .fitting-page .fitting-workflow-grid,
+  .report-page-two-column.resizable-report-grid {
+    height: auto;
+    overflow: visible;
+  }
+}
+
+/* v1.5.28: density, report, and landscape stabilization pass. */
+.data-workspace.scroll-page {
+  height: 100%;
+  overflow: hidden;
+}
+.data-import-layout {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: minmax(210px, 0.34fr) minmax(270px, 0.66fr);
+  align-items: stretch;
+}
+.import-actions-card,
+.plot-review-card,
+.paste-card,
+.spreadsheet-card {
+  min-height: 0;
+}
+.import-actions-card {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+.import-actions-card .muted {
+  margin: 2px 0 8px;
+}
+.trace-selection-subsection {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--theme-border, #e5e7eb);
+}
+.plot-review-card .trace-plot-review-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.plot-review-card .simple-chart svg {
+  max-height: min(24vh, 230px);
+}
+.paste-card textarea {
+  max-height: 36vh;
+}
+
+.streamlined-fit-config .fit-config-row,
+.compact-fit-config-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.streamlined-fit-config .fit-config-actions .fit-action-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+}
+.streamlined-fit-config .fit-config-actions .fit-action-row button {
+  min-width: 0;
+  width: auto;
+  white-space: nowrap;
+}
+.streamlined-fit-config .fit-config-actions .fit-action-row button:first-child {
+  width: 100%;
+}
+.fit-config-inline-options {
+  border-top: 1px solid var(--theme-border, #e5e7eb);
+  background: #f8fafc;
+  padding: calc(8px * var(--app-zoom));
+  max-height: min(48vh, 420px);
+  overflow: auto;
+}
+.fit-config-inline-options .advanced-objective-body {
+  display: grid;
+  gap: 8px;
+}
+.fit-config-inline-options .setup-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+.fit-config-inline-options .setup-section,
+.fit-config-inline-options .fit-config-section {
+  display: grid;
+  gap: 5px;
+}
+.fit-config-inline-options h3 {
+  margin: 4px 0 0;
+}
+.fit-config-inline-options .check-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  line-height: 1.25;
+  font-size: 0.92em;
+}
+
+.fitting-page .fitting-workflow-grid {
+  grid-template-columns: minmax(300px, 0.38fr) minmax(720px, 1.62fr);
+}
+.fitting-page .fitting-results-column {
+  grid-template-rows: minmax(300px, 0.58fr) minmax(190px, 0.42fr);
+}
+.fitting-page .plot-grid {
+  overflow: hidden;
+}
+.fitting-page .parameter-card {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+.parameter-card h2 {
+  margin-bottom: 4px;
+}
+.parameter-filter-bar {
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.parameter-filter-bar button {
+  padding: 3px 8px;
+}
+.parameter-placement-group {
+  display: block;
+  min-height: 0;
+  overflow: visible;
+}
+.parameter-placement-group h3 {
+  margin: 6px 0 2px;
+}
+.parameter-card .table-wrap,
+.parameter-placement-group .table-wrap {
+  max-height: 100%;
+  overflow: auto;
+}
+.compact-parameter-table th,
+.compact-parameter-table td,
+.interactive-parameter-table th,
+.interactive-parameter-table td {
+  padding: 3px 5px;
+  line-height: 1.18;
+  vertical-align: middle;
+}
+.parameter-component-divider td {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.parameter-summary-row td {
+  height: auto;
+}
+.parameter-edit-input {
+  min-height: 24px;
+  padding: 2px 5px;
+}
+.parameter-status-pill {
+  padding: 1px 6px;
+}
+
+.report-status-card,
+.report-model-equation-card,
+.report-diagnostics-card,
+.report-parameter-summary-card,
+.report-export-sidebar-card,
+.compact-report-summary-card,
+.report-preview-card {
+  padding: calc(10px * var(--app-zoom));
+}
+.report-status-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+.report-status-header h2 {
+  margin: 0 0 4px;
+}
+.report-status-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-weight: 800;
+  white-space: nowrap;
+  border: 1px solid #e2e8f0;
+}
+.report-status-pill.ok { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+.report-status-pill.warning { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+.report-status-pill.muted { background: #f8fafc; color: #64748b; }
+.report-equation-list {
+  display: grid;
+  gap: 6px;
+}
+.report-equation-list code {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 0.98em;
+}
+.report-warning-list {
+  display: grid;
+  gap: 8px;
+}
+.report-warning-item {
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+  color: #713f12;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.report-warning-item p {
+  margin: 4px 0 0;
+}
+.report-warning-item.error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #7f1d1d;
+}
+.report-export-actions-grid {
+  display: grid;
+  gap: 7px;
+}
+.report-export-actions-grid button {
+  text-align: center;
+  font-weight: 700;
+  padding: 7px 9px;
+}
+.report-parameter-table th,
+.report-parameter-table td {
+  padding: 5px 7px;
+  line-height: 1.25;
+}
+.report-text-preview.user-report-preview {
+  min-height: 240px;
+  max-height: min(50vh, 600px);
+  font-size: 0.9em;
+  line-height: 1.35;
+}
+
+@media (orientation: landscape) and (max-height: 820px) {
+  .data-import-layout {
+    grid-template-rows: minmax(180px, 0.32fr) minmax(230px, 0.68fr);
+  }
+  .plot-review-card .simple-chart svg,
+  .fitting-page .simple-chart svg {
+    max-height: min(22vh, 200px);
+  }
+  .fit-config-inline-options {
+    max-height: min(45vh, 360px);
+  }
+  .compact-parameter-table th,
+  .compact-parameter-table td,
+  .interactive-parameter-table th,
+  .interactive-parameter-table td {
+    padding: 2px 4px;
+  }
+}
+
+@media (orientation: portrait), (max-width: 900px) {
+  .data-workspace.scroll-page {
+    height: auto;
+    overflow: auto;
+  }
+  .data-import-layout {
+    height: auto;
+  }
+  .plot-review-card .trace-plot-review-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .streamlined-fit-config .fit-config-actions .fit-action-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .streamlined-fit-config .fit-config-actions .fit-action-row button:first-child {
+    grid-column: 1 / -1;
+  }
+  .report-status-header {
+    display: grid;
+  }
+}
+
+/* v1.5.28 final stabilization: compact Data/Fitting/Report and independent panes. */
+.workflow-shell {
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+.workflow-page {
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Data page: avoid huge empty import box while keeping plot review visible. */
+.data-workspace.scroll-page {
+  height: 100%;
+  overflow: auto;
+  align-content: start;
+}
+.data-import-layout {
+  height: auto;
+  min-height: 0;
+  grid-template-columns: minmax(340px, 0.92fr) minmax(520px, 1.35fr);
+  grid-template-rows: auto minmax(260px, auto);
+  grid-template-areas: "import plot" "paste preview";
+  align-items: start;
+}
+.data-import-layout > .card {
+  align-self: start;
+  min-height: 0;
+  overflow: hidden;
+}
+.import-actions-card {
+  max-height: none;
+  overflow: visible;
+}
+.import-actions-card .muted {
+  margin: 2px 0 8px;
+}
+.trace-selection-subsection {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+.plot-review-card {
+  align-self: stretch;
+}
+.plot-review-card .trace-plot-review-grid {
+  height: auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.plot-review-card .simple-chart svg {
+  max-height: min(22vh, 220px);
+}
+.paste-card textarea {
+  min-height: 170px;
+  max-height: min(30vh, 280px);
+}
+.spreadsheet-card .spreadsheet-wrap,
+.spreadsheet-wrap {
+  max-height: min(34vh, 320px);
+  overflow: auto;
+}
+
+/* Model page: left builder and right preview scroll independently. */
+.model-page.workflow-page {
+  height: 100%;
+  overflow: hidden;
+}
+.model-page .resizable-workflow-grid {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.model-page .workspace-section {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.model-page .workspace-section-body {
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.model-page .model-builder,
+.model-page .equation-preview {
+  min-height: 0;
+}
+
+/* Fitting page: stable landscape layout, one action row, compact options and table. */
+.fitting-page.workflow-page {
+  height: 100%;
+  overflow: hidden;
+}
+.fitting-page .fitting-workflow-grid {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-columns: minmax(310px, 0.33fr) minmax(760px, 1.67fr);
+}
+.fitting-page .fitting-control-column {
+  min-height: 0;
+  overflow: auto;
+}
+.fitting-page .fitting-results-column {
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: minmax(300px, 0.56fr) minmax(190px, 0.44fr);
+}
+.fitting-page .fitting-results-column > .workspace-section,
+.fitting-page .fitting-results-column > .workspace-section > .workspace-section-body {
+  min-height: 0;
+  overflow: hidden;
+}
+.fitting-page .plots {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+.fitting-page .plot-grid {
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+}
+.fitting-page .simple-chart svg {
+  max-height: min(24vh, 245px);
+}
+.streamlined-fit-config .fit-config-actions .fit-action-row,
+.fit-action-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(92px, auto) minmax(70px, auto);
+  gap: 6px;
+  align-items: center;
+}
+.streamlined-fit-config .fit-config-actions .fit-action-row button,
+.fit-action-row button {
+  min-width: 0;
+  width: auto;
+  white-space: nowrap;
+  padding-inline: 9px;
+}
+.streamlined-fit-config .fit-config-actions .fit-action-row button:first-child,
+.fit-action-row button:first-child {
+  width: 100%;
+  justify-content: center;
+}
+.fit-config-status .fit-primary-message,
+.fit-config-message-stack .fit-primary-message {
+  margin: 0;
+}
+.fit-config-inline-options {
+  margin-top: 2px;
+  padding: 8px;
+  max-height: min(42vh, 380px);
+  overflow: auto;
+}
+.fit-config-inline-options .setup-section h3 {
+  margin: 2px 0 3px;
+}
+.fit-config-inline-options .setup-grid,
+.fit-config-inline-options .advanced-objective-body {
+  gap: 6px;
+}
+.fit-config-inline-options label {
+  gap: 2px;
+}
+.fit-config-inline-options input,
+.fit-config-inline-options select {
+  min-height: 30px;
+  padding: 4px 7px;
+}
+.fit-config-inline-options .check-row {
+  grid-template-columns: auto minmax(0, 1fr);
+  justify-items: start;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.86em;
+}
+.fit-config-inline-options .check-row input {
+  width: auto;
+  min-height: auto;
+}
+
+.fitting-page .parameter-card {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  padding: 8px;
+}
+.fitting-page .parameter-placement-group {
+  min-height: 0;
+  overflow: hidden;
+}
+.fitting-page .parameter-placement-group .table-wrap,
+.fitting-page .parameter-card .table-wrap {
+  max-height: none;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+}
+.compact-parameter-table th,
+.compact-parameter-table td,
+.interactive-parameter-table th,
+.interactive-parameter-table td {
+  padding: 2px 5px;
+  line-height: 1.12;
+  height: auto;
+  vertical-align: middle;
+}
+.parameter-component-divider td {
+  padding: 3px 5px;
+}
+.parameter-component-title {
+  gap: 5px;
+}
+.parameter-filter-bar button {
+  padding: 2px 7px;
+  min-height: 26px;
+}
+.parameter-edit-input {
+  min-height: 22px;
+  height: 22px;
+  max-width: 120px;
+  padding: 1px 5px;
+}
+.parameter-status-pill {
+  padding: 0 5px;
+  line-height: 1.35;
+}
+.parameter-meaning {
+  max-width: 280px;
+}
+
+/* Report page: make exports action-like, keep raw markdown collapsed. */
+.report-page.workflow-page {
+  height: 100%;
+  overflow: hidden;
+}
+.report-page-two-column.resizable-report-grid {
+  height: 100%;
+  overflow: hidden;
+}
+.report-main-column,
+.report-side-column {
+  min-height: 0;
+  overflow: auto;
+}
+.report-export-actions-grid button {
+  border-radius: 10px;
+  min-height: 34px;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+}
+.report-export-actions-grid button.primary {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+.collapsed-raw-report summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+.collapsed-raw-report .report-text-preview {
+  margin-top: 8px;
+}
+.report-equation-list code {
+  white-space: normal;
+}
+
+@media (orientation: landscape) and (max-height: 820px) {
+  .data-import-layout {
+    grid-template-rows: auto minmax(220px, auto);
+  }
+  .plot-review-card .simple-chart svg {
+    max-height: min(20vh, 185px);
+  }
+  .fitting-page .fitting-results-column {
+    grid-template-rows: minmax(245px, 0.55fr) minmax(165px, 0.45fr);
+  }
+  .fitting-page .simple-chart svg {
+    max-height: min(21vh, 190px);
+  }
+  .fit-config-inline-options {
+    max-height: min(40vh, 320px);
+  }
+}
+
+@media (orientation: portrait), (max-width: 900px) {
+  .data-workspace.scroll-page,
+  .model-page.workflow-page,
+  .fitting-page.workflow-page,
+  .report-page.workflow-page {
+    height: auto;
+    overflow: auto;
+  }
+  .data-import-layout,
+  .model-page .resizable-workflow-grid,
+  .fitting-page .fitting-workflow-grid,
+  .report-page-two-column.resizable-report-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas: "import" "plot" "paste" "preview";
+    height: auto;
+    overflow: visible;
+  }
+  .plot-review-card .trace-plot-review-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .streamlined-fit-config .fit-config-actions .fit-action-row,
+  .fit-action-row {
+    grid-template-columns: minmax(0, 1fr) minmax(80px, auto) minmax(64px, auto);
+  }
+  .fitting-page .fitting-results-column {
+    grid-template-rows: auto auto;
+    overflow: visible;
+  }
+  .fitting-page .parameter-card .table-wrap {
+    max-height: 50vh;
+  }
+}
+
+/* v1.5.30 UI/layout polish requested after v1.5.29 review. */
+.workspace-section-head-action {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.debug-algorithm-button {
+  padding: calc(4px * var(--app-zoom)) calc(9px * var(--app-zoom));
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.synthetic-inline-message {
+  color: var(--theme-muted, #64748b);
+  font-size: calc(12px * var(--app-zoom));
+}
+.resizable-fitting-grid {
+  display: grid;
+  gap: calc(8px * var(--app-zoom));
+  align-items: stretch;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+.resizable-fitting-grid > .fitting-control-column,
+.resizable-fitting-grid > .fitting-results-column {
+  min-width: 0;
+}
+.fitting-page .resizable-fitting-grid {
+  grid-template-columns: var(--fit-grid-template, minmax(270px, .28fr) 8px minmax(520px, .72fr));
+}
+.fitting-control-column {
+  overflow: hidden;
+}
+.fitting-control-column .fit-config-panel {
+  height: 100%;
+  max-height: none;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+.fitting-control-column .fit-config-row {
+  min-height: 0;
+  align-content: start;
+}
+.fitting-control-column .fit-config-drawer {
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.fitting-control-column .fit-config-panel .advanced-objective-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+.fitting-control-column .fit-config-panel label {
+  min-width: 0;
+}
+.fitting-control-column .fit-config-panel input,
+.fitting-control-column .fit-config-panel select {
+  min-width: 0;
+  max-width: 100%;
+}
+.parameter-card .table-wrap,
+.parameter-placement-group .table-wrap {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.interactive-parameter-table {
+  table-layout: fixed;
+  min-width: 760px;
+  font-size: clamp(11px, calc(12px * var(--app-zoom)), 13px);
+}
+.interactive-parameter-table th,
+.interactive-parameter-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
