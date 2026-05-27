@@ -205,7 +205,7 @@ export function ParameterTable({
               <td colSpan={7}>
                 <div className="parameter-component-title">
                   <strong>{nickname(group.component)}</strong>
-                  <span>{componentSummary(group.component, language)}</span>
+                  <span title={componentSummary(group.component, language)}>{componentSummary(group.component, language)}</span>
                   <span className="parameter-fit-count">{group.fittedCount}/{group.totalCount} {parameterText("fittedCountSuffix", language)}</span>
                 </div>
               </td>
@@ -228,7 +228,7 @@ export function ParameterTable({
             const informationTitle = dataBoundsReport ? (dataBoundsDetail ? dataBoundsTitle(dataBoundsDetail) : "") : meaning;
             return <Fragment key={key}>
               <tr className="parameter-summary-row">
-                <td title={key} onClick={() => setOpenKey(open ? null : key)}>{labelForModelParameter(model, comp.id, paramName)}</td>
+                <td title={meaning || key} onClick={() => setOpenKey(open ? null : key)}>{labelForModelParameter(model, comp.id, paramName)}</td>
                 <td><DraftNumberInput disabled={disabled} value={spec.value} title={parameterText("initialTitle", language)} onCommit={(value) => { if (value !== null) onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { value }), comp.id, paramName, "initial")); }} /></td>
                 <td title={fitted ? String(fitted.value) : ""}>{fitted ? formatParameterNumber(fitted.value, fitted.unit ?? spec.unit) : "-"}</td>
                 <td><span className="parameter-status-pill">{fitted ? parameterFitStatus(fitted.value, fitted.lower, fitted.upper, fitted.stderr, fitted.fixed) : (spec.fit ?? true ? "free" : "fixed")}</span></td>

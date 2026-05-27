@@ -307,7 +307,7 @@ export function ModelBuilder({ model, registry, onChange, language, disabled = f
           : "This law/form/placement/polarity is already present. Use a different polarity, or use the explicit two-diode action instead of ordinary duplicate Add.";
 
         return (
-          <div className="model-group" key={bucket}>
+          <div className={`model-group model-group-${bucket}`} key={bucket}>
             <h3>{labels[bucket]} <HelpTip text={bucket === "main" ? t(language, "mainPathUserHelp") : t(language, "branchUserHelp")} /></h3>
             <AddRow
               bucket={bucket}

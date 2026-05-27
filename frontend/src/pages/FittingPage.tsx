@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import type {
   ComponentSpec,
   EquationSummary,
@@ -276,6 +276,8 @@ function ModelWorkflowPage({
   result,
   language,
   isFitting,
+  leftPct,
+  onResizeStart,
 }: {
   model: ModelSpec;
   setModel: (model: ModelSpec) => void;
@@ -284,10 +286,12 @@ function ModelWorkflowPage({
   result: FitResult | null;
   language: Language;
   isFitting: boolean;
+  leftPct: number;
+  onResizeStart: (event: ReactPointerEvent<HTMLDivElement>) => void;
 }) {
   return (
     <section className="workflow-page model-page">
-      <div className="workflow-two-column">
+      <div className="workflow-two-column resizable-workflow-grid" style={{ gridTemplateColumns: `minmax(320px, ${leftPct}fr) 8px minmax(420px, ${100 - leftPct}fr)` }}>
         <PageSection title={t(language, "modelBuilder")}>
           <ErrorBoundary label="Model builder">
             <ModelBuilder
@@ -299,6 +303,7 @@ function ModelWorkflowPage({
             />
           </ErrorBoundary>
         </PageSection>
+        <div className="pane-resizer" role="separator" aria-label="Resize Model page columns" onPointerDown={onResizeStart} />
         <PageSection title={t(language, "equationPreview")}>
           <ErrorBoundary label="Equation preview">
             <EquationPreview
@@ -465,6 +470,8 @@ function ReportWorkflowPage({
   onExportReportHtml,
   setActiveView,
   language,
+  leftPct,
+  onResizeStart,
 }: {
   selectedTrace: TraceData;
   hasSelectedTrace: boolean;
@@ -487,12 +494,14 @@ function ReportWorkflowPage({
   onExportReportHtml: () => void;
   setActiveView: (view: AppView) => void;
   language: Language;
+  leftPct: number;
+  onResizeStart: (event: ReactPointerEvent<HTMLDivElement>) => void;
 }) {
   const verdict = fitStateText(result, isFitting, fitLifecycle);
   const metricEntries = result ? Object.entries(result.metrics ?? {}) : [];
   const parameterEntries = result ? Object.entries(result.parameters ?? {}) : [];
   return (
-    <section className="workflow-page report-page scroll-page report-page-two-column">
+    <section className="workflow-page report-page scroll-page report-page-two-column resizable-report-grid" style={{ gridTemplateColumns: `minmax(420px, ${leftPct}fr) 8px minmax(280px, ${100 - leftPct}fr)` }}>
       <main className="report-main-column">
         <div className="card report-overview-card">
           <h2>Report</h2>
@@ -541,6 +550,7 @@ function ReportWorkflowPage({
           </>
         ) : null}
       </main>
+      <div className="pane-resizer" role="separator" aria-label="Resize Report page columns" onPointerDown={onResizeStart} />
 
       <aside className="report-side-column">
         <div className="card report-export-card report-export-sidebar-card">
@@ -591,6 +601,25 @@ function BackendConnectionBanner({
 }) {
   const help =
     "Check that the backend window is running, then open http://127.0.0.1:8000/api/health. For phone testing, also check firewall and use the LAN address printed by 04c_run_lan_dev.bat.";
+
+
+  function startPaneResize(event: ReactPointerEvent<HTMLDivElement>, setter: (value: number) => void, min = 26, max = 78) {
+    const container = event.currentTarget.parentElement;
+    if (!container) return;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    const rect = container.getBoundingClientRect();
+    const onMove = (move: PointerEvent) => {
+      const pct = ((move.clientX - rect.left) / Math.max(1, rect.width)) * 100;
+      setter(Math.min(max, Math.max(min, Number(pct.toFixed(1)))));
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp, { once: true });
+  }
+
   return (
     <div className="backend-banner" role="alert">
       <div>
@@ -712,6 +741,8 @@ export function FittingPage() {
     useState<EquationSummary | null>(null);
   const [zoom, setZoom] = useState(0.92);
   const [activeView, setActiveView] = useState<AppView>("start");
+  const [modelPanePct, setModelPanePct] = useState(42);
+  const [reportPanePct, setReportPanePct] = useState(72);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [language, setLanguage] = useState<Language>("en");
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -1072,6 +1103,7 @@ export function FittingPage() {
       trace: selectedTrace,
       markdownReport: report,
       appVersion: APP_VERSION,
+      includePlots: true,
     });
   }
 
@@ -1199,6 +1231,25 @@ export function FittingPage() {
     </div>
   );
 
+
+
+  function startPaneResize(event: ReactPointerEvent<HTMLDivElement>, setter: (value: number) => void, min = 26, max = 78) {
+    const container = event.currentTarget.parentElement;
+    if (!container) return;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    const rect = container.getBoundingClientRect();
+    const onMove = (move: PointerEvent) => {
+      const pct = ((move.clientX - rect.left) / Math.max(1, rect.width)) * 100;
+      setter(Math.min(max, Math.max(min, Number(pct.toFixed(1)))));
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp, { once: true });
+  }
+
   return (
     <div
       className={sidebarCollapsed ? "app sidebar-collapsed" : "app"}
@@ -1269,6 +1320,8 @@ export function FittingPage() {
             result={result}
             language={language}
             isFitting={isFitting}
+            leftPct={modelPanePct}
+            onResizeStart={(event) => startPaneResize(event, setModelPanePct, 28, 65)}
           />
         ) : activeView === "fitting" ? (
           <FittingWorkflowPage
@@ -1339,6 +1392,8 @@ export function FittingPage() {
             onExportReportHtml={downloadReportHtml}
             setActiveView={setActiveView}
             language={language}
+            leftPct={reportPanePct}
+            onResizeStart={(event) => startPaneResize(event, setReportPanePct, 54, 82)}
           />
         ) : (
           <UserDocumentationPage

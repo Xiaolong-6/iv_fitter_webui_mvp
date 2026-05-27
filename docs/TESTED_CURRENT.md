@@ -1,29 +1,6 @@
-# Tested current — v1.5.23
+# Tested current — v1.5.26
 
-Validated after workflow UI polish, Data plot review, report two-column layout, and test-covered HTML report export.
-
-Commands to run:
-
-```bash
-PYTHONPATH=backend python -m pytest backend/tests -q
-python -m compileall -q backend/ivfitter backend/tests
-cd frontend
-npm run test
-npm run build
-```
-
-# Tested current version
-
-Version: v1.5.19
-
-Validated in this package:
-
-- Backend pytest suite.
-- Backend compileall.
-- Frontend Vitest suite: pending local dependency repair.
-- Frontend production build: pending local dependency repair.
-
-Key change: the UI is reorganized around workflow pages: Start here, Data, Model, Fitting, Report, and Help. Existing Data import, Model Builder, Fit setup, plots, parameters, diagnostics, exports, and manual content are moved into task-specific pages. This is an information-architecture release only; fitting behavior, backend APIs, reports, saved models, and equations are unchanged.
+Validated after adaptive workflow layout polish, resizable Model/Report panes, Data page containment, parameter-table scroll containment, portrait-mode CSS checks, and HTML report plot export.
 
 Commands run:
 
@@ -35,18 +12,18 @@ npm run test
 npm run build
 ```
 
-Expected result:
+Observed result in this package:
 
-- Backend tests pass.
-- Backend package and tests compile.
-- Frontend unit tests pass when frontend dev dependencies are installed.
-- Frontend production build passes when frontend dev dependencies are installed.
+- Backend pytest: passed, 123 tests.
+- Backend compileall: passed.
+- Frontend Vitest: passed, 8 files / 27 tests.
+- Frontend production build: passed.
 
-Local note: the backend pytest suite passes with the repository `.venv`. The default `python` and `py -3.12` interpreters on this machine do not currently have `pytest` installed. Frontend validation remains blocked because `frontend/node_modules` is incomplete (`vitest` has no generated `.bin` entry, and type packages such as `aria-query`, `chai`, and `deep-eql` are missing). A repair attempt with `npm install` timed out against the package registry.
+Manual browser checks still recommended:
 
-Manual checks recommended:
-
-1. Confirm the default page is Start here.
-2. Navigate to Data, Model, Fitting, Report, and Help; state should persist while switching pages.
-3. Confirm Data renders import/preview, Model renders Model Builder and preview, Fitting renders Fit setup/plots/parameters, Report renders unavailable state before fitting plus export controls, and Help renders the manual.
-4. Confirm Run fit, Stop fit, Report availability, compact status, and diagnostics behavior match the previous release.
+1. Verify Data page card heights at 100%, 125%, and 150% app zoom.
+2. Drag the Model page and Report page column dividers.
+3. Confirm Fitting plots stay visible while the Parameters table scrolls internally.
+4. Confirm portrait/narrow layout stacks pages without horizontal overflow.
+5. Download the HTML report and verify plots, metrics, parameters, and warnings render correctly.
+6. Hover parameter names and confirm the tooltip explains the parameter meaning rather than internal parameter keys.

@@ -1,3 +1,14 @@
+## v1.5.26 — adaptive workflow layout and report plot export
+
+- Added manual column resizing for the Model and Report workflow pages.
+- Improved Data page adaptive sizing so Import/Paste/Plot review/Spreadsheet cards use available viewport space more predictably.
+- Matched Model Builder group card backgrounds to the equivalent-circuit color semantics: main path in blue and junction/current branches in green.
+- Improved Fitting page containment so plots remain stable while the Parameters table scrolls internally.
+- Added portrait/narrow-screen layout rules for Data, Model, Fitting, and Report pages.
+- Added inline SVG plots to the downloadable HTML report.
+- Changed parameter-name hover text to explain the parameter meaning rather than expose internal keys.
+- Kept fitting equations, backend APIs, CSV/JSON report formats, and saved-model compatibility unchanged.
+
 ## v1.5.23 — final audit notes for UI polish batch
 
 - Added a self-audit handoff document for the workflow UI polish batch.

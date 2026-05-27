@@ -32,5 +32,8 @@ describe("HTML report export", () => {
     expect(html).toContain("Trace &lt;1&gt;");
     expect(html).toContain("hello &lt;world&gt;");
     expect(html).toContain("2026-01-01T00:00:00.000Z");
+    expect(html).toContain("Linear I-V");
+    expect(html).toContain("Log |I|");
+    expect(html).toContain("Signed residual");
   });
 });
