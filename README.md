@@ -188,6 +188,14 @@ The sample preserves the multi-trace row count and voltage/current data needed t
 
 User-facing demo IV traces live under `examples/demo_data/iv_traces/`. In the local app, Import CSV/TXT opens that folder by default when the runtime supports local OS file dialogs; users can still browse anywhere.
 
+
+### v1.5.17 internal stability refactor
+
+- Extracted fit lifecycle state helpers into `frontend/src/model/fitLifecycle.ts` so run-id, stale-result, cancelled, timeout, and report-availability rules can be tested outside the page component.
+- Extracted report filename/artifact helpers into `frontend/src/model/reportArtifacts.ts`.
+- Added frontend regression tests for stale-result rejection, cancelled/timeout state derivation, report availability, and report filename normalization.
+- Preserved existing UI behavior; this release is an internal stability refactor, not a feature expansion.
+
 ### v1.5.16 frontend test foundation
 
 The frontend now has a formal Vitest suite for fast model/UI-logic regression checks. Initial coverage includes parameter formatting, parameter status classification, fit diagnostics helpers, bounds suggestion application, Model Builder rules, and representative i18n keys. Run it with `cd frontend && npm run test`.

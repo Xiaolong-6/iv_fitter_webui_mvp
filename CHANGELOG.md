@@ -1,3 +1,17 @@
+# v1.5.17 - Internal stability refactor
+
+- Extracted frontend fit lifecycle helpers for run-id sequencing, stale-result acceptance, cancelled/timeout/error lifecycle states, derived UI state, and report availability.
+- Extracted report artifact/download filename helpers to remove duplicated page-local string handling.
+- Added frontend regression tests for fit lifecycle edge cases and report artifact naming.
+- Preserved user-facing behavior and layout; no new fitting feature, model law, or UI control was added.
+- Updated version metadata to v1.5.17.
+
+Validation:
+- `PYTHONPATH=backend python -m pytest backend/tests -q`
+- `python -m compileall -q backend/ivfitter backend/tests`
+- `cd frontend && npm run test`
+- `cd frontend && npm run build`
+
 # v1.5.16 - Frontend test foundation
 
 - Added Vitest configuration and frontend test scripts (`npm run test`, `npm run test:watch`).

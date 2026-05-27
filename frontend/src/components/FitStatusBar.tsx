@@ -1,15 +1,9 @@
 import type { FitResult, FitSessionStats } from "../model/types";
+import type { FitLifecycleState } from "../model/fitLifecycle";
 import { fmtEng } from "../model/format";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { currentDataScale, fitQualityVerdict } from "../model/diagnostics";
-
-type FitLifecycleStatus =
-  | { kind: "idle" }
-  | { kind: "running"; runId: number; startedAt: number; timeoutS: number }
-  | { kind: "cancelled"; runId: number; elapsedSeconds: number }
-  | { kind: "timeout"; runId: number; timeoutS: number }
-  | { kind: "error"; runId?: number; message: string };
 
 function percentile(sorted: number[], p: number) {
   if (!sorted.length) return 0;
@@ -80,7 +74,7 @@ export function FitStatusBar({
   language: Language;
   isFitting?: boolean;
   elapsedSeconds?: number;
-  lifecycleStatus?: FitLifecycleStatus;
+  lifecycleStatus?: FitLifecycleState;
 }) {
   if (isFitting)
     return (

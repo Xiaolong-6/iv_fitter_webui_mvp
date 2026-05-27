@@ -51,6 +51,8 @@ import { EquationPreview } from "../components/EquationPreview";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
+import { buildReportBaseName, emptyReportArtifacts } from "../model/reportArtifacts";
+import { canGenerateReport, createCancelledLifecycle, createErrorLifecycle, createRunningLifecycle, createTimeoutLifecycle, nextRunId, shouldAcceptRunResult, type FitLifecycleState } from "../model/fitLifecycle";
 
 const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "dev";
 
@@ -136,20 +138,6 @@ const initialConfig: FitConfig = {
   run_timeout_s: 60,
   solver_mode: "legacy_composite",
 };
-
-type FitLifecycleState =
-  | { kind: "idle" }
-  | { kind: "running"; runId: number; startedAt: number; timeoutS: number }
-  | { kind: "cancelled"; runId: number; elapsedSeconds: number }
-  | { kind: "timeout"; runId: number; timeoutS: number }
-  | { kind: "error"; runId?: number; message: string };
-
-function isCurrentRun(
-  activeRunIdRef: { current: number | null },
-  runId: number,
-) {
-  return activeRunIdRef.current === runId;
-}
 
 type ZoomStyle = CSSProperties & { "--app-zoom": number };
 
@@ -537,8 +525,9 @@ export function FittingPage() {
   const fitRunSeqRef = useRef(0);
   const activeFitRunIdRef = useRef<number | null>(null);
   const cancelledFitRunIdsRef = useRef(new Set<number>());
-  const [report, setReport] = useState<string>("");
-  const [reportMessage, setReportMessage] = useState<string>("");
+  const [reportArtifacts, setReportArtifacts] = useState(emptyReportArtifacts);
+  const report = reportArtifacts.report;
+  const reportMessage = reportArtifacts.message;
   const [equationSummary, setEquationSummary] =
     useState<EquationSummary | null>(null);
   const [zoom, setZoom] = useState(0.92);
@@ -672,8 +661,7 @@ export function FittingPage() {
       const response = await suggestBounds(selectedTrace, model, config);
       const applied = applyDataBoundsSuggestions(model, registry, response);
       setModel(applied.model);
-      setReport("");
-              setReportMessage("");
+      setReportArtifacts(emptyReportArtifacts);
       setDataBoundsReport(applied.report);
       setOpenSections((current) => ({ ...current, parameters: true }));
     } catch (e) {
@@ -687,15 +675,14 @@ export function FittingPage() {
 
   async function runFit() {
     if (isFitting) return;
-    const runId = fitRunSeqRef.current + 1;
+    const runId = nextRunId(fitRunSeqRef.current);
     fitRunSeqRef.current = runId;
     activeFitRunIdRef.current = runId;
     cancelledFitRunIdsRef.current.delete(runId);
     setError(null);
     setFitPromotionNotice(null);
     setResult(null);
-    setReport("");
-              setReportMessage("");
+    setReportArtifacts(emptyReportArtifacts);
     setDataBoundsReport(null);
     setDismissedWarningKey("");
     setActiveView("workspace");
@@ -720,17 +707,17 @@ export function FittingPage() {
     const startedAt = Date.now();
     setElapsedSeconds(0);
     setFitStartedAt(startedAt);
-    setFitLifecycle({ kind: "running", runId, startedAt, timeoutS });
+    setFitLifecycle(createRunningLifecycle(runId, startedAt, timeoutS));
     setIsFitting(true);
     const timeoutId = window.setTimeout(() => {
-      if (!isCurrentRun(activeFitRunIdRef, runId)) return;
+      if (!shouldAcceptRunResult({ activeRunId: activeFitRunIdRef.current, runId })) return;
       cancelledFitRunIdsRef.current.add(runId);
       activeFitRunIdRef.current = null;
       controller.abort();
       setIsFitting(false);
       setFitStartedAt(null);
       setElapsedSeconds(timeoutS);
-      setFitLifecycle({ kind: "timeout", runId, timeoutS });
+      setFitLifecycle(createTimeoutLifecycle(runId, timeoutS));
       setError(
         language === "zh"
           ? `拟合超过 ${timeoutS} 秒，已中止请求；本次结果不会写入界面。`
@@ -744,11 +731,7 @@ export function FittingPage() {
         { ...config, run_timeout_s: timeoutS },
         controller.signal,
       );
-      if (
-        !isCurrentRun(activeFitRunIdRef, runId) ||
-        cancelledFitRunIdsRef.current.has(runId)
-      )
-        return;
+      if (!shouldAcceptRunResult({ activeRunId: activeFitRunIdRef.current, runId, cancelledRunIds: cancelledFitRunIdsRef.current })) return;
       setResult(fit);
       const diag = fit.fit_diagnostics;
       setFitSessionStats((current) => ({
@@ -783,15 +766,11 @@ export function FittingPage() {
       }));
       setFitLifecycle({ kind: "idle" });
     } catch (e) {
-      if (
-        !isCurrentRun(activeFitRunIdRef, runId) ||
-        cancelledFitRunIdsRef.current.has(runId)
-      )
-        return;
+      if (!shouldAcceptRunResult({ activeRunId: activeFitRunIdRef.current, runId, cancelledRunIds: cancelledFitRunIdsRef.current })) return;
       if (e instanceof DOMException && e.name === "AbortError") {
         cancelledFitRunIdsRef.current.add(runId);
         activeFitRunIdRef.current = null;
-        setFitLifecycle({ kind: "cancelled", runId, elapsedSeconds });
+        setFitLifecycle(createCancelledLifecycle(runId, elapsedSeconds));
         setError(
           language === "zh"
             ? "拟合请求已中止。本次结果不会写入界面。"
@@ -799,18 +778,15 @@ export function FittingPage() {
         );
       } else {
         const message = String(e);
-        setFitLifecycle({ kind: "error", runId, message });
+        setFitLifecycle(createErrorLifecycle(runId, message));
         setError(message);
       }
     } finally {
       window.clearTimeout(timeoutId);
       if (abortFitRef.current === controller) abortFitRef.current = null;
-      if (isCurrentRun(activeFitRunIdRef, runId))
+      if (activeFitRunIdRef.current === runId)
         activeFitRunIdRef.current = null;
-      if (
-        isCurrentRun(activeFitRunIdRef, runId) ||
-        fitRunSeqRef.current === runId
-      ) {
+      if (activeFitRunIdRef.current === runId || fitRunSeqRef.current === runId) {
         setIsFitting(false);
         setFitStartedAt(null);
       }
@@ -824,11 +800,7 @@ export function FittingPage() {
     abortFitRef.current?.abort();
     setIsFitting(false);
     setFitStartedAt(null);
-    setFitLifecycle({
-      kind: "cancelled",
-      runId: runId ?? fitRunSeqRef.current,
-      elapsedSeconds,
-    });
+    setFitLifecycle(createCancelledLifecycle(runId ?? fitRunSeqRef.current, elapsedSeconds));
     setError(
       language === "zh"
         ? "已停止当前拟合请求。本次结果不会写入界面。"
@@ -854,13 +826,11 @@ export function FittingPage() {
   async function makeReport() {
     if (!result) return;
     const r = await exportReport(result);
-    setReport(r.markdown);
-    setReportMessage(language === "zh" ? "报告已生成。可下载完整 CSV、参数 CSV 或 diagnostics JSON。" : "Report generated. You can download the full CSV, parameter CSV, or diagnostics JSON.");
+    setReportArtifacts({
+      report: r.markdown,
+      message: language === "zh" ? "报告已生成。可下载完整 CSV、参数 CSV 或 diagnostics JSON。" : "Report generated. You can download the full CSV, parameter CSV, or diagnostics JSON.",
+    });
     setActiveView("workspace");
-  }
-
-  function safeFilePart(value: string | null | undefined) {
-    return (value || "trace").replace(/[^a-zA-Z0-9._-]+/g, "_").replace(/^_+|_+$/g, "") || "trace";
   }
 
   function downloadText(filename: string, text: string, mimeType: string) {
@@ -873,13 +843,15 @@ export function FittingPage() {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-    setReportMessage(`${language === "zh" ? "已导出" : "Exported"}: ${filename}`);
+    setReportArtifacts((current) => ({ ...current, message: `${language === "zh" ? "已导出" : "Exported"}: ${filename}` }));
   }
 
   function reportBaseName(suffix: string) {
-    const trace = safeFilePart(selectedTrace.trace_id || String(selectedTrace.metadata?.trace_name ?? "trace"));
-    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    return `ivfit_${trace}_${stamp}_${suffix}`;
+    return buildReportBaseName({
+      traceId: selectedTrace.trace_id,
+      traceName: String(selectedTrace.metadata?.trace_name ?? "trace"),
+      suffix,
+    });
   }
 
   async function downloadReportCsv() {
@@ -910,6 +882,14 @@ export function FittingPage() {
       50,
     );
   }
+
+
+  const reportAvailable = canGenerateReport({
+    hasSelectedTrace,
+    isFitting,
+    hasResult: result !== null,
+    lifecycle: fitLifecycle,
+  });
 
   const zoomControl = (
     <div
@@ -957,15 +937,13 @@ export function FittingPage() {
             onTraces={(next) => {
               setTraces(next);
               setResult(null);
-              setReport("");
-              setReportMessage("");
+              setReportArtifacts(emptyReportArtifacts);
               setDataBoundsReport(null);
             }}
             onSelectTrace={(id) => {
               setSelectedTraceId(id);
               setResult(null);
-              setReport("");
-              setReportMessage("");
+              setReportArtifacts(emptyReportArtifacts);
               setDataBoundsReport(null);
               setNoTraceRunAttempted(false);
             }}
@@ -980,16 +958,14 @@ export function FittingPage() {
             setTraces={(next) => {
               setTraces(next);
               setResult(null);
-              setReport("");
-              setReportMessage("");
+              setReportArtifacts(emptyReportArtifacts);
               setDataBoundsReport(null);
               setNoTraceRunAttempted(false);
             }}
             setSelectedTraceId={(id) => {
               setSelectedTraceId(id);
               setResult(null);
-              setReport("");
-              setReportMessage("");
+              setReportArtifacts(emptyReportArtifacts);
               setDataBoundsReport(null);
               setNoTraceRunAttempted(false);
             }}
@@ -998,14 +974,12 @@ export function FittingPage() {
               setModel(next);
               setPreFitInitialModel(null);
               setResult(null);
-              setReport("");
-              setReportMessage("");
+              setReportArtifacts(emptyReportArtifacts);
               setDataBoundsReport(null);
             }}
             updateParameterModel={(next) => {
               setModel(next);
-              setReport("");
-              setReportMessage("");
+              setReportArtifacts(emptyReportArtifacts);
               setDataBoundsReport(null);
             }}
             canRestoreInitialValues={preFitInitialModel !== null}
@@ -1069,9 +1043,9 @@ export function FittingPage() {
                   {language === "zh" ? "停止拟合" : "Stop fit"}
                 </button>
                 <button
-                  disabled={!result || isFitting || !hasSelectedTrace}
+                  disabled={!reportAvailable}
                   title={
-                    !result || isFitting
+                    !reportAvailable
                       ? language === "zh"
                         ? "完成一次拟合后可生成报告。"
                         : "Available after a completed fit."

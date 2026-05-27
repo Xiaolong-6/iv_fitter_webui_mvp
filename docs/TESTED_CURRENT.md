@@ -1,6 +1,6 @@
 # Tested current version
 
-Version: v1.5.16
+Version: v1.5.17
 
 Validated in this package:
 
@@ -9,7 +9,7 @@ Validated in this package:
 - Frontend Vitest suite.
 - Frontend production build.
 
-Key change: the frontend now has a formal Vitest test foundation covering parameter formatting, diagnostics, bounds suggestions, model-builder rules, and representative i18n keys.
+Key change: internal frontend stability refactor. Fit lifecycle and report artifact rules are now centralized in pure helpers and covered by regression tests; existing UI behavior is preserved.
 
 Commands run:
 
@@ -30,6 +30,6 @@ Expected result:
 
 Manual checks recommended:
 
-1. Open the app and confirm the existing Fit setup bottom dock and compact diagnostics still render normally.
-2. Run a normal fit and confirm the Parameters table/report buttons still update from the current completed fit.
-3. Run `cd frontend && npm run test:watch` during future UI/model iterations when editing model-builder, diagnostics, bounds, formatting, or i18n logic.
+1. Run a normal fit and confirm status, Parameters table, and Report behavior match v1.5.16.
+2. Start a fit, press Stop fit, then start a new fit; confirm late/old results do not overwrite the workspace.
+3. Generate and download reports; confirm filenames still use the selected trace label and timestamp.
