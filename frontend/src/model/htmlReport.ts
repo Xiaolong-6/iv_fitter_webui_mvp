@@ -34,22 +34,47 @@ function equationLinesFromResult(result: FitResult) {
   ].filter(Boolean);
 }
 
+function componentPlainRole(component: FitResult["model"]["series"][number]) {
+  const name = String(component.metadata?.nickname ?? component.id);
+  const placement = component.placement ?? "";
+  const law = component.law_id ?? component.function_type;
+  const isMain =
+    placement.includes("series") || component.location === "series";
+  if (/ohmic/i.test(law)) {
+    return isMain
+      ? `${name}: main-path series resistance; it consumes part of the applied voltage before branch currents are evaluated.`
+      : `${name}: Ohmic leakage/shunt branch; it adds a nearly linear current at the internal junction voltage.`;
+  }
+  if (/shockley/i.test(law) || component.function_type === "diode") {
+    return `${name}: Shockley diode branch; it adds the exponential junction current evaluated at the internal voltage.`;
+  }
+  if (component.function_type === "series_diode_barrier") {
+    return `${name}: diode-like main-path barrier; it changes how terminal voltage maps to internal voltage.`;
+  }
+  return `${name}: ${isMain ? "main-path" : "branch"} term using ${law}.`;
+}
+
 function modelEquationSection(result: FitResult) {
   const lines = equationLinesFromResult(result);
-  const formulaRows = lines.length
-    ? lines.map((line) => `<code>${escapeHtml(line)}</code>`).join("")
-    : `<code>${escapeHtml(modelSummaryFromResult(result))}</code>`;
+  const main =
+    result.model.series
+      .map((c) => String(c.metadata?.nickname ?? c.id))
+      .join(" + ") || "no main-path drop";
+  const branches =
+    [...result.model.core, ...result.model.parallel]
+      .map((c) => String(c.metadata?.nickname ?? c.id))
+      .join(" + ") || "no branch current";
   const components = [
     ...result.model.series,
     ...result.model.core,
     ...result.model.parallel,
   ]
-    .map(
-      (component) =>
-        `<li><strong>${escapeHtml(component.metadata?.nickname ?? component.id)}</strong> — ${escapeHtml(component.law_id ?? component.function_type)}${component.polarity ? ` · polarity: ${escapeHtml(component.polarity)}` : ""}</li>`,
-    )
+    .map((component) => `<li>${escapeHtml(componentPlainRole(component))}</li>`)
     .join("");
-  return `<section class="card"><h2>Model and equations</h2><p class="muted">Model used for this fit: ${escapeHtml(modelSummaryFromResult(result))}</p><div class="formula-list">${formulaRows}</div><ul>${components}</ul></section>`;
+  const technicalRows = lines.length
+    ? `<details><summary>Backend technical equation summary</summary><div class="formula-list">${lines.map((line) => `<code>${escapeHtml(line)}</code>`).join("")}</div></details>`
+    : "";
+  return `<section class="card"><h2>How the model produces this fit</h2><p class="muted">The terminal voltage first passes through the main path (${escapeHtml(main)}) to give the internal junction voltage. The branches (${escapeHtml(branches)}) then generate currents at that internal voltage, and those currents are summed.</p><div class="formula-list"><code>Voltage relation: V_ext = V_j + Σ V_drop,k(I,V_j)</code><code>Current sum: I = Σ I_branch,m(V_j)</code></div><ul>${components}</ul>${technicalRows}</section>`;
 }
 
 function finitePairs(x: number[], y: number[]) {

@@ -1,10 +1,29 @@
 import { Fragment, useState } from "react";
-import type { ComponentSpec, FitResult, FunctionDefinition, Location, ModelSpec, ParameterSpec } from "../model/types";
-import { fmtBounds, formatValueWithUnit, parameterFitStatus } from "../model/format";
+import type {
+  ComponentSpec,
+  FitResult,
+  FunctionDefinition,
+  Location,
+  ModelSpec,
+  ParameterSpec,
+} from "../model/types";
+import {
+  fmtBounds,
+  formatValueWithUnit,
+  parameterFitStatus,
+} from "../model/format";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
-import { parameterMeaning, parameterShortAssessment } from "../model/diagnostics";
-import { boundsSourceTitle, markParameterUserEdited, type DataBoundsApplicationDetail, type DataBoundsApplicationReport } from "../model/boundsSuggestion";
+import {
+  parameterMeaning,
+  parameterShortAssessment,
+} from "../model/diagnostics";
+import {
+  boundsSourceTitle,
+  markParameterUserEdited,
+  type DataBoundsApplicationDetail,
+  type DataBoundsApplicationReport,
+} from "../model/boundsSuggestion";
 import { updateComponent } from "../model/utils";
 import { HelpTip } from "./HelpTip";
 import { parameterText } from "../content/localizedText";
@@ -16,7 +35,10 @@ import {
   type ComponentParameterGroup,
 } from "../model/parameterGrouping";
 
-function formatParameterNumber(v: number | undefined | null, unit?: string | null) {
+function formatParameterNumber(
+  v: number | undefined | null,
+  unit?: string | null,
+) {
   return formatValueWithUnit(v, unit, 4); // uses 4 significant digits, equivalent to toExponential(3) for scientific notation when abs < 1e-3 || abs >= 1e4
 }
 
@@ -24,22 +46,46 @@ function num(v: number | undefined | null) {
   return formatParameterNumber(v);
 }
 
-function formatBoundsPair(lower: number | null | undefined, upper: number | null | undefined) {
+function formatBoundsPair(
+  lower: number | null | undefined,
+  upper: number | null | undefined,
+) {
   return fmtBounds(lower ?? null, upper ?? null);
 }
 
 function isPartialNumber(text: string) {
-  return text === "" || text === "-" || text === "+" || text === "." || text === "-." || text === "+." || /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d*)?$/.test(text);
+  return (
+    text === "" ||
+    text === "-" ||
+    text === "+" ||
+    text === "." ||
+    text === "-." ||
+    text === "+." ||
+    /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d*)?$/.test(text)
+  );
 }
 
 function commitNumber(text: string): number | null | undefined {
   if (text === "") return null;
-  if (["-", "+", ".", "-.", "+."].includes(text) || /[eE][-+]?$/.test(text)) return undefined;
+  if (["-", "+", ".", "-.", "+."].includes(text) || /[eE][-+]?$/.test(text))
+    return undefined;
   const n = Number(text);
   return Number.isFinite(n) ? n : undefined;
 }
 
-function DraftNumberInput({ value, placeholder, title, disabled = false, onCommit }: { value: number | null | undefined; placeholder?: string; title?: string; disabled?: boolean; onCommit: (value: number | null) => void }) {
+function DraftNumberInput({
+  value,
+  placeholder,
+  title,
+  disabled = false,
+  onCommit,
+}: {
+  value: number | null | undefined;
+  placeholder?: string;
+  title?: string;
+  disabled?: boolean;
+  onCommit: (value: number | null) => void;
+}) {
   const [draft, setDraft] = useState(num(value));
   function commitOrRevert() {
     const parsed = commitNumber(draft);
@@ -50,22 +96,30 @@ function DraftNumberInput({ value, placeholder, title, disabled = false, onCommi
     onCommit(parsed);
     setDraft(num(parsed));
   }
-  return <input
-    className="parameter-edit-input"
-    title={title}
-    disabled={disabled}
-    value={draft}
-    placeholder={placeholder}
-    onChange={(e) => { if (isPartialNumber(e.target.value)) setDraft(e.target.value); }}
-    onBlur={commitOrRevert}
-    onKeyDown={(e) => {
-      if (e.key === "Enter") commitOrRevert();
-      if (e.key === "Escape") setDraft(num(value));
-    }}
-  />;
+  return (
+    <input
+      className="parameter-edit-input"
+      title={title}
+      disabled={disabled}
+      value={draft}
+      placeholder={placeholder}
+      onChange={(e) => {
+        if (isPartialNumber(e.target.value)) setDraft(e.target.value);
+      }}
+      onBlur={commitOrRevert}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") commitOrRevert();
+        if (e.key === "Escape") setDraft(num(value));
+      }}
+    />
+  );
 }
 
-function labelForModelParameter(model: ModelSpec, componentId: string, paramName: string) {
+function labelForModelParameter(
+  model: ModelSpec,
+  componentId: string,
+  paramName: string,
+) {
   const components = [...model.core, ...model.series, ...model.parallel];
   const comp = components.find((c) => c.id === componentId);
   if (!comp) return `${componentId}.${paramName}`;
@@ -78,16 +132,31 @@ function labelForModelParameter(model: ModelSpec, componentId: string, paramName
     Vs_ph_V: "Vs",
     m_ph: "m",
   };
-  const label = comp.function_type === "bias_dependent_current" || comp.function_type === "photocurrent_voltage_dependent" || comp.function_type === "voltage_dependent_photocurrent"
-    ? (neutralBiasLabels[paramName] ?? param?.label ?? paramName)
-    : (param?.label ?? paramName);
+  const label =
+    comp.function_type === "bias_dependent_current" ||
+    comp.function_type === "photocurrent_voltage_dependent" ||
+    comp.function_type === "voltage_dependent_photocurrent"
+      ? (neutralBiasLabels[paramName] ?? param?.label ?? paramName)
+      : (param?.label ?? paramName);
   return `${nick}.${label}`;
 }
 
-function updateParameter(model: ModelSpec, location: Location, componentId: string, paramName: string, patch: Partial<ParameterSpec>) {
+function updateParameter(
+  model: ModelSpec,
+  location: Location,
+  componentId: string,
+  paramName: string,
+  patch: Partial<ParameterSpec>,
+) {
   const comp = model[location].find((item) => item.id === componentId);
   if (!comp || !comp.params[paramName]) return model;
-  const next = { ...comp, params: { ...comp.params, [paramName]: { ...comp.params[paramName], ...patch } } };
+  const next = {
+    ...comp,
+    params: {
+      ...comp.params,
+      [paramName]: { ...comp.params[paramName], ...patch },
+    },
+  };
   return updateComponent(model, location, componentId, next);
 }
 
@@ -96,24 +165,49 @@ function nickname(comp: ComponentSpec) {
 }
 
 function componentSummary(comp: ComponentSpec, language: Language) {
-  const location = comp.placement?.includes("series") || comp.location === "series"
-    ? (language === "zh" ? "主路" : "main path")
-    : (language === "zh" ? "电流支路" : "current branch");
-  const role = comp.function_type === "diode" || /shockley/i.test(comp.law_id ?? "")
-    ? (language === "zh" ? "Shockley 二极管" : "Shockley diode")
-    : /ohmic/i.test(comp.law_id ?? "")
-      ? (comp.location === "series" ? (language === "zh" ? "欧姆串联电阻" : "Ohmic series resistance") : (language === "zh" ? "欧姆漏电/旁路" : "Ohmic leakage/shunt"))
-      : comp.function_type === "series_diode_barrier"
-        ? (language === "zh" ? "类二极管串联势垒压降" : "diode-like series barrier drop")
-        : (language === "zh" ? "经验模型项" : "empirical model term");
-  const polarity = comp.polarity ? `${parameterText("polarity", language)}: ${comp.polarity}` : parameterText("noPolarity", language);
+  const location =
+    comp.placement?.includes("series") || comp.location === "series"
+      ? language === "zh"
+        ? "主路"
+        : "main path"
+      : language === "zh"
+        ? "电流支路"
+        : "current branch";
+  const role =
+    comp.function_type === "diode" || /shockley/i.test(comp.law_id ?? "")
+      ? language === "zh"
+        ? "Shockley 二极管"
+        : "Shockley diode"
+      : /ohmic/i.test(comp.law_id ?? "")
+        ? comp.location === "series"
+          ? language === "zh"
+            ? "欧姆串联电阻"
+            : "Ohmic series resistance"
+          : language === "zh"
+            ? "欧姆漏电/旁路"
+            : "Ohmic leakage/shunt"
+        : comp.function_type === "series_diode_barrier"
+          ? language === "zh"
+            ? "类二极管串联势垒压降"
+            : "diode-like series barrier drop"
+          : language === "zh"
+            ? "经验模型项"
+            : "empirical model term";
+  const polarity = comp.polarity
+    ? `${parameterText("polarity", language)}: ${comp.polarity}`
+    : parameterText("noPolarity", language);
   return `${role} | ${location} | ${polarity}`;
 }
 
-function parameterMeaningFromSpec(comp: ComponentSpec, paramName: string, spec: ParameterSpec, language: Language) {
+function parameterMeaningFromSpec(
+  comp: ComponentSpec,
+  paramName: string,
+  spec: ParameterSpec,
+  language: Language,
+) {
   const label = spec.label ?? paramName;
   const componentName = nickname(comp);
-  const en = (text: string, zh: string) => language === "zh" ? zh : text;
+  const en = (text: string, zh: string) => (language === "zh" ? zh : text);
   let base = "";
   if (/^n$/i.test(paramName)) {
     base = en(
@@ -130,7 +224,10 @@ function parameterMeaningFromSpec(comp: ComponentSpec, paramName: string, spec: 
       `Series resistance for ${componentName}. It controls high-current voltage loss and forward-bias roll-off.`,
       `${componentName} 的串联电阻，控制大电流区压降和正向高偏压弯折。`,
     );
-  } else if (/Rsh|Rsh_ohm/i.test(paramName) || /rsh|shunt/i.test(componentName)) {
+  } else if (
+    /Rsh|Rsh_ohm/i.test(paramName) ||
+    /rsh|shunt/i.test(componentName)
+  ) {
     base = en(
       `Shunt/leakage resistance for ${componentName}. Smaller values mean stronger linear leakage.`,
       `${componentName} 的并联/漏电电阻；数值越小表示线性漏电越强。`,
@@ -161,10 +258,12 @@ function parameterMeaningFromSpec(comp: ComponentSpec, paramName: string, spec: 
       `${componentName} 的方向符号，控制该支路是增加还是减少端口电流。`,
     );
   } else {
-    base = spec.description || en(
-      `Parameter ${label} for ${componentName}. Review fitted value, uncertainty, and bounds together.`,
-      `${componentName} 的参数 ${label}。请结合拟合值、不确定度和边界一起判断。`,
-    );
+    base =
+      spec.description ||
+      en(
+        `Parameter ${label} for ${componentName}. Review fitted value, uncertainty, and bounds together.`,
+        `${componentName} 的参数 ${label}。请结合拟合值、不确定度和边界一起判断。`,
+      );
   }
   if (spec.description && !base.includes(spec.description)) {
     base += ` ${spec.description}`;
@@ -189,17 +288,29 @@ function dataBoundsTitle(detail: DataBoundsApplicationDetail) {
       : `Current: ${formatBoundsPair(detail.currentLower, detail.currentUpper)}; suggested: ${formatBoundsPair(detail.suggestedLower, detail.suggestedUpper)}`,
     `Current source: ${sourceLabel(detail.source)}`,
   ];
-  if (!applied && detail.skipReason) rows.push(`Skip reason: ${detail.skipReason}`);
+  if (!applied && detail.skipReason)
+    rows.push(`Skip reason: ${detail.skipReason}`);
   rows.push(`Basis: ${detail.reason}`);
   return rows.join("\n");
 }
 
-function DataBoundsDetail({ detail }: { detail?: DataBoundsApplicationDetail }) {
+function DataBoundsDetail({
+  detail,
+}: {
+  detail?: DataBoundsApplicationDetail;
+}) {
   if (!detail) return null;
   const applied = detail.action === "applied";
-  return <span className={applied ? "data-bounds-note applied" : "data-bounds-note skipped"} title={dataBoundsTitle(detail)}>
-    {applied ? "auto bounds applied" : "auto bounds skipped"}
-  </span>;
+  return (
+    <span
+      className={
+        applied ? "data-bounds-note applied" : "data-bounds-note skipped"
+      }
+      title={dataBoundsTitle(detail)}
+    >
+      {applied ? "auto bounds applied" : "auto bounds skipped"}
+    </span>
+  );
 }
 
 export function ParameterTable({
@@ -234,84 +345,381 @@ export function ParameterTable({
   const allRows = buildParameterRows(model, result);
   const grouped = groupParameterRows(allRows);
 
-  return <section className="card parameter-card">
-    <h2>{t(language, "parameters")} <HelpTip text={parameterText("help", language)} /></h2>
-    <div className="parameter-filter-bar" role="toolbar" aria-label={parameterText("restoreToolbar", language)}>
-      <button type="button" disabled={disabled || !canRestoreInitialValues || !onRestoreInitialValues} onClick={onRestoreInitialValues}>
-        {parameterText("restoreInitialValues", language)}
-      </button>
-      <button type="button" disabled={disabled || !onApplyDataBounds} onClick={onApplyDataBounds} title={language === "zh" ? "根据当前选中 trace 和拟合电压范围生成保守的 data-aware bounds；只覆盖仍为默认值或之前由数据建议生成的 bounds。" : "Generate conservative data-aware bounds from the selected trace and fit voltage range. Only default or previous data-suggested bounds are overwritten."}>
-        {language === "zh" ? "应用数据建议边界" : "Apply data bounds"}
-      </button>
-      <button type="button" disabled={disabled || !canSeedSyntheticGroundTruth || !onSeedSyntheticGroundTruth} onClick={onSeedSyntheticGroundTruth} title={language === "zh" ? "从当前 synthetic trace metadata 中保存的真实参数恢复初值。不会改变模型结构或参数 key。" : "Restore initials from the ground-truth parameters stored in the active synthetic trace metadata. Model structure and parameter keys are not changed."}>
-        {language === "zh" ? "使用 synthetic 真值作为初值" : "Seed from synthetic ground truth"}
-      </button>
-    </div>
-    {allRows.length === 0 ? <p className="muted">{t(language, "runFitForParameters")}</p> : grouped.map((placement) => <div className="parameter-placement-group" key={placement.id}>
-      <h3>{placement.id === "main" ? t(language, "mainPath") : t(language, "branches")}</h3>
-      <div className="table-wrap"><table className="parameter-table interactive-parameter-table compact-parameter-table">
-          <thead><tr>
-            <th>{t(language, "parameter")}</th>
-            <th>{parameterText("initial", language)}</th>
-            <th>{parameterText("fitted", language)}</th>
-            <th>{language === "zh" ? "状态" : "Status"}</th>
-            <th>{t(language, "stdErr")}</th>
-            <th>{parameterText("lower", language)}</th>
-            <th>{parameterText("upper", language)}</th>
-            <th>{parameterText("fitQuestion", language)}</th>
-            <th className="desktop-detail">{parameterText("meaningColumn", language)}</th>
-          </tr></thead>
-          <tbody>{placement.groups.flatMap((group) => {
-            const header = <tr className="parameter-component-divider" key={`${group.component.id}-header`}>
-              <td colSpan={7}>
-                <div className="parameter-component-title">
-                  <strong>{nickname(group.component)}</strong>
-                  <span title={componentSummary(group.component, language)}>{componentSummary(group.component, language)}</span>
-                  <span className="parameter-fit-count">{group.fittedCount}/{group.totalCount} {parameterText("fittedCountSuffix", language)}</span>
-                </div>
-              </td>
-              <td>
-                <div className="parameter-fit-batch-toggles">
-                  <label><input type="checkbox" disabled={disabled} checked={group.fittedCount === group.totalCount} onChange={(e) => onModelChange(setComponentFitState(model, group.location, group.component.id, e.target.checked))} /> {group.fittedCount === group.totalCount ? parameterText("batchFixAll", language) : parameterText("batchFitAll", language)}</label>
-                </div>
-              </td>
-              <td className="desktop-detail"></td>
-            </tr>;
-            const parameterRows = group.rows.map(({ location, component: comp, paramName, spec }) => {
-            const key = parameterKey(comp.id, paramName);
-            const dataBoundsDetails = dataBoundsReport?.details.filter((detail) => detail.key === key) ?? [];
-            const dataBoundsDetail = dataBoundsDetails[dataBoundsDetails.length - 1];
-            const open = openKey === key;
-            const fitted = result?.parameters[key];
-            const prefitMeaning = parameterMeaningFromSpec(comp, paramName, spec, language);
-            const meaning = result ? parameterMeaning(result, key, language) : prefitMeaning;
-            const short = result ? parameterShortAssessment(result, key, language) : prefitMeaning;
-            const information = dataBoundsReport ? <DataBoundsDetail detail={dataBoundsDetail} /> : short;
-            const informationTitle = dataBoundsReport ? (dataBoundsDetail ? dataBoundsTitle(dataBoundsDetail) : "") : meaning;
-            return <Fragment key={key}>
-              <tr className="parameter-summary-row">
-                <td title={meaning} onClick={() => setOpenKey(open ? null : key)}>{labelForModelParameter(model, comp.id, paramName)}</td>
-                <td><DraftNumberInput disabled={disabled} value={spec.value} title={parameterText("initialTitle", language)} onCommit={(value) => { if (value !== null) onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { value }), comp.id, paramName, "initial")); }} /></td>
-                <td title={fitted ? String(fitted.value) : ""}>{fitted ? formatParameterNumber(fitted.value, fitted.unit ?? spec.unit) : "-"}</td>
-                <td><span className="parameter-status-pill">{fitted ? parameterFitStatus(fitted.value, fitted.lower, fitted.upper, fitted.stderr, fitted.fixed) : (spec.fit ?? true ? "free" : "fixed")}</span></td>
-                <td className="desktop-detail" title={fitted?.stderr === null || fitted?.stderr === undefined ? "" : String(fitted.stderr)}>{fitted?.stderr === null || fitted?.stderr === undefined ? "-" : formatParameterNumber(fitted.stderr, fitted.unit ?? spec.unit)}</td>
-                <td><DraftNumberInput disabled={disabled} value={spec.lower} placeholder="-" title={`${parameterText("lowerTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`} onCommit={(value) => onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { lower: value }), comp.id, paramName, "bounds"))} /></td>
-                <td><DraftNumberInput disabled={disabled} value={spec.upper} placeholder="-" title={`${parameterText("upperTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`} onCommit={(value) => onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { upper: value }), comp.id, paramName, "bounds"))} /></td>
-                <td><label className="parameter-fit-toggle"><input type="checkbox" disabled={disabled} checked={spec.fit ?? true} onChange={(e) => onModelChange(updateParameter(model, location, comp.id, paramName, { fit: e.target.checked }))} /> {spec.fit ?? true ? t(language, "fitState") : t(language, "fixed")}</label></td>
-                <td className="parameter-meaning desktop-detail" title={informationTitle}>{information}</td>
-              </tr>
-              <tr className={open ? "parameter-mobile-detail open" : "parameter-mobile-detail"}>
-                <td colSpan={9}>
-                  <div title={boundsSourceTitle(model, comp.id, paramName, language)}><strong>{parameterText("currentBounds", language)}:</strong> {fmtBounds(spec.lower, spec.upper)}</div>
-                  <div><strong>{t(language, "stdErr")}:</strong> {fitted?.stderr === null || fitted?.stderr === undefined ? "-" : formatParameterNumber(fitted.stderr, fitted.unit ?? spec.unit)}</div>
-                  {dataBoundsReport ? <DataBoundsDetail detail={dataBoundsDetail} /> : <p title={meaning}>{short}</p>}
-                </td>
-              </tr>
-            </Fragment>;
-            });
-            return [header, ...parameterRows];
-          })}</tbody>
-        </table></div>
-    </div>)}
-  </section>;
+  return (
+    <section className="card parameter-card">
+      <h2>
+        {t(language, "parameters")}{" "}
+        <HelpTip text={parameterText("help", language)} />
+      </h2>
+      <div
+        className="parameter-filter-bar"
+        role="toolbar"
+        aria-label={parameterText("restoreToolbar", language)}
+      >
+        <button
+          type="button"
+          disabled={
+            disabled || !canRestoreInitialValues || !onRestoreInitialValues
+          }
+          onClick={onRestoreInitialValues}
+        >
+          {parameterText("restoreInitialValues", language)}
+        </button>
+        <button
+          type="button"
+          disabled={disabled || !onApplyDataBounds}
+          onClick={onApplyDataBounds}
+          title={
+            language === "zh"
+              ? "根据当前选中 trace 和拟合电压范围生成保守的 data-aware bounds；只覆盖仍为默认值或之前由数据建议生成的 bounds。"
+              : "Generate conservative data-aware bounds from the selected trace and fit voltage range. Only default or previous data-suggested bounds are overwritten."
+          }
+        >
+          {language === "zh" ? "应用数据建议边界" : "Apply data bounds"}
+        </button>
+        <button
+          type="button"
+          disabled={
+            disabled ||
+            !canSeedSyntheticGroundTruth ||
+            !onSeedSyntheticGroundTruth
+          }
+          onClick={onSeedSyntheticGroundTruth}
+          title={
+            language === "zh"
+              ? "从当前 synthetic trace metadata 中保存的真实参数恢复初值。不会改变模型结构或参数 key。"
+              : "Restore initials from the ground-truth parameters stored in the active synthetic trace metadata. Model structure and parameter keys are not changed."
+          }
+        >
+          {language === "zh"
+            ? "使用 synthetic 真值作为初值"
+            : "Seed from synthetic ground truth"}
+        </button>
+      </div>
+      {allRows.length === 0 ? (
+        <p className="muted">{t(language, "runFitForParameters")}</p>
+      ) : (
+        <div className="parameter-groups-scroll">
+          {grouped.map((placement) => (
+            <div className="parameter-placement-group" key={placement.id}>
+              <h3>
+                {placement.id === "main"
+                  ? t(language, "mainPath")
+                  : t(language, "branches")}
+              </h3>
+              <div className="table-wrap">
+                <table className="parameter-table interactive-parameter-table compact-parameter-table">
+                  <thead>
+                    <tr>
+                      <th>{t(language, "parameter")}</th>
+                      <th>{parameterText("initial", language)}</th>
+                      <th>{parameterText("fitted", language)}</th>
+                      <th>{language === "zh" ? "状态" : "Status"}</th>
+                      <th>{t(language, "stdErr")}</th>
+                      <th>{parameterText("lower", language)}</th>
+                      <th>{parameterText("upper", language)}</th>
+                      <th>{parameterText("fitQuestion", language)}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {placement.groups.flatMap((group) => {
+                      const header = (
+                        <tr
+                          className="parameter-component-divider"
+                          key={`${group.component.id}-header`}
+                        >
+                          <td colSpan={7}>
+                            <div className="parameter-component-title">
+                              <strong>{nickname(group.component)}</strong>
+                              <span
+                                title={componentSummary(
+                                  group.component,
+                                  language,
+                                )}
+                              >
+                                {componentSummary(group.component, language)}
+                              </span>
+                              <span className="parameter-fit-count">
+                                {group.fittedCount}/{group.totalCount}{" "}
+                                {parameterText("fittedCountSuffix", language)}
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="parameter-fit-batch-toggles">
+                              <label
+                                title={componentSummary(
+                                  group.component,
+                                  language,
+                                )}
+                              >
+                                <input
+                                  type="checkbox"
+                                  disabled={disabled}
+                                  checked={
+                                    group.fittedCount === group.totalCount
+                                  }
+                                  onChange={(e) =>
+                                    onModelChange(
+                                      setComponentFitState(
+                                        model,
+                                        group.location,
+                                        group.component.id,
+                                        e.target.checked,
+                                      ),
+                                    )
+                                  }
+                                />{" "}
+                                {group.fittedCount === group.totalCount
+                                  ? parameterText("batchFixAll", language)
+                                  : parameterText("batchFitAll", language)}
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                      const parameterRows = group.rows.map(
+                        ({ location, component: comp, paramName, spec }) => {
+                          const key = parameterKey(comp.id, paramName);
+                          const dataBoundsDetails =
+                            dataBoundsReport?.details.filter(
+                              (detail) => detail.key === key,
+                            ) ?? [];
+                          const dataBoundsDetail =
+                            dataBoundsDetails[dataBoundsDetails.length - 1];
+                          const open = openKey === key;
+                          const fitted = result?.parameters[key];
+                          const prefitMeaning = parameterMeaningFromSpec(
+                            comp,
+                            paramName,
+                            spec,
+                            language,
+                          );
+                          const meaning = result
+                            ? parameterMeaning(result, key, language)
+                            : prefitMeaning;
+                          const short = result
+                            ? parameterShortAssessment(result, key, language)
+                            : prefitMeaning;
+                          const information = dataBoundsReport ? (
+                            <DataBoundsDetail detail={dataBoundsDetail} />
+                          ) : (
+                            short
+                          );
+                          const informationTitle = dataBoundsReport
+                            ? dataBoundsDetail
+                              ? dataBoundsTitle(dataBoundsDetail)
+                              : ""
+                            : meaning;
+                          return (
+                            <Fragment key={key}>
+                              <tr className="parameter-summary-row">
+                                <td
+                                  title={meaning}
+                                  onClick={() => setOpenKey(open ? null : key)}
+                                >
+                                  {labelForModelParameter(
+                                    model,
+                                    comp.id,
+                                    paramName,
+                                  )}
+                                </td>
+                                <td>
+                                  <DraftNumberInput
+                                    disabled={disabled}
+                                    value={spec.value}
+                                    title={parameterText(
+                                      "initialTitle",
+                                      language,
+                                    )}
+                                    onCommit={(value) => {
+                                      if (value !== null)
+                                        onModelChange(
+                                          markParameterUserEdited(
+                                            updateParameter(
+                                              model,
+                                              location,
+                                              comp.id,
+                                              paramName,
+                                              { value },
+                                            ),
+                                            comp.id,
+                                            paramName,
+                                            "initial",
+                                          ),
+                                        );
+                                    }}
+                                  />
+                                </td>
+                                <td title={fitted ? String(fitted.value) : ""}>
+                                  {fitted
+                                    ? formatParameterNumber(
+                                        fitted.value,
+                                        fitted.unit ?? spec.unit,
+                                      )
+                                    : "-"}
+                                </td>
+                                <td>
+                                  <span className="parameter-status-pill">
+                                    {fitted
+                                      ? parameterFitStatus(
+                                          fitted.value,
+                                          fitted.lower,
+                                          fitted.upper,
+                                          fitted.stderr,
+                                          fitted.fixed,
+                                        )
+                                      : (spec.fit ?? true)
+                                        ? "free"
+                                        : "fixed"}
+                                  </span>
+                                </td>
+                                <td
+                                  className="desktop-detail"
+                                  title={
+                                    fitted?.stderr === null ||
+                                    fitted?.stderr === undefined
+                                      ? ""
+                                      : String(fitted.stderr)
+                                  }
+                                >
+                                  {fitted?.stderr === null ||
+                                  fitted?.stderr === undefined
+                                    ? "-"
+                                    : formatParameterNumber(
+                                        fitted.stderr,
+                                        fitted.unit ?? spec.unit,
+                                      )}
+                                </td>
+                                <td>
+                                  <DraftNumberInput
+                                    disabled={disabled}
+                                    value={spec.lower}
+                                    placeholder="-"
+                                    title={`${parameterText("lowerTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`}
+                                    onCommit={(value) =>
+                                      onModelChange(
+                                        markParameterUserEdited(
+                                          updateParameter(
+                                            model,
+                                            location,
+                                            comp.id,
+                                            paramName,
+                                            { lower: value },
+                                          ),
+                                          comp.id,
+                                          paramName,
+                                          "bounds",
+                                        ),
+                                      )
+                                    }
+                                  />
+                                </td>
+                                <td>
+                                  <DraftNumberInput
+                                    disabled={disabled}
+                                    value={spec.upper}
+                                    placeholder="-"
+                                    title={`${parameterText("upperTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`}
+                                    onCommit={(value) =>
+                                      onModelChange(
+                                        markParameterUserEdited(
+                                          updateParameter(
+                                            model,
+                                            location,
+                                            comp.id,
+                                            paramName,
+                                            { upper: value },
+                                          ),
+                                          comp.id,
+                                          paramName,
+                                          "bounds",
+                                        ),
+                                      )
+                                    }
+                                  />
+                                </td>
+                                <td>
+                                  <label
+                                    className="parameter-fit-toggle"
+                                    title={informationTitle || meaning}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      disabled={disabled}
+                                      checked={spec.fit ?? true}
+                                      onChange={(e) =>
+                                        onModelChange(
+                                          updateParameter(
+                                            model,
+                                            location,
+                                            comp.id,
+                                            paramName,
+                                            { fit: e.target.checked },
+                                          ),
+                                        )
+                                      }
+                                    />{" "}
+                                    {(spec.fit ?? true)
+                                      ? t(language, "fitState")
+                                      : t(language, "fixed")}
+                                  </label>
+                                </td>
+                              </tr>
+                              <tr
+                                className={
+                                  open
+                                    ? "parameter-mobile-detail open"
+                                    : "parameter-mobile-detail"
+                                }
+                              >
+                                <td colSpan={8}>
+                                  <div
+                                    title={boundsSourceTitle(
+                                      model,
+                                      comp.id,
+                                      paramName,
+                                      language,
+                                    )}
+                                  >
+                                    <strong>
+                                      {parameterText("currentBounds", language)}
+                                      :
+                                    </strong>{" "}
+                                    {fmtBounds(spec.lower, spec.upper)}
+                                  </div>
+                                  <div>
+                                    <strong>{t(language, "stdErr")}:</strong>{" "}
+                                    {fitted?.stderr === null ||
+                                    fitted?.stderr === undefined
+                                      ? "-"
+                                      : formatParameterNumber(
+                                          fitted.stderr,
+                                          fitted.unit ?? spec.unit,
+                                        )}
+                                  </div>
+                                  {dataBoundsReport ? (
+                                    <DataBoundsDetail
+                                      detail={dataBoundsDetail}
+                                    />
+                                  ) : (
+                                    <p title={meaning}>{short}</p>
+                                  )}
+                                </td>
+                              </tr>
+                            </Fragment>
+                          );
+                        },
+                      );
+                      return [header, ...parameterRows];
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 }

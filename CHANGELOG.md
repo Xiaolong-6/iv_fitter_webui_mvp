@@ -1,3 +1,14 @@
+## v1.5.31 — fitting release-candidate UI polish and external audit
+
+- Tightened Fitting page height containment: Fit setup now uses full available pane height with a scrollable objective/run-options body instead of a fixed short scroll box.
+- Made the Parameters table denser and more high-zoom tolerant by using a single internal scroll container, reducing row/input height, and moving long parameter meaning text into hover/help surfaces instead of a visible wide column.
+- Replaced tiny text chart controls with larger icon-style zoom/pan/reset buttons and clearer hover labels.
+- Further reduced Equivalent circuit visual chrome and made the SVG scale more predictably with the Model Builder pane.
+- Reworked Report model/equation explanation into user-facing circuit language with plain roles, core equations, and a collapsed backend technical summary.
+- Completed Manual page cleanup with a fixed navigation column and a single independently scrollable content pane; removed developer-facing tutorial wording from the user-facing header.
+- Updated HTML report model explanation to match the user-facing report language.
+- Preserved fitting math, backend API shape, saved-model compatibility, and reportability logic.
+
 ## v1.5.30 — UI/layout/manual/report cleanup
 
 - Moved Synthetic trace generation from the Data import card to a Model Builder **Debug algorithm** action.

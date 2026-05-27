@@ -4377,3 +4377,314 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
   font-weight: 850;
   color: var(--theme-text, #0f172a);
 }
+
+/* v1.5.31: release-candidate UI containment and readability pass. */
+.doc-page,
+.manual-reader {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.manual-reader {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+}
+.manual-hero {
+  padding: 10px 14px !important;
+}
+.manual-hero h2 {
+  margin: 0 0 2px !important;
+}
+.manual-hero p {
+  margin: 0 !important;
+}
+.manual-reader-shell {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(132px, 0.12fr) minmax(0, 1fr);
+  gap: 10px;
+  overflow: hidden;
+}
+.manual-reader-nav {
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  padding: 8px;
+  border: 1px solid var(--theme-border, #e2e8f0);
+  border-radius: 12px;
+  background: #ffffff;
+}
+.manual-reader-nav-title {
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 850;
+  margin-bottom: 2px;
+}
+.manual-reader-nav button {
+  text-align: left;
+  display: grid;
+  gap: 1px;
+  min-height: 36px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+}
+.manual-reader-nav button span {
+  font-weight: 850;
+  color: #0f172a;
+}
+.manual-reader-nav button small {
+  color: #64748b;
+  font-size: 0.72rem;
+  line-height: 1.15;
+}
+.manual-reader-nav button.active {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+.manual-reader-content {
+  min-height: 0;
+  overflow: hidden;
+}
+.manual-reader-content-scroll {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
+  overscroll-behavior: contain;
+}
+.manual-reader-content-scroll .manual-section {
+  margin: 0;
+}
+.manual-section.card {
+  padding: 14px 16px;
+}
+.manual-section h2 {
+  margin-top: 0;
+}
+
+.fitting-control-column .fit-config-panel {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+.fitting-control-column .fit-config-inline-options {
+  height: 100% !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  overscroll-behavior: contain;
+}
+.fitting-control-column .advanced-objective-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px !important;
+}
+.fitting-control-column .fit-config-inline-options .setup-section,
+.fitting-control-column .fit-config-inline-options .fit-config-section {
+  padding: 6px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+.fitting-control-column .fit-config-inline-options .setup-grid {
+  gap: 5px !important;
+}
+.fitting-control-column .fit-config-inline-options input,
+.fitting-control-column .fit-config-inline-options select {
+  min-height: 27px !important;
+  height: 27px !important;
+}
+
+.fitting-page .parameter-card {
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  padding: 7px !important;
+}
+.parameter-groups-scroll {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.fitting-page .parameter-placement-group h3 {
+  margin: 3px 0 2px !important;
+  font-size: 0.82rem !important;
+  letter-spacing: 0.02em;
+}
+.fitting-page .parameter-filter-bar {
+  margin-bottom: 4px !important;
+}
+.interactive-parameter-table {
+  min-width: 680px !important;
+  font-size: clamp(10px, calc(11px * var(--app-zoom)), 12px) !important;
+}
+.interactive-parameter-table th,
+.interactive-parameter-table td {
+  padding: 1px 4px !important;
+  line-height: 1.05 !important;
+}
+.interactive-parameter-table .parameter-edit-input {
+  height: 20px !important;
+  min-height: 20px !important;
+  padding: 0 4px !important;
+}
+.parameter-component-divider td {
+  padding: 2px 4px !important;
+}
+.parameter-component-title span:not(.parameter-fit-count) {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.parameter-fit-batch-toggles label,
+.parameter-fit-toggle {
+  font-size: 0.86em;
+}
+
+.compact-chart-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 2px 3px 3px;
+}
+.chart-toolbar-hint {
+  color: #64748b;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+.chart-button-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #ffffffcc;
+}
+.chart-icon-button {
+  min-width: 28px !important;
+  min-height: 28px !important;
+  width: auto !important;
+  padding: 0 7px !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-weight: 850;
+  line-height: 1;
+  color: #334155;
+  background: #f8fafc;
+}
+.chart-icon-button:hover,
+.chart-icon-button:focus-visible {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.chart-icon-button small {
+  font-size: 0.64rem;
+  font-weight: 850;
+}
+.chart-reset-button {
+  padding-inline: 8px !important;
+}
+.fitting-page .simple-chart {
+  border-radius: 8px !important;
+}
+.fitting-page .simple-chart svg {
+  max-height: min(22vh, 220px) !important;
+}
+
+.model-circuit-panel.circuit-panel-v2 {
+  container-type: inline-size;
+  padding: 4px !important;
+  margin: 4px 0 6px !important;
+  border-width: 1px !important;
+  border-radius: 8px !important;
+}
+.model-circuit-panel .circuit-title-row {
+  margin-bottom: 2px !important;
+}
+.circuit-svg,
+.circuit-panel-vertical-branches .circuit-svg {
+  height: clamp(110px, 24cqw, 190px) !important;
+  min-height: 0 !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+}
+
+.report-model-equation-card h2 {
+  margin-bottom: 3px;
+}
+.report-model-explainer {
+  display: grid;
+  gap: 10px;
+}
+.report-model-plain-summary {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.report-model-plain-summary p {
+  margin: 4px 0 0;
+  color: #334155;
+}
+.report-core-equations {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.report-component-role-grid {
+  display: grid;
+  gap: 6px;
+}
+.report-component-role {
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+}
+.report-technical-equations {
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #f8fafc;
+}
+.report-technical-equations summary {
+  cursor: pointer;
+  font-weight: 850;
+  color: #475569;
+}
+.technical-equation-list {
+  margin-top: 8px;
+}
+
+@media (orientation: landscape) and (max-height: 820px) {
+  .manual-hero { padding: 7px 10px !important; }
+  .manual-reader-shell { gap: 8px; }
+  .manual-reader-nav button { min-height: 31px; padding: 4px 7px; }
+  .fitting-page .simple-chart svg { max-height: min(19vh, 175px) !important; }
+  .chart-toolbar-hint { display: none; }
+  .chart-icon-button { min-width: 26px !important; min-height: 26px !important; }
+}
+@media (orientation: portrait), (max-width: 900px) {
+  .manual-reader,
+  .doc-page { height: auto; overflow: visible; }
+  .manual-reader-shell { grid-template-columns: minmax(0, 1fr); overflow: visible; }
+  .manual-reader-nav { display: flex; overflow-x: auto; }
+  .manual-reader-nav-title { display: none; }
+  .manual-reader-nav button { min-width: 110px; }
+  .manual-reader-content-scroll { height: auto; max-height: none; overflow: visible; }
+  .report-core-equations { grid-template-columns: minmax(0, 1fr); }
+}

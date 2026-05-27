@@ -358,7 +358,9 @@ function PageSection({
     <section className="workspace-section open">
       <div className="workspace-section-head static-head">
         <span>{title}</span>
-        {action ? <div className="workspace-section-head-action">{action}</div> : null}
+        {action ? (
+          <div className="workspace-section-head-action">{action}</div>
+        ) : null}
       </div>
       <div className="workspace-section-body">{children}</div>
     </section>
@@ -505,9 +507,11 @@ function FittingWorkflowPage({
       ) : null}
       <div
         className="fitting-workflow-grid resizable-fitting-grid"
-        style={{
-          "--fit-grid-template": `minmax(270px, ${leftPct}fr) 8px minmax(520px, ${100 - leftPct}fr)`,
-        } as CSSProperties}
+        style={
+          {
+            "--fit-grid-template": `minmax(270px, ${leftPct}fr) 8px minmax(520px, ${100 - leftPct}fr)`,
+          } as CSSProperties
+        }
       >
         <aside className="fitting-control-column">
           <ErrorBoundary label="Fit config panel">
@@ -643,6 +647,120 @@ function parameterReliabilityNote(value: {
   return notes.join("; ") || "fit";
 }
 
+function componentPlainRole(component: ComponentSpec, language: Language) {
+  const name = String(component.metadata?.nickname ?? component.id);
+  const isZh = language === "zh";
+  const placement = component.placement ?? "";
+  const law = component.law_id ?? component.function_type;
+  const isMain =
+    placement.includes("series") || component.location === "series";
+  if (/ohmic/i.test(law)) {
+    if (isMain) {
+      return isZh
+        ? `${name} 是主路串联电阻：它让一部分外部电压消耗在主路上，所以支路实际看到的是较小的内部结点电压 Vj。`
+        : `${name} is a main-path series resistance: it consumes part of the applied voltage, so the branches see the internal junction voltage Vj rather than the raw terminal voltage.`;
+    }
+    return isZh
+      ? `${name} 是欧姆漏电/旁路支路：它在内部结点电压 Vj 下产生近似线性的漏电流。`
+      : `${name} is an Ohmic leakage/shunt branch: it adds a nearly linear leakage current evaluated at the internal junction voltage Vj.`;
+  }
+  if (/shockley/i.test(law) || component.function_type === "diode") {
+    return isZh
+      ? `${name} 是 Shockley 二极管支路：它在 Vj 下产生指数型结电流。`
+      : `${name} is a Shockley diode branch: it adds the exponential junction current evaluated at Vj.`;
+  }
+  if (component.function_type === "series_diode_barrier") {
+    return isZh
+      ? `${name} 是主路中的类二极管势垒压降：它改变外部电压与内部 Vj 的对应关系。`
+      : `${name} is a diode-like barrier in the main path: it changes how terminal voltage maps to the internal voltage Vj.`;
+  }
+  if (
+    component.function_type.includes("photocurrent") ||
+    component.function_type.includes("bias_dependent_current")
+  ) {
+    return isZh
+      ? `${name} 是偏压相关电流支路：它在 Vj 下加入一个额外电流项，方向由 direction_sign 约定。`
+      : `${name} is a bias-dependent current branch: it adds an extra current term at Vj, with sign controlled by direction_sign.`;
+  }
+  return isZh
+    ? `${name} 是 ${isMain ? "主路" : "支路"}模型项：它通过 ${law} law 参与当前拟合。`
+    : `${name} is a ${isMain ? "main-path" : "branch"} model term using the ${law} law.`;
+}
+
+function ModelAssemblyExplanation({
+  model,
+  equationLines,
+  language,
+}: {
+  model: ModelSpec;
+  equationLines: string[];
+  language: Language;
+}) {
+  const isZh = language === "zh";
+  const main = model.series;
+  const branches = [...model.core, ...model.parallel];
+  const mainNames =
+    main
+      .map((item) => String(item.metadata?.nickname ?? item.id))
+      .join(" + ") || (isZh ? "无主路压降" : "no main-path drop");
+  const branchNames =
+    branches
+      .map((item) => String(item.metadata?.nickname ?? item.id))
+      .join(" + ") || (isZh ? "无支路" : "no current branch");
+  return (
+    <div className="report-model-explainer">
+      <div className="report-model-plain-summary">
+        <strong>{isZh ? "读法" : "How to read this model"}</strong>
+        <p>
+          {isZh
+            ? `端口电压先经过主路（${mainNames}）得到内部结点电压 Vj；然后支路（${branchNames}）在 Vj 下产生电流并相加。`
+            : `The terminal voltage first passes through the main path (${mainNames}) to give the internal junction voltage Vj. The branches (${branchNames}) then generate currents at Vj, and those branch currents are summed.`}
+        </p>
+      </div>
+      <div className="report-core-equations">
+        <div className="report-equation-line friendly-equation">
+          <span className="report-equation-label">
+            {isZh ? "电压关系" : "Voltage relation"}
+          </span>
+          <MathFormula
+            latex="V_{ext}=V_j+\sum_k V_{drop,k}(I,V_j)"
+            className="report-formula"
+          />
+        </div>
+        <div className="report-equation-line friendly-equation">
+          <span className="report-equation-label">
+            {isZh ? "电流求和" : "Current sum"}
+          </span>
+          <MathFormula
+            latex="I=\sum_m I_{branch,m}(V_j)"
+            className="report-formula"
+          />
+        </div>
+      </div>
+      <div className="report-component-role-grid">
+        {[...main, ...branches].map((component) => (
+          <div key={component.id} className="report-component-role">
+            {componentPlainRole(component, language)}
+          </div>
+        ))}
+      </div>
+      {equationLines.length ? (
+        <details className="report-technical-equations">
+          <summary>
+            {isZh
+              ? "查看后端技术公式摘要"
+              : "Show backend technical equation summary"}
+          </summary>
+          <div className="report-equation-list technical-equation-list">
+            {equationLines.map((line, idx) => (
+              <ReportEquationLine key={`${line}-${idx}`} line={line} />
+            ))}
+          </div>
+        </details>
+      ) : null}
+    </div>
+  );
+}
 
 function equationDisplayParts(line: string) {
   const [prefix, ...rest] = line.split(":");
@@ -660,16 +778,23 @@ function equationDisplayParts(line: string) {
     .replace(/sp\(/g, "\\operatorname{softplus}(")
     .replace(/ln\(/g, "\\ln(")
     .replace(/exp\(/g, "\\exp(");
-  const likelyFormula = /[=+\-*/^]|V_\{|I_\{|R_\{|\\sum|\\ln|\\operatorname/.test(latex);
+  const likelyFormula =
+    /[=+\-*/^]|V_\{|I_\{|R_\{|\\sum|\\ln|\\operatorname/.test(latex);
   return { label, body, latex, likelyFormula };
 }
 
 function ReportEquationLine({ line }: { line: string }) {
   const parts = equationDisplayParts(line);
-  return <div className="report-equation-line">
-    <span className="report-equation-label">{parts.label}</span>
-    {parts.likelyFormula ? <MathFormula latex={parts.latex} className="report-formula" /> : <p>{parts.body}</p>}
-  </div>;
+  return (
+    <div className="report-equation-line">
+      <span className="report-equation-label">{parts.label}</span>
+      {parts.likelyFormula ? (
+        <MathFormula latex={parts.latex} className="report-formula" />
+      ) : (
+        <p>{parts.body}</p>
+      )}
+    </div>
+  );
 }
 function ReportWorkflowPage({
   selectedTrace,
@@ -782,17 +907,23 @@ function ReportWorkflowPage({
 
         {result ? (
           <div className="card report-model-equation-card">
-            <h2>Model and equations</h2>
-            <p className="muted">This is the model used for the current fit.</p>
-            <div className="report-equation-list">
-              {equationLines.length ? (
-                equationLines.map((line, idx) => (
-                  <ReportEquationLine key={`${line}-${idx}`} line={line} />
-                ))
-              ) : (
-                <ReportEquationLine line={modelSummary(model)} />
-              )}
-            </div>
+            <h2>
+              {language === "zh"
+                ? "模型如何产生这条拟合曲线"
+                : "How the model produces this fit"}
+            </h2>
+            <p className="muted">
+              {language === "zh"
+                ? "这里用用户语言说明主路、内部结点电压和支路电流的关系；技术公式可展开查看。"
+                : "This section explains the fitted circuit in user-facing terms: main path, internal junction voltage, branch currents, and the equations behind them."}
+            </p>
+            <ModelAssemblyExplanation
+              model={model}
+              equationLines={
+                equationLines.length ? equationLines : [modelSummary(model)]
+              }
+              language={language}
+            />
           </div>
         ) : null}
 
@@ -933,7 +1064,9 @@ function ReportWorkflowPage({
         {report ? (
           <details className="card report-text-card report-preview-card collapsed-raw-report">
             <summary>Markdown report text</summary>
-            <pre className="report-text-preview user-report-preview">{report}</pre>
+            <pre className="report-text-preview user-report-preview">
+              {report}
+            </pre>
           </details>
         ) : null}
       </aside>
