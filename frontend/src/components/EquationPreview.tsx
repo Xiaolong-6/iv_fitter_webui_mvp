@@ -13,11 +13,21 @@ function idFromRow(row: string) {
   const beforeColon = row.split(":")[0]?.trim();
   return beforeColon || row.slice(0, 24);
 }
+function humanId(id: string, law?: string) {
+  const source = `${id} ${law ?? ""}`;
+  if (/shunt|rsh/i.test(source)) return "Rsh";
+  if (/rs|ohmic|series/i.test(source)) return "Rs";
+  if (/barrier/i.test(source)) return "Barrier";
+  if (/shockley|diode/i.test(source)) return "D1";
+  if (/break|leak/i.test(source)) return "Leakage";
+  if (/bias|photo/i.test(source)) return "Iaux";
+  return id.replace(/[_-]+/g, " ").replace(/\d{3,}$/g, "").trim() || "term";
+}
 function parseLaw(row: string) {
   const law = row.match(/law=([^;·,\s]+)/)?.[1] ?? row.match(/law_id[:=]\s*([^;·,\s]+)/)?.[1] ?? "unknown";
   const form = row.match(/form=([^;·,\s]+)/)?.[1] ?? "unknown";
   const placement = row.match(/placement=([^;·,\s]+)/)?.[1] ?? "unknown";
-  const nick = row.match(/nick=([^;·,]+)/)?.[1]?.trim() || idFromRow(row);
+  const nick = row.match(/nick=([^;·,]+)/)?.[1]?.trim() || row.match(/nickname=([^;·,]+)/)?.[1]?.trim() || humanId(idFromRow(row), law);
   return { law, form, placement, nick };
 }
 function rowsToTerms(rows: string[]): Term[] {
@@ -31,8 +41,12 @@ function isPhotocurrentConstant(term: Term) { return /photocurrent_constant/i.te
 function isBiasDependentCurrent(term: Term) { return /bias_dependent_current|photocurrent_voltage_dependent|voltage_dependent_photocurrent/i.test(`${term.row} ${term.law} ${term.id}`); }
 function isConductanceModifier(term: Term) { return term.form === "conductance_modifier" || /conductance_modifier|softplus_rs_modifier|series-path modifier/i.test(`${term.row} ${term.law} ${term.id}`); }
 function isSeriesPowerDrop(term: Term) { return /softplus_power_law_voltage_drop|series_power_law_drop/i.test(`${term.row} ${term.law} ${term.id}`); }
+function symbolName(term: Term) {
+  const raw = humanId(term.nick || term.id, term.law);
+  return raw.replace(/[^A-Za-z0-9]+/g, "") || "term";
+}
 function symbolFor(term: Term) {
-  const safe = (term.nick || term.id).replace(/[^A-Za-z0-9]+/g, "");
+  const safe = symbolName(term);
   if (/^rs$/i.test(term.nick) || /^rs$/i.test(term.id)) return { r: "R_s", i: "I", v: "V_{Rs}" };
   if (/rsh|shunt/i.test(term.nick) || /rsh|shunt/i.test(term.id)) return { r: "R_{sh}", i: "I_{Rsh}", v: "V_j" };
   if (isDiode(term)) return { i: `I_{${safe || "D"}}`, r: "", v: "V_j" };
@@ -49,7 +63,7 @@ function seriesDropLatex(series: Term[]) {
     if (isOhmic(term)) return `I${s.r}`;
     if (isSeriesPowerDrop(term)) return `sA_V\\,\\operatorname{softplus}\\!\\left(\\frac{sI-I_t}{I_s}\\right)^m`;
     if (isConductanceModifier(term)) return `I R_{base}/[1 + A\\,\\operatorname{softplus}(u)]`;
-    return `V_{${term.id.replace(/[^A-Za-z0-9]/g, "")}}(I)`;
+    return `V_{${symbolName(term)}}(I)`;
   });
   return `V_j = V_{ext} - ${drops.join(" - ")}`;
 }
@@ -60,7 +74,7 @@ function branchCurrentLatex(branch: Term) {
   if (isForwardPower(branch)) return `${s.i} = A_{fwd}\\,\\operatorname{softplus}\\!\\left(\\frac{V_j - V_t}{V_s}\\right)^{m}`;
   if (isBreakdown(branch)) return `${s.i} = I_{br0}\\,\\operatorname{softplus}\\!\\left(\\frac{-V_j - V_{br}}{V_s}\\right)^{m}`;
   if (isBiasDependentCurrent(branch)) return `${s.i} = I_0(1+a|V_j|)+A\\,\\operatorname{softplus}\\!\\left(\\frac{|V_j|-V_t}{V_s}\\right)^m`;
-  return `${s.i} = f_{${branch.id.replace(/[^A-Za-z0-9]/g, "")}}(V_j)`;
+  return `${s.i} = f_{${symbolName(branch)}}(V_j)`;
 }
 function totalCurrentLatex(branches: Term[]) {
   if (!branches.length) return "I = 0";
@@ -81,7 +95,7 @@ function concreteLatex(series: Term[], branches: Term[]) {
     if (isForwardPower(b)) return `A_{fwd}\\,\\operatorname{softplus}\\!\\left(\\frac{${vj}-V_t}{V_s}\\right)^m`;
     if (isBreakdown(b)) return `I_{br0}\\,\\operatorname{softplus}\\!\\left(\\frac{-${vj}-V_{br}}{V_s}\\right)^m`;
     if (isBiasDependentCurrent(b)) return `I_0(1+a|${vj}|)+A\\,\\operatorname{softplus}\\!\\left(\\frac{|${vj}|-V_t}{V_s}\\right)^m`;
-    return `f_{${b.id.replace(/[^A-Za-z0-9]/g, "")}}(${vj})`;
+    return `f_{${symbolName(b)}}(${vj})`;
   });
   return `I = ${pieces.length ? pieces.join(" + ") : "0"}`;
 }
@@ -160,7 +174,7 @@ function CurrentValuesCard({ model, result, language }: { model: ModelSpec; resu
     <h3>{language === "zh" ? "当前参数值" : "Current parameter values"}</h3>
     <p className="equation-explain">{language === "zh" ? "这些数值会代入上面的公式；运行拟合后这里显示拟合值，拟合前显示初始值。" : "These values plug into the formulas above. Before fitting they are initial values; after fitting they are fitted values."}</p>
     <div className="parameter-chip-grid">
-      {rows.map((row) => <span className="parameter-chip" key={row.key} title={row.key}>
+      {rows.map((row) => <span className="parameter-chip" key={row.key}>
         <strong>{row.label}</strong>
         <span>{fmtEng(row.value.value, 4)} {"unit" in row.value && row.value.unit ? row.value.unit : ""}</span>
       </span>)}
@@ -173,7 +187,7 @@ function ComponentRows({ terms, language }: { terms: Term[]; language: Language 
     <div className="component-table readable-component-table">
       {terms.map((term) => <div className="component-row readable-component-row" key={`${term.id}-${term.row}`}>
         <span className="component-group"><strong>{term.nick}</strong></span>
-        <span className="component-readable"><em>{termMeaning(term, language)}</em><small>{t(language, "law")}: {term.law} · {t(language, "evalForm")}: {term.form} · {t(language, "place")}: {term.placement}</small></span>
+        <span className="component-readable"><em>{termMeaning(term, language)}</em><small>{language === "zh" ? "技术细节可在帮助页查看。" : "Technical law/form/placement details are available in Help."}</small></span>
       </div>)}
     </div>
   </div>;

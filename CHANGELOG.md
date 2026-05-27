@@ -1,11 +1,23 @@
-# v1.5.20 - Minimal welcome page and Data plot review
+## v1.5.23 — final audit notes for UI polish batch
 
-- Simplify the Start here page into a minimal hero, a four-step Data → Model → Fitting → Report workflow, and a compact current-state strip.
-- Remove duplicated quick-action buttons from the welcome page.
-- Add inline SVG icons to the workflow sidebar tabs.
-- Add a Plot review section to the Data page using the existing PlotWorkspace component for imported-trace review.
-- Preserve fitting behavior, backend APIs, report export structure, model semantics, and saved-model compatibility.
-- Updated version metadata to v1.5.20.
+- Added a self-audit handoff document for the workflow UI polish batch.
+- Documented validation commands, manual-review risks, known limitations, and recommended browser checks.
+- No fitting behavior, backend API, report CSV/JSON structure, or model semantics were changed from v1.5.22.
+
+## v1.5.22 — HTML report export hardening
+
+- Extracted HTML report generation into a testable frontend helper.
+- Added Vitest coverage for HTML escaping and report document structure.
+- Kept the v1.5.21 workflow UI, Data plot review, Report layout, and fitting behavior unchanged.
+
+## v1.5.21 — workflow UI polish and report usability
+
+- Simplified the Start page into a minimal hero, two primary actions, and a four-step workflow.
+- Added shared page icons for sidebar/workflow navigation and introduced theme token scaffolding.
+- Compacted the Data page, folded trace selection into Import data, and added Plot review for quick trace inspection.
+- Changed Fitting-page Advanced and Details panels to expand downward as left-panel controls.
+- Reworked Report into a two-column layout with exports on the right and added HTML report export.
+- Improved equation/model preview wording to avoid generated internal identifiers in default UI.
 
 # v1.5.19 - Workflow-centered UI shell
 

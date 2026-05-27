@@ -4,8 +4,8 @@ import { generateSyntheticTrace, importCsvTextMulti, openImportFileDialog, type 
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { HelpTip } from "./HelpTip";
-import { PlotWorkspace } from "./PlotWorkspace";
 import { appendSyntheticTrace, validateSyntheticTraceForm, type SyntheticTraceFormState } from "../model/syntheticTrace";
+import { SimpleChart } from "./SimpleChart";
 
 type ImportQuality = {
   rows_in_file?: number;
@@ -103,6 +103,20 @@ function ImportQualityPanel({ quality, language }: { quality: ImportQuality | nu
     {warnings.length ? <div className="import-quality-warnings">
       {warnings.map((warning) => <div className="warning" key={warning}>{warning}</div>)}
     </div> : null}
+  </div>;
+}
+
+function logAbsForReview(values: number[]) {
+  return values.map((value) => Math.log10(Math.max(Math.abs(value), 1e-30)));
+}
+
+function TracePlotReview({ trace, language }: { trace?: TraceData; language: Language }) {
+  if (!trace) return <div className="plot-review-empty warning info">{t(language, "noData")}</div>;
+  const linear = [{ x: trace.voltage_V, y: trace.current_A, label: trace.trace_id, kind: "points" as const }];
+  const log = [{ x: trace.voltage_V, y: logAbsForReview(trace.current_A), label: trace.trace_id, kind: "points" as const }];
+  return <div className="trace-plot-review-grid">
+    <SimpleChart title="Linear I-V" yLabel="Current (A)" height={220} series={linear} />
+    <SimpleChart title="Log |I|" yLabel="log10(|I|)" height={220} series={log} />
   </div>;
 }
 
@@ -348,13 +362,6 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   const qualityWarnings = importQuality?.warnings ?? [];
   const syntheticValidation = validateSyntheticTraceForm(syntheticForm);
   return <section className="data-workspace scroll-page">
-    <div className="page-header-card">
-      <div>
-        <h2>{t(language, "dataImportTitle")}</h2>
-        <p className="muted">{t(language, "dataImportIntro")}</p>
-      </div>
-    </div>
-
     {message && <div className={message.toLowerCase().includes("error") || message.includes("Error") ? "warning error" : "warning info"}>{message}</div>}
 
     <div className="data-import-layout">
@@ -364,46 +371,50 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
         <div className="data-actions compact-data-actions">
           <button type="button" className="file-button import-primary-action" title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`} onClick={openImportPicker}>{t(language, "importCsv")}</button>
           <input ref={fileInputRef} id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
-          <button className="import-debug-action" title={language === "zh" ? `${t(language, "loadDemoHelp")} 测试用示例数据。` : `${t(language, "loadDemoHelp")} Test fixture for import and fitting checks.`} onClick={loadSampleData}>{language === "zh" ? "测试：示例数据" : "Test: sample data"}</button>
-          <button className="import-debug-action" title={language === "zh" ? "调试用：从当前 Model Builder 模型正向生成 IV trace。" : "Debug utility: forward-simulate an IV trace from the current Model Builder model."} onClick={() => setSyntheticOpen(true)}>{language === "zh" ? "调试：合成 trace" : "Debug: synthetic trace"}</button>
+          <button className="import-debug-action" title={t(language, "loadDemoHelp")} onClick={loadSampleData}>{language === "zh" ? "加载示例数据" : "Load sample data"}</button>
+          <button className="import-debug-action" title={language === "zh" ? "从当前模型生成可控的合成 IV trace。" : "Generate a controlled synthetic IV trace from the current model."} onClick={() => setSyntheticOpen(true)}>{language === "zh" ? "合成 trace" : "Synthetic trace"}</button>
         </div>
+        <div className="trace-selection-subsection">
+          <div className="subsection-head"><h4>{t(language, "traceSelection")}</h4><HelpTip text={t(language, "traceSelectionHelp")} /></div>
+          {traces.length === 0 ? <p className="warning info">{t(language, "noData")}</p> : <>
+            <label className="trace-select-label"><span>{t(language, "selectedTrace")}</span><select title={t(language, "selectedTraceHelp")} value={selected?.trace_id ?? ""} onChange={(e) => onSelectTrace(e.target.value)}>
+              {traces.map((tr) => <option key={tr.trace_id} value={tr.trace_id}>{tr.trace_id} · {tr.voltage_V.length} pts</option>)}
+            </select></label>
+            <div className="trace-facts compact-trace-facts">
+              <span>{t(language, "importedTraces")}: <strong>{traces.length}</strong></span>
+              <span>{t(language, "pointCount")}: <strong>{selected?.voltage_V.length ?? 0}</strong></span>
+              <span>{language === "zh" ? "Source units" : "Source units"}: <strong>{voltageUnit}/{currentUnit}</strong> → <strong>V/A</strong></span>
+              {qualityWarnings.length ? <span>{language === "zh" ? "Quality notes" : "Quality notes"}: <strong>{qualityWarnings.length}</strong></span> : null}
+            </div>
+            {qualityWarnings.length ? <div className="import-quality-warnings compact-quality-warnings">
+              {qualityWarnings.map((warning) => <div className="warning" key={warning}>{warning}</div>)}
+            </div> : null}
+            <div className="parsed-settings compact-parsed-settings">
+              <label title={language === "zh" ? "更改当前数据集名称；报告和图例会使用这个名称。" : "Rename the active dataset. Plots and reports use this name."}>
+                <span>{language === "zh" ? "数据集名称" : "Dataset name"}</span>
+                <DatasetNameInput value={selected?.trace_id ?? ""} language={language} onCommit={renameSelected} />
+              </label>
+              <label title={unitHelp}>
+                <span>{language === "zh" ? "电压单位" : "V unit"}</span>
+                <select value={voltageUnit} onChange={(e) => changeUnit("voltage", e.target.value)}>
+                  {voltageUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
+                </select>
+              </label>
+              <label title={unitHelp}>
+                <span>{language === "zh" ? "电流单位" : "I unit"}</span>
+                <select value={currentUnit} onChange={(e) => changeUnit("current", e.target.value)}>
+                  {currentUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
+                </select>
+              </label>
+            </div>
+          </>}
+        </div>
+
       </section>
 
-      <section className="card trace-card">
-        <div className="card-head"><h3>{t(language, "traceSelection")}</h3><HelpTip text={t(language, "traceSelectionHelp")} /></div>
-        {traces.length === 0 ? <p className="warning info">{t(language, "noData")}</p> : <>
-          <label className="trace-select-label"><span>{t(language, "selectedTrace")}</span><select title={t(language, "selectedTraceHelp")} value={selected?.trace_id ?? ""} onChange={(e) => onSelectTrace(e.target.value)}>
-            {traces.map((tr) => <option key={tr.trace_id} value={tr.trace_id}>{tr.trace_id} · {tr.voltage_V.length} pts</option>)}
-          </select></label>
-          <div className="trace-facts compact-trace-facts">
-            <span>{t(language, "importedTraces")}: <strong>{traces.length}</strong></span>
-            <span>{t(language, "pointCount")}: <strong>{selected?.voltage_V.length ?? 0}</strong></span>
-            <span>{language === "zh" ? "原始列单位" : "Source units"}: <strong>{voltageUnit}/{currentUnit}</strong> {"->"} <strong>V/A</strong></span>
-            {qualityWarnings.length ? <span>{language === "zh" ? "质量提示" : "Quality notes"}: <strong>{qualityWarnings.length}</strong></span> : null}
-          </div>
-          {qualityWarnings.length ? <div className="import-quality-warnings compact-quality-warnings">
-            {qualityWarnings.map((warning) => <div className="warning" key={warning}>{warning}</div>)}
-          </div> : null}
-          <div className="parsed-settings">
-            <label title={language === "zh" ? "更改当前数据集名称；报告和图例会使用这个名称。" : "Rename the active dataset. Plots and reports use this name."}>
-              <span>{language === "zh" ? "数据集名称" : "Dataset name"}</span>
-              <DatasetNameInput value={selected?.trace_id ?? ""} language={language} onCommit={renameSelected} />
-            </label>
-            <label title={unitHelp}>
-              <span>{language === "zh" ? "电压列单位" : "Voltage column unit"}</span>
-              <select value={voltageUnit} onChange={(e) => changeUnit("voltage", e.target.value)}>
-                {voltageUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
-              </select>
-            </label>
-            <label title={unitHelp}>
-              <span>{language === "zh" ? "电流列单位" : "Current column unit"}</span>
-              <select value={currentUnit} onChange={(e) => changeUnit("current", e.target.value)}>
-                {currentUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
-              </select>
-            </label>
-          </div>
-          <p className="muted unit-integrity-note">{unitHelp}</p>
-        </>}
+      <section className="card plot-review-card">
+        <div className="card-head"><h3>{language === "zh" ? "Plot review" : "Plot review"}</h3><HelpTip text={language === "zh" ? "快速检查当前导入 trace 的线性和对数 I-V。" : "Quickly inspect the selected trace before fitting."} /></div>
+        <TracePlotReview trace={selected} language={language} />
       </section>
 
       <section className="card paste-card">
@@ -421,20 +432,6 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
           </table>
         </div>}
         {selected && selected.voltage_V.length > previewRows.length && <p className="muted">{t(language, "previewLimited")}</p>}
-      </section>
-
-      <section className="data-plot-review-card">
-        <div className="data-plot-review-head">
-          <h3>{language === "zh" ? "图形预览" : "Plot review"}</h3>
-          <p className="muted">{language === "zh" ? "用已有诊断绘图组件快速检查导入的 trace。残差图会在拟合后出现在 Fitting 页面。" : "Review the imported trace with the same plotting component used later in fitting. Residual plots appear after a completed fit."}</p>
-        </div>
-        <PlotWorkspace
-          traces={traces}
-          selectedTraceId={selectedTraceId}
-          onSelectTrace={onSelectTrace}
-          result={null}
-          language={language}
-        />
       </section>
     </div>
 

@@ -104,31 +104,12 @@ function AdvancedRunOptions({ config, onChange, language, disabled }: { config: 
 export function FitConfigPanel({ config, onChange, language, actionDock, statusDock, messageDock, detailsDock, hasDetails = false, disabled = false, drawerMode, onDrawerModeChange, autoVoltageRange }: { config: FitConfig; onChange: (cfg: FitConfig) => void; language: Language; actionDock?: ReactNode; statusDock?: ReactNode; messageDock?: ReactNode; detailsDock?: ReactNode; hasDetails?: boolean; disabled?: boolean; drawerMode: FitDrawerMode; onDrawerModeChange: (mode: FitDrawerMode) => void; autoVoltageRange?: { vMin: number | null; vMax: number | null } }) {
   const advancedOpen = drawerMode === "advanced";
   const detailsOpen = drawerMode === "details";
-  return <section className="fit-bottom-dock" aria-label={t(language, "fitSetup")}>
-    {drawerMode !== "none" ? (
-      <div id="fit-bottom-dock-drawer" className="fit-bottom-dock-drawer" data-drawer-mode={drawerMode}>
-        <div className="fit-bottom-dock-drawer-head">
-          <h2>
-            {advancedOpen
-              ? language === "zh" ? "高级目标函数和运行选项" : "Advanced objective and run options"
-              : "Details / diagnostics"}
-          </h2>
-        </div>
-        {advancedOpen ? (
-          <AdvancedRunOptions config={config} onChange={onChange} language={language} disabled={disabled} />
-        ) : (
-          <div className="fit-details-drawer-body fit-bottom-details-body">
-            {detailsDock}
-          </div>
-        )}
-      </div>
-    ) : null}
-
-    <div className="fit-bottom-dock-row">
-      <div className="fit-bottom-dock-title">
+  return <section className="fit-config-panel" aria-label={t(language, "fitSetup")}>
+    <div className="fit-config-row">
+      <div className="fit-config-title">
         <h2>{t(language, "fitSetup")}</h2>
       </div>
-      {actionDock ? <div className="fit-bottom-dock-actions">{actionDock}</div> : null}
+      {actionDock ? <div className="fit-config-actions">{actionDock}</div> : null}
       <FitVoltageRangeControls
         config={config}
         onChange={onChange}
@@ -138,31 +119,50 @@ export function FitConfigPanel({ config, onChange, language, actionDock, statusD
       />
       <button
         type="button"
-        className={advancedOpen ? "fit-bottom-dock-toggle active" : "fit-bottom-dock-toggle"}
+        className={advancedOpen ? "fit-drawer-toggle active" : "fit-drawer-toggle"}
         aria-expanded={advancedOpen}
-        aria-controls="fit-bottom-dock-drawer"
+        aria-controls="fit-config-drawer"
         onClick={() => onDrawerModeChange(advancedOpen ? "none" : "advanced")}
       >
         <span className="button-icon" aria-hidden="true">⚙</span>
         <span>{language === "zh" ? "高级" : "Advanced"}</span>
-        <span className="drawer-caret" aria-hidden="true">{advancedOpen ? "v" : "^"}</span>
+        <span className="drawer-caret" aria-hidden="true">{advancedOpen ? "▴" : "▾"}</span>
       </button>
-      <div className="fit-bottom-status" aria-live="polite">
+      <div className="fit-config-status" aria-live="polite">
         {statusDock}
-        {messageDock ? <div className="fit-bottom-message-stack">{messageDock}</div> : null}
+        {messageDock ? <div className="fit-config-message-stack">{messageDock}</div> : null}
       </div>
       <button
         type="button"
-        className={detailsOpen ? "fit-bottom-dock-toggle active" : "fit-bottom-dock-toggle"}
+        className={detailsOpen ? "fit-drawer-toggle active" : "fit-drawer-toggle"}
         aria-expanded={detailsOpen}
-        aria-controls="fit-bottom-dock-drawer"
+        aria-controls="fit-config-drawer"
         disabled={!hasDetails}
         onClick={() => onDrawerModeChange(detailsOpen ? "none" : "details")}
       >
         <span className="button-icon" aria-hidden="true">i</span>
         <span>{language === "zh" ? "详情" : "Details"}</span>
-        <span className="drawer-caret" aria-hidden="true">{detailsOpen ? "v" : "^"}</span>
+        <span className="drawer-caret" aria-hidden="true">{detailsOpen ? "▴" : "▾"}</span>
       </button>
     </div>
+
+    {drawerMode !== "none" ? (
+      <div id="fit-config-drawer" className="fit-config-drawer" data-drawer-mode={drawerMode}>
+        <div className="fit-config-drawer-head">
+          <h2>
+            {advancedOpen
+              ? language === "zh" ? "高级目标函数和运行选项" : "Advanced objective and run options"
+              : language === "zh" ? "状态详情" : "Status details"}
+          </h2>
+        </div>
+        {advancedOpen ? (
+          <AdvancedRunOptions config={config} onChange={onChange} language={language} disabled={disabled} />
+        ) : (
+          <div className="fit-details-drawer-body fit-config-details-body">
+            {detailsDock}
+          </div>
+        )}
+      </div>
+    ) : null}
   </section>;
 }

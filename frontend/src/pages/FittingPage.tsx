@@ -53,6 +53,8 @@ import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { buildReportBaseName, emptyReportArtifacts } from "../model/reportArtifacts";
 import { canGenerateReport, createCancelledLifecycle, createErrorLifecycle, createRunningLifecycle, createTimeoutLifecycle, nextRunId, shouldAcceptRunResult, type FitLifecycleState } from "../model/fitLifecycle";
+import { fmtEng } from "../model/format";
+import { buildHtmlReportDocument } from "../model/htmlReport";
 
 const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "dev";
 
@@ -211,86 +213,51 @@ function StartHerePage({
   isFitting: boolean;
   reportAvailable: boolean;
 }) {
-  const workflowSteps = [
-    {
-      title: "Data",
-      text: "Import and choose a trace.",
-      view: "data",
-      status: hasSelectedTrace ? "Loaded" : "Needed",
-      icon: "data",
-    },
-    {
-      title: "Model",
-      text: "Build the circuit model.",
-      view: "model",
-      status: "Ready",
-      icon: "model",
-    },
-    {
-      title: "Fitting",
-      text: "Run and inspect the fit.",
-      view: "fitting",
-      status: isFitting ? "Running" : result ? "Complete" : "Not run",
-      icon: "fitting",
-    },
-    {
-      title: "Report",
-      text: "Review and export results.",
-      view: "report",
-      status: reportAvailable ? "Available" : "Unavailable",
-      icon: "report",
-    },
-  ] as const;
-
+  const steps = [
+    { title: "Data", text: "Import and choose a trace.", view: "data" as AppView, status: hasSelectedTrace ? "Loaded" : "Needed" },
+    { title: "Model", text: "Build the circuit model.", view: "model" as AppView, status: "Ready" },
+    { title: "Fitting", text: "Run and inspect the fit.", view: "fitting" as AppView, status: isFitting ? "Running" : result ? "Done" : "Not run" },
+    { title: "Report", text: "Review and export results.", view: "report" as AppView, status: reportAvailable ? "Available" : "Unavailable" },
+  ];
   return (
-    <section className="workflow-page scroll-page start-page start-page-minimal">
-      <header className="start-hero-minimal">
-        <div className="start-hero-kicker">Circuit-based I–V fitting</div>
+    <section className="workflow-page scroll-page start-page minimal-start-page">
+      <div className="minimal-hero">
+        <div className="hero-kicker">Circuit-based I-V fitting</div>
         <h2>Welcome to IV-fitter</h2>
-        <p>Import I–V data, build a model, run the fit, and export a reproducible report.</p>
-        <div className="start-hero-actions">
-          <button type="button" className="primary" onClick={() => setActiveView("data")}>Start with data</button>
+        <p>Import I-V data, build a model, run the fit, and export a reproducible report.</p>
+        <div className="hero-actions">
+          <button type="button" className="primary hero-primary" onClick={() => setActiveView("data")}>Start with data</button>
           <button type="button" onClick={() => setActiveView("help")}>Open help</button>
         </div>
-      </header>
-
-      <section className="start-workflow-minimal" aria-label="IV-fitter workflow">
-        <div className="start-section-head">
-          <div>
-            <h3>Workflow</h3>
-            <p>Four pages, one fitting path.</p>
-          </div>
-          <span className="workflow-inline-path">Data → Model → Fitting → Report</span>
+      </div>
+      <div className="minimal-workflow-head">
+        <div>
+          <h3>Workflow</h3>
+          <p>Four pages, one fitting path.</p>
         </div>
-        <div className="start-workflow-row">
-          {workflowSteps.map((step, index) => (
-            <div className="start-workflow-item-wrap" key={step.title}>
-              <button
-                type="button"
-                className="start-workflow-item"
-                onClick={() => setActiveView(step.view as AppView)}
-              >
-                <span className={`start-workflow-icon ${step.icon}`} aria-hidden="true" />
-                <span className="start-workflow-status">{step.status}</span>
-                <strong>{step.title}</strong>
-                <span>{step.text}</span>
-              </button>
-              {index < workflowSteps.length - 1 ? <span className="start-workflow-arrow" aria-hidden="true">→</span> : null}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="start-current-state-minimal" aria-label="Current project state">
+        <div className="workflow-mini-path">Data → Model → Fitting → Report</div>
+      </div>
+      <div className="minimal-workflow-grid">
+        {steps.map((step, idx) => (
+          <article className="minimal-workflow-card" key={step.title} onClick={() => setActiveView(step.view)} role="button" tabIndex={0}>
+            <span className="minimal-step-index">{idx + 1}</span>
+            <span className="minimal-step-status">{step.status}</span>
+            <h3>{step.title}</h3>
+            <p>{step.text}</p>
+          </article>
+        ))}
+      </div>
+      <div className="minimal-current-state">
         <strong>Current state</strong>
         <span>Trace: {hasSelectedTrace ? "loaded" : "no trace loaded"}</span>
         <span>Model: Rs + D1 + Rsh</span>
         <span>Fit: {isFitting ? "running" : result ? "complete" : "not run"}</span>
         <span>Report: {reportAvailable ? "available" : "unavailable"}</span>
-      </section>
+      </div>
     </section>
   );
 }
+
 
 function PageSection({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -495,6 +462,7 @@ function ReportWorkflowPage({
   onExportReportCsv,
   onExportParametersCsv,
   onExportDiagnosticsJson,
+  onExportReportHtml,
   setActiveView,
   language,
 }: {
@@ -516,57 +484,96 @@ function ReportWorkflowPage({
   onExportReportCsv: () => void;
   onExportParametersCsv: () => void;
   onExportDiagnosticsJson: () => void;
+  onExportReportHtml: () => void;
   setActiveView: (view: AppView) => void;
   language: Language;
 }) {
   const verdict = fitStateText(result, isFitting, fitLifecycle);
+  const metricEntries = result ? Object.entries(result.metrics ?? {}) : [];
+  const parameterEntries = result ? Object.entries(result.parameters ?? {}) : [];
   return (
-    <section className="workflow-page report-page scroll-page">
-      <div className="card report-overview-card">
-        <h2>Report</h2>
-        <div className="report-meta-grid">
-          <span><strong>Trace</strong>{hasSelectedTrace ? String(selectedTrace.metadata?.trace_name ?? selectedTrace.trace_id) : "No trace loaded"}</span>
-          <span><strong>Model</strong>{modelSummary(model)}</span>
-          <span><strong>Fit verdict</strong>{verdict}</span>
-          <span><strong>Software</strong>{APP_VERSION}</span>
-        </div>
-        {!result && !isFitting ? (
-          <div className="workflow-empty-state inline">
-            <p>No completed fit yet.</p>
-            <button type="button" className="primary" onClick={() => setActiveView("fitting")}>Go to Fitting</button>
+    <section className="workflow-page report-page scroll-page report-page-two-column">
+      <main className="report-main-column">
+        <div className="card report-overview-card">
+          <h2>Report</h2>
+          <div className="report-meta-grid">
+            <span><strong>Trace</strong>{hasSelectedTrace ? String(selectedTrace.metadata?.trace_name ?? selectedTrace.trace_id) : "No trace loaded"}</span>
+            <span><strong>Model</strong>{modelSummary(model)}</span>
+            <span><strong>Fit verdict</strong>{verdict}</span>
+            <span><strong>Software</strong>{APP_VERSION}</span>
           </div>
-        ) : null}
-        {isFitting ? <p className="fit-primary-message info">Fit is running; report will be available after completion.</p> : null}
-      </div>
-      {fitPromotionNotice ? <div className="fit-full-note">{fitPromotionNotice}</div> : null}
-      {result ? (
-        <>
-          <FitProcessDiagnostics result={result} language={language} sessionStats={fitSessionStats} />
-          {warningDismissKey(result) !== dismissedWarningKey ? (
-            <FitDiagnostics
-              result={result}
-              language={language}
-              onCheckLogIv={() => openAndScroll("plots")}
-              onAdjustInitials={() => openAndScroll("model")}
-              onClose={() => setDismissedWarningKey(warningDismissKey(result))}
-            />
+          {!result && !isFitting ? (
+            <div className="workflow-empty-state inline">
+              <p>No completed fit yet.</p>
+              <button type="button" className="primary" onClick={() => setActiveView("fitting")}>Go to Fitting</button>
+            </div>
           ) : null}
-        </>
-      ) : null}
-      <div className="card report-export-card">
-        <h2>Exports</h2>
-        <div className="report-actions">
-          <button type="button" disabled={!reportAvailable} onClick={makeReport}>{t(language, "report")}</button>
-          <button type="button" disabled={!report} onClick={onExportReportCsv}>{language === "zh" ? "下载完整 CSV 报告" : "Download report CSV"}</button>
-          <button type="button" disabled={!report} onClick={onExportParametersCsv}>{language === "zh" ? "下载参数 CSV" : "Download parameter CSV"}</button>
-          <button type="button" disabled={!report} onClick={onExportDiagnosticsJson}>{language === "zh" ? "下载 diagnostics JSON" : "Download diagnostics JSON"}</button>
+          {isFitting ? <p className="fit-primary-message info">Fit is running; report will be available after completion.</p> : null}
         </div>
-        {reportMessage ? <p className="muted">{reportMessage}</p> : null}
-        {report ? <textarea readOnly value={report} rows={12} /> : <p className="muted">Generate a report after a completed or review-only fit.</p>}
-      </div>
+
+        {fitPromotionNotice ? <div className="fit-full-note">{fitPromotionNotice}</div> : null}
+
+        {result ? <div className="card report-verdict-card">
+          <h2>{result.reportable ? "Fit verdict: reportable" : "Fit verdict: review required"}</h2>
+          <p>{result.message}</p>
+          {result.reportability_reason ? <p className="muted">{result.reportability_reason}</p> : null}
+        </div> : null}
+
+        {result ? (
+          <>
+            <FitProcessDiagnostics result={result} language={language} sessionStats={fitSessionStats} />
+            {warningDismissKey(result) !== dismissedWarningKey ? (
+              <FitDiagnostics
+                result={result}
+                language={language}
+                onCheckLogIv={() => openAndScroll("plots")}
+                onAdjustInitials={() => openAndScroll("model")}
+                onClose={() => setDismissedWarningKey(warningDismissKey(result))}
+              />
+            ) : null}
+            <div className="card report-parameter-summary-card">
+              <h2>Parameter summary</h2>
+              <div className="table-wrap"><table className="parameter-table compact-parameter-table">
+                <thead><tr><th>Parameter</th><th>Value</th><th>Unit</th><th>Status</th><th>Std. err.</th></tr></thead>
+                <tbody>{parameterEntries.map(([key, value]) => <tr key={key}><td>{key}</td><td>{fmtEng(value.value, 5)}</td><td>{value.unit ?? ""}</td><td>{value.fixed ? "fixed" : "fit"}</td><td>{value.stderr == null ? "-" : fmtEng(value.stderr, 4)}</td></tr>)}</tbody>
+              </table></div>
+            </div>
+          </>
+        ) : null}
+      </main>
+
+      <aside className="report-side-column">
+        <div className="card report-export-card report-export-sidebar-card">
+          <h2>Exports</h2>
+          <div className="report-actions vertical-report-actions">
+            <button type="button" disabled={!reportAvailable} onClick={makeReport}>{t(language, "report")}</button>
+            <button type="button" disabled={!result} onClick={onExportReportHtml}>{language === "zh" ? "下载 HTML 报告" : "Download report HTML"}</button>
+            <button type="button" disabled={!report} onClick={onExportReportCsv}>{language === "zh" ? "下载完整 CSV 报告" : "Download report CSV"}</button>
+            <button type="button" disabled={!report} onClick={onExportParametersCsv}>{language === "zh" ? "下载参数 CSV" : "Download parameter CSV"}</button>
+            <button type="button" disabled={!report} onClick={onExportDiagnosticsJson}>{language === "zh" ? "下载 diagnostics JSON" : "Download diagnostics JSON"}</button>
+          </div>
+          {reportMessage ? <p className="muted">{reportMessage}</p> : null}
+        </div>
+
+        <div className="card report-metadata-card">
+          <h2>Summary</h2>
+          <div className="report-side-facts">
+            <span><strong>Status</strong>{verdict}</span>
+            <span><strong>Warnings</strong>{result?.warnings.length ?? 0}</span>
+            <span><strong>Metrics</strong>{metricEntries.length}</span>
+            <span><strong>Parameters</strong>{parameterEntries.length}</span>
+          </div>
+        </div>
+
+        <div className="card report-text-card">
+          <h2>Report text</h2>
+          {report ? <pre className="report-text-preview">{report}</pre> : <p className="muted">A report will be generated automatically after a completed or review-only fit. You can also regenerate it from Exports.</p>}
+        </div>
+      </aside>
     </section>
   );
 }
+
 
 function isBackendConnectionError(message: string | null) {
   if (!message) return false;
@@ -937,6 +944,19 @@ export function FittingPage() {
         plots: true,
         parameters: true,
       }));
+      try {
+        const autoReport = await exportReport(fit);
+        if (shouldAcceptRunResult({ activeRunId: activeFitRunIdRef.current, runId, cancelledRunIds: cancelledFitRunIdsRef.current })) {
+          setReportArtifacts({
+            report: autoReport.markdown,
+            message: language === "zh" ? "报告已自动更新。" : "Report updated automatically after fit completion.",
+          });
+        }
+      } catch {
+        if (shouldAcceptRunResult({ activeRunId: activeFitRunIdRef.current, runId, cancelledRunIds: cancelledFitRunIdsRef.current })) {
+          setReportArtifacts({ report: "", message: language === "zh" ? "拟合完成，但报告自动更新失败。" : "Fit completed, but automatic report update failed." });
+        }
+      }
       setFitLifecycle({ kind: "idle" });
     } catch (e) {
       if (!shouldAcceptRunResult({ activeRunId: activeFitRunIdRef.current, runId, cancelledRunIds: cancelledFitRunIdsRef.current })) return;
@@ -1043,6 +1063,21 @@ export function FittingPage() {
     if (!result) return;
     const r = await exportDiagnosticsJson(result);
     downloadText(reportBaseName("diagnostics.json"), r.text, "application/json;charset=utf-8");
+  }
+
+  function buildHtmlReport() {
+    if (!result) return "";
+    return buildHtmlReportDocument({
+      result,
+      trace: selectedTrace,
+      markdownReport: report,
+      appVersion: APP_VERSION,
+    });
+  }
+
+  function downloadReportHtml() {
+    if (!result) return;
+    downloadText(reportBaseName("report.html"), buildHtmlReport(), "text/html;charset=utf-8");
   }
   function openAndScroll(sectionId: string) {
     setActiveView(sectionId === "model" ? "model" : "fitting");
@@ -1301,6 +1336,7 @@ export function FittingPage() {
             onExportReportCsv={downloadReportCsv}
             onExportParametersCsv={downloadParametersCsv}
             onExportDiagnosticsJson={downloadDiagnosticsJson}
+            onExportReportHtml={downloadReportHtml}
             setActiveView={setActiveView}
             language={language}
           />

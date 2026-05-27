@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.5.20**.
+Current package: **v1.5.19**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -79,7 +79,7 @@ After every change, provide a 3-step browser test that does not require reading 
 
 ## Current validation note
 
-- v1.5.20 validation is recorded in `docs/TESTED_CURRENT.md`.
+- v1.5.19 validation is recorded in `docs/TESTED_CURRENT.md`.
 - Current expected validation commands are backend pytest, backend compileall, frontend Vitest, and frontend production build.
 
 ## v1.4.35 Fit setup and Model Builder interaction note
