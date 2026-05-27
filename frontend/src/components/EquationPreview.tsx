@@ -7,7 +7,7 @@ import { MathFormula } from "./MathFormula";
 
 interface Props { equations?: EquationSummary | null; model: ModelSpec; result?: FitResult | null; language: Language; }
 
-type Term = { id: string; nick: string; row: string; law: string; form: string; placement: string };
+type Term = { id: string; nick: string; row: string; law: string; form: string; placement: string; polarity?: string };
 
 function idFromRow(row: string) {
   const beforeColon = row.split(":")[0]?.trim();
@@ -27,8 +27,9 @@ function parseLaw(row: string) {
   const law = row.match(/law=([^;·,\s]+)/)?.[1] ?? row.match(/law_id[:=]\s*([^;·,\s]+)/)?.[1] ?? "unknown";
   const form = row.match(/form=([^;·,\s]+)/)?.[1] ?? "unknown";
   const placement = row.match(/placement=([^;·,\s]+)/)?.[1] ?? "unknown";
+  const polarity = row.match(/polarity=([^;·,\s]+)/)?.[1];
   const nick = row.match(/nick=([^;·,]+)/)?.[1]?.trim() || row.match(/nickname=([^;·,]+)/)?.[1]?.trim() || humanId(idFromRow(row), law);
-  return { law, form, placement, nick };
+  return { law, form, placement, nick, polarity };
 }
 function rowsToTerms(rows: string[]): Term[] {
   return rows.map((row) => ({ id: idFromRow(row), row, ...parseLaw(row) }));
@@ -41,6 +42,7 @@ function isPhotocurrentConstant(term: Term) { return /photocurrent_constant/i.te
 function isBiasDependentCurrent(term: Term) { return /bias_dependent_current|photocurrent_voltage_dependent|voltage_dependent_photocurrent/i.test(`${term.row} ${term.law} ${term.id}`); }
 function isConductanceModifier(term: Term) { return term.form === "conductance_modifier" || /conductance_modifier|softplus_rs_modifier|series-path modifier/i.test(`${term.row} ${term.law} ${term.id}`); }
 function isSeriesPowerDrop(term: Term) { return /softplus_power_law_voltage_drop|series_power_law_drop/i.test(`${term.row} ${term.law} ${term.id}`); }
+function isSeriesDiodeBarrier(term: Term) { return /series_diode_barrier|series barrier|barrier/i.test(`${term.row} ${term.law} ${term.id} ${term.nick}`); }
 function symbolName(term: Term) {
   const raw = humanId(term.nick || term.id, term.law);
   return raw.replace(/[^A-Za-z0-9]+/g, "") || "term";
@@ -104,6 +106,9 @@ function residualLatex(branches: Term[]) {
 }
 function termMeaning(term: Term, language: Language) {
   if (term.form === "conductance_modifier" || term.placement.includes("series_conductance_modifier")) return language === "zh" ? "串联电导调制，改变有效主路电阻" : "series conductance modifier; changes effective main-path resistance";
+  if (isSeriesDiodeBarrier(term)) return term.polarity === "reverse"
+    ? (language === "zh" ? "反向激活的类二极管串联势垒压降；改变结点电压" : "reverse-activated diode-like series barrier drop; modifies junction voltage")
+    : (language === "zh" ? "正向激活的类二极管串联势垒压降；改变结点电压" : "forward-activated diode-like series barrier drop; modifies junction voltage");
   if (term.form === "voltage_drop" || term.placement.includes("series")) return language === "zh" ? "主路电压降，改变结点电压" : "main-path voltage drop; modifies junction voltage";
   if (term.form === "current_branch" || term.placement.includes("branch")) return language === "zh" ? "并联支路电流，加入总电流" : "parallel branch current; adds to terminal current";
   return language === "zh" ? "模型项" : "model term";
@@ -187,7 +192,7 @@ function ComponentRows({ terms, language }: { terms: Term[]; language: Language 
     <div className="component-table readable-component-table">
       {terms.map((term) => <div className="component-row readable-component-row" key={`${term.id}-${term.row}`}>
         <span className="component-group"><strong>{term.nick}</strong></span>
-        <span className="component-readable"><em>{termMeaning(term, language)}</em><small>{language === "zh" ? "技术细节可在帮助页查看。" : "Technical law/form/placement details are available in Help."}</small></span>
+        <span className="component-readable"><em>{termMeaning(term, language)}</em><small>{term.polarity ? (language === "zh" ? `极性：${term.polarity}` : `Polarity: ${term.polarity}`) : (language === "zh" ? "技术细节可在帮助页查看。" : "Technical law/form/placement details are available in Help.")}</small></span>
       </div>)}
     </div>
   </div>;

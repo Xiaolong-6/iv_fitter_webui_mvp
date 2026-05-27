@@ -3453,3 +3453,158 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
     position: static;
   }
 }
+
+/* v1.5.27: landscape-safe workflow containment and model-page sticky panes. */
+.workflow-shell {
+  min-height: 0;
+  overflow: hidden;
+}
+.workflow-page {
+  min-height: 0;
+  min-width: 0;
+}
+.model-page.workflow-page {
+  height: 100%;
+  overflow: hidden;
+}
+.model-page .resizable-workflow-grid {
+  height: 100%;
+  min-height: 0;
+}
+.model-page .workspace-section {
+  min-height: 0;
+  overflow: hidden;
+}
+.model-page .workspace-section-body {
+  min-height: 0;
+  overflow: auto;
+}
+.model-page .model-builder {
+  min-height: 0;
+}
+.model-page .equation-preview {
+  min-height: 0;
+}
+
+/* Keep the Fitting page stable in desktop/landscape: plots keep their panel,
+   parameters scroll internally, and the whole page does not produce a second
+   horizontal layout failure. */
+.fitting-page.workflow-page {
+  height: 100%;
+  overflow: hidden;
+}
+.fitting-page .fitting-workflow-grid {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.fitting-page .fitting-control-column,
+.fitting-page .fitting-results-column {
+  min-height: 0;
+  overflow: auto;
+}
+.fitting-page .fitting-results-column {
+  overflow: hidden;
+  grid-template-rows: minmax(300px, 0.62fr) minmax(180px, 0.38fr);
+}
+.fitting-page .plots {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+}
+.fitting-page .plot-grid {
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+}
+.fitting-page .simple-chart svg {
+  max-height: min(26vh, 260px);
+}
+.fitting-page .parameter-card {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.fitting-page .parameter-placement-group .table-wrap,
+.fitting-page .parameter-card .table-wrap {
+  overflow: auto;
+}
+
+/* Series barrier polarity selector and long labels should never blow up rows. */
+.component-polarity-select {
+  max-width: calc(118px * var(--app-zoom));
+  min-width: calc(92px * var(--app-zoom));
+}
+.component-actions {
+  flex: 0 1 auto;
+}
+.model-group-main .component-card,
+.model-group-main .compact-model-row {
+  background: rgba(239, 246, 255, 0.72);
+}
+.model-group-branches .component-card,
+.model-group-branches .compact-model-row {
+  background: rgba(240, 253, 244, 0.72);
+}
+
+/* Parameter hover targets: show help cursor only when the tooltip is explanatory. */
+.parameter-summary-row > td:first-child,
+.parameter-component-title span,
+.parameter-meaning {
+  cursor: help;
+}
+
+/* Report page containment for landscape and resized panes. */
+.report-page.workflow-page {
+  height: 100%;
+  overflow: hidden;
+}
+.report-page-two-column.resizable-report-grid {
+  height: 100%;
+  overflow: hidden;
+}
+.report-main-column,
+.report-side-column {
+  overflow: auto;
+  min-height: 0;
+}
+
+@media (orientation: landscape) and (max-height: 820px) {
+  .workflow-context-bar {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  .fitting-workflow-grid {
+    grid-template-columns: minmax(280px, 0.42fr) minmax(620px, 1.58fr);
+  }
+  .fit-config-panel .fit-config-row {
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+  .fit-config-drawer {
+    max-height: min(50vh, 420px);
+  }
+  .fitting-page .simple-chart svg {
+    max-height: min(23vh, 220px);
+  }
+  .fitting-page .fitting-results-column {
+    grid-template-rows: minmax(260px, 0.6fr) minmax(160px, 0.4fr);
+  }
+}
+
+@media (max-width: 1100px) {
+  .model-page.workflow-page,
+  .fitting-page.workflow-page,
+  .report-page.workflow-page {
+    height: auto;
+    overflow: auto;
+  }
+  .model-page .resizable-workflow-grid,
+  .fitting-page .fitting-workflow-grid,
+  .report-page-two-column.resizable-report-grid {
+    height: auto;
+    overflow: visible;
+  }
+}

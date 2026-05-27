@@ -257,12 +257,14 @@ def component_registry() -> list[FunctionDefinition]:
             default_form="voltage_drop",
             allowed_placements=["series_voltage_drop"],
             default_placement="series_voltage_drop",
+            allowed_polarities=["forward", "reverse"],
+            default_polarity="forward",
             parameters=[
                 ParameterDefinition(name="I0_A", default=1e-12, lower=1e-30, upper=1.0, unit="A", description="Saturation current scale for the series barrier."),
                 ParameterDefinition(name="n", default=1.5, lower=0.5, upper=10.0, unit="", description="Ideality factor for the series barrier voltage drop."),
             ],
             equation_template="V_drop = n VT ln(I/I0 + 1)",
-            help_text="Adds a diode-like voltage drop in the main series path, useful for injection/contact-barrier-like behavior.",
+            help_text="Adds a diode-like voltage drop in the main series path, useful for injection/contact-barrier-like behavior. Polarity controls which current direction activates the barrier drop.",
         ),
         FunctionDefinition(
             function_type="custom",

@@ -72,16 +72,18 @@ photocurrent_voltage_dependent = bias_dependent_current
 
 
 def series_diode_barrier_drop(current: np.ndarray, comp: ComponentSpec, temperature_K: float) -> np.ndarray:
-    """Return the forward-only series diode barrier voltage drop.
+    """Return a polarity-aware diode-like main-path voltage drop.
 
-    The series barrier is a main-path voltage-drop form, not a polarity-aware
-    current branch. Stored legacy polarity values are intentionally ignored.
+    The default forward polarity preserves the legacy behavior. Reverse polarity
+    lets users place the same diode-like barrier in the opposite current
+    direction without changing the mathematical component type.
     """
     arr = np.asarray(current, dtype=float)
-    forward_current = np.maximum(arr, 0.0)
+    sign = diode_polarity_sign(comp.polarity)
+    active_current = np.maximum(sign * arr, 0.0)
     i0 = max(param_value(comp, "I0_A", 1e-12), 1e-300)
     n = max(param_value(comp, "n", 1.5), 1e-12)
-    return n * thermal_voltage(temperature_K) * np.log1p(forward_current / i0)
+    return sign * n * thermal_voltage(temperature_K) * np.log1p(active_current / i0)
 
 
 def series_power_law_drop(current: np.ndarray, comp: ComponentSpec) -> np.ndarray:

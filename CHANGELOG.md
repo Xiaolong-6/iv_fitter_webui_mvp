@@ -1,3 +1,12 @@
+## v1.5.27 — polarity and landscape layout stabilization
+
+- Expose polarity for Diode-like series barrier drop and make the series-barrier voltage-drop evaluation polarity-aware while preserving the forward default.
+- Add user-facing barrier polarity explanation in Model preview.
+- Keep Model Builder fixed while Model preview scrolls independently.
+- Stabilize Fitting and Report landscape layouts so portrait improvements do not break horizontal/desktop workflows.
+- Improve parameter hover text before and after fitting so it explains the parameter meaning instead of exposing internal keys.
+- Add layout containment for plots, parameter tables, and report panes.
+
 ## v1.5.26 — adaptive workflow layout and report plot export
 
 - Added manual column resizing for the Model and Report workflow pages.

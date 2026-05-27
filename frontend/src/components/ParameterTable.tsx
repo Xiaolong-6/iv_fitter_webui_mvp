@@ -110,6 +110,67 @@ function componentSummary(comp: ComponentSpec, language: Language) {
   return `${role} | ${location} | ${polarity}`;
 }
 
+function parameterMeaningFromSpec(comp: ComponentSpec, paramName: string, spec: ParameterSpec, language: Language) {
+  const label = spec.label ?? paramName;
+  const componentName = nickname(comp);
+  const en = (text: string, zh: string) => language === "zh" ? zh : text;
+  let base = "";
+  if (/^n$/i.test(paramName)) {
+    base = en(
+      `Ideality factor for ${componentName}. It controls how steeply the diode-like exponential turns on. Typical diode-like values are around 1–2; larger values usually need model/data review.`,
+      `${componentName} 的理想因子，控制类二极管指数开启的陡峭程度。典型值约 1–2；更大值通常需要检查模型或数据。`,
+    );
+  } else if (/I0|I_?0/i.test(paramName) || /I0/i.test(label)) {
+    base = en(
+      `Current scale for ${componentName}. For diode-like terms this is the saturation-current scale; it may span many decades, so use physically reasonable bounds.`,
+      `${componentName} 的电流尺度。对类二极管项通常是饱和电流尺度，可能跨很多数量级，应使用物理合理边界。`,
+    );
+  } else if (/Rs_ohm|^Rs$/i.test(paramName) || /^rs$/i.test(componentName)) {
+    base = en(
+      `Series resistance for ${componentName}. It controls high-current voltage loss and forward-bias roll-off.`,
+      `${componentName} 的串联电阻，控制大电流区压降和正向高偏压弯折。`,
+    );
+  } else if (/Rsh|Rsh_ohm/i.test(paramName) || /rsh|shunt/i.test(componentName)) {
+    base = en(
+      `Shunt/leakage resistance for ${componentName}. Smaller values mean stronger linear leakage.`,
+      `${componentName} 的并联/漏电电阻；数值越小表示线性漏电越强。`,
+    );
+  } else if (/Vt|Vbr/i.test(paramName)) {
+    base = en(
+      `Threshold voltage for ${componentName}. It shifts where this empirical term starts to turn on.`,
+      `${componentName} 的阈值电压，决定经验项从哪个电压附近开始开启。`,
+    );
+  } else if (/Vs|w_V/i.test(paramName)) {
+    base = en(
+      `Voltage softness/scale for ${componentName}. It controls how gradual the turn-on is.`,
+      `${componentName} 的电压软化/尺度参数，控制开启过程有多平滑。`,
+    );
+  } else if (/^A$|Aph|amplitude|scale/i.test(paramName)) {
+    base = en(
+      `Amplitude scale for ${componentName}. Compare it with the measured current or voltage range before trusting the fitted value.`,
+      `${componentName} 的幅值尺度。可信前应和实测电流或电压范围对照。`,
+    );
+  } else if (/gain/i.test(paramName)) {
+    base = en(
+      `Bias coefficient for ${componentName}. It controls how strongly this current branch changes with voltage.`,
+      `${componentName} 的偏压系数，控制该电流支路随电压变化的强弱。`,
+    );
+  } else if (/direction_sign/i.test(paramName)) {
+    base = en(
+      `Direction sign for ${componentName}. It controls whether this branch adds to or subtracts from terminal current.`,
+      `${componentName} 的方向符号，控制该支路是增加还是减少端口电流。`,
+    );
+  } else {
+    base = spec.description || en(
+      `Parameter ${label} for ${componentName}. Review fitted value, uncertainty, and bounds together.`,
+      `${componentName} 的参数 ${label}。请结合拟合值、不确定度和边界一起判断。`,
+    );
+  }
+  if (spec.description && !base.includes(spec.description)) {
+    base += ` ${spec.description}`;
+  }
+  return base;
+}
 
 function sourceLabel(source: DataBoundsApplicationDetail["source"]) {
   if (source === "data_suggested") return "previous data suggestion";
@@ -222,13 +283,14 @@ export function ParameterTable({
             const dataBoundsDetail = dataBoundsDetails[dataBoundsDetails.length - 1];
             const open = openKey === key;
             const fitted = result?.parameters[key];
-            const meaning = result ? parameterMeaning(result, key, language) : (spec.description ?? "");
-            const short = result ? parameterShortAssessment(result, key, language) : (spec.description ?? "");
+            const prefitMeaning = parameterMeaningFromSpec(comp, paramName, spec, language);
+            const meaning = result ? parameterMeaning(result, key, language) : prefitMeaning;
+            const short = result ? parameterShortAssessment(result, key, language) : prefitMeaning;
             const information = dataBoundsReport ? <DataBoundsDetail detail={dataBoundsDetail} /> : short;
             const informationTitle = dataBoundsReport ? (dataBoundsDetail ? dataBoundsTitle(dataBoundsDetail) : "") : meaning;
             return <Fragment key={key}>
               <tr className="parameter-summary-row">
-                <td title={meaning || key} onClick={() => setOpenKey(open ? null : key)}>{labelForModelParameter(model, comp.id, paramName)}</td>
+                <td title={meaning} onClick={() => setOpenKey(open ? null : key)}>{labelForModelParameter(model, comp.id, paramName)}</td>
                 <td><DraftNumberInput disabled={disabled} value={spec.value} title={parameterText("initialTitle", language)} onCommit={(value) => { if (value !== null) onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { value }), comp.id, paramName, "initial")); }} /></td>
                 <td title={fitted ? String(fitted.value) : ""}>{fitted ? formatParameterNumber(fitted.value, fitted.unit ?? spec.unit) : "-"}</td>
                 <td><span className="parameter-status-pill">{fitted ? parameterFitStatus(fitted.value, fitted.lower, fitted.upper, fitted.stderr, fitted.fixed) : (spec.fit ?? true ? "free" : "fixed")}</span></td>

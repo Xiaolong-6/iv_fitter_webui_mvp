@@ -16,7 +16,9 @@ def _component_equation(comp) -> str:
     if comp.function_type in BIAS_DEPENDENT_CURRENT_TYPES:
         return f"I_{nick}(V_j) = direction_sign * [I0*(1 + gain_per_V*|V_j|) + A*sp((|V_j|-Vt)/Vs)^m]"
     if comp.function_type == "series_diode_barrier":
-        return f"V_drop,{nick} = n V_T ln(I/I0 + 1)"
+        pol = comp.polarity or "forward"
+        s = "+I" if pol != "reverse" else "-I"
+        return f"V_drop,{nick} = sign * n V_T ln(max({s},0)/I0 + 1)"
     if comp.function_type == "series_power_law_drop":
         return f"V_drop,{nick} = s A_V sp((sI - It)/Is)^m"
     if comp.function_type == "softplus_rs_modifier":
@@ -47,7 +49,8 @@ def _law_line(comp) -> str:
         role = "series-path modifier: it changes an existing voltage-drop path"
     else:
         role = "implicit/custom relation"
-    return f"{comp.id}: nick={nickname}; law={law}; form={form}; placement={placement}; {role}; {equation}; parameters: {param_text}"
+    polarity = f"; polarity={comp.polarity}" if comp.polarity else ""
+    return f"{comp.id}: nick={nickname}; law={law}; form={form}; placement={placement}{polarity}; {role}; {equation}; parameters: {param_text}"
 
 
 def _equivalent_circuit_line(model: ModelSpec) -> str:

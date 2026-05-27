@@ -401,7 +401,7 @@ function FittingWorkflowPage({
               detailsDock={
                 result || fitPromotionNotice ? (
                   <div className="fit-compact-details-note">
-                    <p>Full fit process metrics, quality diagnostics, warnings, and exports live on the Report page.</p>
+                    <p>Review full fit quality, warnings, and exports in the Report page.</p>
                     <button type="button" onClick={() => setActiveView("report")}>Open Report</button>
                   </div>
                 ) : null

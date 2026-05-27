@@ -1,8 +1,8 @@
-# Tested current — v1.5.26
+# Tested current — v1.5.27
 
-Validated after adaptive workflow layout polish, resizable Model/Report panes, Data page containment, parameter-table scroll containment, portrait-mode CSS checks, and HTML report plot export.
+Validation performed for the v1.5.27 polarity/layout stabilization package.
 
-Commands run:
+Commands:
 
 ```bash
 PYTHONPATH=backend python -m pytest backend/tests -q
@@ -12,18 +12,9 @@ npm run test
 npm run build
 ```
 
-Observed result in this package:
+Focus areas:
+- Diode-like series barrier drop polarity is available and validated.
+- Model Builder remains fixed while Model preview scrolls.
+- Fitting/Report desktop-landscape layouts are contained.
+- Parameter hover text explains meaning instead of internal keys.
 
-- Backend pytest: passed, 123 tests.
-- Backend compileall: passed.
-- Frontend Vitest: passed, 8 files / 27 tests.
-- Frontend production build: passed.
-
-Manual browser checks still recommended:
-
-1. Verify Data page card heights at 100%, 125%, and 150% app zoom.
-2. Drag the Model page and Report page column dividers.
-3. Confirm Fitting plots stay visible while the Parameters table scrolls internally.
-4. Confirm portrait/narrow layout stacks pages without horizontal overflow.
-5. Download the HTML report and verify plots, metrics, parameters, and warnings render correctly.
-6. Hover parameter names and confirm the tooltip explains the parameter meaning rather than internal parameter keys.
