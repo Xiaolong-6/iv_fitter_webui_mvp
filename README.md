@@ -124,10 +124,13 @@ University or company Wi-Fi may block device-to-device access; a phone hotspot i
 Frontend:
 
 ```bash
+cd frontend
 npm install
-npm run test:parameter-ui
+npm run test
 npm run build
 ```
+
+See `docs/FRONTEND_TESTING.md` for the Vitest test policy and coverage focus.
 
 Backend:
 
@@ -184,6 +187,10 @@ The Data page **Load sample data** button loads an anonymized HappyMeasure combi
 The sample preserves the multi-trace row count and voltage/current data needed to test importer behavior, while removing sample identifiers, timestamps, port names, and trace fingerprints.
 
 User-facing demo IV traces live under `examples/demo_data/iv_traces/`. In the local app, Import CSV/TXT opens that folder by default when the runtime supports local OS file dialogs; users can still browse anywhere.
+
+### v1.5.16 frontend test foundation
+
+The frontend now has a formal Vitest suite for fast model/UI-logic regression checks. Initial coverage includes parameter formatting, parameter status classification, fit diagnostics helpers, bounds suggestion application, Model Builder rules, and representative i18n keys. Run it with `cd frontend && npm run test`.
 
 ### v1.5.15 reporting polish
 

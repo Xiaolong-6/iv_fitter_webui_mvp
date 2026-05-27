@@ -1,3 +1,25 @@
+# v1.5.16 - Frontend test foundation
+
+- Added Vitest configuration and frontend test scripts (`npm run test`, `npm run test:watch`).
+- Added focused unit tests for parameter formatting, parameter status classification, fit diagnostics, bounds suggestion application, Model Builder rules, and representative i18n keys.
+- Added `docs/FRONTEND_TESTING.md` to document the frontend testing workflow and test policy.
+- Updated version metadata to v1.5.16.
+
+Validation:
+- `PYTHONPATH=backend python -m pytest backend/tests -q`
+- `python -m compileall -q backend/ivfitter backend/tests`
+- `cd frontend && npm run test`
+- `cd frontend && npm run build`
+
+# v1.5.15 - Parameter and report export polish
+
+- Added centralized parameter display/status formatting for the Parameters table and report exports.
+- Added display/status/note columns to the parameter CSV export.
+- Added a sectioned report CSV with software, trace, model, fit configuration, quality, parameters, warnings, and diagnostics sections.
+- Added structured diagnostics JSON export for reproducibility and downstream batch comparison.
+- Added backend regression tests for parameter CSV, sectioned report CSV, and diagnostics JSON export structure.
+- Updated version metadata to v1.5.15.
+
 # v1.5.14 - Fit lifecycle hardening
 
 - Added a frontend fit-run lifecycle guard with monotonic run ids so stale/late fit responses cannot overwrite the current workspace after Stop, timeout, or a newer run.
