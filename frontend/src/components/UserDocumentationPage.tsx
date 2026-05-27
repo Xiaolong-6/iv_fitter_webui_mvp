@@ -232,21 +232,16 @@ function ManualReader({ registry, appVersion, language }: { registry: FunctionDe
       <div>
         <h2>{language === "zh" ? "IV-fitter Web 用户手册" : "IV-fitter Web User Manual"}</h2>
         <p className="muted">{language === "zh"
-          ? `v${appVersion} 导航式教程：一次只显示当前章节，避免长卷轴。`
-          : `Navigation-style tutorial for v${appVersion}: one section at a time, without a long scroll wall.`}</p>
+          ? `v${appVersion} · 面向实际 I-V 拟合、模型选择、参数判断和报告审查。`
+          : `v${appVersion} · Practical guidance for I-V fitting, model choice, parameter review, and report checks.`}</p>
       </div>
-      <select className="manual-section-select" value={active} onChange={(e) => setActive(e.target.value as ManualSectionKey)} title={language === "zh" ? "选择手册章节" : "Select manual section"}>
-        {labels.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-      </select>
     </div>
     <div className="manual-reader-shell">
       <SectionNavigator language={language} active={active} onSelect={setActive} />
       <main className="manual-reader-content">
-        <div className="manual-reader-heading">
-          <span>{language === "zh" ? "当前章节" : "Current section"}</span>
-          <h2>{activeLabel}</h2>
+        <div className="manual-reader-content-scroll" aria-label={activeLabel}>
+          {renderManualSection(active, registry, language)}
         </div>
-        {renderManualSection(active, registry, language)}
       </main>
     </div>
   </div>;

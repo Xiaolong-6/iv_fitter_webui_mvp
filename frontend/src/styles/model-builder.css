@@ -329,3 +329,30 @@
     margin-bottom: 0.7rem;
   }
 }
+
+/* v1.5.30: make the equivalent-circuit preview scale with the pane and reduce visual chrome. */
+.model-circuit-panel.circuit-panel-v2 {
+  padding: calc(6px * var(--app-zoom));
+  margin: calc(6px * var(--app-zoom)) 0 calc(8px * var(--app-zoom));
+  border-radius: calc(8px * var(--app-zoom));
+}
+.circuit-title-row {
+  margin-bottom: calc(3px * var(--app-zoom));
+}
+.circuit-svg,
+.circuit-panel-vertical-branches .circuit-svg {
+  width: 100%;
+  height: clamp(132px, 28cqw, 230px);
+  min-height: 0;
+  border-width: 0;
+  border-radius: calc(8px * var(--app-zoom));
+  background: #ffffff;
+}
+@container (max-width: 420px) {
+  .circuit-svg,
+  .circuit-panel-vertical-branches .circuit-svg {
+    height: 150px;
+  }
+  .circuit-component-text { font-size: 11px; }
+  .circuit-node-text { font-size: 10px; }
+}

@@ -1,16 +1,20 @@
-# Tested current — v1.5.29
+# Tested current — v1.5.30
 
-Validation target: v1.5.29 audit principles and validation polish.
+Validation target: v1.5.30 UI/layout/manual/report cleanup after v1.5.29 audit-principles release.
 
-Changes validated:
+Validated changes in this package:
 
-- Added `docs/DEVELOPMENT_PRINCIPLES.md` and linked it from the current agent handoff and documentation index.
-- Updated stale current-version labels in README and handoff metadata.
-- Consolidated backend model evaluation to the shared stable `softplus` helper.
-- Added explicit `missing_direction_sign` validation warning for photocurrent/bias-dependent current models that rely on the legacy default sign.
-- Clarified the reduced-χ²-like metric as relative/weighting-dependent in UI, docs, and report text while preserving metric keys.
+- Synthetic trace generation moved from Data import to a **Debug algorithm** action beside the Model Builder title.
+- Fitting page now has a manual column resizer between Fit setup and plots/parameters.
+- Fit setup advanced/objective controls use available pane height and scroll internally.
+- Parameters table is denser and uses horizontal/internal scrolling to avoid high-zoom overlap.
+- Report exports now keep HTML report and full report CSV only; separate parameter CSV and diagnostics JSON download paths were removed.
+- Report Model and equations are displayed as labeled, rendered formula blocks rather than raw code text.
+- Manual page is simplified: no redundant section dropdown, no Current section heading, user-facing subtitle, scrollable content area with left navigation.
+- Equivalent circuit panel has reduced chrome and scales with the Model Builder pane.
+- Fit quality metrics each expose their own hover explanation.
 
-Commands run:
+Commands to run:
 
 ```bash
 PYTHONPATH=backend python -m pytest backend/tests -q
@@ -21,11 +25,11 @@ npm run test -- --run
 npm run build
 ```
 
-Observed result:
+Manual browser checks recommended:
 
-- Backend pytest: passed, 124 tests.
-- Backend compileall: passed.
-- Frontend Vitest: passed, 8 files / 27 tests.
-- Frontend production build: passed.
-
-Manual UI checks recommended: Model Builder / Model Preview independent scroll, Fitting Parameters internal scroll, Fit process relative reduced-χ² tooltip, Report page exports, and HTML report content.
+1. Model page: Debug algorithm opens Synthetic IV trace drawer; generated trace imports and becomes selected.
+2. Model page: Equivalent circuit scales with pane resize and does not show an oversized border.
+3. Fitting page: drag the Fit setup/results resizer; Objective/advanced options scroll inside Fit setup.
+4. Fitting page: high zoom does not make Parameters cells overlap; table scrolls instead.
+5. Report page: only HTML and report CSV exports are shown; equations are rendered as labeled formula blocks.
+6. Help page: left navigation changes sections; content scrolls without redundant top dropdown or Current section header.

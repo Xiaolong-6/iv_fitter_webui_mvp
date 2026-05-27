@@ -280,3 +280,62 @@
     min-width: 190px;
   }
 }
+
+/* v1.5.30 user-facing manual simplification. */
+.doc-page {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.manual-reader {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.manual-reader .manual-hero {
+  padding: 12px 14px;
+}
+.manual-reader .manual-hero p {
+  margin-bottom: 0;
+}
+.manual-section-select,
+.manual-reader-heading {
+  display: none !important;
+}
+.manual-reader-shell {
+  height: 100%;
+  min-height: 0;
+  align-items: stretch;
+}
+.manual-reader-nav {
+  position: static;
+  max-height: none;
+  height: 100%;
+}
+.manual-reader-content {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+.manual-reader-content-scroll {
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+  padding-right: 2px;
+  overscroll-behavior: contain;
+}
+.manual-reader-content .manual-section {
+  margin: 0;
+}
+@media (max-width: 900px) {
+  .doc-page {
+    overflow: auto;
+  }
+  .manual-reader,
+  .manual-reader-shell,
+  .manual-reader-content,
+  .manual-reader-content-scroll {
+    height: auto;
+    overflow: visible;
+  }
+}

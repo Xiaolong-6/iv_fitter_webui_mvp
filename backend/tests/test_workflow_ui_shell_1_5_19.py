@@ -44,8 +44,12 @@ def test_existing_components_are_moved_to_task_specific_pages():
 
 def test_global_context_and_report_page_exports_are_present():
     page = read_repo_file("frontend/src/pages/FittingPage.tsx")
+    client = read_repo_file("frontend/src/api/client.ts")
     assert "workflow-context-bar" in page
     assert "Next:" in page
     assert "Download report CSV" in page
-    assert "Download parameter CSV" in page
-    assert "Download diagnostics JSON" in page
+    assert "Download HTML report" in page
+    assert "Download parameter CSV" not in page
+    assert "Download diagnostics JSON" not in page
+    assert "export-parameters-csv" not in client
+    assert "export-diagnostics-json" not in client

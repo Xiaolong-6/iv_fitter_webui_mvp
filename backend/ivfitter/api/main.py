@@ -23,7 +23,7 @@ from ivfitter.core.model_validation import validate_model_spec
 from ivfitter.io.export_report import fit_result_markdown
 from ivfitter.io.default_import_dir import resolve_default_import_dir
 from ivfitter.io.import_trace import ImportCsvTextRequest, import_csv_text, import_csv_text_multi
-from ivfitter.io.export_result import diagnostics_json_text, fit_result_json_text, parameter_csv_text, report_csv_text
+from ivfitter.io.export_result import fit_result_json_text, report_csv_text
 
 
 app = FastAPI(title="IV-fitter Web Backend", version=__version__)
@@ -281,20 +281,12 @@ def export_report_csv(result: FitResult) -> TextResponse:
     """Return a sectioned, spreadsheet-friendly fit report CSV."""
     return TextResponse(text=report_csv_text(result))
 
-@app.post("/api/export-diagnostics-json", response_model=TextResponse)
-def export_diagnostics_json(result: FitResult) -> TextResponse:
-    """Return a structured diagnostics JSON document for reproducibility."""
-    return TextResponse(text=diagnostics_json_text(result))
 
 @app.post("/api/export-result-json", response_model=TextResponse)
 def export_result_json(result: FitResult) -> TextResponse:
     """Return a reproducible FitResult JSON document."""
     return TextResponse(text=fit_result_json_text(result))
 
-@app.post("/api/export-parameters-csv", response_model=TextResponse)
-def export_parameters_csv(result: FitResult) -> TextResponse:
-    """Return fitted parameters as CSV text."""
-    return TextResponse(text=parameter_csv_text(result))
 
 
 @app.get("/api/version")

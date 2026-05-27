@@ -1,3 +1,15 @@
+## v1.5.30 — UI/layout/manual/report cleanup
+
+- Moved Synthetic trace generation from the Data import card to a Model Builder **Debug algorithm** action.
+- Added a manual resizer between Fit setup and the plots/parameters results columns.
+- Improved Fit setup height behavior so advanced/objective controls scroll inside the available pane.
+- Tightened Parameters table density and high-zoom behavior with internal/horizontal scrolling instead of cell overlap.
+- Removed separate parameter CSV and diagnostics JSON download actions and their unused API/client helper paths; the full report CSV remains the spreadsheet export.
+- Rendered Report model/equation lines as labeled formula blocks instead of raw code text.
+- Simplified the User Manual reader by removing the redundant section dropdown, Current section heading, and developer-facing subtitle; the left navigation now controls a scrollable content area.
+- Reduced Equivalent-circuit panel visual chrome and made its SVG height scale with the Model Builder pane.
+- Added per-metric hover explanations in Fit process quality metrics.
+
 ## v1.5.29 — audit principles and validation polish
 
 - Added a durable agent/developer principles document distilled from repeated commit-history fixes: scientific contract stability, independent scroll containment, parameter provenance, action hierarchy, report auditability, Law/Form/Placement vocabulary, and validation/documentation discipline.

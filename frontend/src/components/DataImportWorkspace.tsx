@@ -372,7 +372,6 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
           <button type="button" className="file-button import-primary-action" title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`} onClick={openImportPicker}>{t(language, "importCsv")}</button>
           <input ref={fileInputRef} id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
           <button className="import-debug-action" title={t(language, "loadDemoHelp")} onClick={loadSampleData}>{language === "zh" ? "加载示例数据" : "Load sample data"}</button>
-          <button className="import-debug-action" title={language === "zh" ? "从当前模型生成可控的合成 IV trace。" : "Generate a controlled synthetic IV trace from the current model."} onClick={() => setSyntheticOpen(true)}>{language === "zh" ? "合成 trace" : "Synthetic trace"}</button>
         </div>
         <div className="trace-selection-subsection">
           <div className="subsection-head"><h4>{t(language, "traceSelection")}</h4><HelpTip text={t(language, "traceSelectionHelp")} /></div>

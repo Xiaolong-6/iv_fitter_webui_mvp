@@ -1,7 +1,7 @@
 from ivfitter.core.model_spec import FitRequest
 from ivfitter.core.fitting_engine import fit_trace
 from ivfitter.io.import_trace import ImportCsvTextRequest, import_csv_text
-from ivfitter.io.export_result import fit_result_json_text, parameter_csv_text
+from ivfitter.io.export_result import fit_result_json_text
 from test_backend_mvp import sample_model, sample_trace
 
 
@@ -13,9 +13,6 @@ def test_import_csv_text_drops_nonfinite_rows():
     assert quality.voltage_col == "V"
 
 
-def test_export_result_json_and_parameter_csv():
+def test_export_result_json_is_available_for_internal_reproducibility():
     result = fit_trace(FitRequest(trace=sample_trace(), model=sample_model()))
     assert '"software_version"' in fit_result_json_text(result)
-    csv_text = parameter_csv_text(result)
-    assert "parameter,value" in csv_text
-    assert "D1.I0_A" in csv_text

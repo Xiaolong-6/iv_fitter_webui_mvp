@@ -4205,3 +4205,175 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
     max-height: 50vh !important;
   }
 }
+
+/* v1.5.30 UI/layout polish requested after v1.5.29 review. */
+.workspace-section-head-action {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.debug-algorithm-button {
+  padding: calc(4px * var(--app-zoom)) calc(9px * var(--app-zoom));
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.synthetic-inline-message {
+  color: var(--theme-muted, #64748b);
+  font-size: calc(12px * var(--app-zoom));
+}
+.resizable-fitting-grid {
+  display: grid;
+  gap: calc(8px * var(--app-zoom));
+  align-items: stretch;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+.resizable-fitting-grid > .fitting-control-column,
+.resizable-fitting-grid > .fitting-results-column {
+  min-width: 0;
+}
+.fitting-page .resizable-fitting-grid {
+  grid-template-columns: var(--fit-grid-template, minmax(270px, .28fr) 8px minmax(520px, .72fr));
+}
+.fitting-control-column {
+  overflow: hidden;
+}
+.fitting-control-column .fit-config-panel {
+  height: 100%;
+  max-height: none;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+.fitting-control-column .fit-config-row {
+  min-height: 0;
+  align-content: start;
+}
+.fitting-control-column .fit-config-drawer {
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.fitting-control-column .fit-config-panel .advanced-objective-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+.fitting-control-column .fit-config-panel label {
+  min-width: 0;
+}
+.fitting-control-column .fit-config-panel input,
+.fitting-control-column .fit-config-panel select {
+  min-width: 0;
+  max-width: 100%;
+}
+.parameter-card .table-wrap,
+.parameter-placement-group .table-wrap {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.interactive-parameter-table {
+  table-layout: fixed;
+  min-width: 760px;
+  font-size: clamp(11px, calc(12px * var(--app-zoom)), 13px);
+}
+.interactive-parameter-table th,
+.interactive-parameter-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.interactive-parameter-table .parameter-edit-input {
+  min-width: 0;
+  width: 100%;
+  font-size: inherit;
+}
+.interactive-parameter-table th:nth-child(9),
+.interactive-parameter-table td:nth-child(9) {
+  white-space: normal;
+}
+.parameter-fit-toggle {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  white-space: nowrap;
+}
+.metric-help-label {
+  cursor: help;
+  text-decoration: underline dotted rgba(100, 116, 139, 0.75);
+  text-underline-offset: 2px;
+}
+.report-equation-list {
+  display: grid;
+  gap: 8px;
+}
+.report-equation-line {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.38fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+.report-equation-label {
+  color: #475569;
+  font-weight: 800;
+  font-size: 0.86em;
+}
+.report-equation-line .latex-card {
+  margin: 0;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+}
+.report-equation-line p {
+  margin: 0;
+}
+.report-equation-list code {
+  display: none;
+}
+.report-export-actions-grid {
+  grid-template-columns: 1fr;
+}
+@media (orientation: portrait), (max-width: 900px) {
+  .resizable-fitting-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    height: auto;
+    overflow: visible;
+  }
+  .resizable-fitting-grid > .pane-resizer {
+    display: none;
+  }
+  .fitting-control-column .fit-config-panel {
+    height: auto;
+  }
+  .interactive-parameter-table {
+    min-width: 720px;
+  }
+  .report-equation-line {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.fitting-page .resizable-fitting-grid {
+  grid-template-columns: var(--fit-grid-template) !important;
+}
+.workflow-page .workspace-section-head.static-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: calc(7px * var(--app-zoom)) calc(10px * var(--app-zoom));
+  border-bottom: 1px solid var(--theme-border, #e2e8f0);
+  background: #f8fafc;
+}
+.workflow-page .workspace-section-head.static-head > span {
+  font-weight: 850;
+  color: var(--theme-text, #0f172a);
+}

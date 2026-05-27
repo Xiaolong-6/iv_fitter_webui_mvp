@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { FitResult, FitSessionStats } from "../model/types";
 import type { FitLifecycleState } from "../model/fitLifecycle";
 import { fmtEng } from "../model/format";
@@ -63,6 +64,58 @@ function fmtMetric(value: number | null | undefined, unit = "") {
   return unit && text !== "—" ? `${text} ${unit}` : text;
 }
 
+
+function metricHelp(key: string, language: Language) {
+  const zh = language === "zh";
+  const help: Record<string, [string, string]> = {
+    linear_rmse_A: [
+      "Root-mean-square current error in amperes. It is dominated by high-current regions and is best for absolute current error.",
+      "电流均方根误差，单位 A。它容易被大电流区主导，适合判断绝对电流误差。",
+    ],
+    normalized_rmse: [
+      "Linear RMSE normalized by the measured current scale. Smaller values usually mean better overall relative agreement.",
+      "按实测电流尺度归一化的 RMSE。数值越小通常表示总体相对拟合越好。",
+    ],
+    linear_r2: [
+      "Coefficient of determination in linear current space. It can look good even if low-current decades are poorly fitted.",
+      "线性电流空间中的决定系数。即使小电流数量级拟合较差，它也可能看起来很好。",
+    ],
+    log_magnitude_r2: [
+      "Coefficient of determination for log10(|I|). It is more sensitive to multi-decade IV behavior than linear R².",
+      "log10(|I|) 空间中的决定系数，比线性 R² 更能反映跨数量级 IV 行为。",
+    ],
+    log_magnitude_mae_decades: [
+      "Mean absolute error in log-current decades. 0.1 decade is roughly a 26% multiplicative error; 0.3 decade is about a factor of 2.",
+      "log 电流数量级中的平均绝对误差。0.1 decade 约等于 26% 倍数误差；0.3 decade 约为 2 倍。",
+    ],
+    reduced_chi_square: [
+      "Relative weighted reduced χ²-like value from the active residual weighting. It is not a strict statistical χ² unless weights are true measurement uncertainties.",
+      "由当前 residual weighting 得到的相对加权 reduced χ²-like 值。只有权重是真实测量不确定度时才是严格统计 χ²。",
+    ],
+    weighted_chi_square: [
+      "Sum of squared active weighted residuals. Use it to compare fits with the same weighting and data range, not as an absolute probability.",
+      "当前加权残差平方和。适合比较相同 weighting 和电压范围下的拟合，不应当作绝对概率。",
+    ],
+    max_abs_residual_A: [
+      "Largest absolute current residual in amperes. Useful for detecting localized outliers or model failure regions.",
+      "最大绝对电流残差，单位 A。适合发现局部异常点或模型失效区。",
+    ],
+  };
+  const fallback: [string, string] = [
+    "Fit-quality metric reported by the backend. Interpret it together with plots, residuals, warnings, and parameter bounds.",
+    "后端报告的拟合质量指标。需要结合图、残差、warnings 和参数边界一起解释。",
+  ];
+  const pair = help[key] ?? fallback;
+  return zh ? pair[1] : pair[0];
+}
+
+function MetricLabel({ name, children, language }: { name: string; children: ReactNode; language: Language }) {
+  return <span title={metricHelp(name, language)} className="metric-help-label">{children}</span>;
+}
+
+function MetricValue({ name, children, language }: { name: string; children: ReactNode; language: Language }) {
+  return <b title={metricHelp(name, language)}>{children}</b>;
+}
 export function FitStatusBar({
   result,
   language,
@@ -242,7 +295,7 @@ export function FitProcessDiagnostics({
       : "This reduced χ²-like metric is computed from the active weighted residuals. It is strictly statistical only when weights are true measurement uncertainties; otherwise it is a relative residual-scale diagnostic.";
 
   return (
-    <div className="fit-process-diagnostics" title={chiHelp}>
+    <div className="fit-process-diagnostics">
       <details>
         <summary>
           <span>{title}</span>
@@ -263,22 +316,22 @@ export function FitProcessDiagnostics({
               {language === "zh" ? "质量指标" : "Quality metrics"}
             </strong>
             <div className="fit-process-grid">
-              <span>RMSE</span>
-              <b>{fmtMetric(m.linear_rmse_A, "A")}</b>
-              <span>
+              <MetricLabel name="linear_rmse_A" language={language}>RMSE</MetricLabel>
+              <MetricValue name="linear_rmse_A" language={language}>{fmtMetric(m.linear_rmse_A, "A")}</MetricValue>
+              <MetricLabel name="normalized_rmse" language={language}>
                 {language === "zh" ? "归一化 RMSE" : "Normalized RMSE"}
-              </span>
-              <b>{fmtNumber(m.normalized_rmse, 4)}</b>
-              <span>{language === "zh" ? "线性 R²" : "Linear R²"}</span>
-              <b>{fmtNumber(r2, 5)}</b>
-              <span>
+              </MetricLabel>
+              <MetricValue name="normalized_rmse" language={language}>{fmtNumber(m.normalized_rmse, 4)}</MetricValue>
+              <MetricLabel name="linear_r2" language={language}>{language === "zh" ? "线性 R²" : "Linear R²"}</MetricLabel>
+              <MetricValue name="linear_r2" language={language}>{fmtNumber(r2, 5)}</MetricValue>
+              <MetricLabel name="log_magnitude_r2" language={language}>
                 {language === "zh" ? "log-magnitude R²" : "Log-magnitude R²"}
-              </span>
-              <b>{fmtNumber(logR2, 5)}</b>
-              <span>{language === "zh" ? "log MAE" : "Log MAE"}</span>
-              <b>{fmtMetric(m.log_magnitude_mae_decades, "dec")}</b>
-              <span title={chiHelp}>{chiLabel}</span>
-              <b title={chiHelp}>{fmtNumber(reducedChi, 4)}</b>
+              </MetricLabel>
+              <MetricValue name="log_magnitude_r2" language={language}>{fmtNumber(logR2, 5)}</MetricValue>
+              <MetricLabel name="log_magnitude_mae_decades" language={language}>{language === "zh" ? "log MAE" : "Log MAE"}</MetricLabel>
+              <MetricValue name="log_magnitude_mae_decades" language={language}>{fmtMetric(m.log_magnitude_mae_decades, "dec")}</MetricValue>
+              <MetricLabel name="reduced_chi_square" language={language}>{chiLabel}</MetricLabel>
+              <MetricValue name="reduced_chi_square" language={language}>{fmtNumber(reducedChi, 4)}</MetricValue>
             </div>
           </section>
           <section>

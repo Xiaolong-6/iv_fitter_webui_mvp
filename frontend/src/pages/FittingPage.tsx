@@ -16,8 +16,6 @@ import type {
 } from "../model/types";
 import {
   equations,
-  exportDiagnosticsJson,
-  exportParametersCsv,
   exportReport,
   exportReportCsv,
   fitTrace,
@@ -55,6 +53,8 @@ import {
   type FitDrawerMode,
 } from "../components/FitConfigPanel";
 import { EquationPreview } from "../components/EquationPreview";
+import { SyntheticTraceTool } from "../components/SyntheticTraceTool";
+import { MathFormula } from "../components/MathFormula";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
@@ -348,14 +348,17 @@ function StartHerePage({
 function PageSection({
   title,
   children,
+  action,
 }: {
   title: string;
   children: ReactNode;
+  action?: ReactNode;
 }) {
   return (
     <section className="workspace-section open">
       <div className="workspace-section-head static-head">
         <span>{title}</span>
+        {action ? <div className="workspace-section-head-action">{action}</div> : null}
       </div>
       <div className="workspace-section-body">{children}</div>
     </section>
@@ -372,6 +375,7 @@ function ModelWorkflowPage({
   isFitting,
   leftPct,
   onResizeStart,
+  syntheticTool,
 }: {
   model: ModelSpec;
   setModel: (model: ModelSpec) => void;
@@ -382,6 +386,7 @@ function ModelWorkflowPage({
   isFitting: boolean;
   leftPct: number;
   onResizeStart: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  syntheticTool?: ReactNode;
 }) {
   return (
     <section className="workflow-page model-page">
@@ -391,7 +396,7 @@ function ModelWorkflowPage({
           gridTemplateColumns: `minmax(320px, ${leftPct}fr) 8px minmax(420px, ${100 - leftPct}fr)`,
         }}
       >
-        <PageSection title={t(language, "modelBuilder")}>
+        <PageSection title={t(language, "modelBuilder")} action={syntheticTool}>
           <ErrorBoundary label="Model builder">
             <ModelBuilder
               model={model}
@@ -450,6 +455,8 @@ function FittingWorkflowPage({
   dataBoundsReport,
   isFitting,
   language,
+  leftPct,
+  onResizeStart,
 }: {
   selectedTrace: TraceData;
   selectedTraceId: string | null;
@@ -477,6 +484,8 @@ function FittingWorkflowPage({
   dataBoundsReport: DataBoundsApplicationReport | null;
   isFitting: boolean;
   language: Language;
+  leftPct: number;
+  onResizeStart: (event: ReactPointerEvent<HTMLDivElement>) => void;
 }) {
   const hasTrace = selectedTrace.voltage_V.length > 0;
   return (
@@ -494,7 +503,12 @@ function FittingWorkflowPage({
           </button>
         </div>
       ) : null}
-      <div className="fitting-workflow-grid">
+      <div
+        className="fitting-workflow-grid resizable-fitting-grid"
+        style={{
+          "--fit-grid-template": `minmax(270px, ${leftPct}fr) 8px minmax(520px, ${100 - leftPct}fr)`,
+        } as CSSProperties}
+      >
         <aside className="fitting-control-column">
           <ErrorBoundary label="Fit config panel">
             <FitConfigPanel
@@ -513,6 +527,12 @@ function FittingWorkflowPage({
             />
           </ErrorBoundary>
         </aside>
+        <div
+          className="pane-resizer"
+          role="separator"
+          aria-label="Resize Fitting setup and results columns"
+          onPointerDown={onResizeStart}
+        />
         <main className="fitting-results-column">
           <PageSection title={t(language, "plots")}>
             <ErrorBoundary label="Plot workspace">
@@ -623,6 +643,34 @@ function parameterReliabilityNote(value: {
   return notes.join("; ") || "fit";
 }
 
+
+function equationDisplayParts(line: string) {
+  const [prefix, ...rest] = line.split(":");
+  const body = rest.length ? rest.join(":").trim() : line.trim();
+  const label = rest.length ? prefix.trim() : "Equation";
+  const latex = body
+    .replace(/V_ext/g, "V_{ext}")
+    .replace(/V_j/g, "V_j")
+    .replace(/V_T/g, "V_T")
+    .replace(/Σ/g, "\\sum")
+    .replace(/I_branch/g, "I_{branch}")
+    .replace(/I_([A-Za-z0-9]+)/g, "I_{$1}")
+    .replace(/V_drop,([A-Za-z0-9_]+)/g, "V_{drop,$1}")
+    .replace(/R_eff,([A-Za-z0-9_]+)/g, "R_{eff,$1}")
+    .replace(/sp\(/g, "\\operatorname{softplus}(")
+    .replace(/ln\(/g, "\\ln(")
+    .replace(/exp\(/g, "\\exp(");
+  const likelyFormula = /[=+\-*/^]|V_\{|I_\{|R_\{|\\sum|\\ln|\\operatorname/.test(latex);
+  return { label, body, latex, likelyFormula };
+}
+
+function ReportEquationLine({ line }: { line: string }) {
+  const parts = equationDisplayParts(line);
+  return <div className="report-equation-line">
+    <span className="report-equation-label">{parts.label}</span>
+    {parts.likelyFormula ? <MathFormula latex={parts.latex} className="report-formula" /> : <p>{parts.body}</p>}
+  </div>;
+}
 function ReportWorkflowPage({
   selectedTrace,
   hasSelectedTrace,
@@ -636,8 +684,6 @@ function ReportWorkflowPage({
   fitPromotionNotice,
   fitSessionStats,
   onExportReportCsv,
-  onExportParametersCsv,
-  onExportDiagnosticsJson,
   onExportReportHtml,
   setActiveView,
   language,
@@ -660,8 +706,6 @@ function ReportWorkflowPage({
   openAndScroll: (sectionId: string) => void;
   makeReport: () => void;
   onExportReportCsv: () => void;
-  onExportParametersCsv: () => void;
-  onExportDiagnosticsJson: () => void;
   onExportReportHtml: () => void;
   setActiveView: (view: AppView) => void;
   language: Language;
@@ -743,10 +787,10 @@ function ReportWorkflowPage({
             <div className="report-equation-list">
               {equationLines.length ? (
                 equationLines.map((line, idx) => (
-                  <code key={`${line}-${idx}`}>{line}</code>
+                  <ReportEquationLine key={`${line}-${idx}`} line={line} />
                 ))
               ) : (
-                <code>{modelSummary(model)}</code>
+                <ReportEquationLine line={modelSummary(model)} />
               )}
             </div>
           </div>
@@ -859,22 +903,6 @@ function ReportWorkflowPage({
               onClick={onExportReportCsv}
             >
               {language === "zh" ? "下载 CSV 报告" : "Download report CSV"}
-            </button>
-            <button
-              type="button"
-              disabled={!report}
-              onClick={onExportParametersCsv}
-            >
-              {language === "zh" ? "下载参数 CSV" : "Download parameter CSV"}
-            </button>
-            <button
-              type="button"
-              disabled={!report}
-              onClick={onExportDiagnosticsJson}
-            >
-              {language === "zh"
-                ? "下载 diagnostics JSON"
-                : "Download diagnostics JSON"}
             </button>
           </div>
           {reportMessage ? <p className="muted">{reportMessage}</p> : null}
@@ -1074,6 +1102,7 @@ export function FittingPage() {
   const [zoom, setZoom] = useState(0.92);
   const [activeView, setActiveView] = useState<AppView>("start");
   const [modelPanePct, setModelPanePct] = useState(42);
+  const [fittingPanePct, setFittingPanePct] = useState(28);
   const [reportPanePct, setReportPanePct] = useState(72);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [language, setLanguage] = useState<Language>("en");
@@ -1431,8 +1460,8 @@ export function FittingPage() {
       report: r.markdown,
       message:
         language === "zh"
-          ? "报告已生成。可下载完整 CSV、参数 CSV 或 diagnostics JSON。"
-          : "Report generated. You can download the full CSV, parameter CSV, or diagnostics JSON.",
+          ? "报告已生成。可下载 HTML 或完整 CSV 报告。"
+          : "Report generated. You can download the HTML or full CSV report.",
     });
     setActiveView("report");
   }
@@ -1468,26 +1497,6 @@ export function FittingPage() {
       reportBaseName("report.csv"),
       r.text,
       "text/csv;charset=utf-8",
-    );
-  }
-
-  async function downloadParametersCsv() {
-    if (!result) return;
-    const r = await exportParametersCsv(result);
-    downloadText(
-      reportBaseName("parameters.csv"),
-      r.text,
-      "text/csv;charset=utf-8",
-    );
-  }
-
-  async function downloadDiagnosticsJson() {
-    if (!result) return;
-    const r = await exportDiagnosticsJson(result);
-    downloadText(
-      reportBaseName("diagnostics.json"),
-      r.text,
-      "application/json;charset=utf-8",
     );
   }
 
@@ -1736,6 +1745,27 @@ export function FittingPage() {
             onResizeStart={(event) =>
               startPaneResize(event, setModelPanePct, 28, 65)
             }
+            syntheticTool={
+              <SyntheticTraceTool
+                traces={traces}
+                onTraces={(next) => {
+                  setTraces(next);
+                  setResult(null);
+                  setReportArtifacts(emptyReportArtifacts);
+                  setDataBoundsReport(null);
+                }}
+                onSelectTrace={(id) => {
+                  setSelectedTraceId(id);
+                  setResult(null);
+                  setReportArtifacts(emptyReportArtifacts);
+                  setDataBoundsReport(null);
+                  setNoTraceRunAttempted(false);
+                }}
+                model={model}
+                language={language}
+                disabled={isFitting}
+              />
+            }
           />
         ) : activeView === "fitting" ? (
           <FittingWorkflowPage
@@ -1782,6 +1812,10 @@ export function FittingPage() {
             dataBoundsReport={dataBoundsReport}
             isFitting={isFitting}
             language={language}
+            leftPct={fittingPanePct}
+            onResizeStart={(event) =>
+              startPaneResize(event, setFittingPanePct, 22, 48)
+            }
           />
         ) : activeView === "report" ? (
           <ReportWorkflowPage
@@ -1801,8 +1835,6 @@ export function FittingPage() {
             openAndScroll={openAndScroll}
             makeReport={makeReport}
             onExportReportCsv={downloadReportCsv}
-            onExportParametersCsv={downloadParametersCsv}
-            onExportDiagnosticsJson={downloadDiagnosticsJson}
             onExportReportHtml={downloadReportHtml}
             setActiveView={setActiveView}
             language={language}

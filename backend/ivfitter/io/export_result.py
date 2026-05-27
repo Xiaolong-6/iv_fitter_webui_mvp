@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import csv
 import io
-import json
 from datetime import datetime, timezone
 from typing import Any
 
@@ -158,9 +157,6 @@ def fit_result_json_text(result: FitResult) -> str:
     return result.model_dump_json(indent=2)
 
 
-def diagnostics_json_text(result: FitResult) -> str:
-    """Return a structured report/diagnostics JSON document."""
-    return json.dumps(structured_report(result), indent=2, ensure_ascii=False)
 
 
 def _section(writer: csv.writer, title: str) -> None:
@@ -224,11 +220,3 @@ def report_csv_text(result: FitResult) -> str:
     return buf.getvalue()
 
 
-def parameter_csv_text(result: FitResult) -> str:
-    """Return fitted parameters as CSV text for spreadsheet inspection."""
-    buf = io.StringIO()
-    writer = csv.writer(buf)
-    writer.writerow(["parameter", "value", "display_value", "unit", "initial", "display_initial", "fixed", "lower", "upper", "stderr", "display_stderr", "status", "note"])
-    for row in structured_report(result)["parameters"]:
-        writer.writerow([row["parameter"], row["value"], row["display_value"], row["unit"], row["initial"], row["display_initial"], row["fixed"], row["lower"], row["upper"], row["stderr"], row["display_stderr"], row["status"], row["note"]])
-    return buf.getvalue()
