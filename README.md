@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.5.9**
+Current version: **1.5.10**
 
 IV-fitter Web UI is a local-first browser app for fitting I-V traces with compact circuit models. It helps a user import voltage/current data, build a model from mathematical circuit terms, run a fit, inspect diagnostics, and export a result only after the residuals, warnings, parameters, and model structure make sense.
 
@@ -100,7 +100,7 @@ For phone/tablet browser testing on the same local network, use:
 .\04c_run_lan_dev.bat
 ```
 
-The LAN launcher starts backend and frontend in separate windows, prints a phone URL such as `http://192.168.x.x:5173`, sets the frontend API base to the detected computer IP, and checks backend health before launching the frontend.
+The LAN launcher starts backend and frontend in separate windows, prints a phone URL such as `http://192.168.x.x:5173`, sets the frontend API base to the detected computer IP, enables a per-session API token, and checks backend health before launching the frontend.
 
 Prerequisites:
 
@@ -109,6 +109,7 @@ Prerequisites:
 - Allow Windows Firewall access on **Private networks** if prompted.
 - Use the printed LAN URL on the phone, not `localhost`.
 - Keep both new PowerShell windows open while testing.
+- The launcher automatically generates `IVFITTER_API_TOKEN` and passes the same value to the frontend as `VITE_IVFITTER_API_TOKEN`; do not mix a frontend window from an old launcher session with a backend window from a new session.
 
 Troubleshooting `TypeError: Failed to fetch`:
 
@@ -116,7 +117,7 @@ Troubleshooting `TypeError: Failed to fetch`:
 2. On the phone, open `http://<computer-LAN-IP>:8000/api/health`. If this fails but the computer health URL works, Windows Firewall or the Wi-Fi network is blocking the backend.
 3. If the script lists multiple IPv4 addresses, the first one may be a VPN/virtual adapter. Disconnect VPN/virtual adapters or use a phone hotspot and rerun the script.
 
-University or company Wi-Fi may block device-to-device access; a phone hotspot is usually the simplest fallback. This is a local development/testing helper only. It is not a public deployment mode.
+University or company Wi-Fi may block device-to-device access; a phone hotspot is usually the simplest fallback. This is a local development/testing helper only. It is not a public deployment mode. If manually exposing the backend beyond localhost, set `IVFITTER_API_TOKEN` and keep `IVFITTER_CORS_ORIGINS` limited to the intended frontend origins.
 
 ## Validation Commands
 

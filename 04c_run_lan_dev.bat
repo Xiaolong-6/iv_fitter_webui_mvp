@@ -79,8 +79,16 @@ if errorlevel 10 (
 
 set "LAN_ORIGINS=http://%LAN_IP%:5173,http://127.0.0.1:5173,http://localhost:5173"
 
+if "%IVFITTER_API_TOKEN%"=="" (
+  for /f "usebackq delims=" %%T in (`powershell -NoProfile -Command "[guid]::NewGuid().ToString('N')"`) do set "IVFITTER_API_TOKEN=%%T"
+)
+
+echo LAN API token is enabled for this launcher session.
+echo The frontend receives it automatically; keep these launched windows together.
+echo.
+
 echo Starting backend window...
-start "IV-fitter backend LAN" powershell.exe -NoExit -ExecutionPolicy Bypass -Command "Set-Location -LiteralPath '%~dp0'; $env:IVFITTER_CORS_ORIGINS='%LAN_ORIGINS%'; .\.venv\Scripts\python.exe -m uvicorn ivfitter.api.main:app --app-dir '.\backend' --host 0.0.0.0 --port 8000"
+start "IV-fitter backend LAN" powershell.exe -NoExit -ExecutionPolicy Bypass -Command "Set-Location -LiteralPath '%~dp0'; $env:IVFITTER_CORS_ORIGINS='%LAN_ORIGINS%'; $env:IVFITTER_API_TOKEN='%IVFITTER_API_TOKEN%'; .\.venv\Scripts\python.exe -m uvicorn ivfitter.api.main:app --app-dir '.\backend' --host 0.0.0.0 --port 8000"
 
 echo Waiting for backend health check...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$ok=$false; foreach ($i in 1..30) { try { $r=Invoke-RestMethod -Uri 'http://127.0.0.1:8000/api/health' -TimeoutSec 2; if ($r.status -eq 'ok') { $ok=$true; break } } catch {}; Start-Sleep -Seconds 1 }; if ($ok) { exit 0 } else { exit 1 }"
@@ -101,7 +109,7 @@ if errorlevel 1 (
 echo Backend health check passed.
 echo.
 echo Starting frontend window...
-start "IV-fitter frontend LAN" powershell.exe -NoExit -ExecutionPolicy Bypass -Command "Set-Location -LiteralPath '%~dp0'; $env:VITE_API_BASE='http://%LAN_IP%:8000'; npm run dev -- --host 0.0.0.0 --port 5173 --strictPort"
+start "IV-fitter frontend LAN" powershell.exe -NoExit -ExecutionPolicy Bypass -Command "Set-Location -LiteralPath '%~dp0'; $env:VITE_API_BASE='http://%LAN_IP%:8000'; $env:VITE_IVFITTER_API_TOKEN='%IVFITTER_API_TOKEN%'; npm run dev -- --host 0.0.0.0 --port 5173 --strictPort"
 
 echo.
 echo == LAN launcher is ready ==

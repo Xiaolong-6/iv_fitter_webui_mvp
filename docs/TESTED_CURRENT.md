@@ -1,3 +1,26 @@
+## v1.5.10 local API and diagnostics hardening check
+
+Scope: address the audit hardening items that are low-risk for the current desktop/LAN workflow. The default localhost app remains frictionless, while LAN mode can protect API routes with a simple shared token. Unexpected internal errors are now logged server-side and shown to the frontend as a generic 500 unless `IVFITTER_DEBUG_ERRORS=1` is set. Local file-dialog import no longer returns an absolute path as a display label.
+
+Expected behavior:
+
+- Normal local dev without `IVFITTER_API_TOKEN` continues to work without login or headers.
+- When `IVFITTER_API_TOKEN` is set, `/api/component-registry` and other non-health API routes require `X-IVFITTER-API-Key`; `/api/health` and `/api/version` remain open for diagnostics.
+- `04c_run_lan_dev.bat` generates one per-session token and passes it to both backend and frontend.
+- `open-import-file-dialog` returns `selected_name` and a basename-only `selected_path` compatibility label, not the host absolute path.
+- Unexpected backend exceptions return `Internal server error. See backend log for details.` by default.
+- `softplus()` handles extreme negative inputs without emitting the previous logaddexp warning.
+
+Validation run in this handoff:
+
+```bash
+PYTHONPATH=backend python -m pytest backend/tests -q
+python -m compileall -q backend/ivfitter backend/tests
+cd frontend && npm install && npm run build
+```
+
+Result: backend tests and frontend production build passed locally in the artifact container.
+
 ## v1.5.9 compact Fit setup diagnostics check
 
 Scope: reduce the crowded bottom-docked Fit setup status area after v1.5.8 without moving the dock. The default footer now shows one compact summary row and one short primary message; long gate-failure text, fit-process metrics, and warning diagnostics are available only inside the collapsed Details / diagnostics drawer.

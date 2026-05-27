@@ -1,8 +1,13 @@
 """FastAPI application for the greenfield IV-fitter backend."""
 
 from __future__ import annotations
+import logging
+import ntpath
 import os
-from fastapi import FastAPI, HTTPException
+from typing import NoReturn
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ValidationError
 
@@ -22,12 +27,50 @@ from ivfitter.io.export_result import fit_result_json_text, parameter_csv_text
 
 
 app = FastAPI(title="IV-fitter Web Backend", version=__version__)
+LOGGER = logging.getLogger(__name__)
+
 
 def _cors_origins() -> list[str]:
     raw = os.getenv("IVFITTER_CORS_ORIGINS", "http://127.0.0.1:5173,http://localhost:5173")
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
 app.add_middleware(CORSMiddleware, allow_origins=_cors_origins(), allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
+def _api_token() -> str | None:
+    token = os.getenv("IVFITTER_API_TOKEN", "").strip()
+    return token or None
+
+
+def _debug_errors_enabled() -> bool:
+    return os.getenv("IVFITTER_DEBUG_ERRORS", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _raise_internal_error(exc: Exception, context: str) -> NoReturn:
+    LOGGER.exception("%s", context)
+    detail = str(exc) if _debug_errors_enabled() else "Internal server error. See backend log for details."
+    raise HTTPException(status_code=500, detail=detail) from exc
+
+
+def _public_selected_name(path: str) -> str:
+    # Handle both native paths and Windows paths when tests run on POSIX.
+    return ntpath.basename(os.path.basename(path))
+
+
+@app.middleware("http")
+async def require_api_token_when_configured(request: Request, call_next):
+    """Require a simple API token only when IVFITTER_API_TOKEN is configured.
+
+    The default desktop workflow remains frictionless on localhost. LAN/dev
+    launchers can set IVFITTER_API_TOKEN and the frontend sends the same value
+    as X-IVFITTER-API-Key. Health/version remain open for diagnostics.
+    """
+    token = _api_token()
+    if token and request.method.upper() != "OPTIONS" and request.url.path not in {"/api/health", "/api/version"}:
+        supplied = request.headers.get("X-IVFITTER-API-Key", "")
+        if supplied != token:
+            return JSONResponse(status_code=401, content={"detail": "Missing or invalid IV-fitter API token."})
+    return await call_next(request)
+
 
 MAX_IMPORT_TEXT_CHARS = int(os.getenv("IVFITTER_MAX_IMPORT_TEXT_CHARS", "5000000"))
 MAX_FIT_POINTS = int(os.getenv("IVFITTER_MAX_FIT_POINTS", "50000"))
@@ -82,7 +125,7 @@ def suggest_bounds_endpoint(request: BoundsSuggestionRequest) -> BoundsSuggestio
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        _raise_internal_error(exc, "Unhandled API error")
 
 @app.post("/api/generate-synthetic-trace", response_model=SyntheticTraceResult)
 def generate_synthetic_trace_endpoint(request: SyntheticTraceRequest) -> SyntheticTraceResult:
@@ -101,7 +144,7 @@ def generate_synthetic_trace_endpoint(request: SyntheticTraceRequest) -> Synthet
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        _raise_internal_error(exc, "Unhandled API error")
 
 @app.post("/api/fit")
 def fit(request: FitRequest):
@@ -112,7 +155,7 @@ def fit(request: FitRequest):
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        _raise_internal_error(exc, "Unhandled API error")
 
 @app.post("/api/export-report", response_model=ReportResponse)
 def export_report(result: FitResult) -> ReportResponse:
@@ -130,6 +173,7 @@ class OpenImportFileDialogResponse(BaseModel):
     canceled: bool = False
     traces: list[object] = []
     selected_path: str | None = None
+    selected_name: str | None = None
     default_dir: str | None = None
     summary: str | None = None
     warnings: list[str] = []
@@ -160,7 +204,7 @@ def import_csv_text_endpoint(payload: ImportCsvTextRequest):
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        _raise_internal_error(exc, "Unhandled API error")
 
 @app.post("/api/import-csv-text-multi")
 def import_csv_text_multi_endpoint(payload: ImportCsvTextRequest):
@@ -171,7 +215,7 @@ def import_csv_text_multi_endpoint(payload: ImportCsvTextRequest):
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        _raise_internal_error(exc, "Unhandled API error")
 
 @app.post("/api/open-import-file-dialog", response_model=OpenImportFileDialogResponse)
 def open_import_file_dialog() -> OpenImportFileDialogResponse:
@@ -217,9 +261,11 @@ def open_import_file_dialog() -> OpenImportFileDialogResponse:
             text = handle.read()
         _check_import_size(text)
         imported = _multi_import_response(import_csv_text_multi(ImportCsvTextRequest(text=text, trace_id=os.path.basename(path))))
+        selected_name = _public_selected_name(path)
         return OpenImportFileDialogResponse(
             traces=imported["traces"],
-            selected_path=path,
+            selected_path=selected_name,
+            selected_name=selected_name,
             default_dir=str(default_dir) if default_dir else None,
             summary=imported.get("summary"),
             warnings=imported.get("warnings", []),
@@ -227,7 +273,7 @@ def open_import_file_dialog() -> OpenImportFileDialogResponse:
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        _raise_internal_error(exc, "Unhandled API error")
 
 @app.post("/api/export-result-json", response_model=TextResponse)
 def export_result_json(result: FitResult) -> TextResponse:

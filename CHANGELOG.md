@@ -1,3 +1,15 @@
+# v1.5.10 - Local API and diagnostics hardening
+
+- Added optional API-token protection for `/api/*` routes when `IVFITTER_API_TOKEN` is configured; `/api/health` and `/api/version` remain open for diagnostics.
+- Updated the LAN launcher to generate and pass a per-session API token to both backend and frontend.
+- Stopped exposing absolute selected import paths to the frontend; `open-import-file-dialog` now returns a basename display label and `selected_name`.
+- Sanitized unexpected HTTP 500 responses by default while preserving full traceback logging server-side; `IVFITTER_DEBUG_ERRORS=1` restores verbose exception details for development.
+- Guarded backend `softplus()` for extreme negative inputs without emitting non-actionable NumPy warnings.
+- Added backend regression tests for optional API token enforcement, sanitized errors, public import filenames, and softplus warning behavior.
+- Bumped version metadata to v1.5.10.
+
+Tests: `PYTHONPATH=backend python -m pytest backend/tests -q`, `python -m compileall -q backend/ivfitter backend/tests`, `cd frontend && npm install && npm run build`
+
 # v1.5.9 - Compact Fit setup diagnostics
 
 - Kept the Fit setup card bottom-docked, but reduced its default status density to a one-line summary plus one short primary message.

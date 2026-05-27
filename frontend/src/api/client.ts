@@ -15,15 +15,26 @@ function resolveApiBase(): string {
 }
 
 const API_BASE = resolveApiBase();
+const API_TOKEN = (import.meta.env.VITE_IVFITTER_API_TOKEN || "").trim();
+
+function jsonHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (API_TOKEN) headers["X-IVFITTER-API-Key"] = API_TOKEN;
+  return headers;
+}
+
+function getHeaders(): Record<string, string> {
+  return API_TOKEN ? { "X-IVFITTER-API-Key": API_TOKEN } : {};
+}
 
 async function postJson<T>(path: string, payload: unknown, init?: { signal?: AbortSignal }): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: init?.signal });
+  const response = await fetch(`${API_BASE}${path}`, { method: "POST", headers: jsonHeaders(), body: JSON.stringify(payload), signal: init?.signal });
   if (!response.ok) throw new Error(await response.text());
   return response.json();
 }
 
 export async function getRegistry(): Promise<FunctionDefinition[]> {
-  const response = await fetch(`${API_BASE}/api/component-registry`);
+  const response = await fetch(`${API_BASE}/api/component-registry`, { headers: getHeaders() });
   if (!response.ok) throw new Error(await response.text());
   return response.json();
 }
@@ -54,7 +65,8 @@ export interface ImportCsvTextMultiResponse {
 
 export interface OpenImportFileDialogResponse extends ImportCsvTextMultiResponse {
   canceled: boolean;
-  selected_path?: string | null;
+  selected_path?: string | null; // Backward-compatible display label only; backend no longer returns absolute paths.
+  selected_name?: string | null;
   default_dir?: string | null;
 }
 

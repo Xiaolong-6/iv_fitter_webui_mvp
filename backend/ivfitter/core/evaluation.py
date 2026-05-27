@@ -37,7 +37,11 @@ def bias_activation(v: np.ndarray, polarity: str | None) -> np.ndarray:
 
 
 def softplus(x: np.ndarray) -> np.ndarray:
-    return np.logaddexp(0.0, np.asarray(x, dtype=float))
+    arr = np.asarray(x, dtype=float)
+    out = np.zeros_like(arr, dtype=float)
+    mask = arr >= -500.0
+    out[mask] = np.logaddexp(0.0, arr[mask])
+    return out
 
 
 def thermal_voltage(temperature_K: float) -> float:
