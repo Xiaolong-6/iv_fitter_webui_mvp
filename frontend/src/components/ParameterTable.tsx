@@ -1,6 +1,6 @@
 import { Fragment, useState } from "react";
 import type { ComponentSpec, FitResult, FunctionDefinition, Location, ModelSpec, ParameterSpec } from "../model/types";
-import { fmtBounds } from "../model/format";
+import { fmtBounds, formatValueWithUnit, parameterFitStatus } from "../model/format";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { parameterMeaning, parameterShortAssessment } from "../model/diagnostics";
@@ -16,13 +16,8 @@ import {
   type ComponentParameterGroup,
 } from "../model/parameterGrouping";
 
-function formatParameterNumber(v: number | undefined | null) {
-  if (v === undefined || v === null) return "";
-  if (!Number.isFinite(v)) return String(v);
-  const abs = Math.abs(v);
-  if (v === 0) return "0";
-  if (abs < 1e-3 || abs >= 1e4) return v.toExponential(3);
-  return Number(v.toPrecision(6)).toString();
+function formatParameterNumber(v: number | undefined | null, unit?: string | null) {
+  return formatValueWithUnit(v, unit, 4); // uses 4 significant digits, equivalent to toExponential(3) for scientific notation when abs < 1e-3 || abs >= 1e4
 }
 
 function num(v: number | undefined | null) {
@@ -180,6 +175,7 @@ export function ParameterTable({
             <th>{t(language, "parameter")}</th>
             <th>{parameterText("initial", language)}</th>
             <th>{parameterText("fitted", language)}</th>
+            <th>{language === "zh" ? "状态" : "Status"}</th>
             <th>{t(language, "stdErr")}</th>
             <th>{parameterText("lower", language)}</th>
             <th>{parameterText("upper", language)}</th>
@@ -188,7 +184,7 @@ export function ParameterTable({
           </tr></thead>
           <tbody>{placement.groups.flatMap((group) => {
             const header = <tr className="parameter-component-divider" key={`${group.component.id}-header`}>
-              <td colSpan={6}>
+              <td colSpan={7}>
                 <div className="parameter-component-title">
                   <strong>{nickname(group.component)}</strong>
                   <span>{componentSummary(group.component, language)}</span>
@@ -216,17 +212,18 @@ export function ParameterTable({
               <tr className="parameter-summary-row">
                 <td title={key} onClick={() => setOpenKey(open ? null : key)}>{labelForModelParameter(model, comp.id, paramName)}</td>
                 <td><DraftNumberInput disabled={disabled} value={spec.value} title={parameterText("initialTitle", language)} onCommit={(value) => { if (value !== null) onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { value }), comp.id, paramName, "initial")); }} /></td>
-                <td title={fitted ? String(fitted.value) : ""}>{fitted ? `${formatParameterNumber(fitted.value)} ${fitted.unit ?? spec.unit ?? ""}` : "-"}</td>
-                <td className="desktop-detail" title={fitted?.stderr === null || fitted?.stderr === undefined ? "" : String(fitted.stderr)}>{fitted?.stderr === null || fitted?.stderr === undefined ? "-" : formatParameterNumber(fitted.stderr)}</td>
+                <td title={fitted ? String(fitted.value) : ""}>{fitted ? formatParameterNumber(fitted.value, fitted.unit ?? spec.unit) : "-"}</td>
+                <td><span className="parameter-status-pill">{fitted ? parameterFitStatus(fitted.value, fitted.lower, fitted.upper, fitted.stderr, fitted.fixed) : (spec.fit ?? true ? "free" : "fixed")}</span></td>
+                <td className="desktop-detail" title={fitted?.stderr === null || fitted?.stderr === undefined ? "" : String(fitted.stderr)}>{fitted?.stderr === null || fitted?.stderr === undefined ? "-" : formatParameterNumber(fitted.stderr, fitted.unit ?? spec.unit)}</td>
                 <td><DraftNumberInput disabled={disabled} value={spec.lower} placeholder="-" title={`${parameterText("lowerTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`} onCommit={(value) => onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { lower: value }), comp.id, paramName, "bounds"))} /></td>
                 <td><DraftNumberInput disabled={disabled} value={spec.upper} placeholder="-" title={`${parameterText("upperTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`} onCommit={(value) => onModelChange(markParameterUserEdited(updateParameter(model, location, comp.id, paramName, { upper: value }), comp.id, paramName, "bounds"))} /></td>
                 <td><label className="parameter-fit-toggle"><input type="checkbox" disabled={disabled} checked={spec.fit ?? true} onChange={(e) => onModelChange(updateParameter(model, location, comp.id, paramName, { fit: e.target.checked }))} /> {spec.fit ?? true ? t(language, "fitState") : t(language, "fixed")}</label></td>
                 <td className="parameter-meaning desktop-detail" title={informationTitle}>{information}</td>
               </tr>
               <tr className={open ? "parameter-mobile-detail open" : "parameter-mobile-detail"}>
-                <td colSpan={8}>
+                <td colSpan={9}>
                   <div title={boundsSourceTitle(model, comp.id, paramName, language)}><strong>{parameterText("currentBounds", language)}:</strong> {fmtBounds(spec.lower, spec.upper)}</div>
-                  <div><strong>{t(language, "stdErr")}:</strong> {fitted?.stderr === null || fitted?.stderr === undefined ? "-" : formatParameterNumber(fitted.stderr)}</div>
+                  <div><strong>{t(language, "stdErr")}:</strong> {fitted?.stderr === null || fitted?.stderr === undefined ? "-" : formatParameterNumber(fitted.stderr, fitted.unit ?? spec.unit)}</div>
                   {dataBoundsReport ? <DataBoundsDetail detail={dataBoundsDetail} /> : <p title={meaning}>{short}</p>}
                 </td>
               </tr>

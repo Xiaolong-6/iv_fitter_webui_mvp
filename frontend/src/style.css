@@ -2717,3 +2717,23 @@ button.fit-action-unavailable:disabled {
     white-space: normal;
   }
 }
+
+.parameter-status-pill {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: var(--muted-text);
+  background: var(--surface-muted);
+  white-space: nowrap;
+}
+
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}

@@ -12,7 +12,10 @@ import type {
 } from "../model/types";
 import {
   equations,
+  exportDiagnosticsJson,
+  exportParametersCsv,
   exportReport,
+  exportReportCsv,
   fitTrace,
   getRegistry,
   suggestBounds,
@@ -169,6 +172,10 @@ function WorkspaceView(props: {
   registry: FunctionDefinition[];
   result: FitResult | null;
   report: string;
+  reportMessage: string;
+  onExportReportCsv: () => void;
+  onExportParametersCsv: () => void;
+  onExportDiagnosticsJson: () => void;
   equationSummary: EquationSummary | null;
   language: Language;
   openSections: Record<string, boolean>;
@@ -386,6 +393,12 @@ function WorkspaceView(props: {
         {props.report && (
           <section className="card report-card">
             <h2>{t(props.language, "markdownReport")}</h2>
+            <div className="report-actions">
+              <button type="button" onClick={props.onExportReportCsv}>{props.language === "zh" ? "下载完整 CSV 报告" : "Download report CSV"}</button>
+              <button type="button" onClick={props.onExportParametersCsv}>{props.language === "zh" ? "下载参数 CSV" : "Download parameter CSV"}</button>
+              <button type="button" onClick={props.onExportDiagnosticsJson}>{props.language === "zh" ? "下载 diagnostics JSON" : "Download diagnostics JSON"}</button>
+            </div>
+            {props.reportMessage ? <p className="muted">{props.reportMessage}</p> : null}
             <textarea readOnly value={props.report} rows={12} />
           </section>
         )}
@@ -525,6 +538,7 @@ export function FittingPage() {
   const activeFitRunIdRef = useRef<number | null>(null);
   const cancelledFitRunIdsRef = useRef(new Set<number>());
   const [report, setReport] = useState<string>("");
+  const [reportMessage, setReportMessage] = useState<string>("");
   const [equationSummary, setEquationSummary] =
     useState<EquationSummary | null>(null);
   const [zoom, setZoom] = useState(0.92);
@@ -659,6 +673,7 @@ export function FittingPage() {
       const applied = applyDataBoundsSuggestions(model, registry, response);
       setModel(applied.model);
       setReport("");
+              setReportMessage("");
       setDataBoundsReport(applied.report);
       setOpenSections((current) => ({ ...current, parameters: true }));
     } catch (e) {
@@ -680,6 +695,7 @@ export function FittingPage() {
     setFitPromotionNotice(null);
     setResult(null);
     setReport("");
+              setReportMessage("");
     setDataBoundsReport(null);
     setDismissedWarningKey("");
     setActiveView("workspace");
@@ -839,7 +855,49 @@ export function FittingPage() {
     if (!result) return;
     const r = await exportReport(result);
     setReport(r.markdown);
+    setReportMessage(language === "zh" ? "报告已生成。可下载完整 CSV、参数 CSV 或 diagnostics JSON。" : "Report generated. You can download the full CSV, parameter CSV, or diagnostics JSON.");
     setActiveView("workspace");
+  }
+
+  function safeFilePart(value: string | null | undefined) {
+    return (value || "trace").replace(/[^a-zA-Z0-9._-]+/g, "_").replace(/^_+|_+$/g, "") || "trace";
+  }
+
+  function downloadText(filename: string, text: string, mimeType: string) {
+    const blob = new Blob([text], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setReportMessage(`${language === "zh" ? "已导出" : "Exported"}: ${filename}`);
+  }
+
+  function reportBaseName(suffix: string) {
+    const trace = safeFilePart(selectedTrace.trace_id || String(selectedTrace.metadata?.trace_name ?? "trace"));
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    return `ivfit_${trace}_${stamp}_${suffix}`;
+  }
+
+  async function downloadReportCsv() {
+    if (!result) return;
+    const r = await exportReportCsv(result);
+    downloadText(reportBaseName("report.csv"), r.text, "text/csv;charset=utf-8");
+  }
+
+  async function downloadParametersCsv() {
+    if (!result) return;
+    const r = await exportParametersCsv(result);
+    downloadText(reportBaseName("parameters.csv"), r.text, "text/csv;charset=utf-8");
+  }
+
+  async function downloadDiagnosticsJson() {
+    if (!result) return;
+    const r = await exportDiagnosticsJson(result);
+    downloadText(reportBaseName("diagnostics.json"), r.text, "application/json;charset=utf-8");
   }
   function openAndScroll(sectionId: string) {
     setActiveView("workspace");
@@ -900,12 +958,14 @@ export function FittingPage() {
               setTraces(next);
               setResult(null);
               setReport("");
+              setReportMessage("");
               setDataBoundsReport(null);
             }}
             onSelectTrace={(id) => {
               setSelectedTraceId(id);
               setResult(null);
               setReport("");
+              setReportMessage("");
               setDataBoundsReport(null);
               setNoTraceRunAttempted(false);
             }}
@@ -921,6 +981,7 @@ export function FittingPage() {
               setTraces(next);
               setResult(null);
               setReport("");
+              setReportMessage("");
               setDataBoundsReport(null);
               setNoTraceRunAttempted(false);
             }}
@@ -928,6 +989,7 @@ export function FittingPage() {
               setSelectedTraceId(id);
               setResult(null);
               setReport("");
+              setReportMessage("");
               setDataBoundsReport(null);
               setNoTraceRunAttempted(false);
             }}
@@ -937,11 +999,13 @@ export function FittingPage() {
               setPreFitInitialModel(null);
               setResult(null);
               setReport("");
+              setReportMessage("");
               setDataBoundsReport(null);
             }}
             updateParameterModel={(next) => {
               setModel(next);
               setReport("");
+              setReportMessage("");
               setDataBoundsReport(null);
             }}
             canRestoreInitialValues={preFitInitialModel !== null}
@@ -961,6 +1025,10 @@ export function FittingPage() {
             registry={registry}
             result={result}
             report={report}
+            reportMessage={reportMessage}
+            onExportReportCsv={downloadReportCsv}
+            onExportParametersCsv={downloadParametersCsv}
+            onExportDiagnosticsJson={downloadDiagnosticsJson}
             equationSummary={equationSummary}
             language={language}
             openSections={openSections}

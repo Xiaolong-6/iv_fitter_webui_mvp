@@ -43,6 +43,9 @@ export async function equations(model: ModelSpec, signal?: AbortSignal): Promise
 export async function fitTrace(trace: TraceData, model: ModelSpec, config: FitConfig, signal?: AbortSignal): Promise<FitResult> { return postJson("/api/fit", { trace, model, config }, { signal }); }
 export async function suggestBounds(trace: TraceData, model: ModelSpec, config: FitConfig, signal?: AbortSignal): Promise<BoundsSuggestionResponse> { return postJson("/api/suggest-bounds", { trace, model, config }, { signal }); }
 export async function exportReport(result: FitResult): Promise<{ markdown: string }> { return postJson("/api/export-report", result); }
+export async function exportReportCsv(result: FitResult): Promise<{ text: string }> { return postJson("/api/export-report-csv", result); }
+export async function exportDiagnosticsJson(result: FitResult): Promise<{ text: string }> { return postJson("/api/export-diagnostics-json", result); }
+export async function exportParametersCsv(result: FitResult): Promise<{ text: string }> { return postJson("/api/export-parameters-csv", result); }
 
 export interface ImportQualitySummary {
   rows_in_file: number;

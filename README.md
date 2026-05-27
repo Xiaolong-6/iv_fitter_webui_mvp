@@ -184,3 +184,7 @@ The Data page **Load sample data** button loads an anonymized HappyMeasure combi
 The sample preserves the multi-trace row count and voltage/current data needed to test importer behavior, while removing sample identifiers, timestamps, port names, and trace fingerprints.
 
 User-facing demo IV traces live under `examples/demo_data/iv_traces/`. In the local app, Import CSV/TXT opens that folder by default when the runtime supports local OS file dialogs; users can still browse anywhere.
+
+### v1.5.15 reporting polish
+
+Fit results now use more consistent parameter formatting in the Parameters table and provide three export paths after generating a report: a sectioned report CSV, a parameter-only CSV, and a structured diagnostics JSON document. The CSV is intended for spreadsheet review; the JSON is intended for reproducibility, batch comparison, and downstream analysis.

@@ -1,3 +1,19 @@
+# Tested current version
+
+Version: v1.5.15
+
+Validated in this package:
+
+- Backend pytest suite.
+- Backend compileall.
+- Frontend production build.
+- Report export regression tests for parameter CSV, sectioned report CSV, and diagnostics JSON.
+
+Key change: parameter display and report exports are now more reviewable and reproducible.
+
+
+---
+
 ## v1.5.14 fit lifecycle hardening check
 
 Validated on this package after applying the fit-run lifecycle guard.
