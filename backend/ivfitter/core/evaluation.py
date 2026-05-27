@@ -12,7 +12,7 @@ from scipy.optimize import brentq
 
 from ivfitter.components.custom import evaluate_custom_expression
 from ivfitter.components.diode import diode_current
-from ivfitter.components.common import thermal_voltage
+from ivfitter.components.common import softplus, thermal_voltage
 from ivfitter.components.parallel import power_law_current, shunt_current, soft_breakdown_current
 from ivfitter.components.series import apply_conductance_boost, softplus_conductance_boost
 from .component_aliases import BIAS_DEPENDENT_CURRENT_TYPES
@@ -33,13 +33,6 @@ def bias_activation(v: np.ndarray, polarity: str | None) -> np.ndarray:
         return (np.asarray(v, dtype=float) <= 0.0).astype(float)
     return np.ones_like(np.asarray(v, dtype=float), dtype=float)
 
-
-def softplus(x: np.ndarray) -> np.ndarray:
-    arr = np.asarray(x, dtype=float)
-    out = np.zeros_like(arr, dtype=float)
-    mask = arr >= -500.0
-    out[mask] = np.logaddexp(0.0, arr[mask])
-    return out
 
 
 def diode_polarity_sign(polarity: str | None) -> float:

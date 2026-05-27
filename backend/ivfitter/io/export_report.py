@@ -32,7 +32,7 @@ def fit_result_markdown(result: FitResult) -> str:
         lines.append(f"- Optimizer status: `{d.optimizer_status}` — {d.optimizer_message or '—'}")
         if d.active_bounds:
             lines.append(f"- Active bounds: `{', '.join(d.active_bounds)}`")
-        lines.append("- Note: weighted reduced chi-square is statistically strict only when residual weights represent measurement uncertainty; otherwise it is a residual-scale diagnostic.")
+        lines.append("- Note: relative weighted reduced chi-square is statistically strict only when residual weights represent measurement uncertainty; otherwise it is a residual-scale diagnostic.")
         lines.append("")
     lines.append("## Warnings")
     if result.warnings:

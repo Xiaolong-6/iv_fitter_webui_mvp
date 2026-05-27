@@ -1,3 +1,11 @@
+## v1.5.29 — audit principles and validation polish
+
+- Added a durable agent/developer principles document distilled from repeated commit-history fixes: scientific contract stability, independent scroll containment, parameter provenance, action hierarchy, report auditability, Law/Form/Placement vocabulary, and validation/documentation discipline.
+- Updated the current agent handoff and README version labels to match the package version.
+- Removed the duplicate local softplus implementation from `core/evaluation.py`; model evaluation now imports the shared stable helper from `components/common.py`.
+- Added a model-validation warning when photocurrent/bias-dependent current components omit explicit `direction_sign`, so imported or hand-edited models do not rely silently on the default current direction.
+- Tightened fit-process copy to label the reduced χ²-like metric as relative/weighting-dependent while preserving existing metric keys and report schema.
+
 ## v1.5.28 — fit/report UI stabilization
 
 - Tighten Data page layout and plot-review containment to reduce blank/overgrown import panels.

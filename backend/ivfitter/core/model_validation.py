@@ -76,7 +76,13 @@ def validate_component_against_registry(comp: ComponentSpec) -> list[FitWarning]
         warnings.append(_warn("unsupported_polarity", f"{comp.id}: {comp.function_type} does not use polarity; remove stored polarity {comp.polarity!r}.", "error"))
     expected = {p.name for p in definition.parameters}
     missing = expected - set(comp.params)
+    direction_controlled_current = comp.function_type == "photocurrent_constant" or comp.function_type in BIAS_DEPENDENT_CURRENT_TYPES
     for name in sorted(missing):
+        if direction_controlled_current and name == "direction_sign":
+            # ``direction_sign`` has a legacy evaluator default of -1. Keep old
+            # imported/hand-edited models usable, but make the implicit sign
+            # visible as a warning below.
+            continue
         warnings.append(_warn("missing_parameter", f"{comp.id}: missing parameter {name}.", "error"))
     for name, spec in comp.params.items():
         if not isfinite(float(spec.value)):
@@ -95,7 +101,13 @@ def validate_component_against_registry(comp: ComponentSpec) -> list[FitWarning]
                     f"{comp.id}.{name} must be non-negative; use direction_sign/polarity to control current direction.",
                     "error",
                 ))
-        if "direction_sign" in comp.params and float(comp.params["direction_sign"].value) == 0.0:
+        if "direction_sign" not in comp.params:
+            warnings.append(_warn(
+                "missing_direction_sign",
+                f"{comp.id}.direction_sign is missing; the evaluator will use the default -1 direction. Add an explicit -1 or +1 sign so imported models do not rely on an implicit current direction.",
+                "warning",
+            ))
+        elif float(comp.params["direction_sign"].value) == 0.0:
             warnings.append(_warn(
                 "invalid_direction_sign",
                 f"{comp.id}.direction_sign must be either -1 or +1; 0 is invalid.",

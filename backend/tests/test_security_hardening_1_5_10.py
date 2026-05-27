@@ -61,5 +61,5 @@ def test_softplus_extreme_negative_values_do_not_warn():
         out = softplus(values)
     assert not caught
     assert out[0] == 0.0
-    assert out[1] == 0.0
+    assert 0.0 < out[1] < 1e-250
     assert np.all(np.isfinite(out))

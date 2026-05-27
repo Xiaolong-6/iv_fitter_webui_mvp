@@ -235,11 +235,11 @@ export function FitProcessDiagnostics({
       ? "拟合过程与质量指标"
       : "Fit process and quality metrics";
   const chiLabel =
-    language === "zh" ? "加权 reduced χ²" : "weighted reduced χ²";
+    language === "zh" ? "相对加权 reduced χ²" : "relative weighted reduced χ²";
   const chiHelp =
     language === "zh"
-      ? "这里的 reduced χ² 使用当前 residual weighting 计算。只有当权重是真实测量不确定度时，它才有严格统计意义；否则主要是残差尺度诊断。"
-      : "This reduced χ² is computed from the active weighted residuals. It is strictly statistical only when weights are true measurement uncertainties; otherwise it is a residual-scale diagnostic.";
+      ? "这里的 reduced χ²-like 指标使用当前 residual weighting 计算。只有当权重是真实测量不确定度时，它才有严格统计意义；否则主要是相对残差尺度诊断。"
+      : "This reduced χ²-like metric is computed from the active weighted residuals. It is strictly statistical only when weights are true measurement uncertainties; otherwise it is a relative residual-scale diagnostic.";
 
   return (
     <div className="fit-process-diagnostics" title={chiHelp}>

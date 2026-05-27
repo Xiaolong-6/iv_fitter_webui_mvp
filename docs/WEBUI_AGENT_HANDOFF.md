@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.5.19**.
+Current package: **v1.5.29**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -8,13 +8,25 @@ This file is the current handoff for future coding agents. It replaces old root-
 
 1. `PROJECT_RULES.md`
 2. `docs/DOCUMENTATION_INDEX.md`
-3. this file
-4. `README.md`
-5. `docs/TESTED_CURRENT.md`
+3. `docs/DEVELOPMENT_PRINCIPLES.md`
+4. this file
+5. `README.md`
+6. `docs/TESTED_CURRENT.md`
 
 ## Product purpose
 
 IV-fitter Web UI has one core job: help users import I-V data, build physically interpretable circuit models, fit traces, inspect residuals/warnings, and export defensible results. Do not add features that make this workflow slower, less reliable, or more confusing.
+
+
+## Durable engineering principles
+
+The recurring fixes in this repository have turned into operating rules. Read `docs/DEVELOPMENT_PRINCIPLES.md` before changing layout, fitting, parameters, reports, or model semantics. The highest-risk rules are:
+
+- Preserve scientific contracts before UI polish: do not silently change equations, optimizer behavior, parameter keys, backend APIs, saved-model compatibility, or report schemas.
+- Protect independent scroll regions: Model Builder, Model Preview / Equation Preview, Parameters, plots, and Report content must remain independently usable after layout changes.
+- Never silently overwrite user intent: user-edited bounds/initials/fixed-state choices must survive unrelated changes; automatic suggestions need visible provenance and rollback.
+- Use Law → Form → Placement vocabulary for models; do not collapse neutral mathematical components into device-specific labels.
+- Update changelog, tested-current notes, handoff/version metadata, and user/transparency docs for every meaningful change.
 
 ## Current architecture
 
@@ -79,7 +91,7 @@ After every change, provide a 3-step browser test that does not require reading 
 
 ## Current validation note
 
-- v1.5.19 validation is recorded in `docs/TESTED_CURRENT.md`.
+- v1.5.29 validation is recorded in `docs/TESTED_CURRENT.md`.
 - Current expected validation commands are backend pytest, backend compileall, frontend Vitest, and frontend production build.
 
 ## v1.4.35 Fit setup and Model Builder interaction note

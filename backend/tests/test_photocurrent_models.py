@@ -119,6 +119,17 @@ def test_direction_sign_zero_rejected():
     assert any(w.code == "invalid_direction_sign" and w.severity == "error" for w in warnings)
 
 
+def test_missing_direction_sign_warns_for_imported_photocurrent_models():
+    model = ModelSpec(parallel=[ComponentSpec(
+        id="Iph", location="parallel", function_type="photocurrent_constant",
+        law_id="photocurrent_constant", evaluation_form="current_branch", placement="parallel_current_branch",
+        params={"Iph0_A": p(1e-9)},
+    )])
+    warnings = validate_model_spec(model)
+    assert any(w.code == "missing_direction_sign" and w.severity == "warning" for w in warnings)
+    assert not any(w.severity == "error" for w in warnings)
+
+
 def test_photocurrent_dark_first_guidance_is_validation_warning():
     model = ModelSpec(parallel=[ComponentSpec(
         id="Iph", location="parallel", function_type="photocurrent_constant",

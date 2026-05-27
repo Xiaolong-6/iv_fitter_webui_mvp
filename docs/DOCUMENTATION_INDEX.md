@@ -34,6 +34,7 @@ This file is the stable entry point for IV-fitter Web UI documentation.
 ### Agent and maintenance docs
 
 - `PROJECT_RULES.md` — highest-priority project rules.
+- `docs/DEVELOPMENT_PRINCIPLES.md` — recurring engineering principles distilled from commit-history fixes and audit findings.
 - `docs/WEBUI_AGENT_HANDOFF.md` — current agent handoff; this replaces historical root-level `HANDOFF_*` files.
 - `docs/VALIDATION_HISTORY.md` — consolidated history of older `TESTED_*` files.
 - `docs/TESTED_CURRENT.md` — current package validation note.
