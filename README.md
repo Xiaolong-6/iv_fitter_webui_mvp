@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.5.19**
+Current version: **1.5.20**
 
 IV-fitter Web UI is a local-first browser app for fitting I-V traces with compact circuit models. It helps a user import voltage/current data, build a model from mathematical circuit terms, run a fit, inspect diagnostics, and export a result only after the residuals, warnings, parameters, and model structure make sense.
 
@@ -21,7 +21,7 @@ The app is a working prototype for the IV-fitter workflow. It is not yet a full 
 
 ## Current UI Areas
 
-- **Start here:** workflow overview, current project state, and quick navigation.
+- **Start here:** minimal welcome page with a concise workflow overview and compact current project state.
 - **Data:** CSV/TXT/DAT import, publication/demo multi-trace auto-detection, pasted-data import, synthetic trace generation, dataset naming, unit selection, trace selection, import-quality summary, and spreadsheet preview.
 - **Model:** Model Builder, equivalent-circuit component controls, and model/equation preview.
 - **Fitting:** Fit setup, Run/Stop/Report controls, plots, residuals, and grouped Parameters table.
@@ -195,6 +195,13 @@ User-facing demo IV traces live under `examples/demo_data/iv_traces/`. In the lo
 
 - Replaced the old Workspace-centered navigation with **Start here**, **Data**, **Model**, **Fitting**, **Report**, and **Help**.
 - Added a default Start here page with workflow guidance and quick navigation.
+
+### v1.5.20 minimal welcome page and Data plot review
+
+- Simplified the Start here page into a large title, short software description, and four-step workflow.
+- Removed duplicated Quick actions from the welcome page.
+- Added icons to sidebar navigation tabs.
+- Added Data-page Plot review by reusing the existing PlotWorkspace component.
 - Moved Model Builder and model preview to Model; moved Fit setup, plots, and parameters to Fitting; moved exports and full diagnostics to Report.
 - Added a compact global context bar and dock button icons.
 - Kept fit lifecycle, report export structure, backend API, saved models, and numerical behavior unchanged.

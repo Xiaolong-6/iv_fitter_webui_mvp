@@ -1,3 +1,12 @@
+# v1.5.20 - Minimal welcome page and Data plot review
+
+- Simplify the Start here page into a minimal hero, a four-step Data → Model → Fitting → Report workflow, and a compact current-state strip.
+- Remove duplicated quick-action buttons from the welcome page.
+- Add inline SVG icons to the workflow sidebar tabs.
+- Add a Plot review section to the Data page using the existing PlotWorkspace component for imported-trace review.
+- Preserve fitting behavior, backend APIs, report export structure, model semantics, and saved-model compatibility.
+- Updated version metadata to v1.5.20.
+
 # v1.5.19 - Workflow-centered UI shell
 
 - Replace Workspace-centered navigation with workflow pages: Start here, Data, Model, Fitting, Report, Help.

@@ -26,6 +26,7 @@ Use `docs/TESTED_CURRENT.md` for the exact commands and result status of the cur
 | 1.4.6–1.4.7 | User-facing Function Guide rewrite | Moved internal schema wording into Advanced details and added a regression check for default Function Guide wording. |
 | 1.4.8 | Documentation cleanup | Removed stale per-version handoff/tested files and consolidated documentation entry points. |
 | 1.5.18 | Bias-dependent current branch rename | Added canonical neutral naming and legacy alias coverage for the former voltage-dependent photocurrent component. |
+| 1.5.20 | Minimal welcome page and Data plot review | Simplified Start here, added sidebar icons, and added Data-page plot review using existing plot components. |
 | 1.5.19 | Workflow-centered UI shell | Replaced the Workspace-centered shell with Start here, Data, Model, Fitting, Report, and Help pages while preserving fitting behavior. |
 
 ## Policy for future validation docs

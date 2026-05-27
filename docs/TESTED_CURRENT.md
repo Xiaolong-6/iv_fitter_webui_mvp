@@ -1,15 +1,15 @@
 # Tested current version
 
-Version: v1.5.19
+Version: v1.5.20
 
 Validated in this package:
 
 - Backend pytest suite.
 - Backend compileall.
-- Frontend Vitest suite: pending local dependency repair.
-- Frontend production build: pending local dependency repair.
+- Frontend Vitest suite.
+- Frontend production build.
 
-Key change: the UI is reorganized around workflow pages: Start here, Data, Model, Fitting, Report, and Help. Existing Data import, Model Builder, Fit setup, plots, parameters, diagnostics, exports, and manual content are moved into task-specific pages. This is an information-architecture release only; fitting behavior, backend APIs, reports, saved models, and equations are unchanged.
+Key change: the Start here page is simplified into a minimal welcome hero plus a four-step workflow, sidebar tabs now use explicit icons, and the Data page gains a Plot review section that reuses the existing PlotWorkspace component. This is a UI polish release only; fitting behavior, backend APIs, reports, saved models, and equations are unchanged.
 
 Commands run:
 
@@ -25,14 +25,14 @@ Expected result:
 
 - Backend tests pass.
 - Backend package and tests compile.
-- Frontend unit tests pass when frontend dev dependencies are installed.
-- Frontend production build passes when frontend dev dependencies are installed.
+- Frontend unit tests pass.
+- Frontend production build passes.
 
-Local note: the backend pytest suite passes with the repository `.venv`. The default `python` and `py -3.12` interpreters on this machine do not currently have `pytest` installed. Frontend validation remains blocked because `frontend/node_modules` is incomplete (`vitest` has no generated `.bin` entry, and type packages such as `aria-query`, `chai`, and `deep-eql` are missing). A repair attempt with `npm install` timed out against the package registry.
+Validation note: `npm install` was run before frontend validation in this environment. `frontend/node_modules` and `frontend/dist` are intentionally not included in the packaged source archive.
 
 Manual checks recommended:
 
-1. Confirm the default page is Start here.
+1. Confirm the default page is Start here and uses the minimal hero/workflow layout without duplicated Quick actions.
 2. Navigate to Data, Model, Fitting, Report, and Help; state should persist while switching pages.
-3. Confirm Data renders import/preview, Model renders Model Builder and preview, Fitting renders Fit setup/plots/parameters, Report renders unavailable state before fitting plus export controls, and Help renders the manual.
+3. Confirm Data renders import/preview plus Plot review, Model renders Model Builder and preview, Fitting renders Fit setup/plots/parameters, Report renders unavailable state before fitting plus export controls, and Help renders the manual.
 4. Confirm Run fit, Stop fit, Report availability, compact status, and diagnostics behavior match the previous release.

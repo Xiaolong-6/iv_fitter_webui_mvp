@@ -4,6 +4,7 @@ import { generateSyntheticTrace, importCsvTextMulti, openImportFileDialog, type 
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { HelpTip } from "./HelpTip";
+import { PlotWorkspace } from "./PlotWorkspace";
 import { appendSyntheticTrace, validateSyntheticTraceForm, type SyntheticTraceFormState } from "../model/syntheticTrace";
 
 type ImportQuality = {
@@ -420,6 +421,20 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
           </table>
         </div>}
         {selected && selected.voltage_V.length > previewRows.length && <p className="muted">{t(language, "previewLimited")}</p>}
+      </section>
+
+      <section className="data-plot-review-card">
+        <div className="data-plot-review-head">
+          <h3>{language === "zh" ? "图形预览" : "Plot review"}</h3>
+          <p className="muted">{language === "zh" ? "用已有诊断绘图组件快速检查导入的 trace。残差图会在拟合后出现在 Fitting 页面。" : "Review the imported trace with the same plotting component used later in fitting. Residual plots appear after a completed fit."}</p>
+        </div>
+        <PlotWorkspace
+          traces={traces}
+          selectedTraceId={selectedTraceId}
+          onSelectTrace={onSelectTrace}
+          result={null}
+          language={language}
+        />
       </section>
     </div>
 

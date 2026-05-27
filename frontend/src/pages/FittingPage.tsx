@@ -211,41 +211,83 @@ function StartHerePage({
   isFitting: boolean;
   reportAvailable: boolean;
 }) {
-  const steps = [
-    ["Import data", "Load CSV/TXT data and choose the active trace.", "data", hasSelectedTrace ? "Loaded" : "Needed"],
-    ["Select trace", "Confirm the trace that will be fitted and exported.", "data", hasSelectedTrace ? "Selected" : "Needed"],
-    ["Build model", "Define the circuit model and inspect the equation preview.", "model", "Ready"],
-    ["Configure and run fit", "Set voltage range, objective, and run controls.", "fitting", isFitting ? "Running" : result ? "Run complete" : "Not run"],
-    ["Inspect residuals and parameters", "Review plots, fitted values, and warnings.", "fitting", result ? "Available" : "After fit"],
-    ["Export report", "Generate and download report artifacts after review.", "report", reportAvailable ? "Available" : "Unavailable"],
+  const workflowSteps = [
+    {
+      title: "Data",
+      text: "Import and choose a trace.",
+      view: "data",
+      status: hasSelectedTrace ? "Loaded" : "Needed",
+      icon: "data",
+    },
+    {
+      title: "Model",
+      text: "Build the circuit model.",
+      view: "model",
+      status: "Ready",
+      icon: "model",
+    },
+    {
+      title: "Fitting",
+      text: "Run and inspect the fit.",
+      view: "fitting",
+      status: isFitting ? "Running" : result ? "Complete" : "Not run",
+      icon: "fitting",
+    },
+    {
+      title: "Report",
+      text: "Review and export results.",
+      view: "report",
+      status: reportAvailable ? "Available" : "Unavailable",
+      icon: "report",
+    },
   ] as const;
+
   return (
-    <section className="workflow-page scroll-page start-page">
-      <div className="card welcome-card">
+    <section className="workflow-page scroll-page start-page start-page-minimal">
+      <header className="start-hero-minimal">
+        <div className="start-hero-kicker">Circuit-based I–V fitting</div>
         <h2>Welcome to IV-fitter</h2>
-        <p>IV-fitter fits semiconductor I-V curves using circuit-based nonlinear models, residual diagnostics, and reproducible reports.</p>
-      </div>
-      <div className="workflow-step-grid">
-        {steps.map(([title, text, view, status]) => (
-          <article className="workflow-step-card card" key={title}>
-            <span className="workflow-step-status">{status}</span>
-            <h3>{title}</h3>
-            <p>{text}</p>
-            <button type="button" onClick={() => setActiveView(view as AppView)}>
-              Go to {view === "data" ? "Data" : view === "model" ? "Model" : view === "fitting" ? "Fitting" : "Report"}
-            </button>
-          </article>
-        ))}
-      </div>
-      <div className="card quick-actions-card">
-        <h2>Quick actions</h2>
-        <div className="quick-action-row">
-          <button type="button" className="primary" onClick={() => setActiveView("data")}>Go to Data / Import CSV/TXT</button>
-          <button type="button" onClick={() => setActiveView("model")}>Go to Model</button>
-          <button type="button" onClick={() => setActiveView("fitting")}>Go to Fitting</button>
-          <button type="button" onClick={() => setActiveView("help")}>Open Help</button>
+        <p>Import I–V data, build a model, run the fit, and export a reproducible report.</p>
+        <div className="start-hero-actions">
+          <button type="button" className="primary" onClick={() => setActiveView("data")}>Start with data</button>
+          <button type="button" onClick={() => setActiveView("help")}>Open help</button>
         </div>
-      </div>
+      </header>
+
+      <section className="start-workflow-minimal" aria-label="IV-fitter workflow">
+        <div className="start-section-head">
+          <div>
+            <h3>Workflow</h3>
+            <p>Four pages, one fitting path.</p>
+          </div>
+          <span className="workflow-inline-path">Data → Model → Fitting → Report</span>
+        </div>
+        <div className="start-workflow-row">
+          {workflowSteps.map((step, index) => (
+            <div className="start-workflow-item-wrap" key={step.title}>
+              <button
+                type="button"
+                className="start-workflow-item"
+                onClick={() => setActiveView(step.view as AppView)}
+              >
+                <span className={`start-workflow-icon ${step.icon}`} aria-hidden="true" />
+                <span className="start-workflow-status">{step.status}</span>
+                <strong>{step.title}</strong>
+                <span>{step.text}</span>
+              </button>
+              {index < workflowSteps.length - 1 ? <span className="start-workflow-arrow" aria-hidden="true">→</span> : null}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="start-current-state-minimal" aria-label="Current project state">
+        <strong>Current state</strong>
+        <span>Trace: {hasSelectedTrace ? "loaded" : "no trace loaded"}</span>
+        <span>Model: Rs + D1 + Rsh</span>
+        <span>Fit: {isFitting ? "running" : result ? "complete" : "not run"}</span>
+        <span>Report: {reportAvailable ? "available" : "unavailable"}</span>
+      </section>
     </section>
   );
 }

@@ -24,7 +24,7 @@ The v1.5.16 frontend test foundation covers:
 - Model Builder bucket/filter/duplicate rules,
 - representative i18n key availability.
 
-The v1.5.19 workflow shell also has source-level regression checks for the new Start here / Data / Model / Fitting / Report / Help navigation and page structure. When adding or moving major page content, update those checks and add focused Vitest coverage once local frontend dependencies are available.
+The v1.5.20 workflow shell also has source-level regression checks for the new Start here / Data / Model / Fitting / Report / Help navigation and page structure. When adding or moving major page content, update those checks and add focused Vitest coverage once local frontend dependencies are available.
 
 ## Test policy
 
