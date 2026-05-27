@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import type {
+  CSSProperties,
+  PointerEvent as ReactPointerEvent,
+  ReactNode,
+} from "react";
 import type {
   ComponentSpec,
   EquationSummary,
@@ -46,13 +50,28 @@ import {
 } from "../components/FitStatusBar";
 import { ParameterTable } from "../components/ParameterTable";
 import { DataImportWorkspace } from "../components/DataImportWorkspace";
-import { FitConfigPanel, type FitDrawerMode } from "../components/FitConfigPanel";
+import {
+  FitConfigPanel,
+  type FitDrawerMode,
+} from "../components/FitConfigPanel";
 import { EquationPreview } from "../components/EquationPreview";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
-import { buildReportBaseName, emptyReportArtifacts } from "../model/reportArtifacts";
-import { canGenerateReport, createCancelledLifecycle, createErrorLifecycle, createRunningLifecycle, createTimeoutLifecycle, nextRunId, shouldAcceptRunResult, type FitLifecycleState } from "../model/fitLifecycle";
+import {
+  buildReportBaseName,
+  emptyReportArtifacts,
+} from "../model/reportArtifacts";
+import {
+  canGenerateReport,
+  createCancelledLifecycle,
+  createErrorLifecycle,
+  createRunningLifecycle,
+  createTimeoutLifecycle,
+  nextRunId,
+  shouldAcceptRunResult,
+  type FitLifecycleState,
+} from "../model/fitLifecycle";
 import { fmtEng } from "../model/format";
 import { buildHtmlReportDocument } from "../model/htmlReport";
 
@@ -151,7 +170,11 @@ function modelSummary(model: ModelSpec) {
   return names.length ? names.join(" + ") : "No model";
 }
 
-function fitStateText(result: FitResult | null, isFitting: boolean, lifecycle: FitLifecycleState) {
+function fitStateText(
+  result: FitResult | null,
+  isFitting: boolean,
+  lifecycle: FitLifecycleState,
+) {
   if (isFitting) return "Running";
   if (result) {
     if (result.success && result.reportable) return "Converged";
@@ -164,7 +187,12 @@ function fitStateText(result: FitResult | null, isFitting: boolean, lifecycle: F
   return "Not run";
 }
 
-function nextStepText(hasSelectedTrace: boolean, result: FitResult | null, isFitting: boolean, lifecycle: FitLifecycleState) {
+function nextStepText(
+  hasSelectedTrace: boolean,
+  result: FitResult | null,
+  isFitting: boolean,
+  lifecycle: FitLifecycleState,
+) {
   if (!hasSelectedTrace) return "Next: Go to Data";
   if (isFitting) return "Next: Wait for completion";
   if (lifecycle.kind === "error") return "Next: Review diagnostics";
@@ -191,11 +219,29 @@ function WorkflowContextBar({
 }) {
   return (
     <section className="workflow-context-bar" aria-label="Project context">
-      <span><strong>Trace:</strong> {hasSelectedTrace ? String(selectedTrace.metadata?.trace_name ?? selectedTrace.trace_id) : "No trace loaded"}</span>
-      <span><strong>Model:</strong> {modelSummary(model)}</span>
-      <span><strong>Fit:</strong> {fitStateText(result, isFitting, lifecycle)}</span>
-      <span><strong>Report:</strong> {reportAvailable ? result?.reportable ? "Available" : "Review only" : "Not available"}</span>
-      <span className="workflow-next-step">{nextStepText(hasSelectedTrace, result, isFitting, lifecycle)}</span>
+      <span>
+        <strong>Trace:</strong>{" "}
+        {hasSelectedTrace
+          ? String(selectedTrace.metadata?.trace_name ?? selectedTrace.trace_id)
+          : "No trace loaded"}
+      </span>
+      <span>
+        <strong>Model:</strong> {modelSummary(model)}
+      </span>
+      <span>
+        <strong>Fit:</strong> {fitStateText(result, isFitting, lifecycle)}
+      </span>
+      <span>
+        <strong>Report:</strong>{" "}
+        {reportAvailable
+          ? result?.reportable
+            ? "Available"
+            : "Review only"
+          : "Not available"}
+      </span>
+      <span className="workflow-next-step">
+        {nextStepText(hasSelectedTrace, result, isFitting, lifecycle)}
+      </span>
     </section>
   );
 }
@@ -214,20 +260,51 @@ function StartHerePage({
   reportAvailable: boolean;
 }) {
   const steps = [
-    { title: "Data", text: "Import and choose a trace.", view: "data" as AppView, status: hasSelectedTrace ? "Loaded" : "Needed" },
-    { title: "Model", text: "Build the circuit model.", view: "model" as AppView, status: "Ready" },
-    { title: "Fitting", text: "Run and inspect the fit.", view: "fitting" as AppView, status: isFitting ? "Running" : result ? "Done" : "Not run" },
-    { title: "Report", text: "Review and export results.", view: "report" as AppView, status: reportAvailable ? "Available" : "Unavailable" },
+    {
+      title: "Data",
+      text: "Import and choose a trace.",
+      view: "data" as AppView,
+      status: hasSelectedTrace ? "Loaded" : "Needed",
+    },
+    {
+      title: "Model",
+      text: "Build the circuit model.",
+      view: "model" as AppView,
+      status: "Ready",
+    },
+    {
+      title: "Fitting",
+      text: "Run and inspect the fit.",
+      view: "fitting" as AppView,
+      status: isFitting ? "Running" : result ? "Done" : "Not run",
+    },
+    {
+      title: "Report",
+      text: "Review and export results.",
+      view: "report" as AppView,
+      status: reportAvailable ? "Available" : "Unavailable",
+    },
   ];
   return (
     <section className="workflow-page scroll-page start-page minimal-start-page">
       <div className="minimal-hero">
         <div className="hero-kicker">Circuit-based I-V fitting</div>
         <h2>Welcome to IV-fitter</h2>
-        <p>Import I-V data, build a model, run the fit, and export a reproducible report.</p>
+        <p>
+          Import I-V data, build a model, run the fit, and export a reproducible
+          report.
+        </p>
         <div className="hero-actions">
-          <button type="button" className="primary hero-primary" onClick={() => setActiveView("data")}>Start with data</button>
-          <button type="button" onClick={() => setActiveView("help")}>Open help</button>
+          <button
+            type="button"
+            className="primary hero-primary"
+            onClick={() => setActiveView("data")}
+          >
+            Start with data
+          </button>
+          <button type="button" onClick={() => setActiveView("help")}>
+            Open help
+          </button>
         </div>
       </div>
       <div className="minimal-workflow-head">
@@ -235,11 +312,19 @@ function StartHerePage({
           <h3>Workflow</h3>
           <p>Four pages, one fitting path.</p>
         </div>
-        <div className="workflow-mini-path">Data → Model → Fitting → Report</div>
+        <div className="workflow-mini-path">
+          Data → Model → Fitting → Report
+        </div>
       </div>
       <div className="minimal-workflow-grid">
         {steps.map((step, idx) => (
-          <article className="minimal-workflow-card" key={step.title} onClick={() => setActiveView(step.view)} role="button" tabIndex={0}>
+          <article
+            className="minimal-workflow-card"
+            key={step.title}
+            onClick={() => setActiveView(step.view)}
+            role="button"
+            tabIndex={0}
+          >
             <span className="minimal-step-index">{idx + 1}</span>
             <span className="minimal-step-status">{step.status}</span>
             <h3>{step.title}</h3>
@@ -251,18 +336,27 @@ function StartHerePage({
         <strong>Current state</strong>
         <span>Trace: {hasSelectedTrace ? "loaded" : "no trace loaded"}</span>
         <span>Model: Rs + D1 + Rsh</span>
-        <span>Fit: {isFitting ? "running" : result ? "complete" : "not run"}</span>
+        <span>
+          Fit: {isFitting ? "running" : result ? "complete" : "not run"}
+        </span>
         <span>Report: {reportAvailable ? "available" : "unavailable"}</span>
       </div>
     </section>
   );
 }
 
-
-function PageSection({ title, children }: { title: string; children: ReactNode }) {
+function PageSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <section className="workspace-section open">
-      <div className="workspace-section-head static-head"><span>{title}</span></div>
+      <div className="workspace-section-head static-head">
+        <span>{title}</span>
+      </div>
       <div className="workspace-section-body">{children}</div>
     </section>
   );
@@ -291,7 +385,12 @@ function ModelWorkflowPage({
 }) {
   return (
     <section className="workflow-page model-page">
-      <div className="workflow-two-column resizable-workflow-grid" style={{ gridTemplateColumns: `minmax(320px, ${leftPct}fr) 8px minmax(420px, ${100 - leftPct}fr)` }}>
+      <div
+        className="workflow-two-column resizable-workflow-grid"
+        style={{
+          gridTemplateColumns: `minmax(320px, ${leftPct}fr) 8px minmax(420px, ${100 - leftPct}fr)`,
+        }}
+      >
         <PageSection title={t(language, "modelBuilder")}>
           <ErrorBoundary label="Model builder">
             <ModelBuilder
@@ -303,7 +402,12 @@ function ModelWorkflowPage({
             />
           </ErrorBoundary>
         </PageSection>
-        <div className="pane-resizer" role="separator" aria-label="Resize Model page columns" onPointerDown={onResizeStart} />
+        <div
+          className="pane-resizer"
+          role="separator"
+          aria-label="Resize Model page columns"
+          onPointerDown={onResizeStart}
+        />
         <PageSection title={t(language, "equationPreview")}>
           <ErrorBoundary label="Equation preview">
             <EquationPreview
@@ -381,7 +485,13 @@ function FittingWorkflowPage({
         <div className="card workflow-empty-state">
           <h2>No trace loaded</h2>
           <p>Import data before running a fit.</p>
-          <button type="button" className="primary" onClick={() => setActiveView("data")}>Go to Data</button>
+          <button
+            type="button"
+            className="primary"
+            onClick={() => setActiveView("data")}
+          >
+            Go to Data
+          </button>
         </div>
       ) : null}
       <div className="fitting-workflow-grid">
@@ -398,15 +508,8 @@ function FittingWorkflowPage({
               actionDock={<div className="fit-action-row">{fitActions}</div>}
               statusDock={fitStatus}
               messageDock={fitMessages}
-              detailsDock={
-                result || fitPromotionNotice ? (
-                  <div className="fit-compact-details-note">
-                    <p>Review full fit quality, warnings, and exports in the Report page.</p>
-                    <button type="button" onClick={() => setActiveView("report")}>Open Report</button>
-                  </div>
-                ) : null
-              }
-              hasDetails={Boolean(result || fitPromotionNotice)}
+              detailsDock={null}
+              hasDetails={false}
             />
           </ErrorBoundary>
         </aside>
@@ -448,6 +551,78 @@ function FittingWorkflowPage({
   );
 }
 
+function modelEquationLines(summary: EquationSummary | null | undefined) {
+  if (!summary) return [] as string[];
+  return [
+    ...(summary.voltage_relation ?? []),
+    ...(summary.series ?? []),
+    ...(summary.core ?? []),
+    ...(summary.parallel ?? []),
+    ...(summary.auxiliary ?? []),
+  ].filter(Boolean);
+}
+
+function parameterDisplayFromKey(key: string, model: ModelSpec) {
+  const parts = key.split(".");
+  const componentId = parts[0] ?? key;
+  const paramName = parts.slice(1).join(".") || key;
+  const components = [...model.series, ...model.core, ...model.parallel];
+  const component = components.find((item) => item.id === componentId);
+  const componentLabel = String(
+    component?.metadata?.nickname ?? component?.id ?? componentId,
+  );
+  const paramLabel = component?.params?.[paramName]?.label ?? paramName;
+  const kind =
+    component?.function_type === "series_diode_barrier"
+      ? "Diode-like series barrier drop"
+      : /ohmic/i.test(component?.law_id ?? "")
+        ? component?.location === "series"
+          ? "Ohmic series resistance"
+          : "Ohmic leakage/current branch"
+        : /shockley/i.test(component?.law_id ?? "") ||
+            component?.function_type === "diode"
+          ? "Shockley diode"
+          : String(
+              component?.metadata?.display_name ??
+                component?.law_id ??
+                component?.function_type ??
+                "Model component",
+            );
+  return { componentLabel, paramLabel, kind };
+}
+
+function parameterReliabilityNote(value: {
+  value: number;
+  stderr?: number | null;
+  lower?: number | null;
+  upper?: number | null;
+  fixed?: boolean;
+}) {
+  if (value.fixed) return "fixed";
+  const notes: string[] = [];
+  if (
+    Number.isFinite(value.stderr) &&
+    Math.abs(value.value) > 0 &&
+    Number(value.stderr) / Math.abs(value.value) > 1
+  )
+    notes.push("large uncertainty");
+  if (
+    value.lower != null &&
+    Number.isFinite(value.lower) &&
+    Math.abs(value.value - value.lower) <=
+      Math.max(1e-30, Math.abs(value.lower) * 1e-4)
+  )
+    notes.push("near lower bound");
+  if (
+    value.upper != null &&
+    Number.isFinite(value.upper) &&
+    Math.abs(value.value - value.upper) <=
+      Math.max(1e-30, Math.abs(value.upper) * 1e-4)
+  )
+    notes.push("near upper bound");
+  return notes.join("; ") || "fit";
+}
+
 function ReportWorkflowPage({
   selectedTrace,
   hasSelectedTrace,
@@ -460,10 +635,6 @@ function ReportWorkflowPage({
   fitLifecycle,
   fitPromotionNotice,
   fitSessionStats,
-  dismissedWarningKey,
-  setDismissedWarningKey,
-  openAndScroll,
-  makeReport,
   onExportReportCsv,
   onExportParametersCsv,
   onExportDiagnosticsJson,
@@ -499,91 +670,248 @@ function ReportWorkflowPage({
 }) {
   const verdict = fitStateText(result, isFitting, fitLifecycle);
   const metricEntries = result ? Object.entries(result.metrics ?? {}) : [];
-  const parameterEntries = result ? Object.entries(result.parameters ?? {}) : [];
+  const parameterEntries = result
+    ? Object.entries(result.parameters ?? {})
+    : [];
+  const equationLines = modelEquationLines(result?.equations ?? null);
+  const traceName = hasSelectedTrace
+    ? String(selectedTrace.metadata?.trace_name ?? selectedTrace.trace_id)
+    : "No trace loaded";
+  const reportStatus = result
+    ? result.reportable
+      ? "Reportable"
+      : "Review required"
+    : isFitting
+      ? "Running"
+      : "Unavailable";
+
   return (
-    <section className="workflow-page report-page scroll-page report-page-two-column resizable-report-grid" style={{ gridTemplateColumns: `minmax(420px, ${leftPct}fr) 8px minmax(280px, ${100 - leftPct}fr)` }}>
+    <section
+      className="workflow-page report-page scroll-page report-page-two-column resizable-report-grid scientific-report-page"
+      style={{
+        gridTemplateColumns: `minmax(520px, ${leftPct}fr) 8px minmax(300px, ${100 - leftPct}fr)`,
+      }}
+    >
       <main className="report-main-column">
-        <div className="card report-overview-card">
-          <h2>Report</h2>
-          <div className="report-meta-grid">
-            <span><strong>Trace</strong>{hasSelectedTrace ? String(selectedTrace.metadata?.trace_name ?? selectedTrace.trace_id) : "No trace loaded"}</span>
-            <span><strong>Model</strong>{modelSummary(model)}</span>
-            <span><strong>Fit verdict</strong>{verdict}</span>
-            <span><strong>Software</strong>{APP_VERSION}</span>
+        <div className="card report-status-card">
+          <div className="report-status-header">
+            <div>
+              <h2>Fit quality: {reportStatus}</h2>
+              <p className="muted">
+                {traceName} · {modelSummary(model)} · v{APP_VERSION}
+              </p>
+            </div>
+            <span
+              className={
+                result?.reportable
+                  ? "report-status-pill ok"
+                  : result
+                    ? "report-status-pill warning"
+                    : "report-status-pill muted"
+              }
+            >
+              {verdict}
+            </span>
           </div>
           {!result && !isFitting ? (
-            <div className="workflow-empty-state inline">
+            <div className="workflow-empty-state inline compact-empty-state">
               <p>No completed fit yet.</p>
-              <button type="button" className="primary" onClick={() => setActiveView("fitting")}>Go to Fitting</button>
+              <button
+                type="button"
+                className="primary"
+                onClick={() => setActiveView("fitting")}
+              >
+                Go to Fitting
+              </button>
             </div>
           ) : null}
-          {isFitting ? <p className="fit-primary-message info">Fit is running; report will be available after completion.</p> : null}
+          {isFitting ? (
+            <p className="fit-primary-message info">
+              Fit is running; report will be available after completion.
+            </p>
+          ) : null}
+          {result ? <p>{result.message}</p> : null}
+          {result?.reportability_reason ? (
+            <p className="muted">{result.reportability_reason}</p>
+          ) : null}
         </div>
 
-        {fitPromotionNotice ? <div className="fit-full-note">{fitPromotionNotice}</div> : null}
+        {result ? (
+          <div className="card report-model-equation-card">
+            <h2>Model and equations</h2>
+            <p className="muted">This is the model used for the current fit.</p>
+            <div className="report-equation-list">
+              {equationLines.length ? (
+                equationLines.map((line, idx) => (
+                  <code key={`${line}-${idx}`}>{line}</code>
+                ))
+              ) : (
+                <code>{modelSummary(model)}</code>
+              )}
+            </div>
+          </div>
+        ) : null}
 
-        {result ? <div className="card report-verdict-card">
-          <h2>{result.reportable ? "Fit verdict: reportable" : "Fit verdict: review required"}</h2>
-          <p>{result.message}</p>
-          {result.reportability_reason ? <p className="muted">{result.reportability_reason}</p> : null}
-        </div> : null}
+        {fitPromotionNotice ? (
+          <div className="fit-full-note">{fitPromotionNotice}</div>
+        ) : null}
 
         {result ? (
           <>
-            <FitProcessDiagnostics result={result} language={language} sessionStats={fitSessionStats} />
-            {warningDismissKey(result) !== dismissedWarningKey ? (
-              <FitDiagnostics
-                result={result}
-                language={language}
-                onCheckLogIv={() => openAndScroll("plots")}
-                onAdjustInitials={() => openAndScroll("model")}
-                onClose={() => setDismissedWarningKey(warningDismissKey(result))}
-              />
-            ) : null}
+            <FitProcessDiagnostics
+              result={result}
+              language={language}
+              sessionStats={fitSessionStats}
+            />
+            <div className="card report-diagnostics-card">
+              <h2>Diagnostics</h2>
+              {(result.warnings ?? []).length ? (
+                <div className="report-warning-list">
+                  {result.warnings.map((warning, idx) => (
+                    <div
+                      className={`report-warning-item ${warning.severity}`}
+                      key={`${warning.code}-${idx}`}
+                    >
+                      <strong>
+                        {warning.severity.toUpperCase()} · {warning.code}
+                      </strong>
+                      <p>{warning.message}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="muted">
+                  No warnings or errors reported by the fitting backend.
+                </p>
+              )}
+            </div>
+
             <div className="card report-parameter-summary-card">
               <h2>Parameter summary</h2>
-              <div className="table-wrap"><table className="parameter-table compact-parameter-table">
-                <thead><tr><th>Parameter</th><th>Value</th><th>Unit</th><th>Status</th><th>Std. err.</th></tr></thead>
-                <tbody>{parameterEntries.map(([key, value]) => <tr key={key}><td>{key}</td><td>{fmtEng(value.value, 5)}</td><td>{value.unit ?? ""}</td><td>{value.fixed ? "fixed" : "fit"}</td><td>{value.stderr == null ? "-" : fmtEng(value.stderr, 4)}</td></tr>)}</tbody>
-              </table></div>
+              <div className="table-wrap">
+                <table className="parameter-table compact-parameter-table report-parameter-table">
+                  <thead>
+                    <tr>
+                      <th>Component</th>
+                      <th>Parameter</th>
+                      <th>Value</th>
+                      <th>Unit</th>
+                      <th>Status</th>
+                      <th>Std. err.</th>
+                      <th>Note</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {parameterEntries.map(([key, value]) => {
+                      const display = parameterDisplayFromKey(
+                        key,
+                        result.model,
+                      );
+                      return (
+                        <tr key={key}>
+                          <td>
+                            <strong>{display.componentLabel}</strong>
+                            <br />
+                            <span className="muted">{display.kind}</span>
+                          </td>
+                          <td>{display.paramLabel}</td>
+                          <td>{fmtEng(value.value, 5)}</td>
+                          <td>{value.unit ?? ""}</td>
+                          <td>{value.fixed ? "fixed" : "fit"}</td>
+                          <td>
+                            {value.stderr == null
+                              ? "-"
+                              : fmtEng(value.stderr, 4)}
+                          </td>
+                          <td>{parameterReliabilityNote(value)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </>
         ) : null}
       </main>
-      <div className="pane-resizer" role="separator" aria-label="Resize Report page columns" onPointerDown={onResizeStart} />
+      <div
+        className="pane-resizer"
+        role="separator"
+        aria-label="Resize Report page columns"
+        onPointerDown={onResizeStart}
+      />
 
       <aside className="report-side-column">
         <div className="card report-export-card report-export-sidebar-card">
           <h2>Exports</h2>
-          <div className="report-actions vertical-report-actions">
-            <button type="button" disabled={!reportAvailable} onClick={makeReport}>{t(language, "report")}</button>
-            <button type="button" disabled={!result} onClick={onExportReportHtml}>{language === "zh" ? "下载 HTML 报告" : "Download report HTML"}</button>
-            <button type="button" disabled={!report} onClick={onExportReportCsv}>{language === "zh" ? "下载完整 CSV 报告" : "Download report CSV"}</button>
-            <button type="button" disabled={!report} onClick={onExportParametersCsv}>{language === "zh" ? "下载参数 CSV" : "Download parameter CSV"}</button>
-            <button type="button" disabled={!report} onClick={onExportDiagnosticsJson}>{language === "zh" ? "下载 diagnostics JSON" : "Download diagnostics JSON"}</button>
+          <div className="report-actions report-export-actions-grid">
+            <button
+              type="button"
+              className="primary"
+              disabled={!result}
+              onClick={onExportReportHtml}
+            >
+              {language === "zh" ? "下载 HTML 报告" : "Download HTML report"}
+            </button>
+            <button
+              type="button"
+              disabled={!report}
+              onClick={onExportReportCsv}
+            >
+              {language === "zh" ? "下载 CSV 报告" : "Download report CSV"}
+            </button>
+            <button
+              type="button"
+              disabled={!report}
+              onClick={onExportParametersCsv}
+            >
+              {language === "zh" ? "下载参数 CSV" : "Download parameter CSV"}
+            </button>
+            <button
+              type="button"
+              disabled={!report}
+              onClick={onExportDiagnosticsJson}
+            >
+              {language === "zh"
+                ? "下载 diagnostics JSON"
+                : "Download diagnostics JSON"}
+            </button>
           </div>
           {reportMessage ? <p className="muted">{reportMessage}</p> : null}
         </div>
 
-        <div className="card report-metadata-card">
-          <h2>Summary</h2>
+        <div className="card report-metadata-card compact-report-summary-card">
+          <h2>Quick summary</h2>
           <div className="report-side-facts">
-            <span><strong>Status</strong>{verdict}</span>
-            <span><strong>Warnings</strong>{result?.warnings.length ?? 0}</span>
-            <span><strong>Metrics</strong>{metricEntries.length}</span>
-            <span><strong>Parameters</strong>{parameterEntries.length}</span>
+            <span>
+              <strong>Status</strong>
+              {reportStatus}
+            </span>
+            <span>
+              <strong>Warnings</strong>
+              {result?.warnings.length ?? 0}
+            </span>
+            <span>
+              <strong>Metrics</strong>
+              {metricEntries.length}
+            </span>
+            <span>
+              <strong>Parameters</strong>
+              {parameterEntries.length}
+            </span>
           </div>
         </div>
 
-        <div className="card report-text-card">
-          <h2>Report text</h2>
-          {report ? <pre className="report-text-preview">{report}</pre> : <p className="muted">A report will be generated automatically after a completed or review-only fit. You can also regenerate it from Exports.</p>}
-        </div>
+        {report ? (
+          <details className="card report-text-card report-preview-card collapsed-raw-report">
+            <summary>Markdown report text</summary>
+            <pre className="report-text-preview user-report-preview">{report}</pre>
+          </details>
+        ) : null}
       </aside>
     </section>
   );
 }
-
 
 function isBackendConnectionError(message: string | null) {
   if (!message) return false;
@@ -602,8 +930,12 @@ function BackendConnectionBanner({
   const help =
     "Check that the backend window is running, then open http://127.0.0.1:8000/api/health. For phone testing, also check firewall and use the LAN address printed by 04c_run_lan_dev.bat.";
 
-
-  function startPaneResize(event: ReactPointerEvent<HTMLDivElement>, setter: (value: number) => void, min = 26, max = 78) {
+  function startPaneResize(
+    event: ReactPointerEvent<HTMLDivElement>,
+    setter: (value: number) => void,
+    min = 26,
+    max = 78,
+  ) {
     const container = event.currentTarget.parentElement;
     if (!container) return;
     event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -921,7 +1253,13 @@ export function FittingPage() {
     setFitLifecycle(createRunningLifecycle(runId, startedAt, timeoutS));
     setIsFitting(true);
     const timeoutId = window.setTimeout(() => {
-      if (!shouldAcceptRunResult({ activeRunId: activeFitRunIdRef.current, runId })) return;
+      if (
+        !shouldAcceptRunResult({
+          activeRunId: activeFitRunIdRef.current,
+          runId,
+        })
+      )
+        return;
       cancelledFitRunIdsRef.current.add(runId);
       activeFitRunIdRef.current = null;
       controller.abort();
@@ -942,7 +1280,14 @@ export function FittingPage() {
         { ...config, run_timeout_s: timeoutS },
         controller.signal,
       );
-      if (!shouldAcceptRunResult({ activeRunId: activeFitRunIdRef.current, runId, cancelledRunIds: cancelledFitRunIdsRef.current })) return;
+      if (
+        !shouldAcceptRunResult({
+          activeRunId: activeFitRunIdRef.current,
+          runId,
+          cancelledRunIds: cancelledFitRunIdsRef.current,
+        })
+      )
+        return;
       setResult(fit);
       const diag = fit.fit_diagnostics;
       setFitSessionStats((current) => ({
@@ -977,20 +1322,48 @@ export function FittingPage() {
       }));
       try {
         const autoReport = await exportReport(fit);
-        if (shouldAcceptRunResult({ activeRunId: activeFitRunIdRef.current, runId, cancelledRunIds: cancelledFitRunIdsRef.current })) {
+        if (
+          shouldAcceptRunResult({
+            activeRunId: activeFitRunIdRef.current,
+            runId,
+            cancelledRunIds: cancelledFitRunIdsRef.current,
+          })
+        ) {
           setReportArtifacts({
             report: autoReport.markdown,
-            message: language === "zh" ? "报告已自动更新。" : "Report updated automatically after fit completion.",
+            message:
+              language === "zh"
+                ? "报告已自动更新。"
+                : "Report updated automatically after fit completion.",
           });
         }
       } catch {
-        if (shouldAcceptRunResult({ activeRunId: activeFitRunIdRef.current, runId, cancelledRunIds: cancelledFitRunIdsRef.current })) {
-          setReportArtifacts({ report: "", message: language === "zh" ? "拟合完成，但报告自动更新失败。" : "Fit completed, but automatic report update failed." });
+        if (
+          shouldAcceptRunResult({
+            activeRunId: activeFitRunIdRef.current,
+            runId,
+            cancelledRunIds: cancelledFitRunIdsRef.current,
+          })
+        ) {
+          setReportArtifacts({
+            report: "",
+            message:
+              language === "zh"
+                ? "拟合完成，但报告自动更新失败。"
+                : "Fit completed, but automatic report update failed.",
+          });
         }
       }
       setFitLifecycle({ kind: "idle" });
     } catch (e) {
-      if (!shouldAcceptRunResult({ activeRunId: activeFitRunIdRef.current, runId, cancelledRunIds: cancelledFitRunIdsRef.current })) return;
+      if (
+        !shouldAcceptRunResult({
+          activeRunId: activeFitRunIdRef.current,
+          runId,
+          cancelledRunIds: cancelledFitRunIdsRef.current,
+        })
+      )
+        return;
       if (e instanceof DOMException && e.name === "AbortError") {
         cancelledFitRunIdsRef.current.add(runId);
         activeFitRunIdRef.current = null;
@@ -1008,9 +1381,11 @@ export function FittingPage() {
     } finally {
       window.clearTimeout(timeoutId);
       if (abortFitRef.current === controller) abortFitRef.current = null;
-      if (activeFitRunIdRef.current === runId)
-        activeFitRunIdRef.current = null;
-      if (activeFitRunIdRef.current === runId || fitRunSeqRef.current === runId) {
+      if (activeFitRunIdRef.current === runId) activeFitRunIdRef.current = null;
+      if (
+        activeFitRunIdRef.current === runId ||
+        fitRunSeqRef.current === runId
+      ) {
         setIsFitting(false);
         setFitStartedAt(null);
       }
@@ -1024,7 +1399,9 @@ export function FittingPage() {
     abortFitRef.current?.abort();
     setIsFitting(false);
     setFitStartedAt(null);
-    setFitLifecycle(createCancelledLifecycle(runId ?? fitRunSeqRef.current, elapsedSeconds));
+    setFitLifecycle(
+      createCancelledLifecycle(runId ?? fitRunSeqRef.current, elapsedSeconds),
+    );
     setError(
       language === "zh"
         ? "已停止当前拟合请求。本次结果不会写入界面。"
@@ -1052,7 +1429,10 @@ export function FittingPage() {
     const r = await exportReport(result);
     setReportArtifacts({
       report: r.markdown,
-      message: language === "zh" ? "报告已生成。可下载完整 CSV、参数 CSV 或 diagnostics JSON。" : "Report generated. You can download the full CSV, parameter CSV, or diagnostics JSON.",
+      message:
+        language === "zh"
+          ? "报告已生成。可下载完整 CSV、参数 CSV 或 diagnostics JSON。"
+          : "Report generated. You can download the full CSV, parameter CSV, or diagnostics JSON.",
     });
     setActiveView("report");
   }
@@ -1067,7 +1447,10 @@ export function FittingPage() {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-    setReportArtifacts((current) => ({ ...current, message: `${language === "zh" ? "已导出" : "Exported"}: ${filename}` }));
+    setReportArtifacts((current) => ({
+      ...current,
+      message: `${language === "zh" ? "已导出" : "Exported"}: ${filename}`,
+    }));
   }
 
   function reportBaseName(suffix: string) {
@@ -1081,19 +1464,31 @@ export function FittingPage() {
   async function downloadReportCsv() {
     if (!result) return;
     const r = await exportReportCsv(result);
-    downloadText(reportBaseName("report.csv"), r.text, "text/csv;charset=utf-8");
+    downloadText(
+      reportBaseName("report.csv"),
+      r.text,
+      "text/csv;charset=utf-8",
+    );
   }
 
   async function downloadParametersCsv() {
     if (!result) return;
     const r = await exportParametersCsv(result);
-    downloadText(reportBaseName("parameters.csv"), r.text, "text/csv;charset=utf-8");
+    downloadText(
+      reportBaseName("parameters.csv"),
+      r.text,
+      "text/csv;charset=utf-8",
+    );
   }
 
   async function downloadDiagnosticsJson() {
     if (!result) return;
     const r = await exportDiagnosticsJson(result);
-    downloadText(reportBaseName("diagnostics.json"), r.text, "application/json;charset=utf-8");
+    downloadText(
+      reportBaseName("diagnostics.json"),
+      r.text,
+      "application/json;charset=utf-8",
+    );
   }
 
   function buildHtmlReport() {
@@ -1109,7 +1504,11 @@ export function FittingPage() {
 
   function downloadReportHtml() {
     if (!result) return;
-    downloadText(reportBaseName("report.html"), buildHtmlReport(), "text/html;charset=utf-8");
+    downloadText(
+      reportBaseName("report.html"),
+      buildHtmlReport(),
+      "text/html;charset=utf-8",
+    );
   }
   function openAndScroll(sectionId: string) {
     setActiveView(sectionId === "model" ? "model" : "fitting");
@@ -1122,7 +1521,6 @@ export function FittingPage() {
       50,
     );
   }
-
 
   const reportAvailable = canGenerateReport({
     hasSelectedTrace,
@@ -1146,10 +1544,14 @@ export function FittingPage() {
       <button
         className={hasSelectedTrace ? "primary" : "fit-action-unavailable"}
         disabled={isFitting || !hasSelectedTrace}
-        title={!hasSelectedTrace ? "Import data before running a fit." : undefined}
+        title={
+          !hasSelectedTrace ? "Import data before running a fit." : undefined
+        }
         onClick={runFit}
       >
-        <span className="button-icon" aria-hidden="true">▶</span>
+        <span className="button-icon" aria-hidden="true">
+          ▶
+        </span>
         {t(language, "runFit")}
       </button>
       <button
@@ -1157,15 +1559,21 @@ export function FittingPage() {
         disabled={!isFitting}
         onClick={stopFit}
       >
-        <span className="button-icon" aria-hidden="true">■</span>
+        <span className="button-icon" aria-hidden="true">
+          ■
+        </span>
         {language === "zh" ? "停止拟合" : "Stop fit"}
       </button>
       <button
         disabled={!reportAvailable}
-        title={!reportAvailable ? "Available after a completed fit." : undefined}
+        title={
+          !reportAvailable ? "Available after a completed fit." : undefined
+        }
         onClick={makeReport}
       >
-        <span className="button-icon" aria-hidden="true">▣</span>
+        <span className="button-icon" aria-hidden="true">
+          ▣
+        </span>
         {t(language, "report")}
       </button>
     </>
@@ -1187,7 +1595,8 @@ export function FittingPage() {
       ) : null}
       {isFitting ? (
         <div className="fit-primary-message info">
-          Fitting is running; Stop fit aborts the current request and ignores late results.
+          Fitting is running; Stop fit aborts the current request and ignores
+          late results.
         </div>
       ) : null}
       {error ? (
@@ -1231,9 +1640,12 @@ export function FittingPage() {
     </div>
   );
 
-
-
-  function startPaneResize(event: ReactPointerEvent<HTMLDivElement>, setter: (value: number) => void, min = 26, max = 78) {
+  function startPaneResize(
+    event: ReactPointerEvent<HTMLDivElement>,
+    setter: (value: number) => void,
+    min = 26,
+    max = 78,
+  ) {
     const container = event.currentTarget.parentElement;
     if (!container) return;
     event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -1321,7 +1733,9 @@ export function FittingPage() {
             language={language}
             isFitting={isFitting}
             leftPct={modelPanePct}
-            onResizeStart={(event) => startPaneResize(event, setModelPanePct, 28, 65)}
+            onResizeStart={(event) =>
+              startPaneResize(event, setModelPanePct, 28, 65)
+            }
           />
         ) : activeView === "fitting" ? (
           <FittingWorkflowPage
@@ -1393,7 +1807,9 @@ export function FittingPage() {
             setActiveView={setActiveView}
             language={language}
             leftPct={reportPanePct}
-            onResizeStart={(event) => startPaneResize(event, setReportPanePct, 54, 82)}
+            onResizeStart={(event) =>
+              startPaneResize(event, setReportPanePct, 54, 82)
+            }
           />
         ) : (
           <UserDocumentationPage
@@ -1406,7 +1822,9 @@ export function FittingPage() {
         {activeView === "fitting" && (
           <div className="mobile-action-bar">
             <button
-              className={hasSelectedTrace ? "primary" : "fit-action-unavailable"}
+              className={
+                hasSelectedTrace ? "primary" : "fit-action-unavailable"
+              }
               disabled={isFitting || !hasSelectedTrace}
               onClick={runFit}
             >

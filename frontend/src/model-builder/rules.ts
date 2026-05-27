@@ -69,7 +69,7 @@ export function allComponents(model: ModelSpec) {
 }
 
 export function duplicateBaseKey(comp: ComponentSpec) {
-  const polarity = comp.function_type === "series_diode_barrier" ? "none" : (comp.polarity ?? "none");
+  const polarity = comp.polarity ?? "none";
   return [canonicalLawId(comp) || canonicalFunctionType(comp.function_type), comp.evaluation_form ?? "auto", comp.placement ?? "auto", polarity].join("|");
 }
 

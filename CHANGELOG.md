@@ -1,3 +1,14 @@
+## v1.5.28 — fit/report UI stabilization
+
+- Tighten Data page layout and plot-review containment to reduce blank/overgrown import panels.
+- Remove the low-value Fitting details drawer that only redirected to Report.
+- Keep Run fit, Stop fit, and Report in a compact action row.
+- Move Advanced run options below the compact fit status and keep them always visible in the Fit setup panel.
+- Make the Parameters table denser and internally scrollable.
+- Rework Report into a scientific report layout with model/equation display, explicit warnings, grouped parameters, improved exports, and readable preview.
+- Add model/equation content to downloadable HTML reports.
+- Add v1.5.28 self-audit notes.
+
 ## v1.5.27 — polarity and landscape layout stabilization
 
 - Expose polarity for Diode-like series barrier drop and make the series-barrier voltage-drop evaluation polarity-aware while preserving the forward default.
