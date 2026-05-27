@@ -538,12 +538,18 @@ export function FittingPage() {
         onSeedSyntheticGroundTruth={seedFromSyntheticGroundTruth}
         dataBoundsReport={dataBoundsReport}
         fitMessages={<>
-          {!selectedTrace.voltage_V.length && !error ? <div className="fit-empty-info"><strong>{language === "zh" ? "还没有加载 trace。" : "No trace loaded."}</strong><span>{language === "zh" ? "请先导入数据文件，或者加载示例数据后再拟合。" : "Import a data file or load a synthetic example before fitting."}</span></div> : null}
-          {fitPromotionNotice ? <div className="warning info">{fitPromotionNotice}</div> : null}
-          {result ? <FitProcessDiagnostics result={result} language={language} sessionStats={fitSessionStats} /> : null}
-          {result && warningDismissKey(result) !== dismissedWarningKey ? <FitDiagnostics result={result} language={language} onCheckLogIv={() => openAndScroll("plots")} onAdjustInitials={() => openAndScroll("model")} onClose={() => setDismissedWarningKey(warningDismissKey(result))} /> : null}
-          {isFitting ? <div className="fit-running-banner">{language === "zh" ? "拟合正在运行。可以停止当前拟合请求；本次结果不会写入界面。" : "Fitting is in progress. You can stop the current fit request if needed; this run result will not update the workspace."}</div> : null}
-          {error ? (isBackendConnectionError(error) ? <BackendConnectionBanner message={error} onRetry={runFit} /> : <div className={noTraceRunAttempted ? "warning error validation" : "warning error"}>{error}</div>) : null}
+          {!selectedTrace.voltage_V.length && !error ? <div className="fit-primary-message empty"><strong>{language === "zh" ? "还没有加载 trace。" : "No trace loaded."}</strong><span>{language === "zh" ? "导入数据或加载 synthetic example 后再拟合。" : "Import data or load a synthetic example before fitting."}</span></div> : null}
+          {fitPromotionNotice ? <div className="fit-primary-message warning"><strong>{language === "zh" ? "门控未通过：" : "Gate failed:"}</strong><span>{language === "zh" ? "fitted values 没有写回下一次初值。" : "fitted values were not promoted to initials."}</span></div> : null}
+          {isFitting ? <div className="fit-primary-message info">{language === "zh" ? "拟合正在运行；Stop fit 会中止当前请求。" : "Fitting is running; Stop fit aborts the current request."}</div> : null}
+          {error ? (isBackendConnectionError(error) ? <BackendConnectionBanner message={error} onRetry={runFit} /> : <div className={noTraceRunAttempted ? "warning error validation fit-primary-message" : "warning error fit-primary-message"}>{error}</div>) : null}
+          {(result || fitPromotionNotice) ? <details className="fit-details-drawer">
+            <summary>{language === "zh" ? "Details / diagnostics" : "Details / diagnostics"}</summary>
+            <div className="fit-details-drawer-body">
+              {fitPromotionNotice ? <div className="fit-full-note">{fitPromotionNotice}</div> : null}
+              {result ? <FitProcessDiagnostics result={result} language={language} sessionStats={fitSessionStats} /> : null}
+              {result && warningDismissKey(result) !== dismissedWarningKey ? <FitDiagnostics result={result} language={language} onCheckLogIv={() => openAndScroll("plots")} onAdjustInitials={() => openAndScroll("model")} onClose={() => setDismissedWarningKey(warningDismissKey(result))} /> : null}
+            </div>
+          </details> : null}
         </>}
         isFitting={isFitting}
         fitSessionStats={fitSessionStats}

@@ -63,34 +63,37 @@ export function FitStatusBar({
   isFitting?: boolean;
   elapsedSeconds?: number;
 }) {
-  if (isFitting) return <div className="fit-status-compact">
-    <span className="fit-status-badge info">{language === "zh" ? "运行中" : "Running"}</span>
-    <span className="fit-status-badge metric">{elapsedSeconds}s</span>
+  if (isFitting) return <div className="fit-status-compact running" title={language === "zh" ? "拟合正在运行" : "Fit is running"}>
+    <span className="fit-status-dot" aria-hidden="true" />
+    <span className="fit-status-text">{language === "zh" ? `运行中 · ${elapsedSeconds}s` : `Running · ${elapsedSeconds}s elapsed`}</span>
   </div>;
 
-  if (!result) return <div className="fit-status-compact">
-    <span className="fit-status-badge info">{t(language, "readyNoFit")}</span>
+  if (!result) return <div className="fit-status-compact idle" title={t(language, "readyNoFit")}>
+    <span className="fit-status-dot" aria-hidden="true" />
+    <span className="fit-status-text">{t(language, "readyNoFit")}</span>
   </div>;
 
   const backendWarn = result.warnings.filter((w) => w.severity !== "error").length;
   const backendErrors = result.warnings.filter((w) => w.severity === "error").length;
   const frontendFailure = frontendQualityFailure(result);
-  const errors = backendErrors;
+  const errors = backendErrors + (frontendFailure ? 1 : 0);
   const rmse = result.metrics.linear_rmse_A;
   const passed = (result.reportable ?? result.success) && result.success && errors === 0;
   const title = result.reportability_reason ?? result.message;
   const scale = currentDataScale(result.curves.current_measured_A);
   const rmseRatio = Number.isFinite(rmse) && scale > 0 ? rmse / scale : Infinity;
-  const stateLabel = passed ? "Converged" : "Not reportable";
-  const statusClass = passed ? "fit-status-badge success" : "fit-status-badge danger";
+  const warningText = backendWarn === 1 ? "1 warning" : `${backendWarn} warnings`;
+  const errorText = errors === 1 ? "1 error" : `${errors} errors`;
+  const zhWarningText = `${backendWarn} warning`;
+  const zhErrorText = `${errors} error`;
+  const tone = errors > 0 ? "error" : passed ? "ok" : "warning";
+  const statusText = language === "zh"
+    ? [passed ? "已收敛" : result.success ? "已收敛，门控未通过" : "拟合失败", `RMSE ${fmtEng(rmse, 4)} A`, zhWarningText, errors ? zhErrorText : null].filter(Boolean).join(" · ")
+    : [passed ? "Converged" : result.success ? "Converged, gate failed" : "Fit failed", `RMSE ${fmtEng(rmse, 4)} A`, `${fmtEng(rmseRatio, 3)}× scale`, backendWarn ? warningText : "0 warnings", errors ? errorText : null].filter(Boolean).join(" · ");
 
-  return <div className="fit-status-compact" title={title}>
-    <span className={statusClass}>{language === "zh" ? (passed ? "已收敛" : "暂不可报告") : stateLabel}</span>
-    <span className="fit-status-badge metric">RMSE {fmtEng(rmse, 4)} A</span>
-    <span className="fit-status-badge metric">{fmtEng(rmseRatio, 3)}× {language === "zh" ? "数据量级" : "scale"}</span>
-    <span className={backendWarn > 0 ? "fit-status-badge warning" : "fit-status-badge metric"}>{backendWarn} {language === "zh" ? "warning" : "warning"}</span>
-    <span className={errors > 0 ? "fit-status-badge danger" : "fit-status-badge metric"}>{errors} error</span>
-    {frontendFailure ? <span className="fit-status-badge danger">{t(language, "frontendSanity")}</span> : null}
+  return <div className={`fit-status-compact ${tone}`} title={title}>
+    <span className="fit-status-dot" aria-hidden="true" />
+    <span className="fit-status-text">{statusText}</span>
   </div>;
 }
 

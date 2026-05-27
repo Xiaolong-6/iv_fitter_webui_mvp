@@ -2894,3 +2894,158 @@ button.fit-action-unavailable:disabled {
     bottom: auto;
   }
 }
+
+/* v1.5.9 compact Fit setup status architecture.
+   The bottom dock now shows one summary line plus one short primary message;
+   long gate-failure text and metrics live behind Details / diagnostics. */
+.fit-setup-footer-content {
+  gap: calc(4px * var(--app-zoom));
+}
+.fit-status-compact {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: calc(7px * var(--app-zoom));
+  min-width: 0;
+  width: 100%;
+  min-height: calc(24px * var(--app-zoom));
+  padding: 0;
+  overflow: hidden;
+}
+.fit-status-dot {
+  width: calc(9px * var(--app-zoom));
+  height: calc(9px * var(--app-zoom));
+  border-radius: 999px;
+  background: #64748b;
+  box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.13);
+}
+.fit-status-compact.idle .fit-status-dot { background: #64748b; }
+.fit-status-compact.running .fit-status-dot { background: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.13); }
+.fit-status-compact.ok .fit-status-dot { background: #059669; box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.13); }
+.fit-status-compact.warning .fit-status-dot { background: #d97706; box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15); }
+.fit-status-compact.error .fit-status-dot { background: #dc2626; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.14); }
+.fit-status-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #0f172a;
+  font-weight: 800;
+  font-size: calc(12.5px * var(--app-zoom));
+  line-height: 1.25;
+}
+.fit-primary-message {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  padding: calc(5px * var(--app-zoom)) calc(7px * var(--app-zoom));
+  border: 1px solid #dbe4f0;
+  border-radius: calc(8px * var(--app-zoom));
+  background: #f8fafc;
+  color: #334155;
+  font-size: calc(12px * var(--app-zoom));
+  line-height: 1.25;
+}
+.fit-primary-message strong,
+.fit-primary-message span {
+  min-width: 0;
+}
+.fit-primary-message span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fit-primary-message.empty,
+.fit-primary-message.info {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+.fit-primary-message.warning {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+.fit-primary-message.error,
+.warning.error.fit-primary-message {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+.fit-details-drawer {
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.fit-details-drawer > summary {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  min-height: calc(25px * var(--app-zoom));
+  padding: calc(3px * var(--app-zoom)) calc(8px * var(--app-zoom));
+  border: 1px solid #dbe4f0;
+  border-radius: calc(7px * var(--app-zoom));
+  background: #fff;
+  color: #1d4ed8;
+  cursor: pointer;
+  font-size: calc(11.5px * var(--app-zoom));
+  font-weight: 800;
+  list-style: none;
+}
+.fit-details-drawer > summary::-webkit-details-marker { display: none; }
+.fit-details-drawer > summary::before {
+  content: "▸";
+  margin-right: 5px;
+  color: #64748b;
+}
+.fit-details-drawer[open] > summary::before { content: "▾"; }
+.fit-details-drawer-body {
+  display: grid;
+  gap: calc(6px * var(--app-zoom));
+  max-height: min(24dvh, 220px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-top: calc(6px * var(--app-zoom));
+  padding-right: 2px;
+}
+.fit-full-note {
+  padding: calc(7px * var(--app-zoom)) calc(8px * var(--app-zoom));
+  border: 1px solid #fde68a;
+  border-radius: calc(8px * var(--app-zoom));
+  background: #fffbeb;
+  color: #92400e;
+  font-size: calc(12px * var(--app-zoom));
+  line-height: 1.35;
+}
+.fit-setup-bottom-dock {
+  max-height: min(42dvh, 380px);
+}
+.fit-setup-bottom-dock .fit-setup-panel {
+  max-height: min(40dvh, 360px);
+}
+.fit-setup-bottom-dock .fit-setup-scroll-body {
+  max-height: min(18dvh, 160px);
+}
+.fit-setup-bottom-dock .fit-setup-footer-content .fit-message-stack {
+  max-height: none;
+  overflow: visible;
+}
+.fit-process-diagnostics,
+.fit-diagnostics {
+  font-size: calc(11.5px * var(--app-zoom));
+}
+@media (max-width: 850px), (orientation: portrait) {
+  .fit-details-drawer-body {
+    max-height: min(28dvh, 250px);
+  }
+  .fit-primary-message {
+    align-items: start;
+  }
+  .fit-primary-message span {
+    white-space: normal;
+  }
+}

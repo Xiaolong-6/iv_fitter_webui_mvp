@@ -1,3 +1,11 @@
+# v1.5.9 - Compact Fit setup diagnostics
+
+- Kept the Fit setup card bottom-docked, but reduced its default status density to a one-line summary plus one short primary message.
+- Moved the long quality-gate explanation, fit-process metrics, and detailed warnings behind a collapsed Details / diagnostics drawer.
+- Changed gate-failure copy to the compact default: fitted values are visible but were not promoted to initials.
+- Added footer CSS so diagnostics expansion scrolls inside the Fit setup dock instead of crowding the left pane.
+- Bumped version metadata to v1.5.9.
+
 # v1.5.8 - Bottom-docked Fit setup panel
 
 - Moved the whole Fit setup card into a reserved bottom dock of the left setup pane, together with the fit-status footer.

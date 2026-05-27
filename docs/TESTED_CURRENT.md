@@ -1,3 +1,25 @@
+## v1.5.9 compact Fit setup diagnostics check
+
+Scope: reduce the crowded bottom-docked Fit setup status area after v1.5.8 without moving the dock. The default footer now shows one compact summary row and one short primary message; long gate-failure text, fit-process metrics, and warning diagnostics are available only inside the collapsed Details / diagnostics drawer.
+
+Expected behavior:
+
+- Fit setup remains bottom-docked in the left setup pane.
+- The top of Fit setup keeps only Run fit / Stop fit / Report actions plus voltage range and advanced run options.
+- The footer shows one-line status such as `Converged, gate failed · RMSE ... · ... warnings`.
+- Gate failure defaults to `Gate failed: fitted values were not promoted to initials.`
+- Full gate-failure explanation, quality metrics, solver process, warning list, and suggested diagnostics actions are hidden until Details / diagnostics is expanded.
+- Expanding Details / diagnostics scrolls internally and does not overlay the Model Builder or force the left pane to become a warning dump.
+
+Validation run in this handoff:
+
+```bash
+PYTHONPATH=backend python -m pytest backend/tests -q
+python -m compileall -q backend/ivfitter backend/tests
+```
+
+Result: backend tests passed locally in the artifact container. Frontend build was not run because node_modules are not included in the container; validate locally with `npm install` then `npm run build`.
+
 ## v1.5.8 bottom-docked Fit setup panel check
 
 Scope: repair the v1.5.7 layout regression where the Fit setup card occupied a full viewport-height section, created a large blank area, and pushed Model Builder below the status footer.
