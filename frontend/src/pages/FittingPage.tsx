@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, PointerEvent, ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type {
   ComponentSpec,
   EquationSummary,
@@ -141,233 +141,388 @@ const initialConfig: FitConfig = {
 
 type ZoomStyle = CSSProperties & { "--app-zoom": number };
 
-function WorkspaceView(props: {
-  traces: TraceData[];
+function modelSummary(model: ModelSpec) {
+  const names = [...model.series, ...model.core, ...model.parallel].map(
+    (component) =>
+      String(component.metadata?.nickname ?? component.id ?? component.law_id),
+  );
+  return names.length ? names.join(" + ") : "No model";
+}
+
+function fitStateText(result: FitResult | null, isFitting: boolean, lifecycle: FitLifecycleState) {
+  if (isFitting) return "Running";
+  if (result) {
+    if (result.success && result.reportable) return "Converged";
+    if (result.success) return "Gate failed";
+    return "Failed";
+  }
+  if (lifecycle.kind === "cancelled") return "Cancelled";
+  if (lifecycle.kind === "timeout") return "Timeout";
+  if (lifecycle.kind === "error") return "Error";
+  return "Not run";
+}
+
+function nextStepText(hasSelectedTrace: boolean, result: FitResult | null, isFitting: boolean, lifecycle: FitLifecycleState) {
+  if (!hasSelectedTrace) return "Next: Go to Data";
+  if (isFitting) return "Next: Wait for completion";
+  if (lifecycle.kind === "error") return "Next: Review diagnostics";
+  if (!result) return "Next: Go to Fitting";
+  return result.success ? "Next: Review Report" : "Next: Review diagnostics";
+}
+
+function WorkflowContextBar({
+  selectedTrace,
+  hasSelectedTrace,
+  model,
+  result,
+  isFitting,
+  lifecycle,
+  reportAvailable,
+}: {
   selectedTrace: TraceData;
-  selectedTraceId: string | null;
-  setTraces: (traces: TraceData[]) => void;
-  setSelectedTraceId: (id: string) => void;
+  hasSelectedTrace: boolean;
+  model: ModelSpec;
+  result: FitResult | null;
+  isFitting: boolean;
+  lifecycle: FitLifecycleState;
+  reportAvailable: boolean;
+}) {
+  return (
+    <section className="workflow-context-bar" aria-label="Project context">
+      <span><strong>Trace:</strong> {hasSelectedTrace ? String(selectedTrace.metadata?.trace_name ?? selectedTrace.trace_id) : "No trace loaded"}</span>
+      <span><strong>Model:</strong> {modelSummary(model)}</span>
+      <span><strong>Fit:</strong> {fitStateText(result, isFitting, lifecycle)}</span>
+      <span><strong>Report:</strong> {reportAvailable ? result?.reportable ? "Available" : "Review only" : "Not available"}</span>
+      <span className="workflow-next-step">{nextStepText(hasSelectedTrace, result, isFitting, lifecycle)}</span>
+    </section>
+  );
+}
+
+function StartHerePage({
+  setActiveView,
+  hasSelectedTrace,
+  result,
+  isFitting,
+  reportAvailable,
+}: {
+  setActiveView: (view: AppView) => void;
+  hasSelectedTrace: boolean;
+  result: FitResult | null;
+  isFitting: boolean;
+  reportAvailable: boolean;
+}) {
+  const steps = [
+    ["Import data", "Load CSV/TXT data and choose the active trace.", "data", hasSelectedTrace ? "Loaded" : "Needed"],
+    ["Select trace", "Confirm the trace that will be fitted and exported.", "data", hasSelectedTrace ? "Selected" : "Needed"],
+    ["Build model", "Define the circuit model and inspect the equation preview.", "model", "Ready"],
+    ["Configure and run fit", "Set voltage range, objective, and run controls.", "fitting", isFitting ? "Running" : result ? "Run complete" : "Not run"],
+    ["Inspect residuals and parameters", "Review plots, fitted values, and warnings.", "fitting", result ? "Available" : "After fit"],
+    ["Export report", "Generate and download report artifacts after review.", "report", reportAvailable ? "Available" : "Unavailable"],
+  ] as const;
+  return (
+    <section className="workflow-page scroll-page start-page">
+      <div className="card welcome-card">
+        <h2>Welcome to IV-fitter</h2>
+        <p>IV-fitter fits semiconductor I-V curves using circuit-based nonlinear models, residual diagnostics, and reproducible reports.</p>
+      </div>
+      <div className="workflow-step-grid">
+        {steps.map(([title, text, view, status]) => (
+          <article className="workflow-step-card card" key={title}>
+            <span className="workflow-step-status">{status}</span>
+            <h3>{title}</h3>
+            <p>{text}</p>
+            <button type="button" onClick={() => setActiveView(view as AppView)}>
+              Go to {view === "data" ? "Data" : view === "model" ? "Model" : view === "fitting" ? "Fitting" : "Report"}
+            </button>
+          </article>
+        ))}
+      </div>
+      <div className="card quick-actions-card">
+        <h2>Quick actions</h2>
+        <div className="quick-action-row">
+          <button type="button" className="primary" onClick={() => setActiveView("data")}>Go to Data / Import CSV/TXT</button>
+          <button type="button" onClick={() => setActiveView("model")}>Go to Model</button>
+          <button type="button" onClick={() => setActiveView("fitting")}>Go to Fitting</button>
+          <button type="button" onClick={() => setActiveView("help")}>Open Help</button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PageSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="workspace-section open">
+      <div className="workspace-section-head static-head"><span>{title}</span></div>
+      <div className="workspace-section-body">{children}</div>
+    </section>
+  );
+}
+
+function ModelWorkflowPage({
+  model,
+  setModel,
+  registry,
+  equationSummary,
+  result,
+  language,
+  isFitting,
+}: {
   model: ModelSpec;
   setModel: (model: ModelSpec) => void;
-  updateParameterModel: (model: ModelSpec) => void;
-  canRestoreInitialValues: boolean;
-  onRestoreInitialValues: () => void;
+  registry: FunctionDefinition[];
+  equationSummary: EquationSummary | null;
+  result: FitResult | null;
+  language: Language;
+  isFitting: boolean;
+}) {
+  return (
+    <section className="workflow-page model-page">
+      <div className="workflow-two-column">
+        <PageSection title={t(language, "modelBuilder")}>
+          <ErrorBoundary label="Model builder">
+            <ModelBuilder
+              model={model}
+              registry={registry}
+              onChange={setModel}
+              language={language}
+              disabled={isFitting}
+            />
+          </ErrorBoundary>
+        </PageSection>
+        <PageSection title={t(language, "equationPreview")}>
+          <ErrorBoundary label="Equation preview">
+            <EquationPreview
+              equations={equationSummary}
+              model={model}
+              result={result}
+              language={language}
+            />
+          </ErrorBoundary>
+        </PageSection>
+      </div>
+    </section>
+  );
+}
+
+function FittingWorkflowPage({
+  selectedTrace,
+  selectedTraceId,
+  traces,
+  setSelectedTraceId,
+  setActiveView,
+  config,
+  setConfig,
+  autoVoltageRange,
+  fitDrawerMode,
+  setFitDrawerMode,
+  fitActions,
+  fitStatus,
+  fitMessages,
+  fitPromotionNotice,
+  result,
+  registry,
+  model,
+  updateParameterModel,
+  canRestoreInitialValues,
+  onRestoreInitialValues,
+  onApplyDataBounds,
+  canSeedSyntheticGroundTruth,
+  onSeedSyntheticGroundTruth,
+  dataBoundsReport,
+  isFitting,
+  language,
+}: {
+  selectedTrace: TraceData;
+  selectedTraceId: string | null;
+  traces: TraceData[];
+  setSelectedTraceId: (id: string) => void;
+  setActiveView: (view: AppView) => void;
   config: FitConfig;
   setConfig: (config: FitConfig) => void;
   autoVoltageRange: { vMin: number | null; vMax: number | null };
   fitDrawerMode: FitDrawerMode;
   setFitDrawerMode: (mode: FitDrawerMode) => void;
-  registry: FunctionDefinition[];
-  result: FitResult | null;
-  report: string;
-  reportMessage: string;
-  onExportReportCsv: () => void;
-  onExportParametersCsv: () => void;
-  onExportDiagnosticsJson: () => void;
-  equationSummary: EquationSummary | null;
-  language: Language;
-  openSections: Record<string, boolean>;
-  setOpenSections: (sections: Record<string, boolean>) => void;
-  setActiveView: (view: AppView) => void;
-  fitStatus: ReactNode;
   fitActions: ReactNode;
+  fitStatus: ReactNode;
   fitMessages: ReactNode;
-  fitDetails: ReactNode;
-  hasFitDetails: boolean;
+  fitPromotionNotice: string | null;
+  result: FitResult | null;
+  registry: FunctionDefinition[];
+  model: ModelSpec;
+  updateParameterModel: (model: ModelSpec) => void;
+  canRestoreInitialValues: boolean;
+  onRestoreInitialValues: () => void;
   onApplyDataBounds: () => void;
   canSeedSyntheticGroundTruth: boolean;
   onSeedSyntheticGroundTruth: () => void;
   dataBoundsReport: DataBoundsApplicationReport | null;
   isFitting: boolean;
-  fitSessionStats: FitSessionStats;
-  fitLifecycle: FitLifecycleState;
+  language: Language;
 }) {
-  const gridRef = useRef<HTMLDivElement | null>(null);
-  const [leftPaneWidth, setLeftPaneWidth] = useState(() => {
-    const saved = window.localStorage.getItem(
-      "ivfitter.workspace.leftPaneWidth",
-    );
-    const parsed = saved ? Number(saved) : NaN;
-    return Number.isFinite(parsed) ? parsed : 520;
-  });
-
-  function clampLeftPaneWidth(nextWidth: number) {
-    const containerWidth = gridRef.current?.getBoundingClientRect().width ?? 0;
-    const maxWidth =
-      containerWidth > 0 ? Math.max(320, containerWidth - 520) : 760;
-    return Math.min(Math.max(nextWidth, 300), Math.min(maxWidth, 820));
-  }
-
-  function resizeLeftPane(clientX: number) {
-    const rect = gridRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const nextWidth = clampLeftPaneWidth(clientX - rect.left);
-    setLeftPaneWidth(nextWidth);
-    window.localStorage.setItem(
-      "ivfitter.workspace.leftPaneWidth",
-      String(Math.round(nextWidth)),
-    );
-  }
-
-  function startPaneResize(event: PointerEvent<HTMLButtonElement>) {
-    event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    resizeLeftPane(event.clientX);
-  }
-
-  function handlePaneResize(event: PointerEvent<HTMLButtonElement>) {
-    if (event.buttons !== 1) return;
-    resizeLeftPane(event.clientX);
-  }
-
-  function toggleSection(id: string) {
-    props.setOpenSections({
-      ...props.openSections,
-      [id]: !props.openSections[id],
-    });
-  }
-  function Section({
-    id,
-    title,
-    children,
-  }: {
-    id: string;
-    title: string;
-    children: ReactNode;
-  }) {
-    const open = props.openSections[id] ?? true;
-    return (
-      <section
-        id={`section-${id}`}
-        className={`${open ? "workspace-section open" : "workspace-section collapsed"} workspace-section-${id}`}
-      >
-        <button
-          className="workspace-section-head"
-          onClick={() => toggleSection(id)}
-          aria-expanded={open}
-        >
-          <span>{title}</span>
-        </button>
-        <div className="workspace-section-body">{children}</div>
-      </section>
-    );
-  }
+  const hasTrace = selectedTrace.voltage_V.length > 0;
   return (
-    <div className="workspace-fit-shell">
-      <div
-        ref={gridRef}
-        className="content-grid workspace-split-grid"
-        style={
-          { "--workspace-left-width": `${leftPaneWidth}px` } as CSSProperties
-        }
-      >
-      <aside className="control-stack control-stack-with-bottom-fit">
-        <div className="control-scroll-content">
-          <Section id="model" title={t(props.language, "modelBuilder")}>
-            <ErrorBoundary label="Model builder">
-              <ModelBuilder
-                model={props.model}
-                registry={props.registry}
-                onChange={props.setModel}
-                language={props.language}
-                disabled={props.isFitting}
-              />
-            </ErrorBoundary>
-          </Section>
-          <Section id="preview" title={t(props.language, "equationPreview")}>
-            <ErrorBoundary label="Equation preview">
-              <EquationPreview
-                equations={props.equationSummary}
-                model={props.model}
-                result={props.result}
-                language={props.language}
-              />
-            </ErrorBoundary>
-          </Section>
+    <section className="workflow-page fitting-page">
+      {!hasTrace ? (
+        <div className="card workflow-empty-state">
+          <h2>No trace loaded</h2>
+          <p>Import data before running a fit.</p>
+          <button type="button" className="primary" onClick={() => setActiveView("data")}>Go to Data</button>
         </div>
-      </aside>
-
-      <button
-        type="button"
-        className="workspace-resizer"
-        aria-label={
-          props.language === "zh"
-            ? "调整拟合设置和结果区域宽度"
-            : "Resize setup and results panes"
-        }
-        title={
-          props.language === "zh" ? "拖动调整左右宽度" : "Drag to resize panes"
-        }
-        onPointerDown={startPaneResize}
-        onPointerMove={handlePaneResize}
-      />
-
-      <section className="plot-stack main-results-stack">
-        <Section id="plots" title={t(props.language, "plots")}>
-          <ErrorBoundary label="Plot workspace">
-            <PlotWorkspace
-              traces={props.traces}
-              selectedTraceId={props.selectedTraceId}
-              onSelectTrace={props.setSelectedTraceId}
-              onImportData={() => props.setActiveView("data")}
-              result={props.result}
-              language={props.language}
-              disabled={props.isFitting}
+      ) : null}
+      <div className="fitting-workflow-grid">
+        <aside className="fitting-control-column">
+          <ErrorBoundary label="Fit config panel">
+            <FitConfigPanel
+              config={config}
+              onChange={setConfig}
+              language={language}
+              disabled={isFitting}
+              drawerMode={fitDrawerMode}
+              onDrawerModeChange={setFitDrawerMode}
+              autoVoltageRange={autoVoltageRange}
+              actionDock={<div className="fit-action-row">{fitActions}</div>}
+              statusDock={fitStatus}
+              messageDock={fitMessages}
+              detailsDock={
+                result || fitPromotionNotice ? (
+                  <div className="fit-compact-details-note">
+                    <p>Full fit process metrics, quality diagnostics, warnings, and exports live on the Report page.</p>
+                    <button type="button" onClick={() => setActiveView("report")}>Open Report</button>
+                  </div>
+                ) : null
+              }
+              hasDetails={Boolean(result || fitPromotionNotice)}
             />
           </ErrorBoundary>
-        </Section>
-        <div className="main-result-grid">
-          <Section id="parameters" title={t(props.language, "parameters")}>
-            <ErrorBoundary label="Parameter table">
-              <ParameterTable
-                result={props.result}
-                model={props.model}
-                registry={props.registry}
-                onModelChange={props.updateParameterModel}
-                language={props.language}
-                canRestoreInitialValues={props.canRestoreInitialValues}
-                onRestoreInitialValues={props.onRestoreInitialValues}
-                onApplyDataBounds={props.onApplyDataBounds}
-                canSeedSyntheticGroundTruth={props.canSeedSyntheticGroundTruth}
-                onSeedSyntheticGroundTruth={props.onSeedSyntheticGroundTruth}
-                dataBoundsReport={props.dataBoundsReport}
-                disabled={props.isFitting}
+        </aside>
+        <main className="fitting-results-column">
+          <PageSection title={t(language, "plots")}>
+            <ErrorBoundary label="Plot workspace">
+              <PlotWorkspace
+                traces={traces}
+                selectedTraceId={selectedTraceId}
+                onSelectTrace={setSelectedTraceId}
+                onImportData={() => setActiveView("data")}
+                result={result}
+                language={language}
+                disabled={isFitting}
               />
             </ErrorBoundary>
-          </Section>
-        </div>
-        {props.report && (
-          <section className="card report-card">
-            <h2>{t(props.language, "markdownReport")}</h2>
-            <div className="report-actions">
-              <button type="button" onClick={props.onExportReportCsv}>{props.language === "zh" ? "下载完整 CSV 报告" : "Download report CSV"}</button>
-              <button type="button" onClick={props.onExportParametersCsv}>{props.language === "zh" ? "下载参数 CSV" : "Download parameter CSV"}</button>
-              <button type="button" onClick={props.onExportDiagnosticsJson}>{props.language === "zh" ? "下载 diagnostics JSON" : "Download diagnostics JSON"}</button>
-            </div>
-            {props.reportMessage ? <p className="muted">{props.reportMessage}</p> : null}
-            <textarea readOnly value={props.report} rows={12} />
-          </section>
-        )}
-      </section>
+          </PageSection>
+          <PageSection title={t(language, "parameters")}>
+            <ErrorBoundary label="Parameter table">
+              <ParameterTable
+                result={result}
+                model={model}
+                registry={registry}
+                onModelChange={updateParameterModel}
+                language={language}
+                canRestoreInitialValues={canRestoreInitialValues}
+                onRestoreInitialValues={onRestoreInitialValues}
+                onApplyDataBounds={onApplyDataBounds}
+                canSeedSyntheticGroundTruth={canSeedSyntheticGroundTruth}
+                onSeedSyntheticGroundTruth={onSeedSyntheticGroundTruth}
+                dataBoundsReport={dataBoundsReport}
+                disabled={isFitting}
+              />
+            </ErrorBoundary>
+          </PageSection>
+        </main>
       </div>
+    </section>
+  );
+}
 
-      <ErrorBoundary label="Fit config panel">
-        <FitConfigPanel
-          config={props.config}
-          onChange={props.setConfig}
-          language={props.language}
-          disabled={props.isFitting}
-          drawerMode={props.fitDrawerMode}
-          onDrawerModeChange={props.setFitDrawerMode}
-          autoVoltageRange={props.autoVoltageRange}
-          actionDock={<div className="fit-action-row">{props.fitActions}</div>}
-          statusDock={props.fitStatus}
-          messageDock={props.fitMessages}
-          detailsDock={props.fitDetails}
-          hasDetails={props.hasFitDetails}
-        />
-      </ErrorBoundary>
-    </div>
+function ReportWorkflowPage({
+  selectedTrace,
+  hasSelectedTrace,
+  model,
+  result,
+  report,
+  reportMessage,
+  reportAvailable,
+  isFitting,
+  fitLifecycle,
+  fitPromotionNotice,
+  fitSessionStats,
+  dismissedWarningKey,
+  setDismissedWarningKey,
+  openAndScroll,
+  makeReport,
+  onExportReportCsv,
+  onExportParametersCsv,
+  onExportDiagnosticsJson,
+  setActiveView,
+  language,
+}: {
+  selectedTrace: TraceData;
+  hasSelectedTrace: boolean;
+  model: ModelSpec;
+  result: FitResult | null;
+  report: string;
+  reportMessage: string;
+  reportAvailable: boolean;
+  isFitting: boolean;
+  fitLifecycle: FitLifecycleState;
+  fitPromotionNotice: string | null;
+  fitSessionStats: FitSessionStats;
+  dismissedWarningKey: string;
+  setDismissedWarningKey: (key: string) => void;
+  openAndScroll: (sectionId: string) => void;
+  makeReport: () => void;
+  onExportReportCsv: () => void;
+  onExportParametersCsv: () => void;
+  onExportDiagnosticsJson: () => void;
+  setActiveView: (view: AppView) => void;
+  language: Language;
+}) {
+  const verdict = fitStateText(result, isFitting, fitLifecycle);
+  return (
+    <section className="workflow-page report-page scroll-page">
+      <div className="card report-overview-card">
+        <h2>Report</h2>
+        <div className="report-meta-grid">
+          <span><strong>Trace</strong>{hasSelectedTrace ? String(selectedTrace.metadata?.trace_name ?? selectedTrace.trace_id) : "No trace loaded"}</span>
+          <span><strong>Model</strong>{modelSummary(model)}</span>
+          <span><strong>Fit verdict</strong>{verdict}</span>
+          <span><strong>Software</strong>{APP_VERSION}</span>
+        </div>
+        {!result && !isFitting ? (
+          <div className="workflow-empty-state inline">
+            <p>No completed fit yet.</p>
+            <button type="button" className="primary" onClick={() => setActiveView("fitting")}>Go to Fitting</button>
+          </div>
+        ) : null}
+        {isFitting ? <p className="fit-primary-message info">Fit is running; report will be available after completion.</p> : null}
+      </div>
+      {fitPromotionNotice ? <div className="fit-full-note">{fitPromotionNotice}</div> : null}
+      {result ? (
+        <>
+          <FitProcessDiagnostics result={result} language={language} sessionStats={fitSessionStats} />
+          {warningDismissKey(result) !== dismissedWarningKey ? (
+            <FitDiagnostics
+              result={result}
+              language={language}
+              onCheckLogIv={() => openAndScroll("plots")}
+              onAdjustInitials={() => openAndScroll("model")}
+              onClose={() => setDismissedWarningKey(warningDismissKey(result))}
+            />
+          ) : null}
+        </>
+      ) : null}
+      <div className="card report-export-card">
+        <h2>Exports</h2>
+        <div className="report-actions">
+          <button type="button" disabled={!reportAvailable} onClick={makeReport}>{t(language, "report")}</button>
+          <button type="button" disabled={!report} onClick={onExportReportCsv}>{language === "zh" ? "下载完整 CSV 报告" : "Download report CSV"}</button>
+          <button type="button" disabled={!report} onClick={onExportParametersCsv}>{language === "zh" ? "下载参数 CSV" : "Download parameter CSV"}</button>
+          <button type="button" disabled={!report} onClick={onExportDiagnosticsJson}>{language === "zh" ? "下载 diagnostics JSON" : "Download diagnostics JSON"}</button>
+        </div>
+        {reportMessage ? <p className="muted">{reportMessage}</p> : null}
+        {report ? <textarea readOnly value={report} rows={12} /> : <p className="muted">Generate a report after a completed or review-only fit.</p>}
+      </div>
+    </section>
   );
 }
 
@@ -507,7 +662,7 @@ export function FittingPage() {
   const [equationSummary, setEquationSummary] =
     useState<EquationSummary | null>(null);
   const [zoom, setZoom] = useState(0.92);
-  const [activeView, setActiveView] = useState<AppView>("workspace");
+  const [activeView, setActiveView] = useState<AppView>("start");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [language, setLanguage] = useState<Language>("en");
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -661,7 +816,7 @@ export function FittingPage() {
     setReportArtifacts(emptyReportArtifacts);
     setDataBoundsReport(null);
     setDismissedWarningKey("");
-    setActiveView("workspace");
+    setActiveView("fitting");
     if (!selectedTrace.voltage_V.length) {
       activeFitRunIdRef.current = null;
       setResult(null);
@@ -697,7 +852,7 @@ export function FittingPage() {
       setError(
         language === "zh"
           ? `拟合超过 ${timeoutS} 秒，已中止请求；本次结果不会写入界面。`
-          : `Fit exceeded ${timeoutS} s. The request was stopped and this run result will not update the workspace.`,
+          : `Fit exceeded ${timeoutS} s. The request was stopped and this run result will not update the interface.`,
       );
     }, timeoutS * 1000);
     try {
@@ -750,7 +905,7 @@ export function FittingPage() {
         setError(
           language === "zh"
             ? "拟合请求已中止。本次结果不会写入界面。"
-            : "Fit request was aborted. This run result will not update the workspace.",
+            : "Fit request was aborted. This run result will not update the interface.",
         );
       } else {
         const message = String(e);
@@ -780,7 +935,7 @@ export function FittingPage() {
     setError(
       language === "zh"
         ? "已停止当前拟合请求。本次结果不会写入界面。"
-        : "Current fit request stopped. This run result will not update the workspace.",
+        : "Current fit request stopped. This run result will not update the interface.",
     );
   }
 
@@ -806,7 +961,7 @@ export function FittingPage() {
       report: r.markdown,
       message: language === "zh" ? "报告已生成。可下载完整 CSV、参数 CSV 或 diagnostics JSON。" : "Report generated. You can download the full CSV, parameter CSV, or diagnostics JSON.",
     });
-    setActiveView("workspace");
+    setActiveView("report");
   }
 
   function downloadText(filename: string, text: string, mimeType: string) {
@@ -848,7 +1003,7 @@ export function FittingPage() {
     downloadText(reportBaseName("diagnostics.json"), r.text, "application/json;charset=utf-8");
   }
   function openAndScroll(sectionId: string) {
-    setActiveView("workspace");
+    setActiveView(sectionId === "model" ? "model" : "fitting");
     setOpenSections((current) => ({ ...current, [sectionId]: true }));
     window.setTimeout(
       () =>
@@ -866,6 +1021,83 @@ export function FittingPage() {
     hasResult: result !== null,
     lifecycle: fitLifecycle,
   });
+
+  const fitStatusNode = (
+    <FitStatusBar
+      result={result}
+      language={language}
+      isFitting={isFitting}
+      elapsedSeconds={elapsedSeconds}
+      lifecycleStatus={fitLifecycle}
+    />
+  );
+
+  const fitActionsNode = (
+    <>
+      <button
+        className={hasSelectedTrace ? "primary" : "fit-action-unavailable"}
+        disabled={isFitting || !hasSelectedTrace}
+        title={!hasSelectedTrace ? "Import data before running a fit." : undefined}
+        onClick={runFit}
+      >
+        <span className="button-icon" aria-hidden="true">▶</span>
+        {t(language, "runFit")}
+      </button>
+      <button
+        className={isFitting ? "danger-soft active" : "danger-soft"}
+        disabled={!isFitting}
+        onClick={stopFit}
+      >
+        <span className="button-icon" aria-hidden="true">■</span>
+        {language === "zh" ? "停止拟合" : "Stop fit"}
+      </button>
+      <button
+        disabled={!reportAvailable}
+        title={!reportAvailable ? "Available after a completed fit." : undefined}
+        onClick={makeReport}
+      >
+        <span className="button-icon" aria-hidden="true">▣</span>
+        {t(language, "report")}
+      </button>
+    </>
+  );
+
+  const fitMessagesNode = (
+    <>
+      {!selectedTrace.voltage_V.length && !error ? (
+        <div className="fit-primary-message empty">
+          <strong>No trace loaded.</strong>
+          <span>Import data or load a synthetic example before fitting.</span>
+        </div>
+      ) : null}
+      {fitPromotionNotice ? (
+        <div className="fit-primary-message warning">
+          <strong>Gate failed:</strong>
+          <span>fitted values were not promoted to initials.</span>
+        </div>
+      ) : null}
+      {isFitting ? (
+        <div className="fit-primary-message info">
+          Fitting is running; Stop fit aborts the current request and ignores late results.
+        </div>
+      ) : null}
+      {error ? (
+        isBackendConnectionError(error) ? (
+          <BackendConnectionBanner message={error} onRetry={runFit} />
+        ) : (
+          <div
+            className={
+              noTraceRunAttempted
+                ? "warning error validation fit-primary-message"
+                : "warning error fit-primary-message"
+            }
+          >
+            {error}
+          </div>
+        )
+      ) : null}
+    </>
+  );
 
   const zoomControl = (
     <div
@@ -905,8 +1137,27 @@ export function FittingPage() {
         onLanguageChange={setLanguage}
         zoomControl={zoomControl}
       />
-      <main className="workspace">
-        {activeView === "data" ? (
+      <main className="workspace workflow-shell">
+        {activeView !== "start" ? (
+          <WorkflowContextBar
+            selectedTrace={selectedTrace}
+            hasSelectedTrace={hasSelectedTrace}
+            model={model}
+            result={result}
+            isFitting={isFitting}
+            lifecycle={fitLifecycle}
+            reportAvailable={reportAvailable}
+          />
+        ) : null}
+        {activeView === "start" ? (
+          <StartHerePage
+            setActiveView={setActiveView}
+            hasSelectedTrace={hasSelectedTrace}
+            result={result}
+            isFitting={isFitting}
+            reportAvailable={reportAvailable}
+          />
+        ) : activeView === "data" ? (
           <DataImportWorkspace
             traces={traces}
             selectedTraceId={selectedTraceId}
@@ -926,25 +1177,8 @@ export function FittingPage() {
             model={model}
             language={language}
           />
-        ) : activeView === "workspace" ? (
-          <WorkspaceView
-            traces={traces}
-            selectedTrace={selectedTrace}
-            selectedTraceId={selectedTraceId}
-            setTraces={(next) => {
-              setTraces(next);
-              setResult(null);
-              setReportArtifacts(emptyReportArtifacts);
-              setDataBoundsReport(null);
-              setNoTraceRunAttempted(false);
-            }}
-            setSelectedTraceId={(id) => {
-              setSelectedTraceId(id);
-              setResult(null);
-              setReportArtifacts(emptyReportArtifacts);
-              setDataBoundsReport(null);
-              setNoTraceRunAttempted(false);
-            }}
+        ) : activeView === "model" ? (
+          <ModelWorkflowPage
             model={model}
             setModel={(next) => {
               setModel(next);
@@ -953,6 +1187,37 @@ export function FittingPage() {
               setReportArtifacts(emptyReportArtifacts);
               setDataBoundsReport(null);
             }}
+            registry={registry}
+            equationSummary={equationSummary}
+            result={result}
+            language={language}
+            isFitting={isFitting}
+          />
+        ) : activeView === "fitting" ? (
+          <FittingWorkflowPage
+            selectedTrace={selectedTrace}
+            selectedTraceId={selectedTraceId}
+            traces={traces}
+            setSelectedTraceId={(id) => {
+              setSelectedTraceId(id);
+              setResult(null);
+              setReportArtifacts(emptyReportArtifacts);
+              setDataBoundsReport(null);
+              setNoTraceRunAttempted(false);
+            }}
+            setActiveView={setActiveView}
+            config={config}
+            setConfig={setConfig}
+            autoVoltageRange={autoVoltageRange}
+            fitDrawerMode={fitDrawerMode}
+            setFitDrawerMode={setFitDrawerMode}
+            fitActions={fitActionsNode}
+            fitStatus={fitStatusNode}
+            fitMessages={fitMessagesNode}
+            fitPromotionNotice={fitPromotionNotice}
+            result={result}
+            registry={registry}
+            model={model}
             updateParameterModel={(next) => {
               setModel(next);
               setReportArtifacts(emptyReportArtifacts);
@@ -967,160 +1232,35 @@ export function FittingPage() {
                 setDataBoundsReport(null);
               }
             }}
-            config={config}
-            setConfig={setConfig}
-            autoVoltageRange={autoVoltageRange}
-            fitDrawerMode={fitDrawerMode}
-            setFitDrawerMode={setFitDrawerMode}
-            registry={registry}
-            result={result}
-            report={report}
-            reportMessage={reportMessage}
-            onExportReportCsv={downloadReportCsv}
-            onExportParametersCsv={downloadParametersCsv}
-            onExportDiagnosticsJson={downloadDiagnosticsJson}
-            equationSummary={equationSummary}
-            language={language}
-            openSections={openSections}
-            setOpenSections={setOpenSections}
-            setActiveView={setActiveView}
-            fitStatus={
-              <FitStatusBar
-                result={result}
-                language={language}
-                isFitting={isFitting}
-                elapsedSeconds={elapsedSeconds}
-                lifecycleStatus={fitLifecycle}
-              />
-            }
-            fitActions={
-              <>
-                <button
-                  className={
-                    hasSelectedTrace ? "primary" : "fit-action-unavailable"
-                  }
-                  disabled={isFitting || !hasSelectedTrace}
-                  title={
-                    !hasSelectedTrace
-                      ? language === "zh"
-                        ? "请先导入数据再运行拟合。"
-                        : "Import data before running a fit."
-                      : undefined
-                  }
-                  onClick={runFit}
-                >
-                  {t(language, "runFit")}
-                </button>
-                <button
-                  className={isFitting ? "danger-soft active" : "danger-soft"}
-                  disabled={!isFitting}
-                  onClick={stopFit}
-                >
-                  {language === "zh" ? "停止拟合" : "Stop fit"}
-                </button>
-                <button
-                  disabled={!reportAvailable}
-                  title={
-                    !reportAvailable
-                      ? language === "zh"
-                        ? "完成一次拟合后可生成报告。"
-                        : "Available after a completed fit."
-                      : undefined
-                  }
-                  onClick={makeReport}
-                >
-                  {t(language, "report")}
-                </button>
-              </>
-            }
             onApplyDataBounds={applyDataBounds}
             canSeedSyntheticGroundTruth={canSeedSyntheticGroundTruth}
             onSeedSyntheticGroundTruth={seedFromSyntheticGroundTruth}
             dataBoundsReport={dataBoundsReport}
-            fitMessages={
-              <>
-                {!selectedTrace.voltage_V.length && !error ? (
-                  <div className="fit-primary-message empty">
-                    <strong>
-                      {language === "zh"
-                        ? "还没有加载 trace。"
-                        : "No trace loaded."}
-                    </strong>
-                    <span>
-                      {language === "zh"
-                        ? "导入数据或加载 synthetic example 后再拟合。"
-                        : "Import data or load a synthetic example before fitting."}
-                    </span>
-                  </div>
-                ) : null}
-                {fitPromotionNotice ? (
-                  <div className="fit-primary-message warning">
-                    <strong>
-                      {language === "zh" ? "门控未通过：" : "Gate failed:"}
-                    </strong>
-                    <span>
-                      {language === "zh"
-                        ? "fitted values 没有写回下一次初值。"
-                        : "fitted values were not promoted to initials."}
-                    </span>
-                  </div>
-                ) : null}
-                {isFitting ? (
-                  <div className="fit-primary-message info">
-                    {language === "zh"
-                      ? "拟合正在运行；Stop fit 会中止当前请求并忽略迟到结果。"
-                      : "Fitting is running; Stop fit aborts the current request and ignores late results."}
-                  </div>
-                ) : null}
-                {error ? (
-                  isBackendConnectionError(error) ? (
-                    <BackendConnectionBanner message={error} onRetry={runFit} />
-                  ) : (
-                    <div
-                      className={
-                        noTraceRunAttempted
-                          ? "warning error validation fit-primary-message"
-                          : "warning error fit-primary-message"
-                      }
-                    >
-                      {error}
-                    </div>
-                  )
-                ) : null}
-              </>
-            }
-            fitDetails={
-              <>
-                {fitPromotionNotice ? (
-                  <div className="fit-full-note">
-                    {fitPromotionNotice}
-                  </div>
-                ) : null}
-                {result ? (
-                  <FitProcessDiagnostics
-                    result={result}
-                    language={language}
-                    sessionStats={fitSessionStats}
-                  />
-                ) : null}
-                {result &&
-                warningDismissKey(result) !== dismissedWarningKey ? (
-                  <FitDiagnostics
-                    result={result}
-                    language={language}
-                    onCheckLogIv={() => openAndScroll("plots")}
-                    onAdjustInitials={() => openAndScroll("model")}
-                    onClose={() =>
-                      setDismissedWarningKey(warningDismissKey(result))
-                    }
-                  />
-                ) : null}
-              </>
-            }
-            hasFitDetails={Boolean(result || fitPromotionNotice)}
             isFitting={isFitting}
-            fitSessionStats={fitSessionStats}
+            language={language}
+          />
+        ) : activeView === "report" ? (
+          <ReportWorkflowPage
+            selectedTrace={selectedTrace}
+            hasSelectedTrace={hasSelectedTrace}
+            model={model}
+            result={result}
+            report={report}
+            reportMessage={reportMessage}
+            reportAvailable={reportAvailable}
+            isFitting={isFitting}
             fitLifecycle={fitLifecycle}
+            fitPromotionNotice={fitPromotionNotice}
+            fitSessionStats={fitSessionStats}
+            dismissedWarningKey={dismissedWarningKey}
+            setDismissedWarningKey={setDismissedWarningKey}
+            openAndScroll={openAndScroll}
+            makeReport={makeReport}
+            onExportReportCsv={downloadReportCsv}
+            onExportParametersCsv={downloadParametersCsv}
+            onExportDiagnosticsJson={downloadDiagnosticsJson}
+            setActiveView={setActiveView}
+            language={language}
           />
         ) : (
           <UserDocumentationPage
@@ -1130,12 +1270,10 @@ export function FittingPage() {
             language={language}
           />
         )}
-        {activeView === "workspace" && (
+        {activeView === "fitting" && (
           <div className="mobile-action-bar">
             <button
-              className={
-                hasSelectedTrace ? "primary" : "fit-action-unavailable"
-              }
+              className={hasSelectedTrace ? "primary" : "fit-action-unavailable"}
               disabled={isFitting || !hasSelectedTrace}
               onClick={runFit}
             >
@@ -1146,7 +1284,7 @@ export function FittingPage() {
               disabled={!isFitting}
               onClick={stopFit}
             >
-              {language === "zh" ? "停止拟合" : "Stop fit"}
+              {language === "zh" ? "Stop fit" : "Stop fit"}
             </button>
           </div>
         )}

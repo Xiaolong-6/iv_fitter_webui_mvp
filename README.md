@@ -14,28 +14,30 @@ The app is a working prototype for the IV-fitter workflow. It is not yet a full 
 
 1. Open **Data** and import or paste a voltage/current trace.
 2. Confirm the selected trace and imported column units. The app converts imported values to SI V/A for preview, plots, and fitting.
-3. Open **Workspace** and set the voltage range and fitting objective in the bottom Fit setup dock.
-4. Build the model in **Model Builder**.
-5. Click **Run fit**.
-6. Inspect plots, residuals, diagnostics, parameters, and equations.
-7. Export a report only after the model, warnings, selected trace, voltage range, and residuals are defensible.
+3. Open **Model** and build or review the equivalent circuit.
+4. Open **Fitting**, set the voltage range/objective, and click **Run fit**.
+5. Inspect plots, residuals, and fitted parameters.
+6. Open **Report** to review full diagnostics and export artifacts only after the fit is defensible.
 
 ## Current UI Areas
 
+- **Start here:** workflow overview, current project state, and quick navigation.
 - **Data:** CSV/TXT/DAT import, publication/demo multi-trace auto-detection, pasted-data import, synthetic trace generation, dataset naming, unit selection, trace selection, import-quality summary, and spreadsheet preview.
-- **Workspace:** Model Builder, Model preview, plots, grouped Parameters table, diagnostics, report generation, and a full-width bottom Fit setup dock.
-- **User manual:** tutorial-style workflow guide, Function Guide, fitting logic, convergence guidance, reporting notes, and glossary.
+- **Model:** Model Builder, equivalent-circuit component controls, and model/equation preview.
+- **Fitting:** Fit setup, Run/Stop/Report controls, plots, residuals, and grouped Parameters table.
+- **Report:** report verdict, full fit process/quality diagnostics, warnings, and export actions.
+- **Help:** tutorial-style workflow guide, Function Guide, fitting logic, convergence guidance, reporting notes, and glossary.
 
 ## Current Workflow Details
 
-- **Fit setup** lives in a full-width bottom dock so Model Builder keeps its vertical space. It keeps status, actions, and messages in compact layers:
+- **Fit setup** lives on the Fitting page. It keeps status, actions, and messages in compact layers:
   - status badges such as Ready, Running, Converged, warnings, and errors;
   - action buttons with **Run fit** as the main idle action and **Stop** as the high-priority action only while fitting;
   - contextual info/diagnostics below the buttons.
 - Empty data is shown as an informational state until the user tries to run a fit with no trace loaded.
 - If `V min` or `V max` is blank, the backend uses the full selected trace range. The empty input placeholder shows the concrete selected-trace min/max voltage instead of a vague `auto`.
 - Completed fits automatically write fitted values back into the model as the next initial values. Use **Restore initial values** in Parameters to recover the pre-fit values from the most recent run.
-- Diagnostics are compact by default. Residual cautions and warning details open upward from the bottom dock instead of occupying persistent Model Builder space.
+- Diagnostics are compact in Fitting. Full fit process metrics, warning details, and export controls live on the Report page.
 - During a running fit, model edits, parameter edits, fit setup inputs, data import actions, and report generation are disabled. **Stop** remains available.
 
 ## Model Builder
@@ -189,12 +191,13 @@ The sample preserves the multi-trace row count and voltage/current data needed t
 User-facing demo IV traces live under `examples/demo_data/iv_traces/`. In the local app, Import CSV/TXT opens that folder by default when the runtime supports local OS file dialogs; users can still browse anywhere.
 
 
-### v1.5.19 full-width bottom Fit setup dock
+### v1.5.19 workflow-centered UI shell
 
-- Moved Fit setup out of the left Model Builder pane and into an app-level bottom dock spanning the workspace.
-- Restored vertical scrolling space for Model Builder and Model preview.
-- Added a shared upward drawer for Advanced run options and Status Details.
-- Kept fit lifecycle, report export, backend API, saved models, and numerical behavior unchanged.
+- Replaced the old Workspace-centered navigation with **Start here**, **Data**, **Model**, **Fitting**, **Report**, and **Help**.
+- Added a default Start here page with workflow guidance and quick navigation.
+- Moved Model Builder and model preview to Model; moved Fit setup, plots, and parameters to Fitting; moved exports and full diagnostics to Report.
+- Added a compact global context bar and dock button icons.
+- Kept fit lifecycle, report export structure, backend API, saved models, and numerical behavior unchanged.
 
 ### v1.5.18 semantic component label cleanup
 

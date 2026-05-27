@@ -2,6 +2,14 @@ export type Language = "en" | "zh";
 
 const dictionaries = {
   en: {
+    start: "Start here",
+    startHint: "Workflow overview and next step",
+    model: "Model",
+    modelHint: "Build and preview the circuit model",
+    fitting: "Fitting",
+    fittingHint: "Configure, run, and inspect the fit",
+    help: "Help",
+    helpHint: "Manual, function guide, fitting logic, and troubleshooting",
     workspace: "Workspace",
     workspaceHint: "Data, model, fit, plots",
     usage: "User manual",
@@ -137,6 +145,14 @@ const dictionaries = {
     solverModeHelp: "Legacy composite is stable for common one-junction models. Graph DC is experimental for topology-based assembly.",
   },
   zh: {
+    start: "Start here",
+    startHint: "工作流程概览和下一步",
+    model: "模型",
+    modelHint: "构建并预览电路模型",
+    fitting: "拟合",
+    fittingHint: "配置、运行并检查拟合",
+    help: "帮助",
+    helpHint: "手册、函数指南、拟合逻辑和故障排查",
     workspace: "工作区",
     workspaceHint: "数据、模型、拟合和图像",
     usage: "用户手册",

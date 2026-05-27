@@ -9,7 +9,7 @@ Validated in this package:
 - Frontend Vitest suite: pending local dependency repair.
 - Frontend production build: pending local dependency repair.
 
-Key change: Fit setup moved from the left Model Builder pane into a full-width bottom dock. Advanced run options and Status Details now share an upward, mutually exclusive drawer from that dock. This is a rendering/layout release only; fitting behavior, backend APIs, reports, saved models, and equations are unchanged.
+Key change: the UI is reorganized around workflow pages: Start here, Data, Model, Fitting, Report, and Help. Existing Data import, Model Builder, Fit setup, plots, parameters, diagnostics, exports, and manual content are moved into task-specific pages. This is an information-architecture release only; fitting behavior, backend APIs, reports, saved models, and equations are unchanged.
 
 Commands run:
 
@@ -32,7 +32,7 @@ Local note: the backend pytest suite passes with the repository `.venv`. The def
 
 Manual checks recommended:
 
-1. Open Workspace and confirm Fit setup appears in the full-width bottom dock, not in the left Model Builder pane.
-2. Confirm Model Builder and Model Preview scroll using the recovered left-pane height.
-3. Toggle Advanced and Details; each should open upward in the same drawer area, close the other mode, and close when clicked again.
+1. Confirm the default page is Start here.
+2. Navigate to Data, Model, Fitting, Report, and Help; state should persist while switching pages.
+3. Confirm Data renders import/preview, Model renders Model Builder and preview, Fitting renders Fit setup/plots/parameters, Report renders unavailable state before fitting plus export controls, and Help renders the manual.
 4. Confirm Run fit, Stop fit, Report availability, compact status, and diagnostics behavior match the previous release.

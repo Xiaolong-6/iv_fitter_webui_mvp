@@ -2826,8 +2826,33 @@ button.fit-action-unavailable:disabled {
 }
 .fit-bottom-dock-toggle {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(5px * var(--app-zoom));
   white-space: nowrap;
   font-weight: 800;
+}
+.button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(16px * var(--app-zoom));
+  min-width: calc(16px * var(--app-zoom));
+  height: calc(16px * var(--app-zoom));
+  font-size: calc(11px * var(--app-zoom));
+  line-height: 1;
+}
+.drawer-caret {
+  color: #64748b;
+  font-size: calc(11px * var(--app-zoom));
+  line-height: 1;
+}
+.fit-action-row button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(5px * var(--app-zoom));
 }
 .fit-bottom-dock-toggle.active {
   border-color: #93c5fd;
@@ -2850,6 +2875,14 @@ button.fit-action-unavailable:disabled {
   max-height: none;
   margin-top: 0;
   padding-right: 2px;
+}
+.fit-compact-details-note {
+  display: grid;
+  gap: calc(8px * var(--app-zoom));
+}
+.fit-compact-details-note p {
+  margin: 0;
+  color: #475569;
 }
 .fit-bottom-dock-drawer .advanced-objective-body {
   display: grid;
@@ -2912,6 +2945,141 @@ button.fit-action-unavailable:disabled {
   color: var(--muted-text);
   background: var(--surface-muted);
   white-space: nowrap;
+}
+
+/* v1.5.19 workflow-centered page shell. */
+.workflow-shell {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.workflow-page {
+  min-height: 0;
+  overflow: auto;
+}
+.workflow-context-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(7px * var(--app-zoom));
+  padding: calc(7px * var(--app-zoom)) calc(10px * var(--app-zoom));
+  border: 1px solid var(--border);
+  border-radius: calc(9px * var(--app-zoom));
+  background: #fff;
+  color: #334155;
+  font-size: calc(12px * var(--app-zoom));
+  min-width: 0;
+}
+.workflow-context-bar span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workflow-next-step {
+  margin-left: auto;
+  color: #1d4ed8;
+  font-weight: 800;
+}
+.start-page,
+.report-page {
+  display: grid;
+  align-content: start;
+  gap: calc(10px * var(--app-zoom));
+}
+.welcome-card p,
+.workflow-step-card p,
+.workflow-empty-state p {
+  margin: 0;
+  color: #475569;
+}
+.workflow-step-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: calc(10px * var(--app-zoom));
+}
+.workflow-step-card {
+  display: grid;
+  gap: calc(8px * var(--app-zoom));
+}
+.workflow-step-card h3 {
+  margin: 0;
+}
+.workflow-step-status {
+  width: fit-content;
+  padding: calc(2px * var(--app-zoom)) calc(7px * var(--app-zoom));
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: calc(11px * var(--app-zoom));
+  font-weight: 800;
+}
+.quick-action-row,
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(8px * var(--app-zoom));
+}
+.workflow-two-column,
+.fitting-workflow-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.85fr) minmax(460px, 1.35fr);
+  gap: calc(10px * var(--app-zoom));
+  min-height: 0;
+}
+.fitting-control-column,
+.fitting-results-column {
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: calc(10px * var(--app-zoom));
+}
+.fitting-control-column .fit-bottom-dock {
+  box-shadow: none;
+}
+.fitting-control-column .fit-bottom-dock-row {
+  align-items: stretch;
+}
+.fitting-control-column .fit-bottom-dock-title,
+.fitting-control-column .fit-bottom-dock-actions,
+.fitting-control-column .fit-bottom-voltage,
+.fitting-control-column .fit-bottom-status,
+.fitting-control-column .fit-bottom-dock-toggle {
+  flex: 1 1 100%;
+}
+.static-head {
+  cursor: default;
+}
+.workflow-empty-state {
+  display: grid;
+  gap: calc(8px * var(--app-zoom));
+  margin-bottom: calc(10px * var(--app-zoom));
+}
+.workflow-empty-state.inline {
+  margin: calc(10px * var(--app-zoom)) 0 0;
+}
+.report-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: calc(8px * var(--app-zoom));
+}
+.report-meta-grid span {
+  display: grid;
+  gap: 2px;
+  padding: calc(7px * var(--app-zoom));
+  border: 1px solid var(--border);
+  border-radius: calc(8px * var(--app-zoom));
+  background: #f8fafc;
+}
+@media (max-width: 980px) {
+  .workflow-step-grid,
+  .workflow-two-column,
+  .fitting-workflow-grid,
+  .report-meta-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workflow-next-step {
+    margin-left: 0;
+  }
 }
 
 .report-actions {

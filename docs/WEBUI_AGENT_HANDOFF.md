@@ -34,11 +34,12 @@ React/Vite frontend -> FastAPI API -> Python fitting core
 - Model Builder equivalent-circuit preview uses a compact topology diagram with main path on top and branches below Vj.
 - Model Builder is compact: component nicknames are edited directly, and parameter initials/bounds/fixed state are handled in the Parameters table rather than duplicated in builder cards.
 - Parameters are displayed by placement and component instance. Keep parameter keys unchanged for fitting, save/load, JSON export/import, and reports. After a completed fit, fitted values are written into the model as next-run initial values only if the fit passes reportability/quality gating; poor fits remain visible but must not silently overwrite trusted initials. The restore button should recover the pre-fit value snapshot only, not rename parameters or alter serialization. Synthetic traces can also seed initials from stored ground-truth metadata when parameter keys match.
-- Model preview belongs below Model Builder and starts collapsed by default.
+- The UI is workflow-centered: Start here, Data, Model, Fitting, Report, and Help. Do not reintroduce a single Workspace tab as the main task surface.
+- Model Builder and model preview belong on Model. Fit setup, plots, and Parameters belong on Fitting. Full fit process/quality diagnostics and exports belong on Report. The full manual belongs on Help.
 - User-facing text should move toward content modules and translation-ready documents; start with `docs/LOCALIZATION_AND_TEXT.md` before adding new visible UI copy.
 - User manual Function Guide is user-facing by default. Internal schema terms are only allowed in collapsed Advanced details.
 - Mobile portrait layout has a sticky full-width run action, compact voltage range controls, and a backend connection banner.
-- Fit setup owns compact fitting status, Run fit/Stop/Report actions, no-trace validation, running feedback, and Diagnostics disclosure. Keep this area compact and layered: status badges, action row, then contextual messages.
+- Fit setup owns compact fitting status, Run fit/Stop/Report actions, no-trace validation, running feedback, and a compact Details drawer/link into Report. Keep this area compact and layered: status badges, action row, then contextual messages.
 - Fitting has visible running feedback, Stop behavior for ignoring an in-flight result, and expanded app-local zoom. While fitting, disable model/parameter/setup/import/report edits but keep Stop available.
 - LAN testing helper `04c_run_lan_dev.bat` starts both backend and frontend and prints phone/tablet URLs.
 
@@ -94,7 +95,7 @@ After every change, provide a 3-step browser test that does not require reading 
 - Parameter table organization is display-only. Do not rename internal parameter keys when changing grouping, filters, labels, export, report, or save/load behavior.
 - Prefer `frontend/src/model/parameterGrouping.ts` for grouping, component batch behavior, whole-model seed-from-fitted logic, and restore-from-snapshot logic instead of reimplementing those rules inside React components.
 - Prefer `frontend/src/content/localizedText.ts` and `frontend/src/model/i18n.ts` for visible labels/help text. Avoid scattering translation strings across component bodies.
-- Keep explanatory text out of the visible Workspace surface when it can live in HelpTips, the user manual, or localization docs.
+- Keep explanatory text out of the visible task pages when it can live in HelpTips, the Help page, or localization docs.
 
 
 ## v1.4.9 selected-column HappyMeasure fix

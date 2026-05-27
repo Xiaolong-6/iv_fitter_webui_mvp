@@ -2,10 +2,17 @@ import type { ReactNode } from "react";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 
-export type AppView = "data" | "workspace" | "usage";
+export type AppView = "start" | "data" | "model" | "fitting" | "report" | "help";
 
-const tabIds: AppView[] = ["data", "workspace", "usage"];
-const tabIcons: Record<AppView, string> = { data: "▦", workspace: "⚙", usage: "?" };
+const tabIds: AppView[] = ["start", "data", "model", "fitting", "report", "help"];
+const tabIcons: Record<AppView, string> = {
+  start: "1",
+  data: "D",
+  model: "M",
+  fitting: "F",
+  report: "R",
+  help: "?",
+};
 
 export function WorkflowSidebar({
   activeView,

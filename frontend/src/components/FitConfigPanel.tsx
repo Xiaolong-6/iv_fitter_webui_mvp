@@ -143,7 +143,9 @@ export function FitConfigPanel({ config, onChange, language, actionDock, statusD
         aria-controls="fit-bottom-dock-drawer"
         onClick={() => onDrawerModeChange(advancedOpen ? "none" : "advanced")}
       >
-        {language === "zh" ? "高级" : "Advanced"} {advancedOpen ? "v" : "^"}
+        <span className="button-icon" aria-hidden="true">⚙</span>
+        <span>{language === "zh" ? "高级" : "Advanced"}</span>
+        <span className="drawer-caret" aria-hidden="true">{advancedOpen ? "v" : "^"}</span>
       </button>
       <div className="fit-bottom-status" aria-live="polite">
         {statusDock}
@@ -157,7 +159,9 @@ export function FitConfigPanel({ config, onChange, language, actionDock, statusD
         disabled={!hasDetails}
         onClick={() => onDrawerModeChange(detailsOpen ? "none" : "details")}
       >
-        {language === "zh" ? "详情" : "Details"} {detailsOpen ? "v" : "^"}
+        <span className="button-icon" aria-hidden="true">i</span>
+        <span>{language === "zh" ? "详情" : "Details"}</span>
+        <span className="drawer-caret" aria-hidden="true">{detailsOpen ? "v" : "^"}</span>
       </button>
     </div>
   </section>;

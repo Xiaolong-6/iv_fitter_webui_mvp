@@ -1,9 +1,14 @@
-# v1.5.19 - Full-width bottom Fit setup dock
+# v1.5.19 - Workflow-centered UI shell
 
-- Move Fit setup from the left Model Builder pane into an app-level full-width bottom dock.
-- Restore vertical space for the Model Builder pane.
-- Make Advanced run options and Status Details expand upward from the bottom dock using a shared mutually exclusive drawer.
-- Preserve fit lifecycle, report export, backend API, and fitting behavior.
+- Replace Workspace-centered navigation with workflow pages: Start here, Data, Model, Fitting, Report, Help.
+- Add a default Start here page with workflow guidance and quick navigation.
+- Move Model Builder into the Model page.
+- Move Fit setup, plots, and parameters into the Fitting page.
+- Move report exports and full fit process/quality diagnostics into the Report page.
+- Move the full user manual into Help.
+- Add a compact global context bar with selected trace, model summary, fit status, report availability, and next-step guidance.
+- Add compact icons to the Fitting page dock controls.
+- Preserve fitting behavior, backend API, report export structure, and saved-model compatibility.
 - Updated version metadata to v1.5.19.
 
 # v1.5.18 - Semantic component label cleanup
