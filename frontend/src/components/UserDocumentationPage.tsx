@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { AppView } from "./WorkflowSidebar";
 import type { FunctionDefinition } from "../model/types";
 import type { Language } from "../model/i18n";
@@ -6,9 +6,13 @@ import { MathFormula } from "./MathFormula";
 import { ReleaseStatusPanel } from "./ReleaseStatusPanel";
 import { USER_FUNCTION_DOCS, type UserFunctionDoc } from "../content/userDocumentationContent";
 
+function readableManualTitle(title: string) {
+  return title.replace(/^\d+\.\s*/, "");
+}
+
 function ManualSection({ id, title, children, wide = false }: { id: string; title: string; children: ReactNode; wide?: boolean }) {
   return <section id={id} className={wide ? "card doc-card wide-card manual-section" : "card doc-card manual-section"}>
-    <h2>{title}</h2>
+    <h2>{readableManualTitle(title)}</h2>
     {children}
   </section>;
 }
@@ -227,7 +231,53 @@ function SectionNavigator({
 function ManualReader({ registry, appVersion, language }: { registry: FunctionDefinition[]; appVersion: string; language: Language }) {
   const [active, setActive] = useState<ManualSectionKey>("solving");
   const labels = sectionLabels[language];
+  const contentRef = useRef<HTMLDivElement | null>(null);
   const activeLabel = labels.find((item) => item.id === active)?.label ?? labels[0].label;
+
+  useEffect(() => {
+    setActive("solving");
+    const container = contentRef.current;
+    if (container) container.scrollTo({ top: 0 });
+  }, [language]);
+
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return undefined;
+    let frame = 0;
+    const updateActiveFromScroll = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const containerTop = container.getBoundingClientRect().top;
+        const sections = labels
+          .map((item) => document.getElementById(item.id))
+          .filter((el): el is HTMLElement => Boolean(el));
+        if (!sections.length) return;
+        let current = sections[0];
+        for (const section of sections) {
+          const offset = section.getBoundingClientRect().top - containerTop;
+          if (offset <= 96) current = section;
+          else break;
+        }
+        setActive(current.id as ManualSectionKey);
+      });
+    };
+    container.addEventListener("scroll", updateActiveFromScroll, { passive: true });
+    updateActiveFromScroll();
+    return () => {
+      window.cancelAnimationFrame(frame);
+      container.removeEventListener("scroll", updateActiveFromScroll);
+    };
+  }, [labels]);
+
+  const jumpToSection = (id: ManualSectionKey) => {
+    setActive(id);
+    const container = contentRef.current;
+    const target = document.getElementById(id);
+    if (!container || !target) return;
+    const top = target.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+    container.scrollTo({ top: Math.max(0, top - 8), behavior: "smooth" });
+  };
+
   return <div className="manual-reader">
     <div className="manual-reader-shell">
       <aside className="manual-reader-side">
@@ -235,12 +285,12 @@ function ManualReader({ registry, appVersion, language }: { registry: FunctionDe
           <h2>{language === "zh" ? "用户手册" : "User Manual"}</h2>
           <p className="muted">v{appVersion}</p>
         </div>
-        <SectionNavigator language={language} active={active} onSelect={setActive} />
+        <SectionNavigator language={language} active={active} onSelect={jumpToSection} />
         <ReleaseStatusPanel language={language} compact />
       </aside>
       <main className="manual-reader-content">
-        <div className="manual-reader-content-scroll" aria-label={activeLabel}>
-          {renderManualSection(active, registry, language)}
+        <div className="manual-reader-content-scroll continuous" ref={contentRef} aria-label={activeLabel}>
+          {labels.map((item) => <div className="manual-continuous-section" key={item.id}>{renderManualSection(item.id, registry, language)}</div>)}
         </div>
       </main>
     </div>

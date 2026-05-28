@@ -1,3 +1,11 @@
+## v1.5.39 — continuous User Manual reader
+
+- Changed the User Manual from one-section-at-a-time reading to a single continuous scrollable document.
+- Kept the left section list as quick-position navigation; clicking a section scrolls the manual content area rather than replacing the page body.
+- Added scroll-linked active-section highlighting so the navigation follows the reader position.
+- Removed visible numeric title prefixes inside the manual body to avoid duplicate/misaligned section numbering.
+- Preserved the compact release-check footer and did not change fitting, reporting, backend APIs, or release-manager logic.
+
 ## v1.5.38 — Manual updates panel cleanup and release-check status refinement
 
 - Kept the User Manual sidebar focused on section navigation by using a compact Version and updates footer instead of a full release-notes card.

@@ -339,3 +339,20 @@
     overflow: visible;
   }
 }
+
+/* v1.5.39 continuous manual reader: one scrollable document, left nav as quick-position tabs. */
+.manual-reader-content-scroll.continuous {
+  display: grid;
+  gap: 12px;
+  scroll-behavior: smooth;
+  scroll-padding-top: 8px;
+}
+.manual-continuous-section {
+  min-width: 0;
+}
+.manual-continuous-section .manual-section {
+  scroll-margin-top: 8px;
+}
+.manual-reader-nav button.active {
+  box-shadow: inset 3px 0 0 #2563eb;
+}

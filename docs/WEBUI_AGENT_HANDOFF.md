@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.5.38**.
+Current package: **v1.5.39**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -98,7 +98,7 @@ After every change, provide a 3-step browser test that does not require reading 
 
 ## Current validation note
 
-- v1.5.38 validation is recorded in `docs/TESTED_CURRENT.md`.
+- v1.5.39 validation is recorded in `docs/TESTED_CURRENT.md`.
 - Current expected validation commands are backend pytest, backend compileall, frontend Vitest, and frontend production build.
 
 ## v1.4.35 Fit setup and Model Builder interaction note
@@ -218,16 +218,21 @@ Dock/sidebar default is collapsed. Language selector dropdown options are explic
 Run timeout is now part of FitConfig and defaults to 60 s. Frontend abort is paired with backend cooperative timeout checks; do not rely on browser abort alone for long solver runs. Starting a new run must clear old result/report/warning/verdict state. Parameters table should use scientific notation for very small/large numbers.
 
 
-## v1.5.38 release-manager and invalid-report note
+## v1.5.39 release-manager and invalid-report note
 
 - Read `docs/RELEASE_MANAGER.md` before changing release-check or GitHub release scripts.
 - Invalid/non-reportable Report tab states must remain diagnostic-only and must not be presented as normal validated reports.
 - Do not put GitHub write tokens in frontend code or normal runtime code.
 - Parameters table containment was fixed after v1.5.36; verify it after CSS changes.
 
-## v1.5.38 manual/update-panel note
+## v1.5.39 manual/update-panel note
 
 - Keep the User Manual sidebar focused on navigation. Do not place full release notes or asset lists permanently in the sidebar.
 - The in-app release checker must distinguish `Update available`, `Up to date`, `Local version newer than public release`, and `Check failed`.
 - Release notes/assets may be shown in a compact details disclosure, not as always-visible manual content.
 - Manual equations should use readable user-facing labels such as External voltage balance and Total current.
+
+
+## v1.5.39 continuous manual reader note
+
+The User Manual is now one continuous scrollable document. The left section list is quick-position navigation only; clicking a section scrolls the manual content pane and does not replace the body with a single section. Preserve this behavior unless a future design explicitly reintroduces paginated manual reading.
