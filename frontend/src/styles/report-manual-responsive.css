@@ -1,4 +1,4 @@
-.interactive-parameter-table .parameter-edit-input {
+﻿.interactive-parameter-table .parameter-edit-input {
   min-width: 0;
   width: 100%;
   font-size: inherit;
@@ -54,7 +54,7 @@
 .report-export-actions-grid {
   grid-template-columns: 1fr;
 }
-@media (orientation: portrait), (max-width: 900px) {
+@media (max-width: 900px) {
   .resizable-fitting-grid {
     grid-template-columns: minmax(0, 1fr);
     height: auto;
@@ -386,7 +386,7 @@
   .chart-toolbar-hint { display: none; }
   .chart-icon-button { min-width: 26px; min-height: 26px; }
 }
-@media (orientation: portrait), (max-width: 900px) {
+@media (max-width: 900px) {
   .manual-reader,
   .doc-page { height: auto; overflow: visible; }
   .manual-reader-shell { grid-template-columns: minmax(0, 1fr); overflow: visible; }
@@ -604,7 +604,7 @@
   margin: 0;
 }
 .small-note { font-size: 0.78rem; }
-@media (max-width: 900px), (orientation: portrait) {
+@media (max-width: 900px) {
   .manual-reader-shell {
     height: auto;
     grid-template-columns: minmax(0, 1fr);
@@ -717,7 +717,7 @@
 .manual-equation-explainer .manual-equations {
   margin: 0;
 }
-@media (max-width: 900px), (orientation: portrait) {
+@media (max-width: 900px) {
   .manual-reader-side {
     grid-template-rows: auto auto auto;
   }

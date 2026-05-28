@@ -1,4 +1,4 @@
-
+﻿
 
 /* Rich hover/focus help for question-mark hints. Keep question marks out of buttons. */
 .help-tip {
@@ -75,7 +75,7 @@ button .help-tip {
 .manual-section .math-inline .latex-rendered {
   white-space: normal;
 }
-@media (max-width: 850px), (orientation: portrait) {
+@media (max-width: 850px) {
   .manual-formula {
     padding: 10px 12px;
     font-size: clamp(15px, calc(17px * var(--app-zoom)), 20px);
@@ -183,7 +183,7 @@ button.running { cursor: progress; opacity: 0.85; }
 }
 
 /* v1.4.30 portrait workspace should collapse the desktop split pane. */
-@media (max-width: 850px), (orientation: portrait) {
+@media (max-width: 850px) {
   html,
   body,
   #root,
@@ -916,7 +916,7 @@ button.running { cursor: progress; opacity: 0.85; }
   line-height: 1.35;
   opacity: 0.92;
 }
-@media (max-width: 850px), (orientation: portrait) {
+@media (max-width: 850px) {
   .data-workspace.scroll-page {
     padding-bottom: calc(var(--mobile-bottom-nav) + 18px);
     overflow: auto;

@@ -1,4 +1,4 @@
-/* Extracted from style.css lines 126-130 for Model Builder stabilization refactor. */
+﻿/* Extracted from style.css lines 126-130 for Model Builder stabilization refactor. */
 .add-row { display: grid; grid-template-columns: minmax(120px, 1fr) auto; gap: 6px; }
 .model-builder {
   container-type: inline-size;
@@ -277,7 +277,7 @@
   color: #475569;
   font-size: calc(12px * var(--app-zoom));
 }
-@media (max-width: 850px), (orientation: portrait) {
+@media (max-width: 850px) {
   .circuit-svg {
     min-height: 190px;
     overflow: visible;
@@ -301,7 +301,7 @@
 .circuit-panel-vertical-branches .circuit-terminal-minus {
   fill: #fff;
 }
-@media (max-width: 850px), (orientation: portrait) {
+@media (max-width: 850px) {
   .circuit-panel-vertical-branches .circuit-svg {
     min-height: 245px;
   }

@@ -1,4 +1,4 @@
-
+﻿
 .language-switch select option {
 
   background: #ffffff;
@@ -258,7 +258,7 @@ button.fit-action-unavailable:disabled {
   backdrop-filter: none;
 }
 
-@media (max-width: 850px), (orientation: portrait) {
+@media (max-width: 850px) {
   .fit-setup-panel {
     height: auto;
     max-height: none;
@@ -340,7 +340,7 @@ button.fit-action-unavailable:disabled {
   max-height: min(18dvh, 150px);
 }
 
-@media (max-width: 850px), (orientation: portrait) {
+@media (max-width: 850px) {
   .control-stack.control-stack-with-bottom-fit {
     height: calc(100dvh - var(--mobile-bottom-nav, 74px) - 16px);
     max-height: calc(100dvh - var(--mobile-bottom-nav, 74px) - 16px);
@@ -509,7 +509,7 @@ button.fit-action-unavailable:disabled {
 .fit-diagnostics {
   font-size: calc(11.5px * var(--app-zoom));
 }
-@media (max-width: 850px), (orientation: portrait) {
+@media (max-width: 850px) {
   .fit-details-drawer-body {
     max-height: min(28dvh, 250px);
   }
@@ -706,7 +706,7 @@ button.fit-action-unavailable:disabled {
     grid-template-columns: repeat(2, minmax(180px, 1fr));
   }
 }
-@media (max-width: 850px), (orientation: portrait) {
+@media (max-width: 850px) {
   .workspace-fit-shell {
     overflow: visible;
   }
@@ -1278,7 +1278,7 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
   max-height: none;
   min-height: 0;
 }
-@media (max-width: 980px), (orientation: portrait) {
+@media (max-width: 980px) {
   .data-import-layout,
   .data-import-layout.no-data {
     grid-template-columns: 1fr;

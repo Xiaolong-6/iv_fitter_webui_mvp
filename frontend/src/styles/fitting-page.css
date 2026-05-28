@@ -1,4 +1,4 @@
-.fitting-control-column,
+﻿.fitting-control-column,
 
 .fitting-results-column {
   min-height: 0;
@@ -85,7 +85,7 @@
   z-index: 2;
 }
 
-@media (orientation: portrait), (max-width: 900px) {
+@media (max-width: 900px) {
   .workflow-context-bar {
     flex-wrap: wrap;
     gap: 4px 10px;
@@ -544,7 +544,7 @@
   }
 }
 
-@media (orientation: portrait), (max-width: 900px) {
+@media (max-width: 900px) {
   .data-workspace.scroll-page {
     height: auto;
     overflow: auto;
@@ -851,7 +851,7 @@
   }
 }
 
-@media (orientation: portrait), (max-width: 900px) {
+@media (max-width: 900px) {
   .data-workspace.scroll-page,
   .model-page.workflow-page,
   .fitting-page.workflow-page,
@@ -1015,7 +1015,7 @@
   background: linear-gradient(180deg, transparent 0, transparent 2px, #2563eb 2px, #2563eb 6px, transparent 6px);
   outline: none;
 }
-@media (orientation: portrait), (max-width: 900px) {
+@media (max-width: 900px) {
   .horizontal-pane-resizer { display: none; }
   .fitting-page .fitting-results-column.resizable-results-column { grid-template-rows: auto auto; }
 }
@@ -1078,7 +1078,7 @@
   min-height: 180px;
   max-height: none;
 }
-@media (orientation: portrait), (max-width: 900px) {
+@media (max-width: 900px) {
   .fitting-page .plot-grid.paired-plot {
     grid-template-columns: 1fr;
   }
@@ -1266,7 +1266,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@media (orientation: portrait), (max-width: 900px) {
+@media (max-width: 900px) {
   .fitting-page .fitting-results-column.resizable-results-column {
     grid-template-rows: auto auto;
   }

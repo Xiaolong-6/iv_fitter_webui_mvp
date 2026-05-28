@@ -1,4 +1,4 @@
-
+﻿
 
 .file-button { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 10px; padding: 7px 10px; background: #fff; cursor: pointer; font-size: 0.9rem; }
 .file-button:hover { background: var(--soft); }
@@ -116,7 +116,7 @@
 .plot-stack.main-results-stack > * {
   min-width: 0;
 }
-@media (max-width: 850px), (orientation: portrait) {
+@media (max-width: 850px) {
   .content-grid { height: auto; }
   .workspace-split-grid {
     grid-template-columns: 1fr;
@@ -227,7 +227,7 @@ html, body, #root { height: 100%; overflow: hidden; }
 }
 .frac > span:last-child { padding: 0.08em 0.25em 0; }
 .branch-formula-list { display: grid; gap: 6px; margin-top: 8px; }
-@media (max-width: 850px), (orientation: portrait) {
+@media (max-width: 850px) {
   html, body, #root { overflow: auto; }
   .app, .workspace { height: auto; min-height: 100dvh; overflow: visible; }
   .content-grid { height: auto; overflow: visible; }
@@ -568,7 +568,7 @@ details summary { cursor: pointer; font-weight: 650; }
   display: none;
 }
 
-@media (max-width: 850px), (orientation: portrait) {
+@media (max-width: 850px) {
   :root {
     --mobile-bottom-nav: 74px;
   }
