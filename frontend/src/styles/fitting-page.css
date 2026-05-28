@@ -1082,7 +1082,7 @@
     grid-template-columns: 1fr;
   }
   .fitting-page .simple-chart > svg {
-    min-height: 220px;
+    min-height: 150px;
   }
 }
 
@@ -1122,19 +1122,21 @@
 .fitting-page .simple-chart {
   border-color: #e9eef6;
   background: #fff;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  position: relative;
   overflow: hidden;
 }
 .fitting-page .simple-chart .compact-chart-toolbar,
 .plot-review-card .simple-chart .compact-chart-toolbar {
-  position: static;
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  z-index: 5;
   display: flex;
   justify-content: flex-end;
-  padding: 3px 5px;
-  border-bottom: 1px solid #eef2f7;
-  background: #fbfdff;
-  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  min-height: 0;
 }
 .fitting-page .simple-chart .chart-control-cluster,
 .plot-review-card .simple-chart .chart-control-cluster {
@@ -1167,8 +1169,9 @@
   min-width: 28px;
 }
 .fitting-page .simple-chart > svg {
+  width: 100%;
   height: 100%;
-  min-height: 230px;
+  min-height: 0;
   max-height: none;
 }
 .fitting-page .plot-grid.all-plots .simple-chart > svg {
