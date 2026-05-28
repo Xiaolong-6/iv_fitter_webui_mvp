@@ -1,6 +1,6 @@
 # Tested current — v1.6.0
 
-Validated after chart interaction overhaul and responsive layout fix.
+Validated after chart interaction overhaul, responsive layout fix, and Data page layout refactor.
 
 ## Scope
 
@@ -8,8 +8,11 @@ Validated after chart interaction overhaul and responsive layout fix.
 - Chart toolbar stripped of zoom X/Y in/out and pan left/right buttons; only Reset button remains.
 - Image-viewer-style interactions: wheel zoom at cursor (both axes), Ctrl+wheel X-only zoom, Shift+wheel Y-only zoom, left-drag pan, double-click reset.
 - Mouse cursor: crosshair default, grabbing during drag.
-- CSS: `.simple-chart` set to `height: 100%; min-height: 0`; SVG to `width: 100%; height: 100%`; removed all `max-height` constraints on `.simple-chart > svg` in fitting-page, report-manual, and base-shell CSS.
-- PlotWorkspace and DataImportWorkspace: removed fixed `height` prop from SimpleChart calls; charts now fill their grid cells via CSS.
+- CSS: `.simple-chart` set to `height: 100%; min-height: 0`; SVG to `width: 100%; height: 100%`; removed all `max-height` constraints.
+- Data Import page refactored to review-first layout: narrow left column (~380px) for import/trace selection, wide right column for plot review (top) and spreadsheet preview (bottom).
+- After data load, import panel collapses to compact summary with "Change data" button and optional re-import zone.
+- Plot review gets primary vertical space (min 340px); spreadsheet fills remaining height.
+- Removed paste card from Data page layout (merged into import panel).
 - New Vitest test file `SimpleChart.test.tsx` covering: render, toolbar buttons, wheel/drag/double-click interactions, series rendering.
 
 ## Plot interaction reference
@@ -50,13 +53,14 @@ npm run build
 
 ## Manual browser checks required
 
-1. Fitting page: charts should fill available space vertically, not be capped at 26vh.
-2. Paired plot view: both charts should resize together when window is resized.
-3. Wheel zoom: scroll should zoom at cursor position; verify Ctrl and Shift modifiers.
-4. Drag pan: left-click drag should pan the view smoothly.
-5. Double-click and Reset button should both restore the original view.
-6. Cursor should show crosshair on chart, grabbing during drag.
-7. Hover tooltip should still show nearest point data.
-8. Clipped badge should still be clickable and show info.
-9. Data page: Linear I-V and Log |I| charts should fill their containers.
-10. App zoom 55–100%, browser zoom 100–160%, low-height landscape.
+1. Data page: after loading data, left panel should be compact (~380px), right column should show tall plots on top and spreadsheet below.
+2. Data page: "Change data" button and re-import zone should appear after data load.
+3. Data page: "Go to Fitting" should be the prominent primary action in the left panel.
+4. Data page: plots should resize with window; side-by-side on wide, stacked on narrow.
+5. Fitting page: charts should fill available space vertically, not be capped at 26vh.
+6. Paired plot view: both charts should resize together when window is resized.
+7. Wheel zoom: scroll should zoom at cursor position; verify Ctrl and Shift modifiers.
+8. Drag pan: left-click drag should pan the view smoothly.
+9. Double-click and Reset button should both restore the original view.
+10. Cursor should show crosshair on chart, grabbing during drag.
+11. App zoom 55–100%, browser zoom 90–125%, low-height landscape.

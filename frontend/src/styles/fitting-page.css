@@ -298,7 +298,7 @@
 .data-import-layout {
   height: 100%;
   min-height: 0;
-  grid-template-rows: minmax(210px, 0.34fr) minmax(270px, 0.66fr);
+  grid-template-rows: minmax(340px, 0.52fr) minmax(220px, 0.48fr);
   align-items: stretch;
 }
 .import-actions-card,
@@ -585,19 +585,18 @@
 .data-import-layout {
   height: auto;
   min-height: 0;
-  grid-template-columns: minmax(340px, 0.92fr) minmax(520px, 1.35fr);
-  grid-template-rows: auto minmax(260px, auto);
-  grid-template-areas: "import plot" "paste preview";
-  align-items: start;
+  grid-template-columns: minmax(340px, 0.38fr) minmax(480px, 1fr);
+  grid-template-rows: minmax(340px, 0.52fr) minmax(220px, 0.48fr);
+  grid-template-areas: "import plot" "import preview";
+  align-items: stretch;
 }
 .data-import-layout > .card {
-  align-self: start;
   min-height: 0;
   overflow: hidden;
 }
 .import-actions-card {
   max-height: none;
-  overflow: visible;
+  overflow-y: auto;
 }
 .import-actions-card .muted {
   margin: 2px 0 8px;
@@ -610,15 +609,17 @@
   align-self: stretch;
 }
 .plot-review-card .trace-plot-review-grid {
-  height: auto;
+  height: 100%;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .plot-review-card .simple-chart > svg {
-  max-height: min(22vh, 220px);
+  max-height: none;
 }
-.paste-card textarea {
-  min-height: 170px;
-  max-height: min(30vh, 280px);
+.spreadsheet-card .spreadsheet-wrap,
+.spreadsheet-wrap {
+  max-height: none;
+  min-height: 0;
+  overflow: auto;
 }
 .spreadsheet-card .spreadsheet-wrap,
 .spreadsheet-wrap {
@@ -864,7 +865,7 @@
   .report-page-two-column.resizable-report-grid {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto;
-    grid-template-areas: "import" "plot" "paste" "preview";
+    grid-template-areas: "import" "plot" "preview";
     height: auto;
     overflow: visible;
   }

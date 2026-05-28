@@ -356,39 +356,66 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   const fileId = "data-workspace-file-input";
   const qualityWarnings = importQuality?.warnings ?? [];
   const syntheticValidation = validateSyntheticTraceForm(syntheticForm);
+  const hasData = traces.length > 0;
   return <section className="data-workspace scroll-page">
     {message && <div className={message.toLowerCase().includes("error") || message.includes("Error") ? "warning error" : "warning info"}>{message}</div>}
 
-    <div className={traces.length ? "data-import-layout has-data" : "data-import-layout no-data"}>
+    <div className={hasData ? "data-import-layout has-data" : "data-import-layout no-data"}>
       <section className="card import-actions-card data-source-card">
         <div className="card-head"><h3>{language === "zh" ? "导入数据" : "Import data"}</h3><HelpTip text={t(language, "importCsvHelp")} /></div>
-        <div className="data-source-tabs" role="tablist" aria-label={language === "zh" ? "数据来源" : "Data source"}>
-          <button type="button" className={inputMode === "upload" ? "active" : ""} onClick={() => setInputMode("upload")}>{language === "zh" ? "上传 CSV/TXT" : "Upload CSV/TXT"}</button>
-          <button type="button" className={inputMode === "paste" ? "active" : ""} onClick={() => setInputMode("paste")}>{t(language, "pasteData")}</button>
-          <button type="button" className={inputMode === "sample" ? "active" : ""} onClick={() => setInputMode("sample")}>{language === "zh" ? "示例数据" : "Sample data"}</button>
-        </div>
-        {inputMode === "upload" ? <div
-          className={`drop-import-zone${dragActive ? " drag-active" : ""}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          <button type="button" className="file-button import-primary-action" title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`} onClick={openImportPicker}>{t(language, "importCsv")}</button>
-          <input ref={fileInputRef} id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
-          <span>{language === "zh" ? "也可以把 CSV/TXT/DAT 文件拖到这里。" : "Or drag a CSV/TXT/DAT file here."}</span>
-        </div> : null}
-        {inputMode === "paste" ? <div className="inline-paste-panel">
-          <textarea title={t(language, "pasteDataHelp")} value={pasteText} onChange={(e) => setPasteText(e.target.value)} placeholder={t(language, "pastePlaceholder")} rows={traces.length ? 6 : 10} />
-          <button title={t(language, "parsePastedHelp")} disabled={!pasteText.trim()} onClick={loadPaste}>{t(language, "parsePastedData")}</button>
-        </div> : null}
-        {inputMode === "sample" ? <div className="sample-import-panel">
-          <p className="muted">{language === "zh" ? "加载内置示例数据用于练习导入、选择 trace 和拟合流程。" : "Load the bundled sample dataset for practicing trace selection and fitting workflow."}</p>
-          <button className="import-debug-action" title={t(language, "loadDemoHelp")} onClick={loadSampleData}>{language === "zh" ? "加载示例数据" : "Load sample data"}</button>
-        </div> : null}
+
+        {!hasData ? <>
+          <div className="data-source-tabs" role="tablist" aria-label={language === "zh" ? "数据来源" : "Data source"}>
+            <button type="button" className={inputMode === "upload" ? "active" : ""} onClick={() => setInputMode("upload")}>{language === "zh" ? "上传 CSV/TXT" : "Upload CSV/TXT"}</button>
+            <button type="button" className={inputMode === "paste" ? "active" : ""} onClick={() => setInputMode("paste")}>{t(language, "pasteData")}</button>
+            <button type="button" className={inputMode === "sample" ? "active" : ""} onClick={() => setInputMode("sample")}>{language === "zh" ? "示例数据" : "Sample data"}</button>
+          </div>
+          {inputMode === "upload" ? <div
+            className={`drop-import-zone${dragActive ? " drag-active" : ""}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <button type="button" className="file-button import-primary-action" title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`} onClick={openImportPicker}>{t(language, "importCsv")}</button>
+            <input ref={fileInputRef} id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
+            <span>{language === "zh" ? "也可以把 CSV/TXT/DAT 文件拖到这里。" : "Or drag a CSV/TXT/DAT file here."}</span>
+          </div> : null}
+          {inputMode === "paste" ? <div className="inline-paste-panel">
+            <textarea title={t(language, "pasteDataHelp")} value={pasteText} onChange={(e) => setPasteText(e.target.value)} placeholder={t(language, "pastePlaceholder")} rows={10} />
+            <button title={t(language, "parsePastedHelp")} disabled={!pasteText.trim()} onClick={loadPaste}>{t(language, "parsePastedData")}</button>
+          </div> : null}
+          {inputMode === "sample" ? <div className="sample-import-panel">
+            <p className="muted">{language === "zh" ? "加载内置示例数据用于练习导入、选择 trace 和拟合流程。" : "Load the bundled sample dataset for practicing trace selection and fitting workflow."}</p>
+            <button className="import-debug-action" title={t(language, "loadDemoHelp")} onClick={loadSampleData}>{language === "zh" ? "加载示例数据" : "Load sample data"}</button>
+          </div> : null}
+        </> : <div className="import-compact-summary">
+          <div className="compact-import-row">
+            <span className="muted">{language === "zh" ? "已导入" : "Loaded"}</span>
+            <strong>{traces.length} {traces.length === 1 ? "trace" : "traces"}</strong>
+            <button type="button" className="compact-change-btn" onClick={() => setInputMode("upload")}>{language === "zh" ? "更换数据" : "Change data"}</button>
+          </div>
+          {inputMode === "upload" ? <div
+            className={`drop-import-zone compact-drop${dragActive ? " drag-active" : ""}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <button type="button" className="file-button import-primary-action" onClick={openImportPicker}>{language === "zh" ? "导入其他文件" : "Import another file"}</button>
+            <input ref={fileInputRef} id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
+            <span>{language === "zh" ? "拖拽 CSV/TXT/DAT 文件到这里" : "Drop CSV/TXT/DAT here"}</span>
+          </div> : null}
+          {inputMode === "paste" ? <div className="inline-paste-panel compact-paste">
+            <textarea title={t(language, "pasteDataHelp")} value={pasteText} onChange={(e) => setPasteText(e.target.value)} placeholder={t(language, "pastePlaceholder")} rows={4} />
+            <button title={t(language, "parsePastedHelp")} disabled={!pasteText.trim()} onClick={loadPaste}>{t(language, "parsePastedData")}</button>
+          </div> : null}
+          {inputMode === "sample" ? <div className="sample-import-panel">
+            <button className="import-debug-action" title={t(language, "loadDemoHelp")} onClick={loadSampleData}>{language === "zh" ? "加载示例数据" : "Load sample data"}</button>
+          </div> : null}
+        </div>}
 
         <div className="trace-selection-subsection">
           <div className="subsection-head"><h4>{t(language, "traceSelection")}</h4><HelpTip text={t(language, "traceSelectionHelp")} /></div>
-          {traces.length === 0 ? <div className="empty-data-invite">
+          {!hasData ? <div className="empty-data-invite">
             <strong>{language === "zh" ? "尚未加载数据" : "No data loaded yet"}</strong>
             <span>{language === "zh" ? "请上传、粘贴或加载示例 I-V 数据。" : "Upload, paste, or load sample I-V data to begin."}</span>
           </div> : <>

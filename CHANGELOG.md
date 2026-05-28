@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.6.0 — Chart interaction overhaul
+## v1.6.0 — Chart interaction overhaul and Data page layout refactor
 
 - Rewrote SimpleChart to use ResizeObserver for real container dimensions instead of fixed width=520; SVG now fills its container via width/height=100% and preserveAspectRatio.
 - Removed toolbar zoom X/Y in/out and pan left/right buttons; only Reset button remains.
@@ -9,6 +9,10 @@
 - Fixed `.simple-chart` CSS to `height: 100%; min-height: 0` and SVG to `width: 100%; height: 100%`.
 - Removed all `max-height` constraints on `.simple-chart > svg` in fitting-page, report-manual, and base-shell CSS so charts fill available vertical space.
 - Removed fixed `height` props from SimpleChart calls in PlotWorkspace and DataImportWorkspace.
+- Refactored Data Import page to review-first layout: narrow left column (~380px) for import/trace selection, wide right column for plot review (top) and spreadsheet preview (bottom).
+- After data is loaded, import panel collapses to a compact summary with "Change data" button and optional re-import zone.
+- Plot review gets primary vertical space (min 340px); spreadsheet fills remaining height without excessive blank space.
+- Removed paste card from Data page layout (merged into import panel).
 - Added first React component test file `SimpleChart.test.tsx` with 7 tests covering render, toolbar, wheel/drag/double-click, and series rendering.
 - Kept fitting physics, backend APIs, report schemas, saved-model compatibility, Manual behavior, and release-manager behavior unchanged.
 
