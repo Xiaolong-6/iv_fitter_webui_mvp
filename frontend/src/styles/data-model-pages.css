@@ -14,7 +14,6 @@
   background: rgba(255,255,255,0.08);
 }
 
-
 /* v1.4.29 plot empty state shortcut. */
 .empty-plot-state {
   display: grid;
@@ -258,21 +257,6 @@ button.fit-action-unavailable:disabled {
   backdrop-filter: none;
 }
 
-@media (max-width: 850px) {
-  .fit-setup-panel {
-    height: auto;
-    max-height: none;
-    overflow: visible;
-  }
-  .fit-setup-scroll-body {
-    overflow: visible;
-  }
-  .fit-setup-status-footer {
-    position: sticky;
-    bottom: calc(var(--mobile-bottom-nav, 74px) + var(--mobile-action-bar, 0px) + 8px);
-  }
-}
-
 /* v1.5.8 left-pane bottom Fit setup dock.
    The whole Fit setup card now lives in a reserved bottom slot of the left pane,
    together with its status footer. The Model Builder / preview content scrolls
@@ -338,32 +322,6 @@ button.fit-action-unavailable:disabled {
 }
 .fit-setup-bottom-dock .fit-setup-footer-content .fit-message-stack {
   max-height: min(18dvh, 150px);
-}
-
-@media (max-width: 850px) {
-  .control-stack.control-stack-with-bottom-fit {
-    height: calc(100dvh - var(--mobile-bottom-nav, 74px) - 16px);
-    max-height: calc(100dvh - var(--mobile-bottom-nav, 74px) - 16px);
-    overflow: hidden;
-  }
-  .control-stack-with-bottom-fit .control-scroll-content {
-    overflow-y: auto;
-  }
-  .fit-setup-bottom-dock {
-    max-height: min(52dvh, 470px);
-  }
-  .fit-setup-bottom-dock .fit-setup-panel {
-    max-height: min(50dvh, 450px);
-    overflow: hidden;
-  }
-  .fit-setup-bottom-dock .fit-setup-scroll-body {
-    overflow-y: auto;
-    max-height: min(24dvh, 210px);
-  }
-  .fit-setup-bottom-dock .fit-setup-status-footer {
-    position: static;
-    bottom: auto;
-  }
 }
 
 /* v1.5.9 compact Fit setup status architecture.
@@ -509,18 +467,6 @@ button.fit-action-unavailable:disabled {
 .fit-diagnostics {
   font-size: calc(11.5px * var(--app-zoom));
 }
-@media (max-width: 850px) {
-  .fit-details-drawer-body {
-    max-height: min(28dvh, 250px);
-  }
-  .fit-primary-message {
-    align-items: start;
-  }
-  .fit-primary-message span {
-    white-space: normal;
-  }
-}
-
 /* v1.5.19 app-level full-width Fit setup dock. */
 .workspace-fit-shell {
   flex: 1 1 auto;
@@ -706,37 +652,6 @@ button.fit-action-unavailable:disabled {
     grid-template-columns: repeat(2, minmax(180px, 1fr));
   }
 }
-@media (max-width: 850px) {
-  .workspace-fit-shell {
-    overflow: visible;
-  }
-  .workspace-fit-shell > .workspace-split-grid {
-    flex: 0 0 auto;
-  }
-  .fit-bottom-dock {
-    position: static;
-  }
-  .fit-bottom-dock-row {
-    align-items: stretch;
-  }
-  .fit-bottom-dock-title,
-  .fit-bottom-dock-actions,
-  .fit-bottom-voltage,
-  .fit-bottom-status,
-  .fit-bottom-dock-toggle {
-    flex: 1 1 100%;
-  }
-  .fit-bottom-dock-drawer {
-    max-height: 38vh;
-  }
-  .fit-bottom-dock-drawer .advanced-objective-body {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .fit-bottom-status {
-    min-width: 0;
-  }
-}
-
 .parameter-status-pill {
   display: inline-flex;
   align-items: center;

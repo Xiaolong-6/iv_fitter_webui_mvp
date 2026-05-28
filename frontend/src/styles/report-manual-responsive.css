@@ -54,25 +54,6 @@
 .report-export-actions-grid {
   grid-template-columns: 1fr;
 }
-@media (max-width: 900px) {
-  .resizable-fitting-grid {
-    grid-template-columns: minmax(0, 1fr);
-    height: auto;
-    overflow: visible;
-  }
-  .resizable-fitting-grid > .pane-resizer {
-    display: none;
-  }
-  .fitting-control-column .fit-config-panel {
-    height: auto;
-  }
-  .interactive-parameter-table {
-    min-width: 720px;
-  }
-  .report-equation-line {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 .fitting-page .resizable-fitting-grid {
   grid-template-columns: var(--fit-grid-template);
 }
@@ -386,17 +367,6 @@
   .chart-toolbar-hint { display: none; }
   .chart-icon-button { min-width: 26px; min-height: 26px; }
 }
-@media (max-width: 900px) {
-  .manual-reader,
-  .doc-page { height: auto; overflow: visible; }
-  .manual-reader-shell { grid-template-columns: minmax(0, 1fr); overflow: visible; }
-  .manual-reader-nav { display: flex; overflow-x: auto; }
-  .manual-reader-nav-title { display: none; }
-  .manual-reader-nav button { min-width: 110px; }
-  .manual-reader-content-scroll { height: auto; max-height: none; overflow: visible; }
-  .report-core-equations { grid-template-columns: minmax(0, 1fr); }
-}
-
 /* v1.5.37 report/manual/release-status polish. */
 .invalid-fit-summary-card {
   border-color: #fecaca;
@@ -604,21 +574,6 @@
   margin: 0;
 }
 .small-note { font-size: 0.78rem; }
-@media (max-width: 900px) {
-  .manual-reader-shell {
-    height: auto;
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .manual-reader-side {
-    overflow: visible;
-    grid-template-rows: auto auto auto;
-  }
-  .invalid-fit-reason-grid,
-  .report-core-equations {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 /* v1.5.38 manual/update cleanup: keep the manual sidebar focused on navigation. */
 .manual-reader-shell {
   grid-template-columns: minmax(170px, 230px) minmax(0, 1fr);
@@ -717,15 +672,6 @@
 .manual-equation-explainer .manual-equations {
   margin: 0;
 }
-@media (max-width: 900px) {
-  .manual-reader-side {
-    grid-template-rows: auto auto auto;
-  }
-  .release-status-panel.compact {
-    max-height: none;
-  }
-}
-
 /* v1.5.40: larger icon-based chart controls and compact manual tabs. */
 .chart-button-group.chart-control-cluster {
   gap: 5px;

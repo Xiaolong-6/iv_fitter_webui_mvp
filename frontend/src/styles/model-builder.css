@@ -277,14 +277,6 @@
   color: #475569;
   font-size: calc(12px * var(--app-zoom));
 }
-@media (max-width: 850px) {
-  .circuit-svg {
-    min-height: 190px;
-    overflow: visible;
-  }
-}
-
-
 /* v1.3.15 circuit layout refinement: branches fold below the main path and return to one shared terminal. */
 .circuit-panel-vertical-branches .circuit-svg {
   min-height: 210px;
@@ -301,12 +293,6 @@
 .circuit-panel-vertical-branches .circuit-terminal-minus {
   fill: #fff;
 }
-@media (max-width: 850px) {
-  .circuit-panel-vertical-branches .circuit-svg {
-    min-height: 245px;
-  }
-}
-
 /* Extracted from style.css lines 1765-1785 for Model Builder stabilization refactor. */
 /* v1.4.14 Model Builder structure polish */
 .model-builder-bucket-note {

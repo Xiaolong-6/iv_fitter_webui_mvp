@@ -221,17 +221,6 @@ th, td { border-bottom: 1px solid #e5e7eb; padding: 5px; text-align: left; }
   .content-grid { grid-template-columns: minmax(230px, 0.85fr) minmax(420px, 1.5fr); }
 }
 
-@media (max-width: 850px) {
-  html, body, #root { overflow: auto; }
-  .app { height: auto; min-height: 100vh; grid-template-columns: 1fr; }
-  .sidebar { max-height: none; }
-  .workspace { height: auto; overflow: visible; }
-  .topbar { grid-template-columns: 1fr; }
-  .content-grid { grid-template-columns: 1fr; overflow: visible; }
-  .control-stack, .plot-stack, .result-stack { overflow: visible; display: grid; }
-  .plot-grid { grid-template-columns: 1fr; }
-}
-
 @media (max-height: 760px) and (orientation: landscape) {
   .sidebar h1 { font-size: 16px; margin-bottom: 8px; }
   .sidebar li { margin: 6px 0; }
@@ -323,9 +312,6 @@ th, td { border-bottom: 1px solid #e5e7eb; padding: 5px; text-align: left; }
 .doc-steps { margin: 8px 0 0; padding-left: 22px; }
 .doc-steps li { margin: 7px 0; }
 .wide-card { grid-column: 1 / -1; }
-@media (max-width: 850px) {
-}
-
 /* v1.1.3 interaction/layout refinements */
 .app.sidebar-collapsed { grid-template-columns: clamp(54px, 4vw, 66px) minmax(0, 1fr); }
 .sidebar-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -399,20 +385,11 @@ th, td { border-bottom: 1px solid #e5e7eb; padding: 5px; text-align: left; }
   .content-grid { grid-template-columns: minmax(245px, 0.78fr) minmax(440px, 1.35fr); }
   .main-result-grid { grid-template-columns: 1fr; }
 }
-@media (max-width: 850px) {
-  .app.sidebar-collapsed { grid-template-columns: 1fr; }
-  .sidebar.collapsed { min-height: 54px; }
-  .sidebar.collapsed .side-tabs, .sidebar.collapsed .sidebar-version { display: none; }
-  .content-grid { grid-template-columns: 1fr; }
-  .main-result-grid { grid-template-columns: 1fr; }
-  .setup-grid.two-col { grid-template-columns: 1fr; }
-}
 .chart-line.chart-series-a,
 .chart-line.chart-series-b { fill: none; }
 .trace-select-label { display: grid; gap: 6px; margin: 10px 0; }
 .trace-select-label select { width: 100%; }
 .trace-row.selected { border-color: #2563eb; background: #eff6ff; }
-
 
 /* v1.3.4 selected-trace-first UI, structured equations, and i18n controls */
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
