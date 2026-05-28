@@ -61,4 +61,5 @@ Do not recreate one-off handoff/tested files for every small internal iteration.
 - `RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_38.md` — External-style release-candidate audit for v1.5.38.
 - `RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_41.md` — External-style release-candidate audit for v1.5.41 chart-control hotfix.
 
+- `RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_43.md` — external-style audit for the v1.5.43 Fitting/Data responsive polish.
 - `RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_42.md` — external-style audit for the v1.5.42 fitting plot layout hotfix.

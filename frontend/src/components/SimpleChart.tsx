@@ -182,7 +182,7 @@ export function SimpleChart({ title, series, yLabel, height = 248, robustScale =
           <PanIcon direction="right" />
         </button>
         <button className="chart-icon-button chart-reset-button" type="button" title="Reset zoom and pan" aria-label="Reset zoom and pan" onClick={() => { setXView(null); setYView(null); }}>
-          <ResetIcon /><small>Reset</small>
+          <ResetIcon />
         </button>
       </div>
     </div>

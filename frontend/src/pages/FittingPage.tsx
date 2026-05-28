@@ -605,6 +605,7 @@ export function FittingPage() {
               setDataBoundsReport(null);
               setNoTraceRunAttempted(false);
             }}
+            onNextToFitting={() => setActiveView("fitting")}
             model={model}
             language={language}
           />

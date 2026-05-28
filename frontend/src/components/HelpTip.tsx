@@ -122,7 +122,14 @@ export function LegacyTooltipLayer() {
     }
 
     function closestTitled(target: EventTarget | null) {
-      return target instanceof Element ? target.closest("[title], [data-legacy-title]") : null;
+      if (!(target instanceof Element)) return null;
+      const element = target.closest("[title], [data-legacy-title]");
+      if (!element) return null;
+      // Large custom popovers are useful for explicit ? help tips, but they are
+      // distracting on ordinary form fields and toolbar buttons. Let native
+      // browser titles handle those compact controls.
+      if (element.closest("input, select, textarea, button")) return null;
+      return element;
     }
 
     function handlePointerOver(event: PointerEvent) {

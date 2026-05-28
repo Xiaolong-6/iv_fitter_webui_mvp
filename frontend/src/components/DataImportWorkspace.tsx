@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { DragEvent as ReactDragEvent } from "react";
 import type { ModelSpec, SyntheticNoiseConfig, TraceData } from "../model/types";
 import { generateSyntheticTrace, importCsvTextMulti, openImportFileDialog, type ImportCsvTextMultiResponse } from "../api/client";
 import type { Language } from "../model/i18n";
@@ -120,16 +121,19 @@ function TracePlotReview({ trace, language }: { trace?: TraceData; language: Lan
   </div>;
 }
 
-export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelectTrace, model, language }: {
+export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelectTrace, onNextToFitting, model, language }: {
   traces: TraceData[];
   selectedTraceId: string | null;
   onTraces: (t: TraceData[]) => void;
   onSelectTrace: (id: string) => void;
+  onNextToFitting?: () => void;
   model: ModelSpec;
   language: Language;
 }) {
   const [pasteText, setPasteText] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [inputMode, setInputMode] = useState<"upload" | "paste" | "sample">("upload");
+  const [dragActive, setDragActive] = useState(false);
   const [syntheticOpen, setSyntheticOpen] = useState(false);
   const [syntheticBusy, setSyntheticBusy] = useState(false);
   const [syntheticError, setSyntheticError] = useState<string | null>(null);
@@ -358,53 +362,91 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
     }
   }
 
+  function handleDrop(event: ReactDragEvent<HTMLElement>) {
+    event.preventDefault();
+    setDragActive(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) loadFile(file);
+  }
+
+  function handleDragOver(event: ReactDragEvent<HTMLElement>) {
+    event.preventDefault();
+    setDragActive(true);
+  }
+
+  function handleDragLeave(event: ReactDragEvent<HTMLElement>) {
+    if (event.currentTarget === event.target) setDragActive(false);
+  }
+
   const fileId = "data-workspace-file-input";
   const qualityWarnings = importQuality?.warnings ?? [];
   const syntheticValidation = validateSyntheticTraceForm(syntheticForm);
   return <section className="data-workspace scroll-page">
     {message && <div className={message.toLowerCase().includes("error") || message.includes("Error") ? "warning error" : "warning info"}>{message}</div>}
 
-    <div className="data-import-layout">
-      <section className="card import-actions-card">
+    <div className={traces.length ? "data-import-layout has-data" : "data-import-layout no-data"}>
+      <section className="card import-actions-card data-source-card">
         <div className="card-head"><h3>{language === "zh" ? "导入数据" : "Import data"}</h3><HelpTip text={t(language, "importCsvHelp")} /></div>
-        <div className="data-actions compact-data-actions">
+        <div className="data-source-tabs" role="tablist" aria-label={language === "zh" ? "数据来源" : "Data source"}>
+          <button type="button" className={inputMode === "upload" ? "active" : ""} onClick={() => setInputMode("upload")}>{language === "zh" ? "上传 CSV/TXT" : "Upload CSV/TXT"}</button>
+          <button type="button" className={inputMode === "paste" ? "active" : ""} onClick={() => setInputMode("paste")}>{t(language, "pasteData")}</button>
+          <button type="button" className={inputMode === "sample" ? "active" : ""} onClick={() => setInputMode("sample")}>{language === "zh" ? "示例数据" : "Sample data"}</button>
+        </div>
+        {inputMode === "upload" ? <div
+          className={`drop-import-zone${dragActive ? " drag-active" : ""}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <button type="button" className="file-button import-primary-action" title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`} onClick={openImportPicker}>{t(language, "importCsv")}</button>
           <input ref={fileInputRef} id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
+          <span>{language === "zh" ? "也可以把 CSV/TXT/DAT 文件拖到这里。" : "Or drag a CSV/TXT/DAT file here."}</span>
+        </div> : null}
+        {inputMode === "paste" ? <div className="inline-paste-panel">
+          <textarea title={t(language, "pasteDataHelp")} value={pasteText} onChange={(e) => setPasteText(e.target.value)} placeholder={t(language, "pastePlaceholder")} rows={traces.length ? 6 : 10} />
+          <button title={t(language, "parsePastedHelp")} disabled={!pasteText.trim()} onClick={loadPaste}>{t(language, "parsePastedData")}</button>
+        </div> : null}
+        {inputMode === "sample" ? <div className="sample-import-panel">
+          <p className="muted">{language === "zh" ? "加载内置示例数据用于练习导入、选择 trace 和拟合流程。" : "Load the bundled sample dataset for practicing trace selection and fitting workflow."}</p>
           <button className="import-debug-action" title={t(language, "loadDemoHelp")} onClick={loadSampleData}>{language === "zh" ? "加载示例数据" : "Load sample data"}</button>
-        </div>
+        </div> : null}
+
         <div className="trace-selection-subsection">
           <div className="subsection-head"><h4>{t(language, "traceSelection")}</h4><HelpTip text={t(language, "traceSelectionHelp")} /></div>
-          {traces.length === 0 ? <p className="warning info">{t(language, "noData")}</p> : <>
-            <label className="trace-select-label"><span>{t(language, "selectedTrace")}</span><select title={t(language, "selectedTraceHelp")} value={selected?.trace_id ?? ""} onChange={(e) => onSelectTrace(e.target.value)}>
-              {traces.map((tr) => <option key={tr.trace_id} value={tr.trace_id}>{tr.trace_id} · {tr.voltage_V.length} pts</option>)}
+          {traces.length === 0 ? <div className="empty-data-invite">
+            <strong>{language === "zh" ? "尚未加载数据" : "No data loaded yet"}</strong>
+            <span>{language === "zh" ? "请上传、粘贴或加载示例 I-V 数据。" : "Upload, paste, or load sample I-V data to begin."}</span>
+          </div> : <>
+            <label className="trace-select-label structured-trace-select"><span>{language === "zh" ? `当前曲线（共 ${traces.length} 条）` : `Current trace (${traces.length} total)`}</span><select title={t(language, "selectedTraceHelp")} value={selected?.trace_id ?? ""} onChange={(e) => onSelectTrace(e.target.value)}>
+              {traces.map((tr) => <option key={tr.trace_id} value={tr.trace_id}>{tr.trace_id}</option>)}
             </select></label>
-            <div className="trace-facts compact-trace-facts">
-              <span>{t(language, "importedTraces")}: <strong>{traces.length}</strong></span>
-              <span>{t(language, "pointCount")}: <strong>{selected?.voltage_V.length ?? 0}</strong></span>
-              <span>{language === "zh" ? "Source units" : "Source units"}: <strong>{voltageUnit}/{currentUnit}</strong> → <strong>V/A</strong></span>
-              {qualityWarnings.length ? <span>{language === "zh" ? "Quality notes" : "Quality notes"}: <strong>{qualityWarnings.length}</strong></span> : null}
+            <div className="trace-property-grid">
+              <span>{language === "zh" ? "数据点数" : "Points"}</span><strong>{selected?.voltage_V.length ?? 0}</strong>
+              <span>{language === "zh" ? "单位映射" : "Unit mapping"}</span><strong>{voltageUnit}/{currentUnit} → V/A</strong>
+              {qualityWarnings.length ? <><span>{language === "zh" ? "质量提示" : "Quality notes"}</span><strong>{qualityWarnings.length}</strong></> : null}
             </div>
             {qualityWarnings.length ? <div className="import-quality-warnings compact-quality-warnings">
               {qualityWarnings.map((warning) => <div className="warning" key={warning}>{warning}</div>)}
             </div> : null}
-            <div className="parsed-settings compact-parsed-settings">
-              <label title={language === "zh" ? "更改当前数据集名称；报告和图例会使用这个名称。" : "Rename the active dataset. Plots and reports use this name."}>
+            <div className="parsed-settings compact-parsed-settings structured-units">
+              <label>
                 <span>{language === "zh" ? "数据集名称" : "Dataset name"}</span>
                 <DatasetNameInput value={selected?.trace_id ?? ""} language={language} onCommit={renameSelected} />
               </label>
-              <label title={unitHelp}>
+              <label>
                 <span>{language === "zh" ? "电压单位" : "V unit"}</span>
                 <select value={voltageUnit} onChange={(e) => changeUnit("voltage", e.target.value)}>
                   {voltageUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
                 </select>
               </label>
-              <label title={unitHelp}>
+              <label>
                 <span>{language === "zh" ? "电流单位" : "I unit"}</span>
                 <select value={currentUnit} onChange={(e) => changeUnit("current", e.target.value)}>
                   {currentUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
                 </select>
               </label>
             </div>
+            {onNextToFitting ? <button type="button" className="primary data-next-action" onClick={onNextToFitting}>{language === "zh" ? "继续拟合" : "Go to Fitting"}</button> : null}
           </>}
         </div>
 
@@ -415,15 +457,9 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
         <TracePlotReview trace={selected} language={language} />
       </section>
 
-      <section className="card paste-card">
-        <div className="card-head"><h3>{t(language, "pasteData")}</h3><HelpTip text={t(language, "pasteDataHelp")} /></div>
-        <textarea title={t(language, "pasteDataHelp")} value={pasteText} onChange={(e) => setPasteText(e.target.value)} placeholder={t(language, "pastePlaceholder")} rows={10} />
-        <button title={t(language, "parsePastedHelp")} disabled={!pasteText.trim()} onClick={loadPaste}>{t(language, "parsePastedData")}</button>
-      </section>
-
       <section className="card spreadsheet-card">
         <div className="card-head"><h3>{t(language, "dataPreview")}</h3><HelpTip text={t(language, "dataPreviewHelp")} /></div>
-        {!selected ? <p className="warning info">{t(language, "noData")}</p> : <div className="spreadsheet-wrap" role="region" aria-label={t(language, "dataPreview")}>
+        {!selected ? <div className="empty-table-placeholder">{language === "zh" ? "导入数据后会在这里显示表格预览。" : "A table preview will appear here after data import."}</div> : <div className="spreadsheet-wrap" role="region" aria-label={t(language, "dataPreview")}>
           <table className="data-spreadsheet">
             <thead><tr><th>#</th><th>V (V)</th><th>I (A)</th></tr></thead>
             <tbody>{previewRows.map((row) => <tr key={row.idx}><td>{row.idx + 1}</td><td>{formatCell(row.v)}</td><td>{formatCell(row.i)}</td></tr>)}</tbody>

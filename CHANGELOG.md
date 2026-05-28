@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.5.43 — Fitting and Data responsive polish
+
+- Stabilized Fitting page density at high browser/app zoom by prioritizing plot height, compacting Fit setup actions, and reducing parameter-table overflow pressure.
+- Changed the paired plot default split to favor plots and kept Plots/Parameters manually resizable.
+- Moved chart controls into a compact chart-header row so they no longer overlay legends or data.
+- Simplified Parameters toolbar labels and truncated long component summaries while preserving hover details.
+- Reworked the Data page into a source-tab workflow with upload / paste / sample options, drag-and-drop upload, structured trace metadata, and a clearer Go to Fitting action after data load.
+- Kept fitting physics, backend APIs, report schemas, saved-model compatibility, Manual behavior, and release-manager behavior unchanged.
+
 ## v1.5.42 — fitting plot layout hotfix
 
 - Removed duplicated Plots and Parameters headings in the Fitting workspace; each panel now keeps one visible title only.
@@ -400,6 +409,15 @@ Tests: `PYTHONPATH=backend pytest -q backend/tests/test_fit_process_diagnostics.
 - Updated Markdown reports to include fit-process diagnostics.
 
 # Changelog
+
+## v1.5.43 — Fitting and Data responsive polish
+
+- Stabilized Fitting page density at high browser/app zoom by prioritizing plot height, compacting Fit setup actions, and reducing parameter-table overflow pressure.
+- Changed the paired plot default split to favor plots and kept Plots/Parameters manually resizable.
+- Moved chart controls into a compact chart-header row so they no longer overlay legends or data.
+- Simplified Parameters toolbar labels and truncated long component summaries while preserving hover details.
+- Reworked the Data page into a source-tab workflow with upload / paste / sample options, drag-and-drop upload, structured trace metadata, and a clearer Go to Fitting action after data load.
+- Kept fitting physics, backend APIs, report schemas, saved-model compatibility, Manual behavior, and release-manager behavior unchanged.
 
 # v1.5.37 - Report diagnostics and release-manager workflow
 

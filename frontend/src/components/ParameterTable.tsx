@@ -363,7 +363,7 @@ export function ParameterTable({
           }
           onClick={onRestoreInitialValues}
         >
-          {parameterText("restoreInitialValues", language)}
+          {language === "zh" ? "恢复初值" : "Restore"}
         </button>
         <button
           type="button"
@@ -375,7 +375,7 @@ export function ParameterTable({
               : "Generate conservative data-aware bounds from the selected trace and fit voltage range. Only default or previous data-suggested bounds are overwritten."
           }
         >
-          {language === "zh" ? "应用数据建议边界" : "Apply data bounds"}
+          {language === "zh" ? "应用边界" : "Apply bounds"}
         </button>
         <button
           type="button"
@@ -391,9 +391,7 @@ export function ParameterTable({
               : "Restore initials from the ground-truth parameters stored in the active synthetic trace metadata. Model structure and parameter keys are not changed."
           }
         >
-          {language === "zh"
-            ? "使用 synthetic 真值作为初值"
-            : "Seed from synthetic ground truth"}
+          {language === "zh" ? "Synthetic 真值" : "Seed synthetic"}
         </button>
       </div>
       {allRows.length === 0 ? (

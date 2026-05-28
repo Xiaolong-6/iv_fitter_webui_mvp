@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.5.42**.
+Current package: **v1.5.43**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -98,7 +98,7 @@ After every change, provide a 3-step browser test that does not require reading 
 
 ## Current validation note
 
-- v1.5.42 validation is recorded in `docs/TESTED_CURRENT.md`.
+- v1.5.43 validation is recorded in `docs/TESTED_CURRENT.md`.
 - Current expected validation commands are backend pytest, backend compileall, frontend Vitest, and frontend production build.
 
 ## v1.4.35 Fit setup and Model Builder interaction note
@@ -253,3 +253,11 @@ The User Manual is now one continuous scrollable document. The left section list
 - Toolbar icon SVGs now use explicit compact dimensions and no longer inherit chart SVG width/max-height rules.
 - Removed the repeated visible Wheel zoom label; wheel guidance remains in tooltip text.
 - No fitting physics, backend API, report schema, release-manager behavior, or Manual reader flow changed.
+
+
+## v1.5.43 fitting/data responsive polish note
+
+- Fitting page responsive polish is UI-only: no fitting math, backend API, report schema, saved-model, Manual, or release-manager behavior changed.
+- Data page now uses source tabs for Upload/Paste/Sample, includes drag-and-drop upload, and gives imported traces more space for plot/table preview.
+- Chart controls should remain compact header controls; do not reintroduce large overlay controls that cover legends or data.
+- Fit setup must remain pane-width responsive at high zoom; Run should stay full-width when the pane is narrow.

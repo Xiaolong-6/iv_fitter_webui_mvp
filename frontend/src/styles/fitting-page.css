@@ -1093,3 +1093,189 @@
     min-height: 220px;
   }
 }
+
+/* v1.5.43 fitting responsive polish: stable high-zoom Fitting workspace. */
+.fitting-page .fitting-results-column.resizable-results-column {
+  grid-template-rows: minmax(330px, var(--plot-pane-pct, 64%)) 8px minmax(150px, 1fr);
+}
+.fitting-page .plots-section .plots {
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+}
+.fitting-page .plot-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
+  gap: 10px;
+  align-items: end;
+}
+.fitting-page .plot-toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(170px, 0.8fr);
+  gap: 10px;
+  align-items: end;
+}
+.fitting-page .plot-toolbar .inline-select {
+  min-width: 0;
+}
+.fitting-page .plot-toolbar .inline-select select {
+  min-width: 0;
+  width: 100%;
+}
+.fitting-page .plot-grid.paired-plot,
+.fitting-page .plot-grid.single-plot,
+.fitting-page .plot-grid.all-plots {
+  gap: 8px;
+  padding-top: 2px;
+}
+.fitting-page .simple-chart {
+  border-color: #e9eef6;
+  background: #fff;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+.fitting-page .simple-chart .compact-chart-toolbar,
+.plot-review-card .simple-chart .compact-chart-toolbar {
+  position: static;
+  display: flex;
+  justify-content: flex-end;
+  padding: 3px 5px;
+  border-bottom: 1px solid #eef2f7;
+  background: #fbfdff;
+  min-height: 28px;
+}
+.fitting-page .simple-chart .chart-control-cluster,
+.plot-review-card .simple-chart .chart-control-cluster {
+  box-shadow: none;
+  background: transparent;
+  gap: 3px;
+}
+.chart-icon-button {
+  width: 27px;
+  height: 25px;
+  min-width: 27px;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  grid-auto-flow: column;
+  gap: 1px;
+}
+.chart-icon-button svg {
+  width: 14px;
+  height: 14px;
+}
+.chart-icon-button small {
+  font-size: 9px;
+  line-height: 1;
+  margin-left: 1px;
+}
+.chart-reset-button {
+  width: 28px;
+  min-width: 28px;
+}
+.fitting-page .simple-chart > svg {
+  height: 100%;
+  min-height: 230px;
+  max-height: none;
+}
+.fitting-page .plot-grid.all-plots .simple-chart > svg {
+  min-height: 180px;
+}
+.fitting-control-column .fit-config-panel {
+  container-type: inline-size;
+}
+.fitting-control-column .fit-action-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(70px, auto) minmax(70px, auto);
+  gap: 6px;
+}
+.fitting-control-column .fit-action-row button {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fitting-control-column .fit-action-row button:first-child {
+  width: 100%;
+}
+@container (max-width: 420px) {
+  .fitting-control-column .fit-action-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .fitting-control-column .fit-action-row button:first-child {
+    grid-column: 1 / -1;
+  }
+  .fitting-control-column .fit-bottom-voltage-grid {
+    grid-template-columns: repeat(2, minmax(78px, 1fr));
+  }
+  .fitting-control-column .fit-status-compact,
+  .fitting-control-column .fit-config-panel .warning.info {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+.fitting-page .parameter-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.fitting-page .parameter-filter-bar button {
+  min-height: 26px;
+  padding: 3px 9px;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fitting-page .parameter-component-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.fitting-page .parameter-component-title span:not(.parameter-fit-count) {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fitting-page .interactive-parameter-table {
+  min-width: 660px;
+}
+.fitting-page .parameter-edit-input {
+  max-width: 112px;
+}
+.fitting-page .parameter-fit-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.workflow-context-bar {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.workflow-context-bar > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 1180px), (max-height: 760px) {
+  .fitting-page .plot-head {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  .fitting-page .plot-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (orientation: portrait), (max-width: 900px) {
+  .fitting-page .fitting-results-column.resizable-results-column {
+    grid-template-rows: auto auto;
+  }
+  .fitting-page .plot-grid.paired-plot,
+  .fitting-page .plot-grid.all-plots {
+    grid-template-columns: 1fr;
+  }
+}
