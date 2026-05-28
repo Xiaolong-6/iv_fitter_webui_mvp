@@ -1,3 +1,13 @@
+## v1.5.37 — Diagnostic report UX and Release Manager workflow
+
+- Improved Report tab invalid-fit UX: invalid fits now open as diagnostic reports with a dominant failure summary, grouped root-cause diagnostics, suggested recovery actions, diagnostic-only parameter messaging, and diagnostic export labels.
+- Clarified model evaluation wording and moved technical equations lower/collapsed for invalid-fit states.
+- Fixed Parameters table height/scroll containment regression after stylesheet modularization.
+- Further simplified the User Manual page into a compact left-navigation reader with independent content scrolling and an Updates panel.
+- Added a read-only in-app GitHub release checker; startup and fitting are never blocked by update checks.
+- Added developer release-page audit and optional maintainer release updater scripts with dry-run mode and privacy/security checks.
+- Documented release-manager usage and synchronized release-candidate notes.
+
 ## v1.5.36 — Structural-debt-cleaned release candidate
 
 - Added a fresh external-style release-candidate audit for the CSS/FittingPage structural cleanup series.
@@ -345,6 +355,16 @@ Tests: `PYTHONPATH=backend pytest -q backend/tests/test_fit_process_diagnostics.
 - Updated Markdown reports to include fit-process diagnostics.
 
 # Changelog
+
+# v1.5.37 - Report diagnostics and release-manager workflow
+
+- Improved Report tab invalid-fit UX: invalid fits now open as diagnostic reports with a dominant failure summary, grouped root-cause diagnostics, suggested recovery actions, diagnostic-only parameter messaging, and diagnostic export labels.
+- Clarified model evaluation wording and moved technical equations lower/collapsed for invalid-fit states.
+- Fixed Parameters table height/scroll containment regression after stylesheet modularization.
+- Further simplified the User Manual page into a compact left-navigation reader with independent content scrolling and an Updates panel.
+- Added a read-only in-app GitHub release checker; startup and fitting are never blocked by update checks.
+- Added developer release-page audit and optional maintainer release updater scripts with dry-run mode and privacy/security checks.
+- Documented release-manager usage and synchronized release-candidate notes.
 
 ## 1.4.37 - Data bounds detail visibility
 

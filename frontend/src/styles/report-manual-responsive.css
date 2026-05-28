@@ -400,3 +400,225 @@
   .manual-reader-content-scroll { height: auto; max-height: none; overflow: visible; }
   .report-core-equations { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* v1.5.37 report/manual/release-status polish. */
+.invalid-fit-summary-card {
+  border-color: #fecaca;
+  background: #fff7f7;
+}
+.invalid-fit-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.invalid-fit-heading h2 { margin: 0; }
+.report-status-pill.error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+.invalid-fit-reason-grid,
+.report-core-equations {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.invalid-fit-reason-grid > div,
+.diagnostic-root-cause,
+.diagnostic-only-note,
+.diagnostic-export-help {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px 12px;
+}
+.diagnostic-root-cause.critical {
+  border-color: #fecaca;
+  background: #fff7f7;
+}
+.diagnostic-root-cause.warning {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+.suggested-fit-actions-card ul,
+.diagnostic-root-cause ul {
+  margin: 6px 0 0;
+  padding-left: 1.2rem;
+}
+.technical-diagnostic-details,
+.technical-fit-message,
+.report-technical-equations {
+  margin-top: 10px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 8px;
+}
+.technical-diagnostic-details code,
+.technical-equation-list code {
+  display: block;
+  padding: 7px 9px;
+  margin: 5px 0;
+  border-radius: 9px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  white-space: pre-wrap;
+}
+.diagnostic-only-note {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #78350f;
+  margin: 0 0 8px;
+}
+.near-bound-row td { background: #fffbeb; }
+.suspect-row td { background: #fef2f2; }
+.parameter-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  padding: 1px 7px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.parameter-badge.amber {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+.parameter-badge.neutral {
+  background: #f8fafc;
+  color: #475569;
+}
+.decision-summary span {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.8fr) minmax(0, 1fr);
+  align-items: start;
+}
+.report-side-action-links,
+.release-status-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.report-side-action-links button,
+.release-status-actions button,
+.button-link {
+  border: 1px solid #d9e4f2;
+  border-radius: 999px;
+  background: #fff;
+  padding: 6px 10px;
+  font-weight: 800;
+  color: #1e3a8a;
+  text-decoration: none;
+  cursor: pointer;
+}
+.diagnostic-export {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+.collapsed-model-evaluation summary {
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+}
+.collapsed-model-evaluation summary h2 {
+  margin: 0;
+}
+.collapsed-model-evaluation summary span {
+  color: #64748b;
+}
+.manual-reader {
+  height: 100%;
+  min-height: 0;
+  display: block;
+}
+.manual-reader-shell {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(210px, 260px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+.manual-reader-side {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  overflow: hidden;
+}
+.manual-title-block {
+  border: 1px solid #dfe8f5;
+  border-radius: 14px;
+  background: #fff;
+  padding: 10px 12px;
+}
+.manual-title-block h2,
+.manual-title-block p {
+  margin: 0;
+}
+.release-status-panel {
+  border: 1px solid #dfe8f5;
+  border-radius: 14px;
+  background: #fff;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+.release-status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.release-status-header h3 { margin: 0; }
+.release-status-badge {
+  border: 1px solid #bbf7d0;
+  color: #047857;
+  background: #ecfdf5;
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+.release-status-badge.warning {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fde68a;
+}
+.release-status-badge.error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+.release-status-grid {
+  display: grid;
+  gap: 4px;
+  font-size: 0.82rem;
+}
+.release-status-grid span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.release-status-error {
+  color: #b91c1c;
+  margin: 0;
+}
+.small-note { font-size: 0.78rem; }
+@media (max-width: 900px), (orientation: portrait) {
+  .manual-reader-shell {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .manual-reader-side {
+    overflow: visible;
+    grid-template-rows: auto auto auto;
+  }
+  .invalid-fit-reason-grid,
+  .report-core-equations {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

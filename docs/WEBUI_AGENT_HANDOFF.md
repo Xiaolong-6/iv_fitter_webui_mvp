@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.5.36**.
+Current package: **v1.5.37**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -98,7 +98,7 @@ After every change, provide a 3-step browser test that does not require reading 
 
 ## Current validation note
 
-- v1.5.36 validation is recorded in `docs/TESTED_CURRENT.md`.
+- v1.5.37 validation is recorded in `docs/TESTED_CURRENT.md`.
 - Current expected validation commands are backend pytest, backend compileall, frontend Vitest, and frontend production build.
 
 ## v1.4.35 Fit setup and Model Builder interaction note
@@ -216,3 +216,11 @@ Dock/sidebar default is collapsed. Language selector dropdown options are explic
 ## v1.4.29 audit/workflow note
 
 Run timeout is now part of FitConfig and defaults to 60 s. Frontend abort is paired with backend cooperative timeout checks; do not rely on browser abort alone for long solver runs. Starting a new run must clear old result/report/warning/verdict state. Parameters table should use scientific notation for very small/large numbers.
+
+
+## v1.5.37 release-manager and invalid-report note
+
+- Read `docs/RELEASE_MANAGER.md` before changing release-check or GitHub release scripts.
+- Invalid/non-reportable Report tab states must remain diagnostic-only and must not be presented as normal validated reports.
+- Do not put GitHub write tokens in frontend code or normal runtime code.
+- Parameters table containment was fixed after v1.5.36; verify it after CSS changes.

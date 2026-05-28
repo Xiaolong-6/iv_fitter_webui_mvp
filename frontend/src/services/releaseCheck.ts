@@ -1,0 +1,73 @@
+import { APP_VERSION, isNewerVersion, normalizeVersion } from "../utils/version";
+
+export type ReleaseCheckResult = {
+  currentVersion: string;
+  latestVersion: string | null;
+  updateAvailable: boolean;
+  releaseUrl: string | null;
+  releaseName: string | null;
+  publishedAt: string | null;
+  bodyExcerpt: string;
+  assetNames: string[];
+  checkedAt: string;
+  error: string | null;
+};
+
+export type GitHubReleasePayload = {
+  tag_name?: string;
+  html_url?: string;
+  name?: string | null;
+  published_at?: string | null;
+  body?: string | null;
+  assets?: Array<{ name?: string }>;
+};
+
+export const DEFAULT_RELEASE_ENDPOINT = "https://api.github.com/repos/Xiaolong-6/iv_fitter_webui_mvp/releases/latest";
+
+function excerpt(body: string | null | undefined): string {
+  return String(body ?? "").replace(/\s+/g, " ").trim().slice(0, 360);
+}
+
+export async function checkLatestRelease({
+  endpoint = DEFAULT_RELEASE_ENDPOINT,
+  currentVersion = APP_VERSION,
+  fetchImpl = fetch,
+}: {
+  endpoint?: string;
+  currentVersion?: string;
+  fetchImpl?: typeof fetch;
+} = {}): Promise<ReleaseCheckResult> {
+  const checkedAt = new Date().toISOString();
+  const base: ReleaseCheckResult = {
+    currentVersion,
+    latestVersion: null,
+    updateAvailable: false,
+    releaseUrl: null,
+    releaseName: null,
+    publishedAt: null,
+    bodyExcerpt: "",
+    assetNames: [],
+    checkedAt,
+    error: null,
+  };
+  try {
+    const response = await fetchImpl(endpoint, {
+      headers: { Accept: "application/vnd.github+json" },
+    });
+    if (!response.ok) throw new Error(`GitHub release check failed: HTTP ${response.status}`);
+    const payload = (await response.json()) as GitHubReleasePayload;
+    const latest = payload.tag_name ?? null;
+    return {
+      ...base,
+      latestVersion: latest,
+      updateAvailable: latest ? isNewerVersion(normalizeVersion(latest), normalizeVersion(currentVersion)) : false,
+      releaseUrl: payload.html_url ?? null,
+      releaseName: payload.name ?? latest,
+      publishedAt: payload.published_at ?? null,
+      bodyExcerpt: excerpt(payload.body),
+      assetNames: (payload.assets ?? []).map((asset) => asset.name).filter((name): name is string => Boolean(name)),
+    };
+  } catch (error) {
+    return { ...base, error: error instanceof Error ? error.message : String(error) };
+  }
+}

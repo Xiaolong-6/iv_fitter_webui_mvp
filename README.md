@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.5.36**
+Current version: **1.5.37**
 
 IV-fitter Web UI is a local-first browser app for fitting I-V traces with compact circuit models. It helps a user import voltage/current data, build a model from mathematical circuit terms, run a fit, inspect diagnostics, and export a result only after the residuals, warnings, parameters, and model structure make sense.
 
@@ -221,3 +221,8 @@ The frontend now has a formal Vitest suite for fast model/UI-logic regression ch
 ### v1.5.15 reporting polish
 
 Fit results now use more consistent parameter formatting in the Parameters table and provide three export paths after generating a report: a sectioned report CSV, a parameter-only CSV, and a structured diagnostics JSON document. The CSV is intended for spreadsheet review; the JSON is intended for reproducibility, batch comparison, and downstream analysis.
+
+
+## Release Manager workflow
+
+The app includes a read-only update checker in the User Manual / Updates panel. It queries GitHub public release metadata and never blocks startup or fitting. Maintainer-only release-page auditing and optional release updating live in `tools/audit_release_page.py` and `tools/update_github_release.py`; see `docs/RELEASE_MANAGER.md`. Automatic binary self-update is intentionally not implemented.

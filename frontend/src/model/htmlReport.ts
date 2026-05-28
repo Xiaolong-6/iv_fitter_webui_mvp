@@ -34,6 +34,38 @@ function equationLinesFromResult(result: FitResult) {
   ].filter(Boolean);
 }
 
+
+function finiteAbs(values: number[] | undefined) {
+  return (values ?? []).filter(Number.isFinite).map((value) => Math.abs(value));
+}
+
+function percentile(values: number[], fraction: number) {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const idx = Math.max(0, Math.min(sorted.length - 1, Math.round((sorted.length - 1) * fraction)));
+  return sorted[idx];
+}
+
+function dataScale(values: number[] | undefined) {
+  const abs = finiteAbs(values);
+  return Math.max(percentile(abs, 0.95), percentile(abs, 0.5), 1e-30);
+}
+
+function isDiagnosticOnly(result: FitResult) {
+  const codes = new Set((result.warnings ?? []).map((warning) => warning.code));
+  const measuredScale = dataScale(result.curves.current_measured_A);
+  const maxFit = Math.max(...finiteAbs(result.curves.current_fit_A), 0);
+  return !result.reportable || !result.success || (result.warnings ?? []).some((warning) => warning.severity === "error") || codes.has("quality_fit_current_explosion") || maxFit > Math.max(1e3, measuredScale * 1e8);
+}
+
+function diagnosticSummarySection(result: FitResult) {
+  if (!isDiagnosticOnly(result)) return "";
+  const measuredScale = dataScale(result.curves.current_measured_A);
+  const maxFit = Math.max(...finiteAbs(result.curves.current_fit_A), 0);
+  const maxResidual = Math.max(...finiteAbs(result.curves.residual_A), 0);
+  return `<section class="hero invalid"><span class="badge bad">Diagnostic report only</span><h1>Invalid fit result</h1><p>The optimizer stopped, but the fitted result failed numerical quality checks. This result should not be used as a validated device model.</p><p><strong>Primary reason:</strong> numerical current explosion. max |I_fit| = ${escapeHtml(fmtEng(maxFit, 4))} A; measured current scale ≈ ${escapeHtml(fmtEng(measuredScale, 4))} A; max |residual| = ${escapeHtml(fmtEng(maxResidual, 4))} A.</p><p><strong>Next step:</strong> review diagnostics, reset seeds or bounds, restrict the voltage range, or try a model with appropriate Rs/Rsh components.</p></section>`;
+}
+
 function componentPlainRole(component: FitResult["model"]["series"][number]) {
   const name = String(component.metadata?.nickname ?? component.id);
   const placement = component.placement ?? "";
@@ -74,7 +106,7 @@ function modelEquationSection(result: FitResult) {
   const technicalRows = lines.length
     ? `<details><summary>Backend technical equation summary</summary><div class="formula-list">${lines.map((line) => `<code>${escapeHtml(line)}</code>`).join("")}</div></details>`
     : "";
-  return `<section class="card"><h2>How the model produces this fit</h2><p class="muted">The terminal voltage first passes through the main path (${escapeHtml(main)}) to give the internal junction voltage. The branches (${escapeHtml(branches)}) then generate currents at that internal voltage, and those currents are summed.</p><div class="formula-list"><code>Voltage relation: V_ext = V_j + Σ V_drop,k(I,V_j)</code><code>Current sum: I = Σ I_branch,m(V_j)</code></div><ul>${components}</ul>${technicalRows}</section>`;
+  return `<section class="card"><h2>Model evaluation summary</h2><p class="muted">The terminal voltage first passes through the main path (${escapeHtml(main)}) to give the internal junction voltage. The branches (${escapeHtml(branches)}) then generate currents at that internal voltage, and those currents are summed.</p><div class="formula-list"><code>External voltage balance: V_ext = V_j + Σ V_drop,k(I,V_j)</code><code>Total current: I = Σ I_branch,m(V_j)</code></div><ul>${components}</ul>${technicalRows}</section>`;
 }
 
 function finitePairs(x: number[], y: number[]) {
@@ -249,8 +281,10 @@ export function buildHtmlReportDocument({
   const reportBody = markdownReport
     ? `<pre>${escapeHtml(markdownReport)}</pre>`
     : "";
-  const badgeBg = result.reportable ? "#ecfdf5" : "#fffbeb";
-  const badgeFg = result.reportable ? "#047857" : "#92400e";
+  const diagnosticOnly = isDiagnosticOnly(result);
+  const badgeBg = diagnosticOnly ? "#fef2f2" : result.reportable ? "#ecfdf5" : "#fffbeb";
+  const badgeFg = diagnosticOnly ? "#b91c1c" : result.reportable ? "#047857" : "#92400e";
   const plots = includePlots ? plotSection(result) : "";
-  return `<!doctype html><html><head><meta charset="utf-8"><title>IV-fitter report — ${escapeHtml(traceName)}</title><style>body{font-family:Inter,Segoe UI,Arial,sans-serif;margin:0;background:#f5f7fb;color:#0f172a}.page{max-width:1180px;margin:0 auto;padding:32px}.hero,.card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:22px;margin-bottom:18px;box-shadow:0 10px 28px rgba(15,23,42,.06)}h1{margin:0 0 8px;font-size:32px}h2{font-size:20px;margin:0 0 12px}.muted{color:#64748b}.badge{display:inline-block;border-radius:999px;padding:4px 10px;background:${badgeBg};color:${badgeFg};font-weight:800}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #e2e8f0;text-align:left;padding:8px}th{color:#475569}pre{white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;overflow:auto}ul{padding-left:22px}.formula-list{display:grid;gap:8px}.formula-list code{display:block;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;font-size:15px}.plot-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.plot-bg{fill:#fff}.grid{stroke:#e2e8f0;stroke-width:1}.axis{stroke:#334155;stroke-width:1.2}.tick,.legend,.axis-label{fill:#475569;font-size:11px}.plot-title{fill:#0f172a;font-weight:800;font-size:15px}@media(max-width:760px){.plot-grid{grid-template-columns:1fr}.page{padding:16px}}</style></head><body><main class="page"><section class="hero"><span class="badge">${escapeHtml(result.reportable ? "Reportable" : "Review only")}</span><h1>IV-fitter report</h1><p class="muted">Trace: ${escapeHtml(traceName)} · Model: ${escapeHtml(modelSummaryFromResult(result))} · Software: ${escapeHtml(result.software_version || appVersion)}</p><p>${escapeHtml(result.message)}</p></section>${modelEquationSection(result)}${plots}<section class="card"><h2>Fit quality metrics</h2><table>${metricRows}</table></section><section class="card"><h2>Parameters</h2><table><thead><tr><th>Parameter</th><th>Value</th><th>Unit</th><th>Status</th><th>Std. err.</th></tr></thead><tbody>${parameterRows}</tbody></table></section><section class="card"><h2>Warnings and diagnostics</h2><ul>${warningRows}</ul></section>${reportBody ? `<section class="card"><h2>Generated report text</h2>${reportBody}</section>` : ""}<section class="card muted">Exported ${escapeHtml(exportedAt.toISOString())}</section></main></body></html>`;
+  const hero = diagnosticOnly ? diagnosticSummarySection(result) : `<section class="hero"><span class="badge">${escapeHtml(result.reportable ? "Reportable" : "Needs review")}</span><h1>IV-fitter report</h1><p class="muted">Trace: ${escapeHtml(traceName)} · Model: ${escapeHtml(modelSummaryFromResult(result))} · Software: ${escapeHtml(result.software_version || appVersion)}</p><p>${escapeHtml(result.message)}</p></section>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><title>IV-fitter report — ${escapeHtml(traceName)}</title><style>body{font-family:Inter,Segoe UI,Arial,sans-serif;margin:0;background:#f5f7fb;color:#0f172a}.page{max-width:1180px;margin:0 auto;padding:32px}.hero,.card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:22px;margin-bottom:18px;box-shadow:0 10px 28px rgba(15,23,42,.06)}.hero.invalid{border-color:#fecaca;background:#fff7f7}h1{margin:0 0 8px;font-size:32px}h2{font-size:20px;margin:0 0 12px}.muted{color:#64748b}.badge{display:inline-block;border-radius:999px;padding:4px 10px;background:${badgeBg};color:${badgeFg};font-weight:800}.badge.bad{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #e2e8f0;text-align:left;padding:8px}th{color:#475569}pre{white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;overflow:auto}ul{padding-left:22px}.formula-list{display:grid;gap:8px}.formula-list code{display:block;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;font-size:15px}.plot-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.plot-bg{fill:#fff}.grid{stroke:#e2e8f0;stroke-width:1}.axis{stroke:#334155;stroke-width:1.2}.tick,.legend,.axis-label{fill:#475569;font-size:11px}.plot-title{fill:#0f172a;font-weight:800;font-size:15px}@media(max-width:760px){.plot-grid{grid-template-columns:1fr}.page{padding:16px}}</style></head><body><main class="page">${hero}${diagnosticOnly ? "" : modelEquationSection(result)}${plots}<section class="card"><h2>Fit quality metrics</h2><table>${metricRows}</table></section><section class="card"><h2>${diagnosticOnly ? "Diagnostic parameter values" : "Parameters"}</h2>${diagnosticOnly ? `<p class="muted">Values are shown for diagnostics only and are not a validated model.</p>` : ""}<table><thead><tr><th>Parameter</th><th>Value</th><th>Unit</th><th>Status</th><th>Std. err.</th></tr></thead><tbody>${parameterRows}</tbody></table></section><section class="card"><h2>Warnings and diagnostics</h2><ul>${warningRows}</ul></section>${diagnosticOnly ? modelEquationSection(result) : ""}${reportBody ? `<section class="card"><h2>Generated report text</h2>${reportBody}</section>` : ""}<section class="card muted">Exported ${escapeHtml(exportedAt.toISOString())}</section></main></body></html>`;
 }

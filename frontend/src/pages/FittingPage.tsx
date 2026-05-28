@@ -26,8 +26,7 @@ import { useAppZoom } from "./hooks/useAppZoom";
 import { useWorkflowLayoutState } from "./hooks/useWorkflowLayoutState";
 import { fitResultIsSafeToPromote, selectedTraceGroundTruth, warningDismissKey } from "./fitPageUtils";
 import { FitActionButtons, FitMessages } from "./components/FitActionCluster";
-
-const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "dev";
+import { APP_VERSION } from "../utils/version";
 
 type ZoomStyle = CSSProperties & { "--app-zoom": number };
 

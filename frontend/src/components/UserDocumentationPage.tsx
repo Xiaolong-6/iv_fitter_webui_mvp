@@ -3,6 +3,7 @@ import type { AppView } from "./WorkflowSidebar";
 import type { FunctionDefinition } from "../model/types";
 import type { Language } from "../model/i18n";
 import { MathFormula } from "./MathFormula";
+import { ReleaseStatusPanel } from "./ReleaseStatusPanel";
 import { USER_FUNCTION_DOCS, type UserFunctionDoc } from "../content/userDocumentationContent";
 
 function ManualSection({ id, title, children, wide = false }: { id: string; title: string; children: ReactNode; wide?: boolean }) {
@@ -228,16 +229,15 @@ function ManualReader({ registry, appVersion, language }: { registry: FunctionDe
   const labels = sectionLabels[language];
   const activeLabel = labels.find((item) => item.id === active)?.label ?? labels[0].label;
   return <div className="manual-reader">
-    <div className="card doc-hero manual-hero">
-      <div>
-        <h2>{language === "zh" ? "IV-fitter Web 用户手册" : "IV-fitter Web User Manual"}</h2>
-        <p className="muted">{language === "zh"
-          ? `v${appVersion} · 面向实际 I-V 拟合、模型选择、参数判断和报告审查。`
-          : `v${appVersion} · Practical guidance for I-V fitting, model choice, parameter review, and report checks.`}</p>
-      </div>
-    </div>
     <div className="manual-reader-shell">
-      <SectionNavigator language={language} active={active} onSelect={setActive} />
+      <aside className="manual-reader-side">
+        <div className="manual-title-block">
+          <h2>{language === "zh" ? "用户手册" : "User Manual"}</h2>
+          <p className="muted">v{appVersion}</p>
+        </div>
+        <SectionNavigator language={language} active={active} onSelect={setActive} />
+        <ReleaseStatusPanel language={language} />
+      </aside>
       <main className="manual-reader-content">
         <div className="manual-reader-content-scroll" aria-label={activeLabel}>
           {renderManualSection(active, registry, language)}

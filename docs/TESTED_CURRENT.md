@@ -1,30 +1,30 @@
-# Tested current — v1.5.36
+# Tested current — v1.5.37
 
-Validated after the structural cleanup series: CSS modularization, FittingPage extraction, stylesheet ownership documentation, and release-candidate external audit.
+Validated after Report invalid-fit UX polish, User Manual cleanup, Parameters containment regression fix, and Release Manager infrastructure.
 
-Commands run:
+Commands to run:
 
 ```bash
 PYTHONPATH=backend python -m pytest backend/tests -q
-python -m compileall -q backend/ivfitter backend/tests
+python -m compileall -q backend/ivfitter backend/tests tools/audit_release_page.py tools/update_github_release.py
 cd frontend
-npm install
 npm run test -- --run --reporter=dot
 npm run build
 ```
 
-Observed results:
+Expected result:
 
-- Backend pytest: passed, 122 tests.
-- Backend compileall: passed.
-- Frontend Vitest: passed, 8 files / 27 tests.
-- Frontend production build: passed.
+- Backend tests pass.
+- Backend package, tests, and release tools compile.
+- Frontend unit tests pass.
+- Frontend production build passes.
 
-Manual browser checks still required before tagging:
+Manual checks still required before public release:
 
-1. Data / Model / Fitting / Report / Manual at 100%, 125%, and 150% zoom.
-2. Low-height landscape and narrow/portrait layouts.
-3. Model Builder and Model Preview independent scrolling.
-4. Fit setup height containment and parameter-table compactness.
-5. Report model explanation and export buttons.
-6. Manual left navigation and scroll behavior.
+1. Valid fit report.
+2. Invalid numerical-explosion diagnostic report.
+3. Warning-only fit report.
+4. Chinese/English language toggle.
+5. Manual page independent scrolling and Updates panel.
+6. Fitting Parameters table at 100%, 125%, and 150% app zoom.
+7. Narrow/mobile viewport.

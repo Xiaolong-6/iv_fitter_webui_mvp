@@ -974,3 +974,33 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* v1.5.37 Parameters containment regression fix. */
+.fitting-page .parameter-card {
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+.fitting-page .parameter-groups-scroll {
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+  display: block;
+}
+.fitting-page .parameter-placement-group {
+  min-height: 0;
+  overflow: visible;
+}
+.fitting-page .parameter-placement-group .table-wrap,
+.fitting-page .parameter-card .table-wrap {
+  height: auto;
+  max-height: none;
+  overflow: auto;
+}
+.fitting-page .parameter-placement-group + .parameter-placement-group {
+  margin-top: 6px;
+}
+.fitting-page .interactive-parameter-table {
+  table-layout: auto;
+  min-width: 700px;
+}
