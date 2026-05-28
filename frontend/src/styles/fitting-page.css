@@ -205,7 +205,7 @@
   height: 100%;
   overflow: auto;
 }
-.fitting-page .simple-chart svg {
+.fitting-page .simple-chart > svg {
   max-height: min(26vh, 260px);
 }
 .fitting-page .parameter-card {
@@ -272,7 +272,7 @@
   .fit-config-drawer {
     max-height: min(50vh, 420px);
   }
-  .fitting-page .simple-chart svg {
+  .fitting-page .simple-chart > svg {
     max-height: min(23vh, 220px);
   }
   .fitting-page .fitting-results-column {
@@ -329,7 +329,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
-.plot-review-card .simple-chart svg {
+.plot-review-card .simple-chart > svg {
   max-height: min(24vh, 230px);
 }
 .paste-card textarea {
@@ -534,8 +534,8 @@
   .data-import-layout {
     grid-template-rows: minmax(180px, 0.32fr) minmax(230px, 0.68fr);
   }
-  .plot-review-card .simple-chart svg,
-  .fitting-page .simple-chart svg {
+  .plot-review-card .simple-chart > svg,
+  .fitting-page .simple-chart > svg {
     max-height: min(22vh, 200px);
   }
   .fit-config-inline-options {
@@ -618,7 +618,7 @@
   height: auto;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.plot-review-card .simple-chart svg {
+.plot-review-card .simple-chart > svg {
   max-height: min(22vh, 220px);
 }
 .paste-card textarea {
@@ -693,7 +693,7 @@
   height: 100%;
   overflow: auto;
 }
-.fitting-page .simple-chart svg {
+.fitting-page .simple-chart > svg {
   max-height: min(24vh, 245px);
 }
 .streamlined-fit-config .fit-config-actions .fit-action-row,
@@ -844,13 +844,13 @@
   .data-import-layout {
     grid-template-rows: auto minmax(220px, auto);
   }
-  .plot-review-card .simple-chart svg {
+  .plot-review-card .simple-chart > svg {
     max-height: min(20vh, 185px);
   }
   .fitting-page .fitting-results-column {
     grid-template-rows: minmax(245px, 0.55fr) minmax(165px, 0.45fr);
   }
-  .fitting-page .simple-chart svg {
+  .fitting-page .simple-chart > svg {
     max-height: min(21vh, 190px);
   }
   .fit-config-inline-options {
@@ -1025,4 +1025,71 @@
 @media (orientation: portrait), (max-width: 900px) {
   .horizontal-pane-resizer { display: none; }
   .fitting-page .fitting-results-column.resizable-results-column { grid-template-rows: auto auto; }
+}
+
+/* v1.5.42 hotfix: remove duplicated fitting section headings and make paired plots fill their pane. */
+.fitting-page .plots-section > .workspace-section-body,
+.fitting-page .parameters-section > .workspace-section-body {
+  padding: 0;
+}
+.fitting-page .plots-section .plots,
+.fitting-page .parameters-section .parameter-card {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  height: 100%;
+}
+.fitting-page .plots-section .plots {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+.fitting-page .plot-grid.paired-plot {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+.fitting-page .plot-grid.single-plot {
+  grid-template-columns: 1fr;
+}
+.fitting-page .plot-grid.paired-plot,
+.fitting-page .plot-grid.single-plot,
+.fitting-page .plot-grid.all-plots {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+}
+.fitting-page .simple-chart {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+.fitting-page .simple-chart .compact-chart-toolbar {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  z-index: 5;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.fitting-page .simple-chart .chart-control-cluster {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.10);
+}
+.fitting-page .simple-chart > svg {
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  max-height: none;
+}
+@media (orientation: portrait), (max-width: 900px) {
+  .fitting-page .plot-grid.paired-plot {
+    grid-template-columns: 1fr;
+  }
+  .fitting-page .simple-chart > svg {
+    min-height: 220px;
+  }
 }

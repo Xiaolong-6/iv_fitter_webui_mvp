@@ -162,8 +162,7 @@ export function SimpleChart({ title, series, yLabel, height = 248, robustScale =
 
   return <div className="simple-chart">
     <div className="chart-toolbar compact-chart-toolbar" aria-label={`${title} chart controls`}>
-      <span className="chart-toolbar-hint" title="Mouse wheel zooms X. Shift + wheel zooms Y.">Wheel zoom</span>
-      <div className="chart-button-group chart-control-cluster" role="group" aria-label="Zoom and pan controls">
+      <div className="chart-button-group chart-control-cluster" role="group" aria-label="Zoom and pan controls" title="Mouse wheel zooms X. Shift + wheel zooms Y.">
         <button className="chart-icon-button" type="button" title="Zoom X axis in" aria-label="Zoom X axis in" onClick={() => setXView((v) => zoomSpan(v ?? baseX, 0.84))}>
           <ZoomIcon plus /><small>X</small>
         </button>

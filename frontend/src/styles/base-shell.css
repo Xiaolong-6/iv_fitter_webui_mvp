@@ -174,7 +174,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
   gap: calc(8px * var(--app-zoom));
 }
 .simple-chart { width: 100%; overflow: hidden; border: 1px solid #eef2f7; border-radius: 10px; }
-.simple-chart svg { display: block; width: 100%; height: auto; max-height: 30vh; }
+.simple-chart > svg { display: block; width: 100%; height: auto; max-height: 30vh; }
 .chart-bg { fill: #ffffff; }
 .chart-grid { stroke: #e5e7eb; stroke-width: 1; }
 .chart-axis { stroke: #374151; stroke-width: 1.2; }
@@ -230,14 +230,14 @@ th, td { border-bottom: 1px solid #e5e7eb; padding: 5px; text-align: left; }
   .content-grid { grid-template-columns: 1fr; overflow: visible; }
   .control-stack, .plot-stack, .result-stack { overflow: visible; display: grid; }
   .plot-grid { grid-template-columns: 1fr; }
-  .simple-chart svg { max-height: none; }
+  .simple-chart > svg { max-height: none; }
 }
 
 @media (max-height: 760px) and (orientation: landscape) {
   .sidebar h1 { font-size: 16px; margin-bottom: 8px; }
   .sidebar li { margin: 6px 0; }
   .card { padding: 8px; }
-  .simple-chart svg { max-height: 25vh; }
+  .simple-chart > svg { max-height: 25vh; }
 }
 
 .table-wrap { width: 100%; overflow-x: auto; }
@@ -360,7 +360,7 @@ th, td { border-bottom: 1px solid #e5e7eb; padding: 5px; text-align: left; }
 
 .plot-head { align-items: start; }
 .single-plot { grid-template-columns: 1fr; }
-.single-plot .simple-chart svg { max-height: 52vh; }
+.single-plot .simple-chart > svg { max-height: 52vh; }
 .chart-toolbar {
   display: flex;
   align-items: center;
@@ -374,7 +374,7 @@ th, td { border-bottom: 1px solid #e5e7eb; padding: 5px; text-align: left; }
 .chart-toolbar button { padding: 3px 6px; font-size: calc(11px * var(--app-zoom)); }
 .chart-toolbar .muted { margin-right: auto; font-size: calc(11px * var(--app-zoom)); }
 .simple-chart { overflow: visible; }
-.simple-chart svg { touch-action: none; }
+.simple-chart > svg { touch-action: none; }
 .chart-hover rect { fill: #0f172a; opacity: 0.96; }
 .chart-hover text { font-weight: 600; }
 

@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.5.40**.
+Current package: **v1.5.42**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -98,7 +98,7 @@ After every change, provide a 3-step browser test that does not require reading 
 
 ## Current validation note
 
-- v1.5.40 validation is recorded in `docs/TESTED_CURRENT.md`.
+- v1.5.42 validation is recorded in `docs/TESTED_CURRENT.md`.
 - Current expected validation commands are backend pytest, backend compileall, frontend Vitest, and frontend production build.
 
 ## v1.4.35 Fit setup and Model Builder interaction note
@@ -218,14 +218,14 @@ Dock/sidebar default is collapsed. Language selector dropdown options are explic
 Run timeout is now part of FitConfig and defaults to 60 s. Frontend abort is paired with backend cooperative timeout checks; do not rely on browser abort alone for long solver runs. Starting a new run must clear old result/report/warning/verdict state. Parameters table should use scientific notation for very small/large numbers.
 
 
-## v1.5.40 release-manager and invalid-report note
+## v1.5.42 release-manager and invalid-report note
 
 - Read `docs/RELEASE_MANAGER.md` before changing release-check or GitHub release scripts.
 - Invalid/non-reportable Report tab states must remain diagnostic-only and must not be presented as normal validated reports.
 - Do not put GitHub write tokens in frontend code or normal runtime code.
 - Parameters table containment was fixed after v1.5.36; verify it after CSS changes.
 
-## v1.5.40 manual/update-panel note
+## v1.5.42 manual/update-panel note
 
 - Keep the User Manual sidebar focused on navigation. Do not place full release notes or asset lists permanently in the sidebar.
 - The in-app release checker must distinguish `Update available`, `Up to date`, `Local version newer than public release`, and `Check failed`.
@@ -233,12 +233,12 @@ Run timeout is now part of FitConfig and defaults to 60 s. Frontend abort is pai
 - Manual equations should use readable user-facing labels such as External voltage balance and Total current.
 
 
-## v1.5.40 continuous manual reader note
+## v1.5.42 continuous manual reader note
 
 The User Manual is now one continuous scrollable document. The left section list is quick-position navigation only; clicking a section scrolls the manual content pane and does not replace the body with a single section. Preserve this behavior unless a future design explicitly reintroduces paginated manual reading.
 
 
-## v1.5.40 fitting controls and manual navigation note
+## v1.5.42 fitting controls and manual navigation note
 
 - Sidebar label changed from Start here to Start.
 - Start-page primary actions are intentionally larger touch targets.
@@ -246,3 +246,10 @@ The User Manual is now one continuous scrollable document. The left section list
 - Plots and Parameters in the Fitting page have a vertical drag splitter. Preserve this split when changing fitting layout.
 - Chart controls use icon-style zoom/pan/reset buttons with larger click targets. Do not regress to tiny text controls.
 - Manual navigation is a compact quick-position tab list for the continuous manual document; subtitles under section tabs were intentionally removed.
+
+## v1.5.42 compact chart-control hotfix
+
+- Fixed chart toolbar SVG sizing regression by scoping main chart sizing rules to `.simple-chart > svg`.
+- Toolbar icon SVGs now use explicit compact dimensions and no longer inherit chart SVG width/max-height rules.
+- Removed the repeated visible Wheel zoom label; wheel guidance remains in tooltip text.
+- No fitting physics, backend API, report schema, release-manager behavior, or Manual reader flow changed.

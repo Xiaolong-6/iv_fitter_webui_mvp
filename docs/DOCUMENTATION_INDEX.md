@@ -59,4 +59,6 @@ Do not recreate one-off handoff/tested files for every small internal iteration.
 
 - `RELEASE_MANAGER.md` — Read-only in-app update checking and maintainer-only GitHub release audit/update workflow.
 - `RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_38.md` — External-style release-candidate audit for v1.5.38.
-- `RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_40.md` — External-style release-candidate audit for v1.5.40 fitting controls and manual navigation polish.
+- `RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_41.md` — External-style release-candidate audit for v1.5.41 chart-control hotfix.
+
+- `RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_42.md` — external-style audit for the v1.5.42 fitting plot layout hotfix.

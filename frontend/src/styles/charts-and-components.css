@@ -773,7 +773,7 @@ details summary { cursor: pointer; font-weight: 650; }
     display: grid;
     gap: 8px;
   }
-  .simple-chart svg {
+  .simple-chart > svg {
     max-height: none;
   }
   .equation-layout {

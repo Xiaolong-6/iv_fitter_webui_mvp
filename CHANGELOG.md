@@ -1,3 +1,22 @@
+# Changelog
+
+## v1.5.42 — fitting plot layout hotfix
+
+- Removed duplicated Plots and Parameters headings in the Fitting workspace; each panel now keeps one visible title only.
+- Changed paired diagnostic plot views to render the two selected plots side-by-side on desktop, with mobile stacking retained.
+- Moved chart controls into a compact top-right overlay so they no longer consume plot height.
+- Let paired charts fill the available plot pane instead of shrinking into the center of a large empty card.
+- Preserved fitting math, backend APIs, report schemas, Manual behavior, and release-manager behavior.
+
+## v1.5.41 — compact chart-control hotfix
+
+- Fixed a chart-toolbar regression where nested SVG control icons inherited the main chart SVG sizing and expanded into oversized buttons.
+- Scoped chart sizing rules to the direct chart SVG so zoom/pan/reset icons remain compact.
+- Removed the repeated visible "Wheel zoom" toolbar text and kept the wheel/shift-wheel guidance in tooltips.
+- Kept the v1.5.40 plot-view defaults, plot/parameter splitter, Manual navigation, fitting math, backend APIs, report schemas, and release-manager behavior unchanged.
+
+Tests: backend pytest and Python compileall passed. Frontend npm validation remains blocked in this environment by the current npm mirror returning 404 for electron-to-chromium-1.5.371.tgz; run frontend tests/build locally before release.
+
 ## v1.5.40 — fitting controls and manual navigation polish
 
 - Renamed the sidebar Start tab to Start and enlarged the Start-page primary actions.

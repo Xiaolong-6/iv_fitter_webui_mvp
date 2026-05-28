@@ -21,19 +21,25 @@ export function PageSection({
   title,
   children,
   action,
+  hideHeader = false,
+  className = "",
 }: {
   title: string;
   children: ReactNode;
   action?: ReactNode;
+  hideHeader?: boolean;
+  className?: string;
 }) {
   return (
-    <section className="workspace-section open">
-      <div className="workspace-section-head static-head">
-        <span>{title}</span>
-        {action ? (
-          <div className="workspace-section-head-action">{action}</div>
-        ) : null}
-      </div>
+    <section className={`workspace-section open ${className}`.trim()}>
+      {!hideHeader ? (
+        <div className="workspace-section-head static-head">
+          <span>{title}</span>
+          {action ? (
+            <div className="workspace-section-head-action">{action}</div>
+          ) : null}
+        </div>
+      ) : null}
       <div className="workspace-section-body">{children}</div>
     </section>
   );
@@ -211,7 +217,7 @@ export function FittingWorkflowPage({
           className="fitting-results-column resizable-results-column"
           style={{ "--plot-pane-pct": `${plotPct}%` } as CSSProperties}
         >
-          <PageSection title={t(language, "plots")}>
+          <PageSection title={t(language, "plots")} hideHeader className="plots-section">
             <ErrorBoundary label="Plot workspace">
               <PlotWorkspace
                 traces={traces}
@@ -230,7 +236,7 @@ export function FittingWorkflowPage({
             aria-label="Resize plots and parameters"
             onPointerDown={onPlotResizeStart}
           />
-          <PageSection title={t(language, "parameters")}>
+          <PageSection title={t(language, "parameters")} hideHeader className="parameters-section">
             <ErrorBoundary label="Parameter table">
               <ParameterTable
                 result={result}
