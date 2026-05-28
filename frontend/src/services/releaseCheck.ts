@@ -1,9 +1,12 @@
 import { APP_VERSION, isNewerVersion, normalizeVersion } from "../utils/version";
 
+export type ReleaseVersionRelation = "unknown" | "older" | "same" | "newer";
+
 export type ReleaseCheckResult = {
   currentVersion: string;
   latestVersion: string | null;
   updateAvailable: boolean;
+  versionRelation: ReleaseVersionRelation;
   releaseUrl: string | null;
   releaseName: string | null;
   publishedAt: string | null;
@@ -42,6 +45,7 @@ export async function checkLatestRelease({
     currentVersion,
     latestVersion: null,
     updateAvailable: false,
+    versionRelation: "unknown",
     releaseUrl: null,
     releaseName: null,
     publishedAt: null,
@@ -57,10 +61,17 @@ export async function checkLatestRelease({
     if (!response.ok) throw new Error(`GitHub release check failed: HTTP ${response.status}`);
     const payload = (await response.json()) as GitHubReleasePayload;
     const latest = payload.tag_name ?? null;
+    const comparison = latest ? isNewerVersion(normalizeVersion(latest), normalizeVersion(currentVersion))
+      ? 1
+      : isNewerVersion(normalizeVersion(currentVersion), normalizeVersion(latest))
+        ? -1
+        : 0
+      : null;
     return {
       ...base,
       latestVersion: latest,
-      updateAvailable: latest ? isNewerVersion(normalizeVersion(latest), normalizeVersion(currentVersion)) : false,
+      updateAvailable: comparison === 1,
+      versionRelation: comparison === null ? "unknown" : comparison === 1 ? "older" : comparison === -1 ? "newer" : "same",
       releaseUrl: payload.html_url ?? null,
       releaseName: payload.name ?? latest,
       publishedAt: payload.published_at ?? null,

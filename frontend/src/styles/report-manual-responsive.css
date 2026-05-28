@@ -622,3 +622,110 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* v1.5.38 manual/update cleanup: keep the manual sidebar focused on navigation. */
+.manual-reader-shell {
+  grid-template-columns: minmax(170px, 230px) minmax(0, 1fr);
+}
+.manual-reader-side {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.manual-title-block {
+  padding: 8px 10px;
+}
+.manual-title-block h2 {
+  font-size: 0.98rem;
+}
+.manual-reader-nav {
+  max-height: none;
+}
+.release-status-panel.compact {
+  padding: 8px 9px;
+  gap: 6px;
+  border-radius: 12px;
+}
+.release-status-panel.compact .release-status-header h3 {
+  font-size: 0.82rem;
+}
+.release-status-panel.compact .release-status-badge {
+  font-size: 0.66rem;
+  padding: 1px 6px;
+  max-width: 120px;
+  text-align: right;
+}
+.release-status-badge.neutral {
+  background: #f8fafc;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+.release-status-panel.compact .release-status-grid {
+  font-size: 0.74rem;
+  gap: 2px;
+}
+.release-status-panel.compact .small-note {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.25;
+}
+.release-status-panel.compact .release-status-actions {
+  gap: 5px;
+}
+.release-status-panel.compact .release-status-actions button,
+.release-status-panel.compact .release-status-actions .button-link {
+  min-height: 24px;
+  padding: 3px 7px;
+  font-size: 0.72rem;
+}
+.release-status-details {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 4px;
+  font-size: 0.72rem;
+}
+.release-status-details summary {
+  cursor: pointer;
+  color: #1d4ed8;
+  font-weight: 750;
+}
+.release-status-details-body {
+  display: grid;
+  gap: 4px;
+  max-height: 120px;
+  overflow: auto;
+  padding-top: 4px;
+  color: #475569;
+}
+.release-status-details-body p {
+  margin: 0;
+}
+.release-status-excerpt {
+  max-height: 4.5em;
+  overflow: hidden;
+}
+.manual-equation-explainer {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+.manual-equation-explainer > div {
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #f8fbff;
+  padding: 9px 11px;
+  display: grid;
+  gap: 6px;
+}
+.manual-equation-explainer strong {
+  color: #1e3a8a;
+  font-size: 0.88rem;
+}
+.manual-equation-explainer .manual-equations {
+  margin: 0;
+}
+@media (max-width: 900px), (orientation: portrait) {
+  .manual-reader-side {
+    grid-template-rows: auto auto auto;
+  }
+  .release-status-panel.compact {
+    max-height: none;
+  }
+}

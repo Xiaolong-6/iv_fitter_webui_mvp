@@ -1,3 +1,11 @@
+## v1.5.38 — Manual updates panel cleanup and release-check status refinement
+
+- Kept the User Manual sidebar focused on section navigation by using a compact Version and updates footer instead of a full release-notes card.
+- Added an explicit release-check state for local builds that are newer than the latest public GitHub release, avoiding the misleading “Up to date” label in development builds.
+- Collapsed release notes/assets behind a details control in the compact manual footer.
+- Improved the first manual section with clearer user-facing self-consistent circuit equations and a short explanation of why diagnostics matter.
+- Preserved read-only release checking; no auto-update or GitHub write token is used in the app runtime.
+
 ## v1.5.37 — Diagnostic report UX and Release Manager workflow
 
 - Improved Report tab invalid-fit UX: invalid fits now open as diagnostic reports with a dominant failure summary, grouped root-cause diagnostics, suggested recovery actions, diagnostic-only parameter messaging, and diagnostic export labels.

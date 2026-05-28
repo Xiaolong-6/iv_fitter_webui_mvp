@@ -236,7 +236,7 @@ function ManualReader({ registry, appVersion, language }: { registry: FunctionDe
           <p className="muted">v{appVersion}</p>
         </div>
         <SectionNavigator language={language} active={active} onSelect={setActive} />
-        <ReleaseStatusPanel language={language} />
+        <ReleaseStatusPanel language={language} compact />
       </aside>
       <main className="manual-reader-content">
         <div className="manual-reader-content-scroll" aria-label={activeLabel}>
@@ -253,12 +253,20 @@ function renderManualSection(section: ManualSectionKey, registry: FunctionDefini
     case "solving":
       return <ManualSection id="solving" title={zh ? "1. IV-fitter 在求什么" : "1. What IV-fitter is solving"} wide>
         {zh ? <>
-          <p>IV-fitter 把 I-V 曲线看成自洽电路拟合问题，而不是把一个固定闭式公式硬套到数据上。实验给出外部电压；内部结点电压通常未知，因为主路元件会消耗一部分电压。支路电流在内部结点电压下计算并求和。</p>
-          <FormulaStack formulas={["V_{ext}=V_j+\\Delta V_{series}(I,V_j;\\theta)", "I=\\sum_k I_k(V_j;\\theta)"]} />
+          <p>IV-fitter 把 I-V 曲线看成自洽电路拟合问题，而不是把一个固定闭式公式硬套到数据上。实验给出外部电压；内部结点电压通常未知，因为串联电阻、势垒或其它主路项会消耗一部分电压。支路电流在内部结点电压下计算并求和。</p>
+          <p>这意味着同一条 I-V 曲线通常需要同时判断三件事：数据是否可靠、模型结构是否足够但不过度、参数是否仍在可解释范围内。报告页的 diagnostics 就是用来阻止“优化器停了但结果不能用”的情况。</p>
+          <div className="manual-equation-explainer">
+            <div><strong>{zh ? "外部电压平衡" : "External voltage balance"}</strong><FormulaStack formulas={["V_{\\mathrm{ext}} = V_j + \\sum_k V_{\\mathrm{drop},k}(I, V_j; \\theta)"]} /></div>
+            <div><strong>{zh ? "总电流" : "Total current"}</strong><FormulaStack formulas={["I = \\sum_m I_{\\mathrm{branch},m}(V_j; \\theta)"]} /></div>
+          </div>
           <div className="manual-keyidea"><strong>核心概念：</strong>主路决定支路看到的内部电压；支路在该电压下产生电流；拟合器反复改变参数、逐点求解自洽电路并最小化加权残差。</div>
         </> : <>
-          <p>IV-fitter treats an I-V curve as a self-consistent circuit-fitting problem, not as one fixed closed-form equation. The measured external voltage is known. The internal junction voltage is generally unknown because main-path elements can consume part of the applied voltage. Branch currents are evaluated at that internal voltage and summed.</p>
-          <FormulaStack formulas={["V_{ext}=V_j+\\Delta V_{series}(I,V_j;\\theta)", "I=\\sum_k I_k(V_j;\\theta)"]} />
+          <p>IV-fitter treats an I-V curve as a self-consistent circuit-fitting problem, not as one fixed closed-form equation. The measured external voltage is known. The internal junction voltage is generally unknown because series resistance, barriers, or other main-path terms can consume part of the applied voltage. Branch currents are evaluated at that internal voltage and summed.</p>
+          <p>This means a fit has to answer three questions at the same time: whether the data are usable, whether the model structure is sufficient but not overbuilt, and whether the fitted parameters remain interpretable. The Report diagnostics are there to catch cases where the optimizer stopped but the result should not be used.</p>
+          <div className="manual-equation-explainer">
+            <div><strong>{zh ? "外部电压平衡" : "External voltage balance"}</strong><FormulaStack formulas={["V_{\\mathrm{ext}} = V_j + \\sum_k V_{\\mathrm{drop},k}(I, V_j; \\theta)"]} /></div>
+            <div><strong>{zh ? "总电流" : "Total current"}</strong><FormulaStack formulas={["I = \\sum_m I_{\\mathrm{branch},m}(V_j; \\theta)"]} /></div>
+          </div>
           <div className="manual-keyidea"><strong>Key idea:</strong> main path controls the internal voltage seen by branches; branches generate current at that voltage; fitting repeatedly changes parameters, solves the self-consistent circuit at every voltage point, and minimizes the weighted residual.</div>
         </>}
       </ManualSection>;
@@ -358,7 +366,10 @@ function LawFormPlacementGuide({ language }: { language: Language }) {
       <p>这个抽象可以避免把同一个数学关系误认为多个不同物理模型，也可以防止为了让曲线更好看而无约束堆项。</p>
       <ThreeColumnTable headers={["层级", "含义", "例子"]} rows={[["Law", "数学关系，定义曲线形状，但不决定放在电路哪里。", "Ohmic、Shockley、softplus、photocurrent"], ["Evaluation form", "该关系怎样被数值计算。", "压降、支路电流、电导调制"], ["Placement", "该 form 在组装方程中的位置。", "主路压降、主路电导调制、结点支路、并联支路"]]} />
       <h3>通用组装</h3>
-      <FormulaStack formulas={["V_{ext}=V_j+\\Delta V_{series}(I,V_j;\\theta)", "I=\\sum_k I_k(V_j;\\theta)"]} />
+      <div className="manual-equation-explainer">
+            <div><strong>{zh ? "外部电压平衡" : "External voltage balance"}</strong><FormulaStack formulas={["V_{\\mathrm{ext}} = V_j + \\sum_k V_{\\mathrm{drop},k}(I, V_j; \\theta)"]} /></div>
+            <div><strong>{zh ? "总电流" : "Total current"}</strong><FormulaStack formulas={["I = \\sum_m I_{\\mathrm{branch},m}(V_j; \\theta)"]} /></div>
+          </div>
       <p className="warning info"><strong>重要区别：</strong>外部电压轴不自动等于二极管电压。存在主路项时，IV-fitter 必须先求内部结点电压，再计算支路电流。</p>
       <h3>Ohmic law 的例子</h3>
       <ThreeColumnTable headers={["组合", "模型含义", "方程角色"]} rows={[["Ohmic + voltage-drop form + main path", "串联电阻 Rs", "Vext = Vj + I Rs"], ["Ohmic + current-branch form + parallel placement", "旁路漏电 Rsh", "Ish = Vj / Rsh"]]} />
@@ -370,7 +381,10 @@ function LawFormPlacementGuide({ language }: { language: Language }) {
       <p>This abstraction prevents the same mathematical relation from being mistaken for unrelated physical models, and it discourages adding every available term until the curve merely looks better.</p>
       <ThreeColumnTable headers={["Level", "Meaning", "Examples"]} rows={[["Law", "The mathematical relation. It defines curve shape, but not where the term belongs.", "Ohmic, Shockley, softplus, photocurrent"], ["Evaluation form", "How the relation is evaluated numerically.", "Voltage drop, current branch, conductance modifier"], ["Placement", "Where the evaluated term enters the assembled model.", "Main-path drop, main-path modifier, junction branch, parallel branch"]]} />
       <h3>General assembly</h3>
-      <FormulaStack formulas={["V_{ext}=V_j+\\Delta V_{series}(I,V_j;\\theta)", "I=\\sum_k I_k(V_j;\\theta)"]} />
+      <div className="manual-equation-explainer">
+            <div><strong>{zh ? "外部电压平衡" : "External voltage balance"}</strong><FormulaStack formulas={["V_{\\mathrm{ext}} = V_j + \\sum_k V_{\\mathrm{drop},k}(I, V_j; \\theta)"]} /></div>
+            <div><strong>{zh ? "总电流" : "Total current"}</strong><FormulaStack formulas={["I = \\sum_m I_{\\mathrm{branch},m}(V_j; \\theta)"]} /></div>
+          </div>
       <p className="warning info"><strong>Important distinction:</strong> the external voltage axis in the data is not automatically the diode voltage. When main-path terms exist, IV-fitter must solve for the internal junction voltage before evaluating branch currents.</p>
       <h3>Worked example: Ohmic law</h3>
       <ThreeColumnTable headers={["Combination", "Model meaning", "Equation role"]} rows={[["Ohmic + voltage-drop form + main-path placement", "Series resistance Rs", "Vext = Vj + I Rs"], ["Ohmic + current-branch form + parallel placement", "Shunt leakage Rsh", "Ish = Vj / Rsh"]]} />

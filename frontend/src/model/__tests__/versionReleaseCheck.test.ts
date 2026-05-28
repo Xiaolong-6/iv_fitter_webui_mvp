@@ -34,7 +34,16 @@ describe("release checker", () => {
     const fetchImpl = vi.fn(() => response({ tag_name: "v1.5.36", assets: [] })) as unknown as typeof fetch;
     const result = await checkLatestRelease({ currentVersion: "1.5.36", fetchImpl });
     expect(result.updateAvailable).toBe(false);
+    expect(result.versionRelation).toBe("same");
     expect(result.error).toBeNull();
+  });
+
+  it("reports local builds newer than the public release without calling it an update", async () => {
+    const fetchImpl = vi.fn(() => response({ tag_name: "v1.5.0", assets: [] })) as unknown as typeof fetch;
+    const result = await checkLatestRelease({ currentVersion: "1.5.38", fetchImpl });
+    expect(result.updateAvailable).toBe(false);
+    expect(result.versionRelation).toBe("newer");
+    expect(result.latestVersion).toBe("v1.5.0");
   });
 
   it("returns structured network failures without throwing", async () => {
@@ -43,5 +52,6 @@ describe("release checker", () => {
     expect(result.error).toContain("offline");
     expect(result.updateAvailable).toBe(false);
     expect(result.latestVersion).toBeNull();
+    expect(result.versionRelation).toBe("unknown");
   });
 });

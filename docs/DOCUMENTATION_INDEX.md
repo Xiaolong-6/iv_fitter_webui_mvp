@@ -41,7 +41,7 @@ This file is the stable entry point for IV-fitter Web UI documentation.
 - `docs/NPM_TROUBLESHOOTING.md` — Node/Vite troubleshooting.
 - `docs/FRONTEND_STYLESHEET_ARCHITECTURE.md` — CSS module ownership and cascade rules.
 - `docs/RELEASE_CHECKLIST.md` - release readiness checklist.
-- `docs/RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_37.md` — current external-style release-candidate audit.
+- `docs/RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_38.md` — current external-style release-candidate audit.
 - `docs/FITTING_PARITY_AND_DIAGNOSTICS.md` - fitting parity and diagnostics notes.
 - `docs/NUMERICAL_SANITY_AND_HOVER.md` - numerical sanity and hover diagnostics notes.
 - `docs/ROADMAP.md` — future work.
@@ -58,4 +58,4 @@ The repository previously accumulated many root-level `HANDOFF_*` files and per-
 Do not recreate one-off handoff/tested files for every small internal iteration. Update the current handoff/tested documents instead, and only create a version-specific document for a major public release or external audit package.
 
 - `RELEASE_MANAGER.md` — Read-only in-app update checking and maintainer-only GitHub release audit/update workflow.
-- `RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_37.md` — External-style release-candidate audit for v1.5.37.
+- `RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_38.md` — External-style release-candidate audit for v1.5.38.
