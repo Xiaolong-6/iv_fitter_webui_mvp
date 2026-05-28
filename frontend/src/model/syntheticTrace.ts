@@ -1,4 +1,4 @@
-import type { SyntheticArtifactConfig, SyntheticNoiseConfig, SyntheticTraceResponse, TraceData } from "./types";
+import type { ModelSpec, SyntheticArtifactConfig, SyntheticNoiseConfig, SyntheticTraceRequest, SyntheticTraceResponse, TraceData } from "./types";
 
 export const MAX_SYNTHETIC_POINTS = 10000;
 
@@ -21,8 +21,45 @@ export interface SyntheticTraceValidation {
   pointCount: number;
 }
 
+export const defaultSyntheticTraceForm: SyntheticTraceFormState = {
+  traceName: "synthetic_trace",
+  voltageStart: "-1",
+  voltageStop: "1",
+  voltageStep: "0.02",
+  noiseMode: "none",
+  noiseLevelA: "1e-12",
+  relativeNoiseFraction: "0.01",
+  seed: "1",
+  complianceEnabled: false,
+  complianceCurrentA: "0.001",
+};
+
 function asNumber(value: string): number {
   return Number(value.trim());
+}
+
+export function buildSyntheticTracePayload(form: SyntheticTraceFormState, model: ModelSpec, traceName: string): SyntheticTraceRequest {
+  const noise_config: SyntheticNoiseConfig = form.noiseMode === "gaussian_absolute"
+    ? { mode: "gaussian_absolute", noise_level_A: Number(form.noiseLevelA) }
+    : form.noiseMode === "gaussian_relative"
+      ? { mode: "gaussian_relative", relative_noise_fraction: Number(form.relativeNoiseFraction) }
+      : { mode: "none" };
+  return {
+    model,
+    trace_name: traceName,
+    voltage_start: Number(form.voltageStart),
+    voltage_stop: Number(form.voltageStop),
+    voltage_step: Number(form.voltageStep),
+    noise_config,
+    artifact_config: form.complianceEnabled
+      ? { compliance_enabled: true, compliance_current_A: Number(form.complianceCurrentA) }
+      : { compliance_enabled: false },
+    seed: form.seed.trim() ? Number(form.seed) : null,
+  };
+}
+
+export function syntheticTraceCsv(response: SyntheticTraceResponse, header = "voltage_V,current_A"): string {
+  return [header, ...response.voltage_V.map((v, idx) => `${v},${response.current_A[idx]}`)].join("\n");
 }
 
 export function syntheticPointCount(voltageStart: number, voltageStop: number, voltageStep: number): number {

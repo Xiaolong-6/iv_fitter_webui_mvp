@@ -5,7 +5,14 @@ import { generateSyntheticTrace, importCsvTextMulti, openImportFileDialog, type 
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { HelpTip } from "./HelpTip";
-import { appendSyntheticTrace, validateSyntheticTraceForm, type SyntheticTraceFormState } from "../model/syntheticTrace";
+import {
+  appendSyntheticTrace,
+  buildSyntheticTracePayload,
+  defaultSyntheticTraceForm,
+  syntheticTraceCsv,
+  validateSyntheticTraceForm,
+  type SyntheticTraceFormState,
+} from "../model/syntheticTrace";
 import { SimpleChart } from "./SimpleChart";
 
 type ImportQuality = {
@@ -138,18 +145,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   const [syntheticBusy, setSyntheticBusy] = useState(false);
   const [syntheticError, setSyntheticError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [syntheticForm, setSyntheticForm] = useState<SyntheticTraceFormState>({
-    traceName: "synthetic_trace",
-    voltageStart: "-1",
-    voltageStop: "1",
-    voltageStep: "0.02",
-    noiseMode: "none",
-    noiseLevelA: "1e-12",
-    relativeNoiseFraction: "0.01",
-    seed: "1",
-    complianceEnabled: false,
-    complianceCurrentA: "0.001",
-  });
+  const [syntheticForm, setSyntheticForm] = useState<SyntheticTraceFormState>(defaultSyntheticTraceForm);
   const selected = traces.find((tr) => tr.trace_id === selectedTraceId) ?? traces[0];
   const voltageUnit = String(selected?.metadata?.voltage_unit ?? "V");
   const currentUnit = String(selected?.metadata?.current_unit ?? "A");
@@ -291,27 +287,6 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
     setSyntheticError(null);
   }
 
-  function syntheticPayload() {
-    const noise_config: SyntheticNoiseConfig = syntheticForm.noiseMode === "gaussian_absolute"
-      ? { mode: "gaussian_absolute", noise_level_A: Number(syntheticForm.noiseLevelA) }
-      : syntheticForm.noiseMode === "gaussian_relative"
-        ? { mode: "gaussian_relative", relative_noise_fraction: Number(syntheticForm.relativeNoiseFraction) }
-        : { mode: "none" };
-    return {
-      model,
-      voltage_start: Number(syntheticForm.voltageStart),
-      voltage_stop: Number(syntheticForm.voltageStop),
-      voltage_step: Number(syntheticForm.voltageStep),
-      noise_config,
-      artifact_config: {
-        compliance_enabled: syntheticForm.complianceEnabled,
-        compliance_current_A: syntheticForm.complianceEnabled ? Number(syntheticForm.complianceCurrentA) : null,
-      },
-      trace_name: safeTraceName(syntheticForm.traceName, "synthetic_trace"),
-      seed: syntheticForm.seed.trim() ? Number(syntheticForm.seed) : null,
-    };
-  }
-
   async function generateAndImportSynthetic() {
     const validation = validateSyntheticTraceForm(syntheticForm);
     if (!validation.ok) {
@@ -321,7 +296,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
     setSyntheticBusy(true);
     setSyntheticError(null);
     try {
-      const response = await generateSyntheticTrace(syntheticPayload());
+      const response = await generateSyntheticTrace(buildSyntheticTracePayload(syntheticForm, model, safeTraceName(syntheticForm.traceName, "synthetic_trace")));
       const appended = appendSyntheticTrace(traces, response);
       onTraces(appended.traces);
       onSelectTrace(appended.selectedTraceId);
@@ -345,8 +320,8 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
     setSyntheticBusy(true);
     setSyntheticError(null);
     try {
-      const response = await generateSyntheticTrace(syntheticPayload());
-      const csv = ["Voltage_V,Current_A", ...response.voltage_V.map((v, idx) => `${v},${response.current_A[idx]}`)].join("\n");
+      const response = await generateSyntheticTrace(buildSyntheticTracePayload(syntheticForm, model, safeTraceName(syntheticForm.traceName, "synthetic_trace")));
+      const csv = syntheticTraceCsv(response, "Voltage_V,Current_A");
       const blob = new Blob([csv], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");

@@ -15,22 +15,32 @@ Validated after Fitting responsive polish and Data import workflow cleanup.
 ```bash
 PYTHONPATH=backend python -m pytest backend/tests -q
 python -m compileall -q backend/ivfitter backend/tests tools/audit_release_page.py tools/update_github_release.py
-cd frontend
 npm run build
+npm run test:frontend -- --reporter=dot
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release_build.ps1 -SkipPackage
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release_build.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_portable_windows.ps1
 ```
 
 ## Observed result
 
 - Backend pytest: passed, 122 tests.
 - Python compileall: passed.
-- Frontend build/test: blocked in this container because frontend dependencies are incomplete and the current package mirror still fails to provide required packages such as electron-to-chromium. No frontend pass is claimed here.
+- Frontend production build: passed after production TypeScript config stopped compiling Vitest test files.
+- Frontend unit tests: passed, 9 files / 33 tests.
+- Release build without packaging: passed, including frontend build, frontend unit tests, backend pytest, and backend compile check.
+- Standard release package: passed, created `release/iv-fitter-webui-v1.5.43.zip`.
+- Windows portable package: passed, created `release/portable-dist/IV-fitter-v1.5.43-win-portable.zip`.
+- Portable smoke test: passed. Launched `IV-fitter.exe` with `IVFITTER_NO_BROWSER=1` and `IVFITTER_PORT=8876`; `/api/health` returned `ok` and `/api/version` returned `1.5.43`.
+- Note: `npm ci` against the lockfile still timed out when the environment rewrote lockfile package URLs to the internal package mirror. For this local validation run, frontend dependencies were restored with `npm install --package-lock=false --registry=https://registry.npmjs.org/` and the lockfile was not changed.
 
 ## Required local release checks
 
 ```bash
 cd frontend
 npm install
-npm run test -- --run --reporter=dot
+npm run test -- --reporter=dot
+cd ..
 npm run build
 ```
 

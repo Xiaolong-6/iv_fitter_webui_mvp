@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -p frontend/tsconfig.json && vite build",
+    "test": "npm run test:frontend",
+    "test:frontend": "npm --prefix frontend run test --",
     "preview": "vite preview",
     "release:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release_build.ps1",
     "portable:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_portable_windows.ps1"

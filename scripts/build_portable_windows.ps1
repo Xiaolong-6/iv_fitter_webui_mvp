@@ -29,8 +29,7 @@ if (-not $SkipFrontendBuild) {
 }
 
 if (-not $SkipTests) {
-  Invoke-Native "Parameter UI smoke tests" "npm" @("run", "test:parameter-ui")
-  Invoke-Native "Synthetic trace UI smoke tests" "npm" @("run", "test:synthetic-ui")
+  Invoke-Native "Frontend unit tests" "npm" @("run", "test:frontend", "--", "--reporter=dot")
   $env:PYTHONPATH = "backend"
   Invoke-Native "Backend pytest suite" $python @("-m", "pytest", "-p", "no:cacheprovider", "backend/tests", "-q")
   Invoke-Native "Backend Python compile check" $python @("-m", "compileall", "-q", "backend/ivfitter", "backend/tests")

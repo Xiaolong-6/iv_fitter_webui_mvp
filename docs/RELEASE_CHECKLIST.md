@@ -13,8 +13,7 @@
 ```powershell
 npm install
 npm run build
-npm run test:parameter-ui
-npm run test:synthetic-ui
+npm run test:frontend -- --reporter=dot
 PYTHONPATH=backend python -m pytest backend/tests -q
 python -m compileall -q backend/ivfitter backend/tests
 ```

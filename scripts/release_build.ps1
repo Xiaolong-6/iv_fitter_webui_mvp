@@ -53,8 +53,7 @@ if ($readme -notmatch "Current version:\s+\*\*$([regex]::Escape($version))\*\*")
 Write-Host "Release build for IV-fitter Web UI v$version"
 
 Invoke-Native "Frontend production build" "npm" @("run", "build")
-Invoke-Native "Parameter UI smoke tests" "npm" @("run", "test:parameter-ui")
-Invoke-Native "Synthetic trace UI smoke tests" "npm" @("run", "test:synthetic-ui")
+Invoke-Native "Frontend unit tests" "npm" @("run", "test:frontend", "--", "--reporter=dot")
 
 if (-not $SkipPythonTests) {
   if (Test-Path ".venv/Scripts/python.exe") {

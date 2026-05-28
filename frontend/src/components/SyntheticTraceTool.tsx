@@ -2,7 +2,14 @@ import { useState } from "react";
 import type { ModelSpec, SyntheticNoiseConfig, TraceData } from "../model/types";
 import { generateSyntheticTrace } from "../api/client";
 import type { Language } from "../model/i18n";
-import { appendSyntheticTrace, validateSyntheticTraceForm, type SyntheticTraceFormState } from "../model/syntheticTrace";
+import {
+  appendSyntheticTrace,
+  buildSyntheticTracePayload,
+  defaultSyntheticTraceForm,
+  syntheticTraceCsv,
+  validateSyntheticTraceForm,
+  type SyntheticTraceFormState,
+} from "../model/syntheticTrace";
 
 function downloadText(filename: string, text: string, mimeType: string) {
   const blob = new Blob([text], { type: mimeType });
@@ -28,43 +35,12 @@ export function SyntheticTraceTool({ traces, onTraces, onSelectTrace, model, lan
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [form, setForm] = useState<SyntheticTraceFormState>({
-    traceName: "synthetic_trace",
-    voltageStart: "-1",
-    voltageStop: "1",
-    voltageStep: "0.02",
-    noiseMode: "none",
-    noiseLevelA: "1e-12",
-    relativeNoiseFraction: "0.01",
-    seed: "1",
-    complianceEnabled: false,
-    complianceCurrentA: "0.001",
-  });
+  const [form, setForm] = useState<SyntheticTraceFormState>(defaultSyntheticTraceForm);
 
   function updateForm(patch: Partial<SyntheticTraceFormState>) {
     setForm((current) => ({ ...current, ...patch }));
     setError(null);
     setMessage(null);
-  }
-
-  function payload() {
-    const noise_config: SyntheticNoiseConfig = form.noiseMode === "gaussian_absolute"
-      ? { mode: "gaussian_absolute", noise_level_A: Number(form.noiseLevelA) }
-      : form.noiseMode === "gaussian_relative"
-        ? { mode: "gaussian_relative", relative_noise_fraction: Number(form.relativeNoiseFraction) }
-        : { mode: "none" };
-    return {
-      model,
-      trace_name: form.traceName.trim() || "synthetic_trace",
-      voltage_start: Number(form.voltageStart),
-      voltage_stop: Number(form.voltageStop),
-      voltage_step: Number(form.voltageStep),
-      noise_config,
-      artifact_config: form.complianceEnabled
-        ? { compliance_enabled: true, compliance_current_A: Number(form.complianceCurrentA) }
-        : { compliance_enabled: false },
-      seed: form.seed.trim() ? Number(form.seed) : null,
-    };
   }
 
   async function generateAndImport() {
@@ -77,7 +53,7 @@ export function SyntheticTraceTool({ traces, onTraces, onSelectTrace, model, lan
     setError(null);
     setMessage(null);
     try {
-      const response = await generateSyntheticTrace(payload());
+      const response = await generateSyntheticTrace(buildSyntheticTracePayload(form, model, form.traceName.trim() || "synthetic_trace"));
       const appended = appendSyntheticTrace(traces, response);
       onTraces(appended.traces);
       onSelectTrace(appended.selectedTraceId);
@@ -100,9 +76,8 @@ export function SyntheticTraceTool({ traces, onTraces, onSelectTrace, model, lan
     setError(null);
     setMessage(null);
     try {
-      const response = await generateSyntheticTrace(payload());
-      const rows = ["voltage_V,current_A", ...response.voltage_V.map((v, idx) => `${v},${response.current_A[idx]}`)];
-      downloadText(`${response.trace_name || "synthetic_trace"}.csv`, rows.join("\n"), "text/csv;charset=utf-8");
+      const response = await generateSyntheticTrace(buildSyntheticTracePayload(form, model, form.traceName.trim() || "synthetic_trace"));
+      downloadText(`${response.trace_name || "synthetic_trace"}.csv`, syntheticTraceCsv(response), "text/csv;charset=utf-8");
       setMessage(language === "zh" ? "Synthetic CSV 已生成。" : "Synthetic CSV generated.");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
