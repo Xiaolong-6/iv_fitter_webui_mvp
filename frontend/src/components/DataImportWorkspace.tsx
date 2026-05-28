@@ -457,7 +457,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
                 </select>
               </label>
             </div>
-            {onNextToFitting ? <button type="button" className="primary data-next-action" onClick={onNextToFitting}>{language === "zh" ? "继续拟合" : "Go to Fitting"}</button> : null}
+            {onNextToFitting ? <button type="button" className="primary data-next-action" onClick={onNextToFitting}>{language === "zh" ? "前往模型构建" : "Go to Model Builder"}</button> : null}
           </>}
         </div>
 
