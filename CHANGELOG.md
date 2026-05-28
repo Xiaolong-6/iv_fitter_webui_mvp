@@ -1,3 +1,13 @@
+## v1.5.40 — fitting controls and manual navigation polish
+
+- Renamed the sidebar Start tab to Start and enlarged the Start-page primary actions.
+- Removed the redundant HappyMeasure sample hint from the Data import header.
+- Changed the default fitting plot view to paired diagnostics: Linear I-V + signed residual, with an alternate Log |I| + log residual view.
+- Added a draggable horizontal splitter between Plots and Parameters on the Fitting page.
+- Replaced tiny text chart controls with larger icon-style zoom/pan/reset controls.
+- Removed Manual section subtitles so the left navigation functions as compact quick-position tabs.
+- Preserved fitting physics, backend APIs, report schemas, and release-manager behavior.
+
 ## v1.5.39 — continuous User Manual reader
 
 - Changed the User Manual from one-section-at-a-time reading to a single continuous scrollable document.

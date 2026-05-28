@@ -52,12 +52,12 @@ export function StartHerePage({
         <div className="hero-actions">
           <button
             type="button"
-            className="primary hero-primary"
+            className="primary hero-primary hero-large-action"
             onClick={() => setActiveView("data")}
           >
             Start with data
           </button>
-          <button type="button" onClick={() => setActiveView("help")}>
+          <button type="button" className="hero-large-action" onClick={() => setActiveView("help")}>
             Open help
           </button>
         </div>

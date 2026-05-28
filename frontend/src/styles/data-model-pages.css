@@ -1117,3 +1117,12 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
   height: 100%;
   grid-template-columns: minmax(320px, 0.48fr) minmax(640px, 1.52fr);
 }
+
+/* v1.5.40: make Start-page primary actions easier to hit. */
+.hero-actions .hero-large-action {
+  min-height: calc(42px * var(--app-zoom));
+  padding: calc(10px * var(--app-zoom)) calc(18px * var(--app-zoom));
+  border-radius: calc(12px * var(--app-zoom));
+  font-size: calc(15px * var(--app-zoom));
+  font-weight: 850;
+}

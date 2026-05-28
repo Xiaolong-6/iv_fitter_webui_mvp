@@ -129,7 +129,9 @@ export function FittingWorkflowPage({
   isFitting,
   language,
   leftPct,
+  plotPct,
   onResizeStart,
+  onPlotResizeStart,
 }: {
   selectedTrace: TraceData;
   selectedTraceId: string | null;
@@ -157,7 +159,9 @@ export function FittingWorkflowPage({
   isFitting: boolean;
   language: Language;
   leftPct: number;
+  plotPct: number;
   onResizeStart: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  onPlotResizeStart: (event: ReactPointerEvent<HTMLDivElement>) => void;
 }) {
   const hasTrace = selectedTrace.voltage_V.length > 0;
   return (
@@ -203,7 +207,10 @@ export function FittingWorkflowPage({
           aria-label="Resize Fitting setup and results columns"
           onPointerDown={onResizeStart}
         />
-        <main className="fitting-results-column">
+        <main
+          className="fitting-results-column resizable-results-column"
+          style={{ "--plot-pane-pct": `${plotPct}%` } as CSSProperties}
+        >
           <PageSection title={t(language, "plots")}>
             <ErrorBoundary label="Plot workspace">
               <PlotWorkspace
@@ -217,6 +224,12 @@ export function FittingWorkflowPage({
               />
             </ErrorBoundary>
           </PageSection>
+          <div
+            className="horizontal-pane-resizer"
+            role="separator"
+            aria-label="Resize plots and parameters"
+            onPointerDown={onPlotResizeStart}
+          />
           <PageSection title={t(language, "parameters")}>
             <ErrorBoundary label="Parameter table">
               <ParameterTable

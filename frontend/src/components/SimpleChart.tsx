@@ -84,6 +84,29 @@ function panSpan([lo, hi]: [number, number], frac: number): [number, number] {
   return [lo + d, hi + d];
 }
 
+function ZoomIcon({ plus = true }: { plus?: boolean }) {
+  return <svg className="chart-control-svg" viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="10" cy="10" r="6" />
+    <path d="M15 15l5 5" />
+    <path d="M7.5 10h5" />
+    {plus ? <path d="M10 7.5v5" /> : null}
+  </svg>;
+}
+
+function PanIcon({ direction }: { direction: "left" | "right" }) {
+  return <svg className="chart-control-svg" viewBox="0 0 24 24" aria-hidden="true">
+    {direction === "left" ? <path d="M14 6l-6 6 6 6" /> : <path d="M10 6l6 6-6 6" />}
+    <path d="M8 12h8" />
+  </svg>;
+}
+
+function ResetIcon() {
+  return <svg className="chart-control-svg" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M5 12a7 7 0 1 0 2.05-4.95" />
+    <path d="M5 5v5h5" />
+  </svg>;
+}
+
 export function SimpleChart({ title, series, yLabel, height = 248, robustScale = true, annotation, regions = [] }: SimpleChartProps) {
   const width = 520;
   const margin = { left: 58, right: 14, top: 30, bottom: 38 };
@@ -140,27 +163,27 @@ export function SimpleChart({ title, series, yLabel, height = 248, robustScale =
   return <div className="simple-chart">
     <div className="chart-toolbar compact-chart-toolbar" aria-label={`${title} chart controls`}>
       <span className="chart-toolbar-hint" title="Mouse wheel zooms X. Shift + wheel zooms Y.">Wheel zoom</span>
-      <div className="chart-button-group" role="group" aria-label="Zoom and pan controls">
+      <div className="chart-button-group chart-control-cluster" role="group" aria-label="Zoom and pan controls">
         <button className="chart-icon-button" type="button" title="Zoom X axis in" aria-label="Zoom X axis in" onClick={() => setXView((v) => zoomSpan(v ?? baseX, 0.84))}>
-          <span aria-hidden="true">⌕</span><small>X+</small>
+          <ZoomIcon plus /><small>X</small>
         </button>
         <button className="chart-icon-button" type="button" title="Zoom X axis out" aria-label="Zoom X axis out" onClick={() => setXView((v) => zoomSpan(v ?? baseX, 1.18))}>
-          <span aria-hidden="true">⌕</span><small>X−</small>
+          <ZoomIcon plus={false} /><small>X</small>
         </button>
         <button className="chart-icon-button" type="button" title="Zoom Y axis in" aria-label="Zoom Y axis in" onClick={() => setYView((v) => zoomSpan(v ?? baseY, 0.84))}>
-          <span aria-hidden="true">⌕</span><small>Y+</small>
+          <ZoomIcon plus /><small>Y</small>
         </button>
         <button className="chart-icon-button" type="button" title="Zoom Y axis out" aria-label="Zoom Y axis out" onClick={() => setYView((v) => zoomSpan(v ?? baseY, 1.18))}>
-          <span aria-hidden="true">⌕</span><small>Y−</small>
+          <ZoomIcon plus={false} /><small>Y</small>
         </button>
         <button className="chart-icon-button" type="button" title="Pan left" aria-label="Pan left" onClick={() => setXView((v) => panSpan(v ?? baseX, -0.18))}>
-          <span aria-hidden="true">←</span>
+          <PanIcon direction="left" />
         </button>
         <button className="chart-icon-button" type="button" title="Pan right" aria-label="Pan right" onClick={() => setXView((v) => panSpan(v ?? baseX, 0.18))}>
-          <span aria-hidden="true">→</span>
+          <PanIcon direction="right" />
         </button>
         <button className="chart-icon-button chart-reset-button" type="button" title="Reset zoom and pan" aria-label="Reset zoom and pan" onClick={() => { setXView(null); setYView(null); }}>
-          <span aria-hidden="true">↺</span><small>Reset</small>
+          <ResetIcon /><small>Reset</small>
         </button>
       </div>
     </div>

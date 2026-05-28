@@ -7,6 +7,7 @@ export function useWorkflowLayoutState() {
   const [modelPanePct, setModelPanePct] = useState(42);
   const [fittingPanePct, setFittingPanePct] = useState(28);
   const [reportPanePct, setReportPanePct] = useState(72);
+  const [plotPanePct, setPlotPanePct] = useState(56);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [language, setLanguage] = useState<Language>("en");
   return {
@@ -18,6 +19,8 @@ export function useWorkflowLayoutState() {
     setFittingPanePct,
     reportPanePct,
     setReportPanePct,
+    plotPanePct,
+    setPlotPanePct,
     sidebarCollapsed,
     setSidebarCollapsed,
     language,

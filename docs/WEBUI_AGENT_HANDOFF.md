@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.5.39**.
+Current package: **v1.5.40**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -46,7 +46,7 @@ React/Vite frontend -> FastAPI API -> Python fitting core
 - Model Builder equivalent-circuit preview uses a compact topology diagram with main path on top and branches below Vj.
 - Model Builder is compact: component nicknames are edited directly, and parameter initials/bounds/fixed state are handled in the Parameters table rather than duplicated in builder cards.
 - Parameters are displayed by placement and component instance. Keep parameter keys unchanged for fitting, save/load, JSON export/import, and reports. After a completed fit, fitted values are written into the model as next-run initial values only if the fit passes reportability/quality gating; poor fits remain visible but must not silently overwrite trusted initials. The restore button should recover the pre-fit value snapshot only, not rename parameters or alter serialization. Synthetic traces can also seed initials from stored ground-truth metadata when parameter keys match.
-- The UI is workflow-centered: Start here, Data, Model, Fitting, Report, and Help. Do not reintroduce a single Workspace tab as the main task surface.
+- The UI is workflow-centered: Start, Data, Model, Fitting, Report, and Help. Do not reintroduce a single Workspace tab as the main task surface.
 - Model Builder and model preview belong on Model. Fit setup, plots, and Parameters belong on Fitting. Full fit process/quality diagnostics and exports belong on Report. The full manual belongs on Help.
 - User-facing text should move toward content modules and translation-ready documents; start with `docs/LOCALIZATION_AND_TEXT.md` before adding new visible UI copy.
 - User manual Function Guide is user-facing by default. Internal schema terms are only allowed in collapsed Advanced details.
@@ -98,7 +98,7 @@ After every change, provide a 3-step browser test that does not require reading 
 
 ## Current validation note
 
-- v1.5.39 validation is recorded in `docs/TESTED_CURRENT.md`.
+- v1.5.40 validation is recorded in `docs/TESTED_CURRENT.md`.
 - Current expected validation commands are backend pytest, backend compileall, frontend Vitest, and frontend production build.
 
 ## v1.4.35 Fit setup and Model Builder interaction note
@@ -218,14 +218,14 @@ Dock/sidebar default is collapsed. Language selector dropdown options are explic
 Run timeout is now part of FitConfig and defaults to 60 s. Frontend abort is paired with backend cooperative timeout checks; do not rely on browser abort alone for long solver runs. Starting a new run must clear old result/report/warning/verdict state. Parameters table should use scientific notation for very small/large numbers.
 
 
-## v1.5.39 release-manager and invalid-report note
+## v1.5.40 release-manager and invalid-report note
 
 - Read `docs/RELEASE_MANAGER.md` before changing release-check or GitHub release scripts.
 - Invalid/non-reportable Report tab states must remain diagnostic-only and must not be presented as normal validated reports.
 - Do not put GitHub write tokens in frontend code or normal runtime code.
 - Parameters table containment was fixed after v1.5.36; verify it after CSS changes.
 
-## v1.5.39 manual/update-panel note
+## v1.5.40 manual/update-panel note
 
 - Keep the User Manual sidebar focused on navigation. Do not place full release notes or asset lists permanently in the sidebar.
 - The in-app release checker must distinguish `Update available`, `Up to date`, `Local version newer than public release`, and `Check failed`.
@@ -233,6 +233,16 @@ Run timeout is now part of FitConfig and defaults to 60 s. Frontend abort is pai
 - Manual equations should use readable user-facing labels such as External voltage balance and Total current.
 
 
-## v1.5.39 continuous manual reader note
+## v1.5.40 continuous manual reader note
 
 The User Manual is now one continuous scrollable document. The left section list is quick-position navigation only; clicking a section scrolls the manual content pane and does not replace the body with a single section. Preserve this behavior unless a future design explicitly reintroduces paginated manual reading.
+
+
+## v1.5.40 fitting controls and manual navigation note
+
+- Sidebar label changed from Start here to Start.
+- Start-page primary actions are intentionally larger touch targets.
+- Fitting plot defaults now favor paired diagnostics: Linear I-V + signed residual, with Log |I| + log residual available.
+- Plots and Parameters in the Fitting page have a vertical drag splitter. Preserve this split when changing fitting layout.
+- Chart controls use icon-style zoom/pan/reset buttons with larger click targets. Do not regress to tiny text controls.
+- Manual navigation is a compact quick-position tab list for the continuous manual document; subtitles under section tabs were intentionally removed.

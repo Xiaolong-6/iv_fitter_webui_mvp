@@ -1004,3 +1004,25 @@
   table-layout: auto;
   min-width: 700px;
 }
+
+/* v1.5.40: user-resizable plot/parameter split. */
+.fitting-page .fitting-results-column.resizable-results-column {
+  grid-template-rows: minmax(240px, var(--plot-pane-pct, 56%)) 8px minmax(170px, 1fr);
+}
+.horizontal-pane-resizer {
+  height: 8px;
+  min-height: 8px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, transparent 0, transparent 2px, #dbe4f0 2px, #dbe4f0 6px, transparent 6px);
+  cursor: row-resize;
+  touch-action: none;
+}
+.horizontal-pane-resizer:hover,
+.horizontal-pane-resizer:focus-visible {
+  background: linear-gradient(180deg, transparent 0, transparent 2px, #2563eb 2px, #2563eb 6px, transparent 6px);
+  outline: none;
+}
+@media (orientation: portrait), (max-width: 900px) {
+  .horizontal-pane-resizer { display: none; }
+  .fitting-page .fitting-results-column.resizable-results-column { grid-template-rows: auto auto; }
+}

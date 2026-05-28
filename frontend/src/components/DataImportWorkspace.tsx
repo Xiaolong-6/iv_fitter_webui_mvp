@@ -367,7 +367,6 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
     <div className="data-import-layout">
       <section className="card import-actions-card">
         <div className="card-head"><h3>{language === "zh" ? "导入数据" : "Import data"}</h3><HelpTip text={t(language, "importCsvHelp")} /></div>
-        <p className="muted">{language === "zh" ? "导入文件或加载内置 HappyMeasure 示例。" : "Import a file or load the bundled HappyMeasure sample."}</p>
         <div className="data-actions compact-data-actions">
           <button type="button" className="file-button import-primary-action" title={`${t(language, "importCsvHelp")} ${t(language, "happyMeasureSupported")}`} onClick={openImportPicker}>{t(language, "importCsv")}</button>
           <input ref={fileInputRef} id={fileId} className="visually-hidden" type="file" accept=".csv,.txt,.dat" onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />

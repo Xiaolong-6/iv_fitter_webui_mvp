@@ -2,7 +2,7 @@ export type Language = "en" | "zh";
 
 const dictionaries = {
   en: {
-    start: "Start here",
+    start: "Start",
     startHint: "Workflow overview and next step",
     model: "Model",
     modelHint: "Build and preview the circuit model",
@@ -145,7 +145,7 @@ const dictionaries = {
     solverModeHelp: "Legacy composite is stable for common one-junction models. Graph DC is experimental for topology-based assembly.",
   },
   zh: {
-    start: "Start here",
+    start: "开始",
     startHint: "工作流程概览和下一步",
     model: "模型",
     modelHint: "构建并预览电路模型",

@@ -70,6 +70,8 @@ export function FittingPage() {
     setFittingPanePct,
     reportPanePct,
     setReportPanePct,
+    plotPanePct,
+    setPlotPanePct,
     sidebarCollapsed,
     setSidebarCollapsed,
     language,
@@ -692,8 +694,12 @@ export function FittingPage() {
             isFitting={isFitting}
             language={language}
             leftPct={fittingPanePct}
+            plotPct={plotPanePct}
             onResizeStart={(event) =>
               startPaneResize(event, setFittingPanePct, 22, 48)
+            }
+            onPlotResizeStart={(event) =>
+              startPaneResize(event, setPlotPanePct, 34, 76, "y")
             }
           />
         ) : activeView === "report" ? (
