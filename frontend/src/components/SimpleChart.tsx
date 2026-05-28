@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import type { WheelEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 import { fmtEng } from "../model/format";
 
 type Series = {
@@ -21,11 +21,14 @@ type SimpleChartProps = {
   title: string;
   series: Series[];
   yLabel?: string;
-  height?: number;
   robustScale?: boolean;
   annotation?: string | null;
   regions?: { x0: number; x1: number; label: string }[];
 };
+
+const VB_W = 520;
+const VB_H = 248;
+const MARGIN = { left: 58, right: 14, top: 30, bottom: 38 };
 
 function finitePairs(series: Series[]) {
   const xs: number[] = [];
@@ -74,31 +77,6 @@ function span(values: number[], fallback: [number, number], robust = false) {
 }
 
 function clip(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)); }
-function zoomSpan([lo, hi]: [number, number], factor: number): [number, number] {
-  const c = (lo + hi) / 2;
-  const half = ((hi - lo) * factor) / 2;
-  return [c - half, c + half];
-}
-function panSpan([lo, hi]: [number, number], frac: number): [number, number] {
-  const d = (hi - lo) * frac;
-  return [lo + d, hi + d];
-}
-
-function ZoomIcon({ plus = true }: { plus?: boolean }) {
-  return <svg className="chart-control-svg" viewBox="0 0 24 24" aria-hidden="true">
-    <circle cx="10" cy="10" r="6" />
-    <path d="M15 15l5 5" />
-    <path d="M7.5 10h5" />
-    {plus ? <path d="M10 7.5v5" /> : null}
-  </svg>;
-}
-
-function PanIcon({ direction }: { direction: "left" | "right" }) {
-  return <svg className="chart-control-svg" viewBox="0 0 24 24" aria-hidden="true">
-    {direction === "left" ? <path d="M14 6l-6 6 6 6" /> : <path d="M10 6l6 6-6 6" />}
-    <path d="M8 12h8" />
-  </svg>;
-}
 
 function ResetIcon() {
   return <svg className="chart-control-svg" viewBox="0 0 24 24" aria-hidden="true">
@@ -107,32 +85,87 @@ function ResetIcon() {
   </svg>;
 }
 
-export function SimpleChart({ title, series, yLabel, height = 248, robustScale = true, annotation, regions = [] }: SimpleChartProps) {
-  const width = 520;
-  const margin = { left: 58, right: 14, top: 30, bottom: 38 };
-  const plotW = width - margin.left - margin.right;
-  const plotH = height - margin.top - margin.bottom;
-  const { xs, ys } = useMemo(() => finitePairs(series), [series]);
+export function SimpleChart({ title, series, yLabel, robustScale = true, annotation, regions = [] }: SimpleChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState<{ w: number; h: number }>({ w: VB_W, h: VB_H });
   const [hover, setHover] = useState<HoverPoint | null>(null);
   const [showClipInfo, setShowClipInfo] = useState(false);
-  const baseX = span(xs, [-1, 1], false);
-  const baseY = span(ys, [-1, 1], robustScale);
+  const baseX = useMemo(() => span(finitePairs(series).xs, [-1, 1], false), [series]);
+  const baseY = useMemo(() => span(finitePairs(series).ys, [-1, 1], robustScale), [series, robustScale]);
   const [xView, setXView] = useState<[number, number] | null>(null);
   const [yView, setYView] = useState<[number, number] | null>(null);
   const [xmin, xmax] = xView ?? baseX;
   const [ymin, ymax] = yView ?? baseY;
+  const [dragging, setDragging] = useState(false);
+  const dragRef = useRef<{ startX: number; startY: number; startViewX: [number, number]; startViewY: [number, number] } | null>(null);
 
-  const sx = (x: number) => margin.left + ((x - xmin) / (xmax - xmin)) * plotW;
-  const syRaw = (y: number) => margin.top + plotH - ((y - ymin) / (ymax - ymin)) * plotH;
-  const sy = (y: number) => clip(syRaw(y), margin.top, margin.top + plotH);
-  const inYRange = (y: number) => y >= ymin && y <= ymax;
-  const inXRange = (x: number) => x >= xmin && x <= xmax;
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) setContainerSize({ w: width, h: height });
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const { xs, ys } = useMemo(() => finitePairs(series), [series]);
+  const plotW = VB_W - MARGIN.left - MARGIN.right;
+  const plotH = VB_H - MARGIN.top - MARGIN.bottom;
+
+  const sx = useCallback((x: number) => MARGIN.left + ((x - xmin) / (xmax - xmin)) * plotW, [xmin, xmax, plotW]);
+  const syRaw = useCallback((y: number) => MARGIN.top + plotH - ((y - ymin) / (ymax - ymin)) * plotH, [ymin, ymax, plotH]);
+  const sy = useCallback((y: number) => clip(syRaw(y), MARGIN.top, MARGIN.top + plotH), [syRaw, plotH]);
+  const inYRange = useCallback((y: number) => y >= ymin && y <= ymax, [ymin, ymax]);
+  const inXRange = useCallback((x: number) => x >= xmin && x <= xmax, [xmin, xmax]);
   const ticks = [0, 0.25, 0.5, 0.75, 1];
+
+  function resetView() {
+    setXView(null);
+    setYView(null);
+  }
+
+  function onPointerDown(e: ReactPointerEvent<SVGSVGElement>) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startViewX: xView ?? baseX,
+      startViewY: yView ?? baseY,
+    };
+    setDragging(true);
+  }
+
+  function onPointerMove(e: ReactPointerEvent<SVGSVGElement>) {
+    if (dragging && dragRef.current) {
+      const dx = e.clientX - dragRef.current.startX;
+      const dy = e.clientY - dragRef.current.startY;
+      const dataDx = -(dx / containerSize.w) * (dragRef.current.startViewX[1] - dragRef.current.startViewX[0]);
+      const dataDy = (dy / containerSize.h) * (dragRef.current.startViewY[1] - dragRef.current.startViewY[0]);
+      setXView([dragRef.current.startViewX[0] + dataDx, dragRef.current.startViewX[1] + dataDx]);
+      setYView([dragRef.current.startViewY[0] + dataDy, dragRef.current.startViewY[1] + dataDy]);
+    } else {
+      setHover(nearestPoint(e.clientX, e.clientY, e.currentTarget));
+    }
+  }
+
+  function onPointerUp(e: ReactPointerEvent<SVGSVGElement>) {
+    if (dragging) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+      setDragging(false);
+      dragRef.current = null;
+    }
+  }
 
   function nearestPoint(clientX: number, clientY: number, svg: SVGSVGElement): HoverPoint | null {
     const rect = svg.getBoundingClientRect();
-    const mx = ((clientX - rect.left) / rect.width) * width;
-    const my = ((clientY - rect.top) / rect.height) * height;
+    const mx = ((clientX - rect.left) / rect.width) * VB_W;
+    const my = ((clientY - rect.top) / rect.height) * VB_H;
     let best: HoverPoint | null = null;
     let bestD = Infinity;
     for (const s of series) {
@@ -147,93 +180,102 @@ export function SimpleChart({ title, series, yLabel, height = 248, robustScale =
     return bestD < 42 ? best : null;
   }
 
-  function wheelZoom(event: WheelEvent<SVGSVGElement>) {
+  function wheelZoom(event: ReactWheelEvent<SVGSVGElement>) {
     event.preventDefault();
+    const rect = event.currentTarget.getBoundingClientRect();
+    const mouseX = ((event.clientX - rect.left) / rect.width) * VB_W;
+    const mouseY = ((event.clientY - rect.top) / rect.height) * VB_H;
+    const cx = xmin + ((mouseX - MARGIN.left) / plotW) * (xmax - xmin);
+    const cy = ymax - ((mouseY - MARGIN.top) / plotH) * (ymax - ymin);
     const factor = event.deltaY > 0 ? 1.18 : 0.84;
-    if (event.shiftKey) setYView((current) => zoomSpan(current ?? baseY, factor));
-    else setXView((current) => zoomSpan(current ?? baseX, factor));
+
+    if (event.ctrlKey) {
+      const lo = cx - (cx - xmin) * factor;
+      const hi = cx + (xmax - cx) * factor;
+      setXView([lo, hi]);
+    } else if (event.shiftKey) {
+      const lo = cy - (cy - ymin) * factor;
+      const hi = cy + (ymax - cy) * factor;
+      setYView([lo, hi]);
+    } else {
+      const xLo = cx - (cx - xmin) * factor;
+      const xHi = cx + (xmax - cx) * factor;
+      const yLo = cy - (cy - ymin) * factor;
+      const yHi = cy + (ymax - cy) * factor;
+      setXView([xLo, xHi]);
+      setYView([yLo, yHi]);
+    }
   }
 
   const clippedCount = ys.filter((y, i) => Number.isFinite(y) && (!inYRange(y) || !inXRange(xs[i]))).length;
   const tooltipW = 244;
   const tooltipH = 54;
-  const tooltipX = hover ? clip(hover.px + 12, margin.left + 4, width - tooltipW - 8) : 0;
-  const tooltipY = hover ? clip(hover.py - tooltipH - 8, margin.top + 4, height - tooltipH - margin.bottom - 4) : 0;
+  const tooltipX = hover ? clip(hover.px + 12, MARGIN.left + 4, VB_W - tooltipW - 8) : 0;
+  const tooltipY = hover ? clip(hover.py - tooltipH - 8, MARGIN.top + 4, VB_H - tooltipH - MARGIN.bottom - 4) : 0;
 
-  return <div className="simple-chart">
+  return <div className="simple-chart" ref={containerRef}>
     <div className="chart-toolbar compact-chart-toolbar" aria-label={`${title} chart controls`}>
-      <div className="chart-button-group chart-control-cluster" role="group" aria-label="Zoom and pan controls" title="Mouse wheel zooms X. Shift + wheel zooms Y.">
-        <button className="chart-icon-button" type="button" title="Zoom X axis in" aria-label="Zoom X axis in" onClick={() => setXView((v) => zoomSpan(v ?? baseX, 0.84))}>
-          <ZoomIcon plus /><small>X</small>
-        </button>
-        <button className="chart-icon-button" type="button" title="Zoom X axis out" aria-label="Zoom X axis out" onClick={() => setXView((v) => zoomSpan(v ?? baseX, 1.18))}>
-          <ZoomIcon plus={false} /><small>X</small>
-        </button>
-        <button className="chart-icon-button" type="button" title="Zoom Y axis in" aria-label="Zoom Y axis in" onClick={() => setYView((v) => zoomSpan(v ?? baseY, 0.84))}>
-          <ZoomIcon plus /><small>Y</small>
-        </button>
-        <button className="chart-icon-button" type="button" title="Zoom Y axis out" aria-label="Zoom Y axis out" onClick={() => setYView((v) => zoomSpan(v ?? baseY, 1.18))}>
-          <ZoomIcon plus={false} /><small>Y</small>
-        </button>
-        <button className="chart-icon-button" type="button" title="Pan left" aria-label="Pan left" onClick={() => setXView((v) => panSpan(v ?? baseX, -0.18))}>
-          <PanIcon direction="left" />
-        </button>
-        <button className="chart-icon-button" type="button" title="Pan right" aria-label="Pan right" onClick={() => setXView((v) => panSpan(v ?? baseX, 0.18))}>
-          <PanIcon direction="right" />
-        </button>
-        <button className="chart-icon-button chart-reset-button" type="button" title="Reset zoom and pan" aria-label="Reset zoom and pan" onClick={() => { setXView(null); setYView(null); }}>
+      <div className="chart-button-group chart-control-cluster" role="group" aria-label="Chart controls" title="Wheel zooms at cursor. Ctrl+wheel: X only. Shift+wheel: Y only. Drag to pan. Double-click to reset.">
+        <button className="chart-icon-button chart-reset-button" type="button" title="Reset zoom and pan" aria-label="Reset zoom and pan" onClick={resetView}>
           <ResetIcon />
         </button>
       </div>
     </div>
     <svg
-      viewBox={`0 0 ${width} ${height}`}
+      width={containerSize.w}
+      height={containerSize.h}
+      viewBox={`0 0 ${VB_W} ${VB_H}`}
+      preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-label={title}
-      onMouseMove={(e) => setHover(nearestPoint(e.clientX, e.clientY, e.currentTarget))}
-      onMouseLeave={() => setHover(null)}
+      style={{ cursor: dragging ? "grabbing" : "crosshair" }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerLeave={() => { setHover(null); if (dragging) { setDragging(false); dragRef.current = null; } }}
       onWheel={wheelZoom}
+      onDoubleClick={resetView}
       tabIndex={0}
     >
       <title>{title}</title>
       <desc>{yLabel ? `${title}, ${yLabel}` : title}</desc>
-      <rect x={0} y={0} width={width} height={height} className="chart-bg" />
-      <text x={margin.left} y={22} className="chart-title">{title}</text>
+      <rect x={0} y={0} width={VB_W} height={VB_H} className="chart-bg" />
+      <text x={MARGIN.left} y={22} className="chart-title">{title}</text>
       {clippedCount > 0 && <g className="chart-clip-badge" onClick={() => setShowClipInfo((v) => !v)} role="button" aria-label={`${clippedCount} clipped points`}>
-        <rect x={width - margin.right - 78} y={8} width={74} height={22} rx={11} />
-        <text x={width - margin.right - 41} y={23} textAnchor="middle">clipped {clippedCount}</text>
+        <rect x={VB_W - MARGIN.right - 78} y={8} width={74} height={22} rx={11} />
+        <text x={VB_W - MARGIN.right - 41} y={23} textAnchor="middle">clipped {clippedCount}</text>
         <title>{clippedCount} point(s) are outside the current robust scale or zoom window. Click to show the note.</title>
       </g>}
 
       {ticks.map((t) => {
-        const x = margin.left + t * plotW;
-        const y = margin.top + t * plotH;
+        const x = MARGIN.left + t * plotW;
+        const y = MARGIN.top + t * plotH;
         const xv = xmin + t * (xmax - xmin);
         const yv = ymax - t * (ymax - ymin);
         return <g key={`grid-${t}`}>
-          <line x1={x} x2={x} y1={margin.top} y2={margin.top + plotH} className="chart-grid" />
-          <line x1={margin.left} x2={margin.left + plotW} y1={y} y2={y} className="chart-grid" />
-          <text x={x} y={height - 18} textAnchor="middle" className="chart-tick">{fmtEng(xv, 3)}</text>
-          <text x={margin.left - 8} y={y + 4} textAnchor="end" className="chart-tick">{fmtEng(yv, 3)}</text>
+          <line x1={x} x2={x} y1={MARGIN.top} y2={MARGIN.top + plotH} className="chart-grid" />
+          <line x1={MARGIN.left} x2={MARGIN.left + plotW} y1={y} y2={y} className="chart-grid" />
+          <text x={x} y={VB_H - 18} textAnchor="middle" className="chart-tick">{fmtEng(xv, 3)}</text>
+          <text x={MARGIN.left - 8} y={y + 4} textAnchor="end" className="chart-tick">{fmtEng(yv, 3)}</text>
         </g>;
       })}
 
-      <line x1={margin.left} x2={margin.left + plotW} y1={margin.top + plotH} y2={margin.top + plotH} className="chart-axis" />
-      <line x1={margin.left} x2={margin.left} y1={margin.top} y2={margin.top + plotH} className="chart-axis" />
-      {yLabel && <text x={16} y={margin.top + plotH / 2} transform={`rotate(-90 16 ${margin.top + plotH / 2})`} className="chart-label">{yLabel}</text>}
+      <line x1={MARGIN.left} x2={MARGIN.left + plotW} y1={MARGIN.top + plotH} y2={MARGIN.top + plotH} className="chart-axis" />
+      <line x1={MARGIN.left} x2={MARGIN.left} y1={MARGIN.top} y2={MARGIN.top + plotH} className="chart-axis" />
+      {yLabel && <text x={16} y={MARGIN.top + plotH / 2} transform={`rotate(-90 16 ${MARGIN.top + plotH / 2})`} className="chart-label">{yLabel}</text>}
       {regions.map((region) => {
-        const x0 = clip(sx(region.x0), margin.left, margin.left + plotW);
-        const x1 = clip(sx(region.x1), margin.left, margin.left + plotW);
+        const x0 = clip(sx(region.x0), MARGIN.left, MARGIN.left + plotW);
+        const x1 = clip(sx(region.x1), MARGIN.left, MARGIN.left + plotW);
         const w = Math.max(2, Math.abs(x1 - x0));
         return <g className="chart-mismatch-region" key={`${region.x0}-${region.x1}-${region.label}`}>
-          <rect x={Math.min(x0, x1)} y={margin.top} width={w} height={plotH} />
-          {w > 54 ? <text x={Math.min(x0, x1) + 6} y={margin.top + 16}>{region.label}</text> : null}
+          <rect x={Math.min(x0, x1)} y={MARGIN.top} width={w} height={plotH} />
+          {w > 54 ? <text x={Math.min(x0, x1) + 6} y={MARGIN.top + 16}>{region.label}</text> : null}
         </g>;
       })}
       {annotation && <g className="chart-annotation">
-        <rect x={margin.left + 12} y={margin.top + 12} width={Math.min(360, plotW - 24)} height={46} rx={8} />
-        <text x={margin.left + 24} y={margin.top + 31}>{annotation.slice(0, 86)}</text>
-        {annotation.length > 86 ? <text x={margin.left + 24} y={margin.top + 47}>{annotation.slice(86, 158)}</text> : null}
+        <rect x={MARGIN.left + 12} y={MARGIN.top + 12} width={Math.min(360, plotW - 24)} height={46} rx={8} />
+        <text x={MARGIN.left + 24} y={MARGIN.top + 31}>{annotation.slice(0, 86)}</text>
+        {annotation.length > 86 ? <text x={MARGIN.left + 24} y={MARGIN.top + 47}>{annotation.slice(86, 158)}</text> : null}
       </g>}
 
       {series.map((s, idx) => {
@@ -247,7 +289,7 @@ export function SimpleChart({ title, series, yLabel, height = 248, robustScale =
         </g>;
       })}
 
-      <g transform={`translate(${margin.left + 8}, ${margin.top + 10})`}>
+      <g transform={`translate(${MARGIN.left + 8}, ${MARGIN.top + 10})`}>
         {series.map((s, idx) => <g key={s.label} transform={`translate(0, ${idx * 16})`}>
           <rect width={10} height={10} className={idx === 0 ? "chart-series-a-fill" : "chart-series-b-fill"} />
           <text x={16} y={9} className="chart-legend">{s.label}</text>
@@ -255,7 +297,7 @@ export function SimpleChart({ title, series, yLabel, height = 248, robustScale =
       </g>
 
       {hover && <g className="chart-hover" aria-live="polite">
-        <line x1={hover.px} x2={hover.px} y1={margin.top} y2={margin.top + plotH} />
+        <line x1={hover.px} x2={hover.px} y1={MARGIN.top} y2={MARGIN.top + plotH} />
         <circle cx={hover.px} cy={hover.py} r={4.5} />
         <rect x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} rx={7} />
         <text x={tooltipX + 10} y={tooltipY + 16}>{hover.label}</text>
@@ -263,9 +305,9 @@ export function SimpleChart({ title, series, yLabel, height = 248, robustScale =
         <text x={tooltipX + 10} y={tooltipY + 47}>Y = {fmtEng(hover.y, 6)}</text>
       </g>}
       {showClipInfo && <g className="chart-clip-info">
-        <rect x={width - margin.right - 246} y={34} width={238} height={42} rx={8} />
-        <text x={width - margin.right - 236} y={52}>{clippedCount} point(s) outside visible scale.</text>
-        <text x={width - margin.right - 236} y={68}>Use reset or inspect anomalies.</text>
+        <rect x={VB_W - MARGIN.right - 246} y={34} width={238} height={42} rx={8} />
+        <text x={VB_W - MARGIN.right - 236} y={52}>{clippedCount} point(s) outside visible scale.</text>
+        <text x={VB_W - MARGIN.right - 236} y={68}>Use reset or inspect anomalies.</text>
       </g>}
     </svg>
   </div>;

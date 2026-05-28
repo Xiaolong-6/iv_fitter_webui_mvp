@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.6.0 — Chart interaction overhaul
+
+- Rewrote SimpleChart to use ResizeObserver for real container dimensions instead of fixed width=520; SVG now fills its container via width/height=100% and preserveAspectRatio.
+- Removed toolbar zoom X/Y in/out and pan left/right buttons; only Reset button remains.
+- Added image-viewer-style interactions: wheel zoom at cursor (both axes), Ctrl+wheel X-only zoom, Shift+wheel Y-only zoom, left-drag pan, double-click reset.
+- Added mouse cursor states: crosshair default, grabbing during drag.
+- Fixed `.simple-chart` CSS to `height: 100%; min-height: 0` and SVG to `width: 100%; height: 100%`.
+- Removed all `max-height` constraints on `.simple-chart > svg` in fitting-page, report-manual, and base-shell CSS so charts fill available vertical space.
+- Removed fixed `height` props from SimpleChart calls in PlotWorkspace and DataImportWorkspace.
+- Added first React component test file `SimpleChart.test.tsx` with 7 tests covering render, toolbar, wheel/drag/double-click, and series rendering.
+- Kept fitting physics, backend APIs, report schemas, saved-model compatibility, Manual behavior, and release-manager behavior unchanged.
+
 ## v1.5.43 — Fitting and Data responsive polish
 
 - Stabilized Fitting page density at high browser/app zoom by prioritizing plot height, compacting Fit setup actions, and reducing parameter-table overflow pressure.

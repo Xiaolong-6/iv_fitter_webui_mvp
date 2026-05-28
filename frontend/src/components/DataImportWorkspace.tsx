@@ -123,8 +123,8 @@ function TracePlotReview({ trace, language }: { trace?: TraceData; language: Lan
   const linear = [{ x: trace.voltage_V, y: trace.current_A, label: trace.trace_id, kind: "points" as const }];
   const log = [{ x: trace.voltage_V, y: logAbsForReview(trace.current_A), label: trace.trace_id, kind: "points" as const }];
   return <div className="trace-plot-review-grid">
-    <SimpleChart title="Linear I-V" yLabel="Current (A)" height={220} series={linear} />
-    <SimpleChart title="Log |I|" yLabel="log10(|I|)" height={220} series={log} />
+    <SimpleChart title="Linear I-V" yLabel="Current (A)" series={linear} />
+    <SimpleChart title="Log |I|" yLabel="log10(|I|)" series={log} />
   </div>;
 }
 

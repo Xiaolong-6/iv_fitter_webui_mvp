@@ -1,55 +1,62 @@
-# Tested current — v1.5.43
+# Tested current — v1.6.0
 
-Validated after Fitting responsive polish and Data import workflow cleanup.
+Validated after chart interaction overhaul and responsive layout fix.
 
 ## Scope
 
-- Fit setup pane-width responsive behavior and compact action rows.
-- Plot/parameter default split changed to plot-priority.
-- Chart controls moved into compact chart-header rows, not data overlays.
-- Parameter toolbar and component summaries compacted for high zoom.
-- Data page input sources consolidated into Upload / Paste / Sample tabs with drag-and-drop upload and structured trace metadata.
+- SimpleChart rewritten: ResizeObserver reads real container dimensions; SVG uses actual width/height with fixed viewBox.
+- Chart toolbar stripped of zoom X/Y in/out and pan left/right buttons; only Reset button remains.
+- Image-viewer-style interactions: wheel zoom at cursor (both axes), Ctrl+wheel X-only zoom, Shift+wheel Y-only zoom, left-drag pan, double-click reset.
+- Mouse cursor: crosshair default, grabbing during drag.
+- CSS: `.simple-chart` set to `height: 100%; min-height: 0`; SVG to `width: 100%; height: 100%`; removed all `max-height` constraints on `.simple-chart > svg` in fitting-page, report-manual, and base-shell CSS.
+- PlotWorkspace and DataImportWorkspace: removed fixed `height` prop from SimpleChart calls; charts now fill their grid cells via CSS.
+- New Vitest test file `SimpleChart.test.tsx` covering: render, toolbar buttons, wheel/drag/double-click interactions, series rendering.
+
+## Plot interaction reference
+
+| Action | Effect |
+|---|---|
+| Wheel (no modifier) | Zoom both X and Y at cursor position |
+| Ctrl + Wheel | Zoom X axis only at cursor position |
+| Shift + Wheel | Zoom Y axis only at cursor position |
+| Left-drag | Pan the current view |
+| Double-click | Reset to base view |
+| Reset button | Reset to base view |
+| Hover nearest point | Tooltip with label, x, y values |
+| Clipped badge click | Toggle clipped-points info |
 
 ## Commands run in this environment
 
 ```bash
-PYTHONPATH=backend python -m pytest backend/tests -q
-python -m compileall -q backend/ivfitter backend/tests tools/audit_release_page.py tools/update_github_release.py
+cd frontend
+npx tsc --noEmit
+npx vitest run --reporter=verbose
 npm run build
-npm run test:frontend -- --reporter=dot
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release_build.ps1 -SkipPackage
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release_build.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_portable_windows.ps1
 ```
 
 ## Observed result
 
-- Backend pytest: passed, 122 tests.
-- Python compileall: passed.
-- Frontend production build: passed after production TypeScript config stopped compiling Vitest test files.
-- Frontend unit tests: passed, 9 files / 33 tests.
-- Release build without packaging: passed, including frontend build, frontend unit tests, backend pytest, and backend compile check.
-- Standard release package: passed, created `release/iv-fitter-webui-v1.5.43.zip`.
-- Windows portable package: passed, created `release/portable-dist/IV-fitter-v1.5.43-win-portable.zip`.
-- Portable smoke test: passed. Launched `IV-fitter.exe` with `IVFITTER_NO_BROWSER=1` and `IVFITTER_PORT=8876`; `/api/health` returned `ok` and `/api/version` returned `1.5.43`.
-- Note: `npm ci` against the lockfile still timed out when the environment rewrote lockfile package URLs to the internal package mirror. For this local validation run, frontend dependencies were restored with `npm install --package-lock=false --registry=https://registry.npmjs.org/` and the lockfile was not changed.
+- TypeScript type check: passed (no errors).
+- Frontend unit tests: passed, 10 files / 40 tests (including 7 new SimpleChart tests).
+- Frontend production build: passed.
 
-## Required local release checks
+## Not verified in this environment
 
-```bash
-cd frontend
-npm install
-npm run test -- --reporter=dot
-cd ..
-npm run build
-```
+- Backend pytest (backend not modified, unchanged from v1.5.43).
+- Full release packaging (`release_build.ps1`, `build_portable_windows.ps1`).
+- Portable smoke test.
+- `npm ci` (lockfile timeout with internal mirror, same as prior version).
+- Manual browser checks (see below).
 
 ## Manual browser checks required
 
-1. Fitting page at 100%, 125%, and 150–160% browser zoom.
-2. App zoom 55–100%.
-3. Low-height landscape.
-4. Data page before and after import, including upload, paste, sample, and drag-drop.
-5. Paired plot views: Linear I-V + signed residual and Log |I| + log residual.
-6. Parameters table at high zoom with long component names.
-7. English/Chinese language toggle.
+1. Fitting page: charts should fill available space vertically, not be capped at 26vh.
+2. Paired plot view: both charts should resize together when window is resized.
+3. Wheel zoom: scroll should zoom at cursor position; verify Ctrl and Shift modifiers.
+4. Drag pan: left-click drag should pan the view smoothly.
+5. Double-click and Reset button should both restore the original view.
+6. Cursor should show crosshair on chart, grabbing during drag.
+7. Hover tooltip should still show nearest point data.
+8. Clipped badge should still be clickable and show info.
+9. Data page: Linear I-V and Log |I| charts should fill their containers.
+10. App zoom 55–100%, browser zoom 100–160%, low-height landscape.

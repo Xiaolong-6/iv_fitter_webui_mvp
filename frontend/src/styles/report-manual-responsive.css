@@ -312,9 +312,6 @@
 .fitting-page .simple-chart {
   border-radius: 8px;
 }
-.fitting-page .simple-chart > svg {
-  max-height: min(22vh, 220px);
-}
 
 .model-circuit-panel.circuit-panel-v2 {
   container-type: inline-size;
@@ -386,7 +383,6 @@
   .manual-hero { padding: 7px 10px; }
   .manual-reader-shell { gap: 8px; }
   .manual-reader-nav button { min-height: 31px; padding: 4px 7px; }
-  .fitting-page .simple-chart > svg { max-height: min(19vh, 175px); }
   .chart-toolbar-hint { display: none; }
   .chart-icon-button { min-width: 26px; min-height: 26px; }
 }

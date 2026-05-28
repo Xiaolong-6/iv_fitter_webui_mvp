@@ -205,9 +205,7 @@
   height: 100%;
   overflow: auto;
 }
-.fitting-page .simple-chart > svg {
-  max-height: min(26vh, 260px);
-}
+
 .fitting-page .parameter-card {
   height: 100%;
   min-height: 0;
@@ -271,9 +269,6 @@
   }
   .fit-config-drawer {
     max-height: min(50vh, 420px);
-  }
-  .fitting-page .simple-chart > svg {
-    max-height: min(23vh, 220px);
   }
   .fitting-page .fitting-results-column {
     grid-template-rows: minmax(260px, 0.6fr) minmax(160px, 0.4fr);
@@ -536,7 +531,7 @@
   }
   .plot-review-card .simple-chart > svg,
   .fitting-page .simple-chart > svg {
-    max-height: min(22vh, 200px);
+    min-height: 160px;
   }
   .fit-config-inline-options {
     max-height: min(45vh, 360px);
@@ -693,9 +688,6 @@
   height: 100%;
   overflow: auto;
 }
-.fitting-page .simple-chart > svg {
-  max-height: min(24vh, 245px);
-}
 .streamlined-fit-config .fit-config-actions .fit-action-row,
 .fit-action-row {
   display: grid;
@@ -845,13 +837,13 @@
     grid-template-rows: auto minmax(220px, auto);
   }
   .plot-review-card .simple-chart > svg {
-    max-height: min(20vh, 185px);
+    min-height: 160px;
   }
   .fitting-page .fitting-results-column {
     grid-template-rows: minmax(245px, 0.55fr) minmax(165px, 0.45fr);
   }
   .fitting-page .simple-chart > svg {
-    max-height: min(21vh, 190px);
+    min-height: 160px;
   }
   .fit-config-inline-options {
     max-height: min(40vh, 320px);
