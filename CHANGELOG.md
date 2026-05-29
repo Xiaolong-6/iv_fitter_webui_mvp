@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.7.6 — Report page/export layout alignment
+
+- Moved the Report side/control panel from the right side to the left side while preserving the previous side-panel default width.
+- Reordered the in-app Report page to match the exported HTML report order exactly: IV-fitter report, Warnings and diagnostics, Critical issue, Fit process and quality metrics, Parameters, Plots, Model evaluation summary, Generated report text.
+- Updated exported HTML to use the same compact report section order and content structure as the in-app Report page.
+- Replaced the collapsible fit-process widget inside Report with a compact three-column metric table: parameter, value, and explanation. The table includes quality metrics, solver-process values, and this-session counters.
+- Changed Report parameter rows to use equation-aligned parameter names such as component.parameter so fitted values match the model evaluation summary more directly.
+- Added plots back into the in-app Report body in the same position as the exported HTML.
+- Kept fitting physics, backend APIs, saved-model compatibility, and numerical report data unchanged.
+
 ## v1.7.5 — Webpage-style Import and Model pages
 
 - Changed the Import/Data page from a dashboard-style split layout to a normal scrollable webpage flow: Import data first, then Trace selection, Plot review, and Spreadsheet preview.

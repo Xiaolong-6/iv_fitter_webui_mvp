@@ -1,32 +1,25 @@
-# Delivery audit — v1.7.4
+# Delivery audit — v1.7.6
 
-## Direct fix
+## Direct change
 
-v1.7.3 removed internal UI controls but accidentally failed to pass the required `language` prop into several top-level workflow pages. Components that call translation helpers then crashed during render, making Data/Import, Model, Fitting, and Report appear blank.
+v1.7.6 aligns the in-app Report page with the exported HTML report. The Report control/export panel is moved from the right side to the left side while keeping the previous side-panel width behavior. The report document body now follows one compact, reading-friendly order in both UI and HTML export.
 
-v1.7.4 fixes that regression by passing `language={language}` to:
+## Required report order
 
-- `DataImportWorkspace`
-- `ModelWorkflowPage`
-- `ReportWorkflowPage`
-- `UserDocumentationPage`
+Both the in-app Report page and the exported HTML follow this order:
 
-It also hardens translation helpers so a missing language falls back to English instead of crashing the page.
+1. IV-fitter report
+2. Warnings and diagnostics
+3. Critical issue
+4. Fit process and quality metrics
+5. Parameters
+6. Plots
+7. Model evaluation summary
+8. Generated report text
 
-## User-facing UI state
+## Fitted-parameter formatting
 
-The requested declutter remains in place:
-
-- Dock `Check newest version` remains removed.
-- Start-page `External tester mode` remains removed.
-- User-facing `Local release gate` remains removed.
-- Parameter diagnostic controls (`Restore`, `Apply bounds`, `Seed synthetic`, `Show`, `All parameters`, `Near bound`, `Weak`, `Review parameter diagnostics`) remain removed.
-- Fitting bottom duplicate Run/Stop/status action bar remains removed.
-- Report action remains tied to the fit-status/check area.
-
-## Redundancy review
-
-Static string/helper scan found no remaining user-facing occurrences of the removed controls in `frontend/src` except unrelated words such as Help-page technical details or chart clipped-info toggles.
+Report parameter names now use equation-aligned `component.parameter` display keys, so fitted values correspond more directly to the model/equation summary.
 
 ## Tests run
 

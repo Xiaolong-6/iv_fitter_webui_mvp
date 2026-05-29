@@ -287,3 +287,24 @@ Work from v1.7.1 if continuing this branch. The key changed files are:
 - `frontend/src/services/releaseCheck.ts` and `ReleaseStatusPanel.tsx` — testable release readiness gate and privacy scan.
 
 Do not claim frontend validation until `npm run test -- --run --reporter=dot` and `npm run build` have been run locally.
+
+## v1.7.6 handoff
+
+Continue from v1.7.6 for report-page work. The Report page was intentionally changed so the left column is the control/export panel and the right column is the report document body. Preserve the report-body section order because it is now matched to exported HTML:
+
+1. IV-fitter report
+2. Warnings and diagnostics
+3. Critical issue
+4. Fit process and quality metrics
+5. Parameters
+6. Plots
+7. Model evaluation summary
+8. Generated report text
+
+Key files:
+
+- `frontend/src/pages/components/ReportWorkflowPage.tsx` — in-app Report layout and section order.
+- `frontend/src/model/htmlReport.ts` — exported HTML layout and section order.
+- `frontend/src/styles/fitting-page.css` — report page left-panel/right-document layout overrides.
+
+Do not reintroduce the old Report order or put model evaluation ahead of diagnostics/metrics unless the user explicitly requests it.

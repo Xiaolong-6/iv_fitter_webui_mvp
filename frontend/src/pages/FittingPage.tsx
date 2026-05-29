@@ -417,6 +417,7 @@ export function FittingPage() {
       markdownReport: report,
       appVersion: APP_VERSION,
       includePlots: true,
+      sessionStats: fitSessionStats,
     });
   }
 

@@ -1,4 +1,4 @@
-import type { FitResult, TraceData } from "./types";
+import type { FitResult, FitSessionStats, TraceData } from "./types";
 import { fmtEng } from "./format";
 
 function escapeHtml(value: unknown) {
@@ -34,7 +34,6 @@ function equationLinesFromResult(result: FitResult) {
   ].filter(Boolean);
 }
 
-
 function finiteAbs(values: number[] | undefined) {
   return (values ?? []).filter(Number.isFinite).map((value) => Math.abs(value));
 }
@@ -51,27 +50,161 @@ function dataScale(values: number[] | undefined) {
   return Math.max(percentile(abs, 0.95), percentile(abs, 0.5), 1e-30);
 }
 
-function isDiagnosticOnly(result: FitResult) {
-  const codes = new Set((result.warnings ?? []).map((warning) => warning.code));
+function reportSemantics(result: FitResult) {
   const measuredScale = dataScale(result.curves.current_measured_A);
-  const maxFit = Math.max(...finiteAbs(result.curves.current_fit_A), 0);
-  return !result.reportable || !result.success || (result.warnings ?? []).some((warning) => warning.severity === "error") || codes.has("quality_fit_current_explosion") || maxFit > Math.max(1e3, measuredScale * 1e8);
+  const maxFitCurrent = Math.max(...finiteAbs(result.curves.current_fit_A), 0);
+  const maxResidual = Math.max(...finiteAbs(result.curves.residual_A), 0);
+  const codes = new Set((result.warnings ?? []).map((warning) => warning.code));
+  const hasError = (result.warnings ?? []).some((warning) => warning.severity === "error");
+  const currentExplosion = codes.has("quality_fit_current_explosion") || maxFitCurrent > Math.max(1e3, measuredScale * 1e8);
+  const residualExplosion = codes.has("quality_residual_explosion") || maxResidual > Math.max(1e3, measuredScale * 1e8);
+  const rmseExplosion = codes.has("quality_rmse_explosion");
+  const invalid = !result.reportable || hasError || currentExplosion || residualExplosion || rmseExplosion || !result.success;
+  const mainIssue = invalid
+    ? currentExplosion || residualExplosion || rmseExplosion
+      ? "Numerical current explosion"
+      : !result.success
+        ? "Optimizer did not produce a valid result"
+        : "Failed numerical quality checks"
+    : "No critical issue detected";
+  const reportMode = invalid ? "Diagnostic report only" : (result.warnings ?? []).length ? "Review report" : "Validated report";
+  const fitStatus = invalid ? "Invalid fit" : (result.warnings ?? []).length ? "Needs review" : "Valid fit";
+  return { invalid, measuredScale, maxFitCurrent, maxResidual, mainIssue, reportMode, fitStatus, usable: invalid ? "No" : "Yes" };
 }
 
-function diagnosticSummarySection(result: FitResult) {
-  if (!isDiagnosticOnly(result)) return "";
-  const measuredScale = dataScale(result.curves.current_measured_A);
-  const maxFit = Math.max(...finiteAbs(result.curves.current_fit_A), 0);
-  const maxResidual = Math.max(...finiteAbs(result.curves.residual_A), 0);
-  return `<section class="hero invalid"><span class="badge bad">Diagnostic report only</span><h1>Invalid fit result</h1><p>The optimizer stopped, but the fitted result failed numerical quality checks. This result should not be used as a validated device model.</p><p><strong>Primary reason:</strong> numerical current explosion. max |I_fit| = ${escapeHtml(fmtEng(maxFit, 4))} A; measured current scale ≈ ${escapeHtml(fmtEng(measuredScale, 4))} A; max |residual| = ${escapeHtml(fmtEng(maxResidual, 4))} A.</p><p><strong>Next step:</strong> review diagnostics, reset seeds or bounds, restrict the voltage range, or try a model with appropriate Rs/Rsh components.</p></section>`;
+function fmtNumber(value: number | null | undefined, digits = 3) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  const abs = Math.abs(value);
+  if (abs !== 0 && (abs < 1e-3 || abs >= 1e4)) return value.toExponential(digits);
+  return Number(value.toPrecision(digits + 1)).toString();
+}
+
+function metricUnit(key: string) {
+  if (key.endsWith("_A")) return "A";
+  if (key.endsWith("_s")) return "s";
+  if (key.includes("decade")) return "dec";
+  return "";
+}
+
+function fmtMetricValue(key: string, value: number | null | undefined) {
+  const unit = metricUnit(key);
+  const text = fmtNumber(value, key.includes("r2") || key.includes("chi") ? 4 : 3);
+  return unit && text !== "—" ? `${text} ${unit}` : text;
+}
+
+function metricExplanation(key: string) {
+  const help: Record<string, string> = {
+    linear_rmse_A: "Root-mean-square current error. Smaller is better; it is dominated by high-current regions.",
+    normalized_rmse: "RMSE normalized by measured-current scale. Useful for comparing traces with different current levels.",
+    linear_r2: "Linear-space R². High values indicate good large-current agreement but may hide low-current decade errors.",
+    log_magnitude_r2: "R² of log10(|I|). More sensitive to multi-decade IV behavior.",
+    log_magnitude_mae_decades: "Mean absolute error in log-current decades; 0.3 decade is roughly a factor of two.",
+    reduced_chi_square: "Weighted reduced χ²-like diagnostic. Interpret relatively unless weights are measured uncertainties.",
+    weighted_chi_square: "Sum of squared weighted residuals for the selected weighting and voltage range.",
+    max_abs_residual_A: "Largest absolute current residual; useful for localized outliers or model-failure regions.",
+  };
+  return help[key] ?? "Backend fit metric; interpret with plots, residuals, warnings, and parameter bounds.";
+}
+
+function solverExplanation(key: string) {
+  const help: Record<string, string> = {
+    elapsed_s: "Wall-clock solver time for this fit.",
+    function_evaluations: "Number of objective evaluations; high values can indicate a difficult optimization.",
+    jacobian_evaluations: "Jacobian evaluations used by the optimizer.",
+    free_parameter_count: "Number of fitted parameters actively optimized.",
+    degrees_of_freedom: "Data points minus free parameters; low values make fit statistics less reliable.",
+    optimizer_status: "Raw optimizer termination status.",
+    cost: "Final optimization cost. Compare only for the same data range and weighting.",
+    optimality: "First-order optimality measure; smaller usually means the solver stopped closer to a stationary point.",
+    root_solver_failures: "Number of internal root-solver failures during implicit model evaluation.",
+  };
+  return help[key] ?? "Solver-process diagnostic reported by the backend.";
+}
+
+function sessionExplanation(key: string) {
+  const help: Record<string, string> = {
+    fitsRun: "Number of fit attempts in this app session.",
+    totalFunctionEvaluations: "Total function evaluations accumulated in this session.",
+    totalElapsedS: "Total solver time accumulated in this session.",
+    totalRootSolverFailures: "Total internal root-solver failures accumulated in this session.",
+  };
+  return help[key] ?? "Session-level run counter.";
+}
+
+function metricRows(result: FitResult, sessionStats: FitSessionStats) {
+  const m = result.metrics ?? {};
+  const d = result.fit_diagnostics;
+  const qualityKeys = ["linear_rmse_A", "normalized_rmse", "linear_r2", "log_magnitude_r2", "log_magnitude_mae_decades", "reduced_chi_square", "weighted_chi_square", "max_abs_residual_A"];
+  const quality = qualityKeys
+    .filter((key) => m[key] !== undefined)
+    .map((key) => ({ parameter: key, value: fmtMetricValue(key, m[key]), explanation: metricExplanation(key) }));
+  const solverData: Array<[string, number | null | undefined]> = [
+    ["elapsed_s", d?.elapsed_s],
+    ["function_evaluations", d?.function_evaluations],
+    ["jacobian_evaluations", d?.jacobian_evaluations],
+    ["free_parameter_count", d?.free_parameter_count],
+    ["degrees_of_freedom", d?.degrees_of_freedom],
+    ["optimizer_status", d?.optimizer_status],
+    ["cost", d?.cost],
+    ["optimality", d?.optimality],
+    ["root_solver_failures", d?.root_solver_failures],
+  ];
+  const solver = solverData.map(([key, value]) => ({ parameter: key, value: fmtMetricValue(key, value), explanation: solverExplanation(key) }));
+  const sessionData: Array<[string, number | null | undefined]> = [
+    ["fitsRun", sessionStats.fitsRun],
+    ["totalFunctionEvaluations", sessionStats.totalFunctionEvaluations],
+    ["totalElapsedS", sessionStats.totalElapsedS],
+    ["totalRootSolverFailures", sessionStats.totalRootSolverFailures],
+  ];
+  const session = sessionData.map(([key, value]) => ({ parameter: key, value: fmtMetricValue(key, value), explanation: sessionExplanation(key) }));
+  return [...quality, ...solver, ...session];
+}
+
+function parameterDisplayFromKey(key: string, result: FitResult) {
+  const parts = key.split(".");
+  const componentId = parts[0] ?? key;
+  const paramName = parts.slice(1).join(".") || key;
+  const components = [...result.model.series, ...result.model.core, ...result.model.parallel];
+  const component = components.find((item) => item.id === componentId);
+  const componentLabel = String(component?.metadata?.nickname ?? component?.id ?? componentId);
+  const displayKey = `${componentLabel}.${paramName}`;
+  const kind = String(component?.metadata?.display_name ?? component?.law_id ?? component?.function_type ?? "model term");
+  return { displayKey, kind };
+}
+
+function nearBoundLabel(parameter: FitResult["parameters"][string]) {
+  if (parameter.fixed || !Number.isFinite(parameter.value)) return null;
+  const scale = Math.max(Math.abs(parameter.value), 1);
+  if (parameter.lower != null && Number.isFinite(parameter.lower) && Math.abs(parameter.value - parameter.lower) <= scale * 1e-6) return "near lower bound";
+  if (parameter.upper != null && Number.isFinite(parameter.upper) && Math.abs(parameter.value - parameter.upper) <= scale * 1e-6) return "near upper bound";
+  return null;
+}
+
+function parameterNote(parameter: FitResult["parameters"][string]) {
+  if (!Number.isFinite(parameter.value)) return "suspect";
+  const near = nearBoundLabel(parameter);
+  if (near) return near;
+  if (parameter.stderr != null && Number.isFinite(parameter.stderr) && parameter.value !== 0 && Math.abs(parameter.stderr / parameter.value) > 1) return "large uncertainty";
+  return parameter.fixed ? "fixed" : "fit";
+}
+
+function parameterSection(result: FitResult) {
+  const rows = Object.entries(result.parameters ?? {})
+    .map(([key, value]) => {
+      const display = parameterDisplayFromKey(key, result);
+      const note = parameterNote(value);
+      return `<tr><td><code>${escapeHtml(display.displayKey)}</code><br><span class="muted">${escapeHtml(display.kind)}</span></td><td>${escapeHtml(fmtEng(value.value, 5))}${value.unit ? ` ${escapeHtml(value.unit)}` : ""}</td><td>${escapeHtml(value.fixed ? "fixed" : "fit")}</td><td>${escapeHtml(value.stderr == null ? "—" : `${fmtEng(value.stderr, 3)}${value.unit ? ` ${value.unit}` : ""}`)}</td><td>${escapeHtml(note)}</td></tr>`;
+    })
+    .join("");
+  const diagnostic = reportSemantics(result).invalid ? `<p class="muted">Values are shown for diagnostics only and are not a validated model.</p>` : "";
+  return `<section class="card report-section"><h2>Parameters</h2>${diagnostic}<table class="parameter-table"><thead><tr><th>Parameter</th><th>Value</th><th>Status</th><th>Std. err.</th><th>Note</th></tr></thead><tbody>${rows}</tbody></table></section>`;
 }
 
 function componentPlainRole(component: FitResult["model"]["series"][number]) {
   const name = String(component.metadata?.nickname ?? component.id);
   const placement = component.placement ?? "";
   const law = component.law_id ?? component.function_type;
-  const isMain =
-    placement.includes("series") || component.location === "series";
+  const isMain = placement.includes("series") || component.location === "series";
   if (/ohmic/i.test(law)) {
     return isMain
       ? `${name}: main-path series resistance; it consumes part of the applied voltage before branch currents are evaluated.`
@@ -104,9 +237,9 @@ function modelEquationSection(result: FitResult) {
     .map((component) => `<li>${escapeHtml(componentPlainRole(component))}</li>`)
     .join("");
   const technicalRows = lines.length
-    ? `<details><summary>Backend technical equation summary</summary><div class="formula-list">${lines.map((line) => `<code>${escapeHtml(line)}</code>`).join("")}</div></details>`
+    ? `<details><summary>Show technical equation details</summary><div class="formula-list">${lines.map((line) => `<code>${escapeHtml(line)}</code>`).join("")}</div></details>`
     : "";
-  return `<section class="card"><h2>Model evaluation summary</h2><p class="muted">The terminal voltage first passes through the main path (${escapeHtml(main)}) to give the internal junction voltage. The branches (${escapeHtml(branches)}) then generate currents at that internal voltage, and those currents are summed.</p><div class="formula-list"><code>External voltage balance: V_ext = V_j + Σ V_drop,k(I,V_j)</code><code>Total current: I = Σ I_branch,m(V_j)</code></div><ul>${components}</ul>${technicalRows}</section>`;
+  return `<section class="card report-section"><h2>Model evaluation summary</h2><p class="muted">The terminal voltage is mapped through the main path to the internal junction voltage. Branch currents are then evaluated at that internal voltage and summed.</p><p><strong>How to read this model:</strong> The terminal voltage first passes through the main path (${escapeHtml(main)}) to give the internal junction voltage. The branches (${escapeHtml(branches)}) then generate currents at that internal voltage, and those currents are summed.</p><div class="formula-list"><code>External voltage balance: V_ext = V_j + Σ V_drop,k(I,V_j)</code><code>Total current: I = Σ I_branch,m(V_j)</code></div><ul>${components}</ul>${technicalRows}</section>`;
 }
 
 function finitePairs(x: number[], y: number[]) {
@@ -154,8 +287,7 @@ function makeSvgPlot({
   const plotW = width - margin.left - margin.right;
   const plotH = height - margin.top - margin.bottom;
   const sx = (v: number) => margin.left + ((v - xmin) / (xmax - xmin)) * plotW;
-  const sy = (v: number) =>
-    margin.top + plotH - ((v - ymin) / (ymax - ymin)) * plotH;
+  const sy = (v: number) => margin.top + plotH - ((v - ymin) / (ymax - ymin)) * plotH;
   const ticks = [0, 0.25, 0.5, 0.75, 1];
   const grid = ticks
     .map((t) => {
@@ -170,27 +302,16 @@ function makeSvgPlot({
     .map((s) => {
       const pairs = finitePairs(x, s.y).sort((a, b) => a[0] - b[0]);
       const d = pairs
-        .map(
-          ([vx, vy], idx) =>
-            `${idx ? "L" : "M"} ${sx(vx).toFixed(2)} ${sy(vy).toFixed(2)}`,
-        )
+        .map(([vx, vy], idx) => `${idx ? "L" : "M"} ${sx(vx).toFixed(2)} ${sy(vy).toFixed(2)}`)
         .join(" ");
       return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2.2"/><g>${pairs
-        .filter(
-          (_, idx) => idx % Math.max(1, Math.ceil(pairs.length / 100)) === 0,
-        )
-        .map(
-          ([vx, vy]) =>
-            `<circle cx="${sx(vx).toFixed(2)}" cy="${sy(vy).toFixed(2)}" r="1.7" fill="${s.color}"/>`,
-        )
+        .filter((_, idx) => idx % Math.max(1, Math.ceil(pairs.length / 100)) === 0)
+        .map(([vx, vy]) => `<circle cx="${sx(vx).toFixed(2)}" cy="${sy(vy).toFixed(2)}" r="1.7" fill="${s.color}"/>`)
         .join("")}</g>`;
     })
     .join("");
   const legend = series
-    .map(
-      (s, idx) =>
-        `<g transform="translate(${margin.left + 8},${margin.top + 12 + idx * 17})"><rect width="10" height="10" rx="2" fill="${s.color}"/><text x="16" y="9" class="legend">${escapeHtml(s.label)}</text></g>`,
-    )
+    .map((s, idx) => `<g transform="translate(${margin.left + 8},${margin.top + 12 + idx * 17})"><rect width="10" height="10" rx="2" fill="${s.color}"/><text x="16" y="9" class="legend">${escapeHtml(s.label)}</text></g>`)
     .join("");
   return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(title)}"><rect width="${width}" height="${height}" rx="14" class="plot-bg"/><text x="${margin.left}" y="24" class="plot-title">${escapeHtml(title)}</text>${grid}<line x1="${margin.left}" x2="${margin.left + plotW}" y1="${margin.top + plotH}" y2="${margin.top + plotH}" class="axis"/><line x1="${margin.left}" x2="${margin.left}" y1="${margin.top}" y2="${margin.top + plotH}" class="axis"/><text x="16" y="${margin.top + plotH / 2}" transform="rotate(-90 16 ${margin.top + plotH / 2})" class="axis-label">${escapeHtml(yLabel)}</text>${paths}${legend}</svg>`;
 }
@@ -202,43 +323,36 @@ function plotSection(result: FitResult) {
   const measured = curves.current_measured_A ?? [];
   const fit = curves.current_fit_A ?? [];
   const residual = curves.residual_A ?? [];
-  const logAbs = (values: number[]) =>
-    values.map((v) => Math.log10(Math.max(Math.abs(v), 1e-30)));
+  const logAbs = (values: number[]) => values.map((v) => Math.log10(Math.max(Math.abs(v), 1e-30)));
   const plots = [
-    makeSvgPlot({
-      title: "Linear I-V",
-      x,
-      yLabel: "Current (A)",
-      series: [
-        { label: "measured", y: measured, color: "#2563eb" },
-        { label: "fit", y: fit, color: "#f97316" },
-      ],
-    }),
-    makeSvgPlot({
-      title: "Log |I|",
-      x,
-      yLabel: "log10(|I|)",
-      series: [
-        { label: "measured", y: logAbs(measured), color: "#2563eb" },
-        { label: "fit", y: logAbs(fit), color: "#f97316" },
-      ],
-    }),
-    makeSvgPlot({
-      title: "Signed residual",
-      x,
-      yLabel: "Residual (A)",
-      series: [{ label: "residual", y: residual, color: "#2563eb" }],
-    }),
-    makeSvgPlot({
-      title: "Log |residual|",
-      x,
-      yLabel: "log10(|residual|)",
-      series: [
-        { label: "log residual", y: logAbs(residual), color: "#2563eb" },
-      ],
-    }),
+    makeSvgPlot({ title: "Linear I-V", x, yLabel: "Current (A)", series: [{ label: "measured", y: measured, color: "#2563eb" }, { label: "fit", y: fit, color: "#f97316" }] }),
+    makeSvgPlot({ title: "Log |I|", x, yLabel: "log10(|I|)", series: [{ label: "measured", y: logAbs(measured), color: "#2563eb" }, { label: "fit", y: logAbs(fit), color: "#f97316" }] }),
+    makeSvgPlot({ title: "Signed residual", x, yLabel: "Residual (A)", series: [{ label: "residual", y: residual, color: "#2563eb" }] }),
+    makeSvgPlot({ title: "Log |residual|", x, yLabel: "log10(|residual|)", series: [{ label: "log residual", y: logAbs(residual), color: "#2563eb" }] }),
   ].join("");
-  return `<section class="card"><h2>Plots</h2><div class="plot-grid">${plots}</div></section>`;
+  return `<section class="card report-section"><h2>Plots</h2><div class="plot-grid">${plots}</div></section>`;
+}
+
+function warningsSection(result: FitResult) {
+  const semantics = reportSemantics(result);
+  const warningRows =
+    (result.warnings ?? [])
+      .map((warning) => `<li class="${escapeHtml(warning.severity)}"><code>${escapeHtml(warning.severity)} · ${escapeHtml(warning.code)}</code><span>${escapeHtml(warning.message)}</span></li>`)
+      .join("") || "<li>No warnings or errors reported by the fitting backend.</li>";
+  return `<section class="card report-section"><h2>Warnings and diagnostics</h2><div class="diagnostic-summary"><span>Status: <strong>${escapeHtml(semantics.fitStatus)}</strong></span><span>Report mode: <strong>${escapeHtml(semantics.reportMode)}</strong></span><span>Usable as validated report: <strong>${escapeHtml(semantics.usable)}</strong></span></div><ul class="warning-list">${warningRows}</ul></section>`;
+}
+
+function criticalIssueSection(result: FitResult) {
+  const semantics = reportSemantics(result);
+  return `<section class="card report-section ${semantics.invalid ? "critical" : "clear"}"><h2>Critical issue</h2><p><strong>${escapeHtml(semantics.mainIssue)}</strong></p><div class="critical-grid"><span><strong>Max fitted current</strong>${escapeHtml(fmtEng(semantics.maxFitCurrent, 4))} A</span><span><strong>Measured current scale</strong>${escapeHtml(fmtEng(semantics.measuredScale, 4))} A</span><span><strong>Max residual</strong>${escapeHtml(fmtEng(semantics.maxResidual, 4))} A</span></div></section>`;
+}
+
+function metricsSection(result: FitResult, sessionStats: FitSessionStats) {
+  const rows = metricRows(result, sessionStats)
+    .map((row) => `<tr><td><code>${escapeHtml(row.parameter)}</code></td><td>${escapeHtml(row.value)}</td><td>${escapeHtml(row.explanation)}</td></tr>`)
+    .join("");
+  const msg = result.fit_diagnostics?.optimizer_message ? `<p class="muted"><strong>Solver message:</strong> ${escapeHtml(result.fit_diagnostics.optimizer_message)}</p>` : "";
+  return `<section class="card report-section"><h2>Fit process and quality metrics</h2><table class="metrics-table"><tbody>${rows}</tbody></table>${msg}</section>`;
 }
 
 export function buildHtmlReportDocument({
@@ -248,6 +362,7 @@ export function buildHtmlReportDocument({
   appVersion = "dev",
   exportedAt = new Date(),
   includePlots = true,
+  sessionStats = { fitsRun: 0, totalFunctionEvaluations: 0, totalElapsedS: 0, totalRootSolverFailures: 0 },
 }: {
   result: FitResult;
   trace: TraceData;
@@ -255,36 +370,12 @@ export function buildHtmlReportDocument({
   appVersion?: string;
   exportedAt?: Date;
   includePlots?: boolean;
+  sessionStats?: FitSessionStats;
 }) {
-  const traceName = String(
-    trace.metadata?.trace_name ?? trace.trace_id ?? "trace",
-  );
-  const metricRows = Object.entries(result.metrics ?? {})
-    .map(
-      ([key, value]) =>
-        `<tr><th>${escapeHtml(key)}</th><td>${escapeHtml(fmtEng(Number(value), 5))}</td></tr>`,
-    )
-    .join("");
-  const parameterRows = Object.entries(result.parameters ?? {})
-    .map(
-      ([key, value]) =>
-        `<tr><td>${escapeHtml(key)}</td><td>${escapeHtml(fmtEng(value.value, 5))}</td><td>${escapeHtml(value.unit ?? "")}</td><td>${escapeHtml(value.fixed ? "fixed" : "fit")}</td><td>${escapeHtml(value.stderr == null ? "" : fmtEng(value.stderr, 4))}</td></tr>`,
-    )
-    .join("");
-  const warningRows =
-    (result.warnings ?? [])
-      .map(
-        (warning) =>
-          `<li><strong>${escapeHtml(warning.severity)}</strong> ${escapeHtml(warning.code)} — ${escapeHtml(warning.message)}</li>`,
-      )
-      .join("") || "<li>No warnings.</li>";
-  const reportBody = markdownReport
-    ? `<pre>${escapeHtml(markdownReport)}</pre>`
-    : "";
-  const diagnosticOnly = isDiagnosticOnly(result);
-  const badgeBg = diagnosticOnly ? "#fef2f2" : result.reportable ? "#ecfdf5" : "#fffbeb";
-  const badgeFg = diagnosticOnly ? "#b91c1c" : result.reportable ? "#047857" : "#92400e";
+  const traceName = String(trace.metadata?.trace_name ?? trace.trace_id ?? "trace");
+  const semantics = reportSemantics(result);
   const plots = includePlots ? plotSection(result) : "";
-  const hero = diagnosticOnly ? diagnosticSummarySection(result) : `<section class="hero"><span class="badge">${escapeHtml(result.reportable ? "Reportable" : "Needs review")}</span><h1>IV-fitter report</h1><p class="muted">Trace: ${escapeHtml(traceName)} · Model: ${escapeHtml(modelSummaryFromResult(result))} · Software: ${escapeHtml(result.software_version || appVersion)}</p><p>${escapeHtml(result.message)}</p></section>`;
-  return `<!doctype html><html><head><meta charset="utf-8"><title>IV-fitter report — ${escapeHtml(traceName)}</title><style>body{font-family:Inter,Segoe UI,Arial,sans-serif;margin:0;background:#f5f7fb;color:#0f172a}.page{max-width:1180px;margin:0 auto;padding:32px}.hero,.card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:22px;margin-bottom:18px;box-shadow:0 10px 28px rgba(15,23,42,.06)}.hero.invalid{border-color:#fecaca;background:#fff7f7}h1{margin:0 0 8px;font-size:32px}h2{font-size:20px;margin:0 0 12px}.muted{color:#64748b}.badge{display:inline-block;border-radius:999px;padding:4px 10px;background:${badgeBg};color:${badgeFg};font-weight:800}.badge.bad{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #e2e8f0;text-align:left;padding:8px}th{color:#475569}pre{white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;overflow:auto}ul{padding-left:22px}.formula-list{display:grid;gap:8px}.formula-list code{display:block;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;font-size:15px}.plot-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.plot-bg{fill:#fff}.grid{stroke:#e2e8f0;stroke-width:1}.axis{stroke:#334155;stroke-width:1.2}.tick,.legend,.axis-label{fill:#475569;font-size:11px}.plot-title{fill:#0f172a;font-weight:800;font-size:15px}@media(max-width:760px){.plot-grid{grid-template-columns:1fr}.page{padding:16px}}</style></head><body><main class="page">${hero}${diagnosticOnly ? "" : modelEquationSection(result)}${plots}<section class="card"><h2>Fit quality metrics</h2><table>${metricRows}</table></section><section class="card"><h2>${diagnosticOnly ? "Diagnostic parameter values" : "Parameters"}</h2>${diagnosticOnly ? `<p class="muted">Values are shown for diagnostics only and are not a validated model.</p>` : ""}<table><thead><tr><th>Parameter</th><th>Value</th><th>Unit</th><th>Status</th><th>Std. err.</th></tr></thead><tbody>${parameterRows}</tbody></table></section><section class="card"><h2>Warnings and diagnostics</h2><ul>${warningRows}</ul></section>${diagnosticOnly ? modelEquationSection(result) : ""}${reportBody ? `<section class="card"><h2>Generated report text</h2>${reportBody}</section>` : ""}<section class="card muted">Exported ${escapeHtml(exportedAt.toISOString())}</section></main></body></html>`;
+  const hero = `<section class="hero report-section ${semantics.invalid ? "invalid" : ""}"><span class="badge">${escapeHtml(semantics.reportMode)}</span><h1>IV-fitter report</h1><div class="hero-meta"><span><strong>Trace</strong>${escapeHtml(traceName)}</span><span><strong>Model</strong>${escapeHtml(modelSummaryFromResult(result))}</span><span><strong>Software</strong>${escapeHtml(result.software_version || appVersion)}</span></div><p>${escapeHtml(result.message)}</p>${result.reportability_reason ? `<p class="muted">${escapeHtml(result.reportability_reason)}</p>` : ""}</section>`;
+  const reportBody = `<section class="card report-section"><h2>Generated report text</h2>${markdownReport ? `<pre>${escapeHtml(markdownReport)}</pre>` : `<p class="muted">—</p>`}</section>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><title>IV-fitter report — ${escapeHtml(traceName)}</title><style>body{font-family:Inter,Segoe UI,Arial,sans-serif;margin:0;background:#f5f7fb;color:#0f172a}.page{max-width:1180px;margin:0 auto;padding:32px}.hero,.card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 10px 28px rgba(15,23,42,.06)}.hero.invalid,.critical{border-color:#fecaca;background:#fff7f7}.clear{border-color:#bbf7d0;background:#f7fef9}h1{margin:0 0 8px;font-size:32px}h2{font-size:19px;margin:0 0 10px}.muted{color:#64748b}.badge{display:inline-block;border-radius:999px;padding:4px 10px;background:#eff6ff;color:#1d4ed8;font-weight:800}.hero-meta,.diagnostic-summary,.critical-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.hero-meta span,.critical-grid span,.diagnostic-summary span{display:grid;gap:3px;padding:9px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;padding:8px}th{color:#475569}.metrics-table td:first-child{width:24%;font-weight:800}.metrics-table td:nth-child(2){width:20%;white-space:nowrap}.metrics-table td:nth-child(3){color:#475569}pre{white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;overflow:auto}ul{padding-left:22px}.warning-list{display:grid;gap:8px;padding-left:0;list-style:none}.warning-list li{display:grid;gap:4px}.formula-list{display:grid;gap:8px}.formula-list code{display:block;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;font-size:15px}.plot-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.plot-bg{fill:#fff}.grid{stroke:#e2e8f0;stroke-width:1}.axis{stroke:#334155;stroke-width:1.2}.tick,.legend,.axis-label{fill:#475569;font-size:11px}.plot-title{fill:#0f172a;font-weight:800;font-size:15px}@media(max-width:760px){.plot-grid,.hero-meta,.diagnostic-summary,.critical-grid{grid-template-columns:1fr}.page{padding:16px}}</style></head><body><main class="page">${hero}${warningsSection(result)}${criticalIssueSection(result)}${metricsSection(result, sessionStats)}${parameterSection(result)}${plots}${modelEquationSection(result)}${reportBody}<section class="card muted">Exported ${escapeHtml(exportedAt.toISOString())}</section></main></body></html>`;
 }
