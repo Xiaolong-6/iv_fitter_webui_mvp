@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.7.3 — User-facing UI declutter and redundancy cleanup
+
+- Removed the dock/footer `Check newest version` link from the workflow sidebar so the main user shell stays focused on fitting tasks.
+- Removed the embedded External tester mode from the Start page and deleted its unused component and CSS. External testing guidance remains in documentation rather than the main user UI.
+- Removed the Local release gate summary/details from the user-facing Updates panel; it now only performs read-only public release lookup.
+- Removed internal/debug-style Parameter table controls from the user UI: Restore, Apply bounds, Seed synthetic, global parameter filters, near-bound/weak count strip, and review-diagnostics prompt.
+- Moved the Report action out of the Run/Stop action row and placed it under the fit check/status summary; its color now follows the current check state.
+- Removed the Fitting page mobile/bottom Run fit / Stop fit action bar so the page has one primary fitting-control location.
+- Removed unused release-readiness UI helpers/tests left over from v1.7.1, while retaining non-UI release privacy scanning tests.
+- Removed dead CSS plus obsolete global parameter-filter helpers/tests and synthetic-ground-truth seeding helpers left behind by the removed controls.
+- Updated version metadata, changelog, tested-current notes, validation history, handoff, and delivery audit.
+- Kept fitting physics, backend APIs, saved-model compatibility, report schemas, and dependency hotfixes unchanged.
+
 ## v1.7.2 — Frontend dependency install hotfix
 
 - Sanitized `package-lock.json` and `frontend/package-lock.json` so resolved tarball URLs point to the public npm registry instead of an internal sandbox mirror.

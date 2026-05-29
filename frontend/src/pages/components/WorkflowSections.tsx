@@ -7,7 +7,6 @@ import type {
   ModelSpec,
   TraceData,
 } from "../../model/types";
-import type { DataBoundsApplicationReport } from "../../model/boundsSuggestion";
 import type { AppView } from "../../components/WorkflowSidebar";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { ModelBuilder } from "../../components/ModelBuilder";
@@ -126,12 +125,6 @@ export function FittingWorkflowPage({
   registry,
   model,
   updateParameterModel,
-  canRestoreInitialValues,
-  onRestoreInitialValues,
-  onApplyDataBounds,
-  canSeedSyntheticGroundTruth,
-  onSeedSyntheticGroundTruth,
-  dataBoundsReport,
   isFitting,
   language,
   leftPct,
@@ -156,12 +149,6 @@ export function FittingWorkflowPage({
   registry: FunctionDefinition[];
   model: ModelSpec;
   updateParameterModel: (model: ModelSpec) => void;
-  canRestoreInitialValues: boolean;
-  onRestoreInitialValues: () => void;
-  onApplyDataBounds: () => void;
-  canSeedSyntheticGroundTruth: boolean;
-  onSeedSyntheticGroundTruth: () => void;
-  dataBoundsReport: DataBoundsApplicationReport | null;
   isFitting: boolean;
   language: Language;
   leftPct: number;
@@ -244,12 +231,6 @@ export function FittingWorkflowPage({
                 registry={registry}
                 onModelChange={updateParameterModel}
                 language={language}
-                canRestoreInitialValues={canRestoreInitialValues}
-                onRestoreInitialValues={onRestoreInitialValues}
-                onApplyDataBounds={onApplyDataBounds}
-                canSeedSyntheticGroundTruth={canSeedSyntheticGroundTruth}
-                onSeedSyntheticGroundTruth={onSeedSyntheticGroundTruth}
-                dataBoundsReport={dataBoundsReport}
                 disabled={isFitting}
               />
             </ErrorBoundary>

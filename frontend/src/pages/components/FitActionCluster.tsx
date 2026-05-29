@@ -1,5 +1,6 @@
 import { BackendConnectionBanner, isBackendConnectionError } from "./BackendConnectionBanner";
 import type { Language } from "../../model/i18n";
+import type { FitResult } from "../../model/types";
 import { t } from "../../model/i18n";
 
 export function FitActionButtons({
@@ -8,16 +9,12 @@ export function FitActionButtons({
   language,
   onRunFit,
   onStopFit,
-  onMakeReport,
-  reportAvailable,
 }: {
   hasSelectedTrace: boolean;
   isFitting: boolean;
   language: Language;
   onRunFit: () => void;
   onStopFit: () => void;
-  onMakeReport: () => void;
-  reportAvailable: boolean;
 }) {
   return (
     <>
@@ -34,13 +31,59 @@ export function FitActionButtons({
         <span className="button-icon" aria-hidden="true">■</span>
         {language === "zh" ? "停止拟合" : "Stop fit"}
       </button>
-      <button disabled={!reportAvailable} title={!reportAvailable ? "Available after a completed fit." : undefined} onClick={onMakeReport}>
-        <span className="button-icon" aria-hidden="true">▣</span>
-        {t(language, "report")}
-      </button>
     </>
   );
 }
+
+function reportTone(result: FitResult | null, reportAvailable: boolean) {
+  if (!result) return "idle";
+  const errors = (result.warnings ?? []).filter((w) => w.severity === "error").length;
+  if (reportAvailable && (result.reportable ?? result.success) && errors === 0) return "ok";
+  if (errors > 0 || result.success === false) return "error";
+  return "warning";
+}
+
+export function FitReportButton({
+  result,
+  language,
+  onMakeReport,
+  reportAvailable,
+}: {
+  result: FitResult | null;
+  language: Language;
+  onMakeReport: () => void;
+  reportAvailable: boolean;
+}) {
+  const tone = reportTone(result, reportAvailable);
+  const label = language === "zh" ? "生成报告" : t(language, "report");
+  const hint = !result
+    ? language === "zh"
+      ? "完成拟合后可用。"
+      : "Available after a completed fit."
+    : reportAvailable
+      ? language === "zh"
+        ? "当前 check 允许生成报告。"
+        : "Current check allows report generation."
+      : language === "zh"
+        ? "当前 check 未通过，报告暂不可用。"
+        : "Current check has not passed; report is unavailable.";
+  return (
+    <div className={`report-gate-action ${tone}`}>
+      <button
+        type="button"
+        className={`report-gate-button ${tone}`}
+        disabled={!reportAvailable}
+        title={hint}
+        onClick={onMakeReport}
+      >
+        <span className="button-icon" aria-hidden="true">▣</span>
+        {label}
+      </button>
+      <span className="report-gate-hint">{hint}</span>
+    </div>
+  );
+}
+
 
 export function FitMessages({
   hasTrace,

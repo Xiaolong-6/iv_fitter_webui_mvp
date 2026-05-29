@@ -21,8 +21,6 @@ import {
 import {
   boundsSourceTitle,
   markParameterUserEdited,
-  type DataBoundsApplicationDetail,
-  type DataBoundsApplicationReport,
 } from "../model/boundsSuggestion";
 import { updateComponent } from "../model/utils";
 import { HelpTip } from "./HelpTip";
@@ -31,14 +29,10 @@ import {
   buildParameterRows,
   componentDisplayTag,
   componentLawFormPlacement,
-  countParameterFilters,
-  filterParameterRows,
   groupParameterRows,
   parameterKey,
   placementGroupTitle,
-  seedComponentFromFittedValues,
   setComponentFitState,
-  type ParameterTableFilter,
 } from "../model/parameterGrouping";
 
 function formatParameterNumber(
@@ -277,47 +271,6 @@ function parameterMeaningFromSpec(
   return base;
 }
 
-function sourceLabel(source: DataBoundsApplicationDetail["source"]) {
-  if (source === "data_suggested") return "previous data suggestion";
-  if (source === "user_edited") return "user-edited";
-  if (source === "fit_derived_initial") return "fitted-as-initial";
-  if (source === "registry_default") return "registry default";
-  return "no stored source";
-}
-
-function dataBoundsTitle(detail: DataBoundsApplicationDetail) {
-  const applied = detail.action === "applied";
-  const rows = [
-    applied ? "Auto bounds applied" : "Auto bounds skipped",
-    applied
-      ? `Changed: ${formatBoundsPair(detail.previousLower, detail.previousUpper)} -> ${formatBoundsPair(detail.currentLower, detail.currentUpper)}`
-      : `Current: ${formatBoundsPair(detail.currentLower, detail.currentUpper)}; suggested: ${formatBoundsPair(detail.suggestedLower, detail.suggestedUpper)}`,
-    `Current source: ${sourceLabel(detail.source)}`,
-  ];
-  if (!applied && detail.skipReason)
-    rows.push(`Skip reason: ${detail.skipReason}`);
-  rows.push(`Basis: ${detail.reason}`);
-  return rows.join("\n");
-}
-
-function DataBoundsDetail({
-  detail,
-}: {
-  detail?: DataBoundsApplicationDetail;
-}) {
-  if (!detail) return null;
-  const applied = detail.action === "applied";
-  return (
-    <span
-      className={
-        applied ? "data-bounds-note applied" : "data-bounds-note skipped"
-      }
-      title={dataBoundsTitle(detail)}
-    >
-      {applied ? "auto bounds applied" : "auto bounds skipped"}
-    </span>
-  );
-}
 
 export function ParameterTable({
   result,
@@ -325,12 +278,6 @@ export function ParameterTable({
   registry,
   onModelChange,
   language,
-  canRestoreInitialValues = false,
-  onRestoreInitialValues,
-  onApplyDataBounds,
-  canSeedSyntheticGroundTruth = false,
-  onSeedSyntheticGroundTruth,
-  dataBoundsReport,
   disabled = false,
 }: {
   result: FitResult | null;
@@ -338,22 +285,12 @@ export function ParameterTable({
   registry: FunctionDefinition[];
   onModelChange: (model: ModelSpec) => void;
   language: Language;
-  canRestoreInitialValues?: boolean;
-  onRestoreInitialValues?: () => void;
-  onApplyDataBounds?: () => void;
-  canSeedSyntheticGroundTruth?: boolean;
-  onSeedSyntheticGroundTruth?: () => void;
-  dataBoundsReport?: DataBoundsApplicationReport | null;
   disabled?: boolean;
 }) {
   void registry;
   const [openKey, setOpenKey] = useState<string | null>(null);
-  const [parameterFilter, setParameterFilter] = useState<ParameterTableFilter>("all");
   const sourceRows = useMemo(() => buildParameterRows(model, result), [model, result]);
-  const filterCounts = useMemo(() => countParameterFilters(sourceRows, result), [sourceRows, result]);
-  const allRows = useMemo(() => filterParameterRows(sourceRows, result, parameterFilter), [sourceRows, result, parameterFilter]);
-  const grouped = useMemo(() => groupParameterRows(allRows, result), [allRows, result]);
-  const totalNearOrWeak = filterCounts.near_bound + filterCounts.weak;
+  const grouped = useMemo(() => groupParameterRows(sourceRows, result), [sourceRows, result]);
 
   return (
     <section className="card parameter-card">
@@ -361,69 +298,8 @@ export function ParameterTable({
         {t(language, "parameters")}{" "}
         <HelpTip text={parameterText("help", language)} />
       </h2>
-      <div
-        className="parameter-filter-bar"
-        role="toolbar"
-        aria-label={parameterText("restoreToolbar", language)}
-      >
-        <button
-          type="button"
-          disabled={
-            disabled || !canRestoreInitialValues || !onRestoreInitialValues
-          }
-          onClick={onRestoreInitialValues}
-        >
-          {language === "zh" ? "恢复初值" : "Restore"}
-        </button>
-        <button
-          type="button"
-          disabled={disabled || !onApplyDataBounds}
-          onClick={onApplyDataBounds}
-          title={
-            language === "zh"
-              ? "根据当前选中 trace 和拟合电压范围生成保守的 data-aware bounds；只覆盖仍为默认值或之前由数据建议生成的 bounds。"
-              : "Generate conservative data-aware bounds from the selected trace and fit voltage range. Only default or previous data-suggested bounds are overwritten."
-          }
-        >
-          {language === "zh" ? "应用边界" : "Apply bounds"}
-        </button>
-        <button
-          type="button"
-          disabled={
-            disabled ||
-            !canSeedSyntheticGroundTruth ||
-            !onSeedSyntheticGroundTruth
-          }
-          onClick={onSeedSyntheticGroundTruth}
-          title={
-            language === "zh"
-              ? "从当前 synthetic trace metadata 中保存的真实参数恢复初值。不会改变模型结构或参数 key。"
-              : "Restore initials from the ground-truth parameters stored in the active synthetic trace metadata. Model structure and parameter keys are not changed."
-          }
-        >
-          {language === "zh" ? "Synthetic 真值" : "Seed synthetic"}
-        </button>
-        <label className="inline-select parameter-filter-select">
-          <span>{language === "zh" ? "显示" : "Show"}</span>
-          <select value={parameterFilter} onChange={(e) => setParameterFilter(e.target.value as ParameterTableFilter)}>
-            <option value="all">{language === "zh" ? "全部参数" : "All parameters"} ({filterCounts.all})</option>
-            <option value="free">{language === "zh" ? "自由参数" : "Free"} ({filterCounts.free})</option>
-            <option value="fixed">{language === "zh" ? "固定参数" : "Fixed"} ({filterCounts.fixed})</option>
-            <option value="near_bound">{language === "zh" ? "接近边界" : "Near bound"} ({filterCounts.near_bound})</option>
-            <option value="weak">{language === "zh" ? "弱识别" : "Weakly identified"} ({filterCounts.weak})</option>
-          </select>
-        </label>
-      </div>
-      <div className="parameter-diagnostic-strip" role="status">
-        <span>{language === "zh" ? "参数总数" : "Parameters"}: <strong>{filterCounts.all}</strong></span>
-        <button type="button" className={parameterFilter === "near_bound" ? "active" : ""} onClick={() => setParameterFilter("near_bound")} disabled={filterCounts.near_bound === 0}>{language === "zh" ? "贴近边界" : "Near bound"}: {filterCounts.near_bound}</button>
-        <button type="button" className={parameterFilter === "weak" ? "active" : ""} onClick={() => setParameterFilter("weak")} disabled={filterCounts.weak === 0}>{language === "zh" ? "弱识别" : "Weak"}: {filterCounts.weak}</button>
-        <span className={totalNearOrWeak ? "parameter-diagnostic-warning" : "parameter-diagnostic-ok"}>{totalNearOrWeak ? (language === "zh" ? "需要复核参数诊断" : "Review parameter diagnostics") : (language === "zh" ? "未发现参数诊断警告" : "No parameter diagnostic warnings")}</span>
-      </div>
       {sourceRows.length === 0 ? (
         <p className="muted">{t(language, "runFitForParameters")}</p>
-      ) : allRows.length === 0 ? (
-        <p className="muted">{language === "zh" ? "当前筛选条件下没有参数。" : "No parameters match the current filter."}</p>
       ) : (
         <div className="parameter-groups-scroll">
           {grouped.map((placement) => (
@@ -446,7 +322,6 @@ export function ParameterTable({
                   <tbody>
                     {placement.groups.flatMap((group, groupIndex) => {
                       const lawFormPlacement = componentLawFormPlacement(group.component);
-                      const canSeedComponent = group.fittedResultCount > 0 && Boolean(result);
                       const header = (
                         <tr
                           className={`parameter-component-divider component-accent-${groupIndex % 8}`}
@@ -470,19 +345,10 @@ Placement: ${lawFormPlacement.placement}`}
                                 {group.fittedCount}/{group.totalCount}{" "}
                                 {parameterText("fittedCountSuffix", language)}
                               </span>
-                              {group.nearBoundCount || group.weakCount ? <span className="parameter-component-warning">{group.nearBoundCount ? `${group.nearBoundCount} near bound` : ""}{group.nearBoundCount && group.weakCount ? " · " : ""}{group.weakCount ? `${group.weakCount} weak` : ""}</span> : null}
                             </div>
                           </td>
                           <td>
                             <div className="parameter-fit-batch-toggles">
-                              <button
-                                type="button"
-                                disabled={disabled || !canSeedComponent}
-                                onClick={() => onModelChange(seedComponentFromFittedValues(model, result, group.location, group.component.id))}
-                                title={language === "zh" ? "把这个组件的 fitted value 写回下一轮初值；不会改变模型结构。" : "Seed this component from fitted values for the next run. Model structure is unchanged."}
-                              >
-                                {language === "zh" ? "用拟合值作初值" : "Seed from fit"}
-                              </button>
                               <label
                                 title={componentSummary(
                                   group.component,
@@ -517,12 +383,6 @@ Placement: ${lawFormPlacement.placement}`}
                       const parameterRows = group.rows.map(
                         ({ location, component: comp, paramName, spec }) => {
                           const key = parameterKey(comp.id, paramName);
-                          const dataBoundsDetails =
-                            dataBoundsReport?.details.filter(
-                              (detail) => detail.key === key,
-                            ) ?? [];
-                          const dataBoundsDetail =
-                            dataBoundsDetails[dataBoundsDetails.length - 1];
                           const open = openKey === key;
                           const fitted = result?.parameters[key];
                           const prefitMeaning = parameterMeaningFromSpec(
@@ -537,16 +397,8 @@ Placement: ${lawFormPlacement.placement}`}
                           const short = result
                             ? parameterShortAssessment(result, key, language)
                             : prefitMeaning;
-                          const information = dataBoundsReport ? (
-                            <DataBoundsDetail detail={dataBoundsDetail} />
-                          ) : (
-                            short
-                          );
-                          const informationTitle = dataBoundsReport
-                            ? dataBoundsDetail
-                              ? dataBoundsTitle(dataBoundsDetail)
-                              : ""
-                            : meaning;
+                          const information = short;
+                          const informationTitle = meaning;
                           return (
                             <Fragment key={key}>
                               <tr className="parameter-summary-row">
@@ -734,13 +586,7 @@ Placement: ${lawFormPlacement.placement}`}
                                           fitted.unit ?? spec.unit,
                                         )}
                                   </div>
-                                  {dataBoundsReport ? (
-                                    <DataBoundsDetail
-                                      detail={dataBoundsDetail}
-                                    />
-                                  ) : (
-                                    <p title={meaning}>{short}</p>
-                                  )}
+                                  <p title={meaning}>{short}</p>
                                 </td>
                               </tr>
                             </Fragment>

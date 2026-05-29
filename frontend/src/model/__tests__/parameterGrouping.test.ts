@@ -3,12 +3,8 @@ import type { FitResult, ModelSpec } from "../types";
 import {
   buildParameterRows,
   componentLawFormPlacement,
-  countParameterFilters,
-  filterParameterRows,
   groupParameterRows,
-  parameterRowStatus,
   placementGroupForComponent,
-  seedComponentFromFittedValues,
 } from "../parameterGrouping";
 
 function model(): ModelSpec {
@@ -29,32 +25,24 @@ function result(): FitResult {
   };
 }
 
-describe("parameter grouping filters", () => {
-  it("classifies and filters table rows", () => {
-    const rows = buildParameterRows(model(), result());
-    expect(parameterRowStatus(rows.find((row) => row.key === "D1.I0_A")!, result())).toBe("near_bound");
-    expect(parameterRowStatus(rows.find((row) => row.key === "D1.n")!, result())).toBe("fixed");
-    expect(parameterRowStatus(rows.find((row) => row.key === "Rs.Rs_ohm")!, result())).toBe("weak");
-    expect(filterParameterRows(rows, result(), "near_bound")).toHaveLength(1);
-    expect(filterParameterRows(rows, result(), "fixed")).toHaveLength(1);
-    expect(filterParameterRows(rows, result(), "weak")).toHaveLength(1);
-    expect(filterParameterRows(rows, result(), "all")).toHaveLength(3);
-  });
-
-  it("separates main path and junction branches and reports counts", () => {
+describe("parameter grouping", () => {
+  it("separates main path and junction branches", () => {
     const rows = buildParameterRows(model(), result());
     const grouped = groupParameterRows(rows, result());
     expect(grouped.map((group) => group.id)).toEqual(["main", "junction"]);
-    expect(countParameterFilters(rows, result()).weak).toBe(1);
     expect(placementGroupForComponent(model().series[0])).toBe("main");
     expect(placementGroupForComponent(model().core[0])).toBe("junction");
     expect(componentLawFormPlacement(model().series[0])).toEqual({ law: "ohmic", form: "voltage_drop", placement: "series_voltage_drop" });
   });
 
-  it("can seed only one component from fitted values without changing topology", () => {
-    const seeded = seedComponentFromFittedValues(model(), result(), "series", "Rs");
-    expect(seeded.series[0].params.Rs_ohm.value).toBe(120);
-    expect(seeded.core[0].params.I0_A.value).toBe(1e-12);
-    expect(seeded.series[0].placement).toBe("series_voltage_drop");
+  it("keeps per-component fitted/free counts for the compact table header", () => {
+    const rows = buildParameterRows(model(), result());
+    const grouped = groupParameterRows(rows, result());
+    const main = grouped.find((group) => group.id === "main")!;
+    const junction = grouped.find((group) => group.id === "junction")!;
+    expect(main.groups[0].fittedCount).toBe(1);
+    expect(main.groups[0].totalCount).toBe(1);
+    expect(junction.groups[0].fittedCount).toBe(1);
+    expect(junction.groups[0].totalCount).toBe(2);
   });
 });

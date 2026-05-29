@@ -344,15 +344,7 @@
 }
 .parameter-card h2 {
   margin-bottom: 4px;
-}
-.parameter-filter-bar {
-  gap: 4px;
-  margin-bottom: 4px;
-}
-.parameter-filter-bar button {
-  padding: 3px 8px;
-}
-.parameter-placement-group {
+}.parameter-placement-group {
   display: block;
   min-height: 0;
   overflow: visible;
@@ -701,12 +693,7 @@
 }
 .parameter-component-title {
   gap: 5px;
-}
-.parameter-filter-bar button {
-  padding: 2px 7px;
-  min-height: 26px;
-}
-.parameter-edit-input {
+}.parameter-edit-input {
   min-height: 22px;
   height: 22px;
   max-width: 120px;
@@ -1086,21 +1073,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-}
-.fitting-page .parameter-filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-.fitting-page .parameter-filter-bar button {
-  min-height: 26px;
-  padding: 3px 9px;
-  max-width: 190px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.fitting-page .parameter-component-title {
+}.fitting-page .parameter-component-title {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1140,32 +1113,7 @@
   .fitting-page .plot-toolbar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
-
-/* v1.7.1: parameter/model usability polish */
-.parameter-diagnostic-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  align-items: center;
-  margin: 0.35rem 0 0.55rem;
-  font-size: 0.78rem;
-}
-.parameter-diagnostic-strip button {
-  border: 1px solid var(--border-color, #d7dee8);
-  border-radius: 999px;
-  background: #f7f9fc;
-  padding: 0.18rem 0.55rem;
-  font-size: 0.76rem;
-}
-.parameter-diagnostic-strip button.active {
-  background: #e9f2ff;
-  border-color: #8bbcff;
-}
-.parameter-diagnostic-strip button:disabled {
-  opacity: 0.55;
-}
-.parameter-diagnostic-ok {
+}.parameter-diagnostic-ok {
   color: #3b7a45;
 }
 .parameter-diagnostic-warning,
@@ -1203,4 +1151,49 @@
 .parameter-fit-batch-toggles button {
   font-size: 0.72rem;
   padding: 0.22rem 0.45rem;
+}
+
+/* v1.7.3: keep Report under the fit-check status, not in the primary run/stop row. */
+.fit-status-report-stack {
+  display: grid;
+  gap: calc(6px * var(--app-zoom));
+  align-items: start;
+}
+.report-gate-action {
+  display: flex;
+  align-items: center;
+  gap: calc(8px * var(--app-zoom));
+  flex-wrap: wrap;
+}
+.report-gate-button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: calc(6px * var(--app-zoom)) calc(12px * var(--app-zoom));
+  font-weight: 700;
+  white-space: nowrap;
+}
+.report-gate-button.ok {
+  background: rgba(15, 118, 110, 0.12);
+  border-color: rgba(15, 118, 110, 0.35);
+  color: #0f766e;
+}
+.report-gate-button.warning {
+  background: rgba(180, 83, 9, 0.12);
+  border-color: rgba(180, 83, 9, 0.35);
+  color: #92400e;
+}
+.report-gate-button.error {
+  background: rgba(185, 28, 28, 0.12);
+  border-color: rgba(185, 28, 28, 0.35);
+  color: #991b1b;
+}
+.report-gate-button.idle,
+.report-gate-button:disabled {
+  background: var(--surface-muted, rgba(148, 163, 184, 0.12));
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+.report-gate-hint {
+  color: var(--text-muted);
+  font-size: calc(11px * var(--app-zoom));
 }

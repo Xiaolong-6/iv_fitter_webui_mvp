@@ -1,44 +1,45 @@
-# Delivery audit — v1.7.1
+# Delivery audit — v1.7.3
 
 ## Purpose
 
-This version consolidates the previously partial v1.6.3–v1.7.0 promises into a single auditable delivery. It does not change fitting physics, backend APIs, report schemas, or saved-model compatibility.
+This version removes development, release, and diagnostic controls that were useful during internal iteration but are not appropriate in the normal user-facing UI. It keeps fitting physics, backend APIs, report schemas, saved-model compatibility, and the v1.7.2 dependency hotfix unchanged.
 
 ## Implemented changes
 
-### 1. Model/parameter usability
+### 1. Main user shell cleanup
 
-- `frontend/src/model/parameterGrouping.ts`
-  - Adds explicit placement groups: main path, junction core, parallel/leakage branches, modifiers.
-  - Adds testable Law / Form / Placement metadata extraction.
-  - Adds live filter counts and component diagnostic counts.
-  - Adds component-only seed-from-fit helper.
-- `frontend/src/components/ParameterTable.tsx`
-  - Shows read-only Law / Form / Placement in each component header.
-  - Shows near-bound and weak-identification counts per component.
-  - Adds filter counts for all/free/fixed/near-bound/weak rows.
-  - Adds component-level Seed from fit action.
+- Removed `Check newest version` from the dock/footer area.
+- Removed the Start page `External tester mode` panel.
+- Removed the user-facing `Local release gate` / `Show release gate details` UI.
+- Kept external-testing and release-privacy content in documentation/internal helpers instead of the main UI.
 
-### 2. External tester readiness
+### 2. Parameter table cleanup
 
-- `frontend/src/components/ExternalTesterChecklist.tsx`
-  - Adds embedded tester roles: UI tester, research user, synthetic-data tester.
-  - Adds live Data → Model → Fitting → Report step status.
-- `frontend/src/pages/components/StartHerePage.tsx`
-  - Embeds the external tester mode on the Start page.
+Removed these user-facing controls from the Fitting page parameter table:
 
-### 3. Release readiness
+- Restore
+- Apply bounds
+- Seed synthetic
+- Show / All parameters filter
+- Near bound / Weak diagnostic count strip
+- Review parameter diagnostics prompt
+- Component-level Seed from fit action
 
-- `frontend/src/services/releaseCheck.ts`
-  - Adds `evaluateReleaseReadiness` for version consistency, release-text privacy scan, backend test record, frontend test/build record, manual browser check, and portable smoke recommendation.
-- `frontend/src/components/ReleaseStatusPanel.tsx`
-  - Displays a local release gate instead of only a GitHub release lookup.
+The parameter table now keeps the core user workflow: read parameters, edit initial values/bounds, inspect fitted values, and toggle Fit/Fixed.
 
-### 4. Tests and documentation
+### 3. Fitting action cleanup
 
-- Added/updated frontend unit tests for parameter grouping, component-only seeding, and release readiness logic.
-- Updated version files to 1.7.1.
-- Updated `CHANGELOG.md`, `docs/TESTED_CURRENT.md`, `docs/VALIDATION_HISTORY.md`, and `docs/WEBUI_AGENT_HANDOFF.md`.
+- Report is no longer in the Run/Stop action row.
+- Report now appears under the fit check/status summary.
+- Report button tone follows the check state: OK, warning, error, or idle/disabled.
+- Removed the bottom/mobile duplicate Run fit / Stop fit action bar.
+
+### 4. Redundancy cleanup
+
+- Removed dead CSS for removed parameter-filter and parameter-diagnostic controls.
+- Removed the now-unused data-bounds and synthetic-seeding UI path from the Fitting page wiring.
+- Removed obsolete global parameter-filter helpers/tests and synthetic-ground-truth seeding helpers from active frontend source.
+- Removed obsolete documentation language that referenced Restore / synthetic seed / apply data bounds in the normal parameter-table workflow.
 
 ## Commands run
 
@@ -52,35 +53,39 @@ python -m compileall -q ivfitter
 
 - Backend pytest passed: 122 tests.
 - Backend compileall passed.
+- Static string scan confirmed the requested removed UI labels are absent from the relevant user-facing UI files.
+- Static redundancy scan confirmed `parameter-filter-bar`, `parameter-diagnostic-strip`, `ExternalTesterChecklist`, `external-tester`, `tester-step`, `release-readiness`, and `evaluateReleaseReadiness` are absent from `frontend/src`.
 
 ## Not verified in sandbox
 
-Frontend validation was not completed because dependencies are not installed and the sandbox package mirror returned a 404 for `electron-to-chromium-1.5.371.tgz` during `npm install`.
+Frontend validation was not completed because this sandbox does not have frontend dependencies installed and dependency installation is environment-dependent.
 
-Attempted commands:
+Required local validation:
 
-```bash
+```powershell
 cd frontend
-npm run test -- --run --reporter=dot
-# failed: vitest: not found
-
-npm install
-# failed: package mirror 404 for electron-to-chromium-1.5.371.tgz
-```
-
-## Required local validation before release
-
-```bash
-cd frontend
-npm install
+npm install --include=dev
 npm run test -- --run --reporter=dot
 npm run build
 ```
 
-Manual checks:
+## Suggested commit
 
-1. Parameter grouping and Law / Form / Placement labels.
-2. Component-level Seed from fit.
-3. External tester mode on Start page.
-4. ReleaseStatusPanel local release gate.
-5. Existing chart zoom/pan/reset behavior.
+```text
+fix(ui): remove internal controls from user workflow
+```
+
+Body:
+
+```text
+- Remove user-facing Check newest version, External tester mode, and Local release gate UI.
+- Remove internal Parameter table controls: Restore, Apply bounds, Seed synthetic, global filters, near-bound/weak strip, and review-diagnostics prompt.
+- Move Report under the fit check/status summary and color it by check state.
+- Remove duplicate bottom/mobile Run fit and Stop fit controls.
+- Remove dead CSS and obsolete documentation references for the removed controls.
+- Keep fitting physics, backend APIs, saved-model compatibility, report schemas, and dependency hotfixes unchanged.
+
+Backend pytest passed: 122 tests.
+Backend compileall passed.
+Frontend npm validation remains local-only.
+```

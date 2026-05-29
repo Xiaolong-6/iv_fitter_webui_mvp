@@ -63,14 +63,6 @@ export function WorkflowSidebar({
         {!collapsed && <span>{t(language, "version")}</span>}
         <strong>v{version}</strong>
       </div>
-      {!collapsed && <a
-        className="sidebar-release-link"
-        href="https://github.com/Xiaolong-6/iv_fitter_webui_mvp/releases"
-        target="_blank"
-        rel="noreferrer"
-      >
-        {language === "zh" ? "查看最新版本" : "Check newest version"}
-      </a>}
     </div>
   </aside>;
 }

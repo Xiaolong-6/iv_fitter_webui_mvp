@@ -209,11 +209,7 @@
   margin: 3px 0 2px;
   font-size: 0.82rem;
   letter-spacing: 0.02em;
-}
-.fitting-page .parameter-filter-bar {
-  margin-bottom: 4px;
-}
-.interactive-parameter-table {
+}.interactive-parameter-table {
   min-width: 680px;
   font-size: clamp(10px, calc(11px * var(--app-zoom)), 12px);
 }

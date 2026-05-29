@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.5.43**.
+Current package: **v1.7.3**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -28,6 +28,11 @@ The recurring fixes in this repository have turned into operating rules. Read `d
 - Use Law → Form → Placement vocabulary for models; do not collapse neutral mathematical components into device-specific labels.
 - Update changelog, tested-current notes, handoff/version metadata, and user/transparency docs for every meaningful change.
 
+
+## v1.7.3 UI-surface rule
+
+Do not put internal release-gate, audit, tester-preparation, or debug-seeding controls on the main user-facing UI. Keep those functions in scripts, docs, tests, or developer-only workflows unless the user explicitly requests a visible operator panel. The sidebar should stay task-focused and should not include a persistent newest-version link. Parameter table controls should stay limited to direct user editing and Fit/Fixed toggles; do not reintroduce Restore / Apply bounds / Seed synthetic / global diagnostic filters in the normal workflow.
+
 ## Current architecture
 
 ```text
@@ -45,13 +50,13 @@ React/Vite frontend -> FastAPI API -> Python fitting core
 - The app is a general compact-circuit fitting tool. Avoid presenting the workflow as specific to one device family; domain-specific interpretations belong in the user's modeling/report narrative.
 - Model Builder equivalent-circuit preview uses a compact topology diagram with main path on top and branches below Vj.
 - Model Builder is compact: component nicknames are edited directly, and parameter initials/bounds/fixed state are handled in the Parameters table rather than duplicated in builder cards.
-- Parameters are displayed by placement and component instance. Keep parameter keys unchanged for fitting, save/load, JSON export/import, and reports. After a completed fit, fitted values are written into the model as next-run initial values only if the fit passes reportability/quality gating; poor fits remain visible but must not silently overwrite trusted initials. The restore button should recover the pre-fit value snapshot only, not rename parameters or alter serialization. Synthetic traces can also seed initials from stored ground-truth metadata when parameter keys match.
+- Parameters are displayed by placement and component instance. Keep parameter keys unchanged for fitting, save/load, JSON export/import, and reports. After a completed fit, fitted values are written into the model as next-run initial values only if the fit passes reportability/quality gating; poor fits remain visible but must not silently overwrite trusted initials. Normal users edit initial values and bounds directly in the table; internal restore, synthetic seed, and automatic bounds helpers must stay out of the main UI unless explicitly requested.
 - The UI is workflow-centered: Start, Data, Model, Fitting, Report, and Help. Do not reintroduce a single Workspace tab as the main task surface.
 - Model Builder and model preview belong on Model. Fit setup, plots, and Parameters belong on Fitting. Full fit process/quality diagnostics and exports belong on Report. The full manual belongs on Help.
 - User-facing text should move toward content modules and translation-ready documents; start with `docs/LOCALIZATION_AND_TEXT.md` before adding new visible UI copy.
 - User manual Function Guide is user-facing by default. Internal schema terms are only allowed in collapsed Advanced details.
-- Mobile portrait layout has a sticky full-width run action, compact voltage range controls, and a backend connection banner.
-- Fit setup owns compact fitting status, Run fit/Stop/Report actions, no-trace validation, running feedback, and a compact Details drawer/link into Report. Keep this area compact and layered: status badges, action row, then contextual messages.
+- Mobile portrait layout uses the same primary Fit setup controls as desktop; do not reintroduce a duplicate bottom Run/Stop action bar.
+- Fit setup owns Run fit/Stop actions, compact fitting status, no-trace validation, and running feedback. The Report action belongs under the fit check/status summary and should change tone with the check state; do not put Report back into the Run/Stop action row.
 - Fitting has visible running feedback, Stop behavior for ignoring an in-flight result, and expanded app-local zoom. While fitting, disable model/parameter/setup/import/report edits but keep Stop available.
 - LAN testing helper `04c_run_lan_dev.bat` starts both backend and frontend and prints phone/tablet URLs.
 

@@ -25,16 +25,8 @@ export function localizedFunctionLabel(functionType: string, fallback: string, l
 
 export const parameterTableText = {
   help: {
-    en: "Parameters are grouped by placement and component. After a fit, fitted values are automatically written back as the next initial values. Use Restore initial values to recover the values that were present before the most recent fit.",
-    zh: "参数按位置和组件分组。每次拟合完成后，拟合值会自动写回为下一次拟合初值。可用 Restore initial values 恢复最近一次拟合前的初值。",
-  },
-  restoreToolbar: {
-    en: "Parameter restore controls",
-    zh: "参数恢复控制",
-  },
-  restoreInitialValues: {
-    en: "Restore initial values",
-    zh: "恢复初始值",
+    en: "Parameters are grouped by placement and component. Edit initial values, bounds, and Fit/Fixed state directly in the table.",
+    zh: "参数按位置和组件分组。初值、边界和 Fit/Fixed 状态直接在表格中编辑。",
   },
   fittedCountSuffix: {
     en: "fitted",

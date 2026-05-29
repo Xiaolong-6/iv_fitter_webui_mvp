@@ -262,25 +262,7 @@ button.running { cursor: progress; opacity: 0.85; }
   color: #7f1d1d;
 }
 .warning-chip.error { font-weight: 700; }
-.warning-chip.muted { color: #64748b; }
-.parameter-filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin: 0 0 8px;
-}
-.parameter-filter-bar button {
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: #f8fafc;
-}
-.parameter-filter-bar button.active {
-  border-color: #2563eb;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-weight: 700;
-}
-.parameter-placement-group {
+.warning-chip.muted { color: #64748b; }.parameter-placement-group {
   display: grid;
   gap: 5px;
   margin-top: 8px;
@@ -785,69 +767,4 @@ button.running { cursor: progress; opacity: 0.85; }
 }
 .parameter-filter-select select {
   width: 100%;
-}
-
-/* v1.7.1: embedded external tester workflow */
-.external-tester-card {
-  border: 1px solid var(--border-color, #d7dee8);
-  border-radius: 14px;
-  background: #ffffff;
-  padding: 1rem;
-  margin-top: 1rem;
-  box-shadow: 0 8px 22px rgba(27, 39, 56, 0.06);
-}
-.external-tester-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-start;
-}
-.external-tester-head h3 { margin: 0; }
-.external-tester-head p { margin: 0.25rem 0 0; color: var(--muted-color, #596779); }
-.tester-role-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.65rem;
-  margin: 0.9rem 0;
-}
-.tester-role-card {
-  border: 1px solid #e1e7ef;
-  border-radius: 12px;
-  padding: 0.7rem;
-  background: #f8fafc;
-}
-.tester-role-card p { margin: 0.3rem 0 0; font-size: 0.82rem; color: var(--muted-color, #596779); }
-.tester-step-list {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-.tester-step {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-rows: auto auto;
-  gap: 0.15rem 0.45rem;
-  text-align: left;
-  border: 1px solid #e1e7ef;
-  border-radius: 12px;
-  background: #fff;
-  padding: 0.55rem;
-}
-.tester-step span {
-  grid-row: 1 / span 2;
-  width: 1.45rem;
-  height: 1.45rem;
-  border-radius: 50%;
-  background: #eef3f9;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-}
-.tester-step em { font-size: 0.72rem; color: var(--muted-color, #596779); font-style: normal; }
-.tester-step.done span { background: #dff3e4; }
-.tester-step.active { border-color: #8bbcff; background: #f4f9ff; }
-@media (max-width: 900px) {
-  .tester-role-grid, .tester-step-list { grid-template-columns: 1fr; }
-  .external-tester-head { flex-direction: column; }
 }

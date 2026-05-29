@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import type { EquationSummary, FitConfig, FitResult, FitSessionStats, FunctionDefinition, ModelSpec, TraceData } from "../model/types";
-import { exportReport, exportReportCsv, fitTrace, getRegistry, suggestBounds, equations } from "../api/client";
+import { exportReport, exportReportCsv, fitTrace, getRegistry, equations } from "../api/client";
 import { emptyTrace, estimateResidualFloorA } from "../model/utils";
-import { countGroundTruthMatches, restoreModelParameterValues, seedModelFromFittedValues, seedModelFromGroundTruthParameters } from "../model/parameterGrouping";
-import { applyDataBoundsSuggestions, type DataBoundsApplicationReport } from "../model/boundsSuggestion";
+import { seedModelFromFittedValues } from "../model/parameterGrouping";
 import { WorkflowSidebar, type AppView } from "../components/WorkflowSidebar";
 import { UserDocumentationPage } from "../components/UserDocumentationPage";
 import { FitStatusBar } from "../components/FitStatusBar";
@@ -24,8 +23,8 @@ import { ReportWorkflowPage } from "./components/ReportWorkflowPage";
 import { usePaneResize } from "./hooks/usePaneResize";
 import { useAppZoom } from "./hooks/useAppZoom";
 import { useWorkflowLayoutState } from "./hooks/useWorkflowLayoutState";
-import { fitResultIsSafeToPromote, selectedTraceGroundTruth, warningDismissKey } from "./fitPageUtils";
-import { FitActionButtons, FitMessages } from "./components/FitActionCluster";
+import { fitResultIsSafeToPromote, warningDismissKey } from "./fitPageUtils";
+import { FitActionButtons, FitMessages, FitReportButton } from "./components/FitActionCluster";
 import { APP_VERSION } from "../utils/version";
 
 type ZoomStyle = CSSProperties & { "--app-zoom": number };
@@ -35,8 +34,6 @@ export function FittingPage() {
   const [traces, setTraces] = useState<TraceData[]>([]);
   const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
   const [model, setModel] = useState<ModelSpec>(() => createInitialModel(APP_VERSION));
-  const [preFitInitialModel, setPreFitInitialModel] =
-    useState<ModelSpec | null>(null);
   const [config, setConfig] = useState<FitConfig>(initialConfig);
   const [fitDrawerMode, setFitDrawerMode] = useState<FitDrawerMode>("none");
   const [result, setResult] = useState<FitResult | null>(null);
@@ -86,8 +83,6 @@ export function FittingPage() {
     preview: false,
   });
   const [dismissedWarningKey, setDismissedWarningKey] = useState("");
-  const [dataBoundsReport, setDataBoundsReport] =
-    useState<DataBoundsApplicationReport | null>(null);
   const [fitSessionStats, setFitSessionStats] = useState<FitSessionStats>({
     fitsRun: 0,
     totalFunctionEvaluations: 0,
@@ -120,11 +115,6 @@ export function FittingPage() {
     traces[0] ??
     emptyTrace();
   const hasSelectedTrace = selectedTrace.voltage_V.length > 0;
-  const syntheticGroundTruth = selectedTraceGroundTruth(selectedTrace);
-  const canSeedSyntheticGroundTruth = syntheticGroundTruth
-    ? countGroundTruthMatches(model, syntheticGroundTruth) > 0
-    : false;
-
   const autoVoltageRange = useMemo(() => {
     const finite = selectedTrace.voltage_V.filter(Number.isFinite);
     if (!finite.length) return { vMin: null, vMax: null };
@@ -145,7 +135,6 @@ export function FittingPage() {
   }, [selectedTrace]);
 
   useEffect(() => {
-    setDataBoundsReport(null);
     if (!selectedTrace.voltage_V.length) return;
     const nextFloor = estimateResidualFloorA(selectedTrace);
     setConfig((current) =>
@@ -179,30 +168,6 @@ export function FittingPage() {
     };
   }, [model]);
 
-  async function applyDataBounds() {
-    if (!selectedTrace.voltage_V.length) {
-      setError(
-        language === "zh"
-          ? "没有选中 trace，无法推荐边界。"
-          : "No selected trace; data bounds were not applied.",
-      );
-      return;
-    }
-    try {
-      const response = await suggestBounds(selectedTrace, model, config);
-      const applied = applyDataBoundsSuggestions(model, registry, response);
-      setModel(applied.model);
-      setReportArtifacts(emptyReportArtifacts);
-      setDataBoundsReport(applied.report);
-      setOpenSections((current) => ({ ...current, parameters: true }));
-    } catch (e) {
-      setError(
-        language === "zh"
-          ? `边界推荐失败：${String(e)}`
-          : `Bounds suggestion failed: ${String(e)}`,
-      );
-    }
-  }
 
   async function runFit() {
     if (isFitting) return;
@@ -214,7 +179,6 @@ export function FittingPage() {
     setFitPromotionNotice(null);
     setResult(null);
     setReportArtifacts(emptyReportArtifacts);
-    setDataBoundsReport(null);
     setDismissedWarningKey("");
     setActiveView("fitting");
     if (!selectedTrace.voltage_V.length) {
@@ -231,7 +195,6 @@ export function FittingPage() {
     }
     setNoTraceRunAttempted(false);
     const modelBeforeFit = structuredClone(model) as ModelSpec;
-    setPreFitInitialModel(modelBeforeFit);
     const timeoutS = Math.max(1, Number(config.run_timeout_s ?? 60));
     const controller = new AbortController();
     abortFitRef.current = controller;
@@ -292,8 +255,7 @@ export function FittingPage() {
           current.totalRootSolverFailures +
           Math.max(0, Math.round(diag?.root_solver_failures ?? 0)),
       }));
-      setDataBoundsReport(null);
-      if (fitResultIsSafeToPromote(fit)) {
+        if (fitResultIsSafeToPromote(fit)) {
         setModel(seedModelFromFittedValues(modelBeforeFit, fit));
         setFitPromotionNotice(null);
       } else {
@@ -399,20 +361,6 @@ export function FittingPage() {
     );
   }
 
-  function seedFromSyntheticGroundTruth() {
-    const groundTruth = selectedTraceGroundTruth(selectedTrace);
-    if (!groundTruth) return;
-    setModel((current) =>
-      seedModelFromGroundTruthParameters(current, groundTruth),
-    );
-    setFitPromotionNotice(
-      language === "zh"
-        ? "已从当前 synthetic trace metadata 恢复初值。"
-        : "Initial values restored from the active synthetic trace ground truth metadata.",
-    );
-    setDataBoundsReport(null);
-    setOpenSections((current) => ({ ...current, parameters: true }));
-  }
 
   async function makeReport() {
     if (!result) return;
@@ -500,13 +448,21 @@ export function FittingPage() {
   });
 
   const fitStatusNode = (
-    <FitStatusBar
-      result={result}
-      language={language}
-      isFitting={isFitting}
-      elapsedSeconds={elapsedSeconds}
-      lifecycleStatus={fitLifecycle}
-    />
+    <div className="fit-status-report-stack">
+      <FitStatusBar
+        result={result}
+        language={language}
+        isFitting={isFitting}
+        elapsedSeconds={elapsedSeconds}
+        lifecycleStatus={fitLifecycle}
+      />
+      <FitReportButton
+        result={result}
+        language={language}
+        onMakeReport={makeReport}
+        reportAvailable={reportAvailable}
+      />
+    </div>
   );
 
   const fitActionsNode = (
@@ -516,8 +472,6 @@ export function FittingPage() {
       language={language}
       onRunFit={runFit}
       onStopFit={stopFit}
-      onMakeReport={makeReport}
-      reportAvailable={reportAvailable}
     />
   );
 
@@ -589,7 +543,6 @@ export function FittingPage() {
             result={result}
             isFitting={isFitting}
             reportAvailable={reportAvailable}
-            language={language}
           />
         ) : activeView === "data" ? (
           <DataImportWorkspace
@@ -599,33 +552,27 @@ export function FittingPage() {
               setTraces(next);
               setResult(null);
               setReportArtifacts(emptyReportArtifacts);
-              setDataBoundsReport(null);
-            }}
+                      }}
             onSelectTrace={(id) => {
               setSelectedTraceId(id);
               setResult(null);
               setReportArtifacts(emptyReportArtifacts);
-              setDataBoundsReport(null);
-              setNoTraceRunAttempted(false);
+                        setNoTraceRunAttempted(false);
             }}
             onNextToFitting={() => setActiveView("model")}
             model={model}
-            language={language}
           />
         ) : activeView === "model" ? (
           <ModelWorkflowPage
             model={model}
             setModel={(next) => {
               setModel(next);
-              setPreFitInitialModel(null);
               setResult(null);
               setReportArtifacts(emptyReportArtifacts);
-              setDataBoundsReport(null);
-            }}
+                      }}
             registry={registry}
             equationSummary={equationSummary}
             result={result}
-            language={language}
             isFitting={isFitting}
             leftPct={modelPanePct}
             onResizeStart={(event) =>
@@ -638,18 +585,15 @@ export function FittingPage() {
                   setTraces(next);
                   setResult(null);
                   setReportArtifacts(emptyReportArtifacts);
-                  setDataBoundsReport(null);
-                }}
+                              }}
                 onSelectTrace={(id) => {
                   setSelectedTraceId(id);
                   setResult(null);
                   setReportArtifacts(emptyReportArtifacts);
-                  setDataBoundsReport(null);
-                  setNoTraceRunAttempted(false);
+                                setNoTraceRunAttempted(false);
                 }}
                 model={model}
-                language={language}
-                disabled={isFitting}
+                    disabled={isFitting}
               />
             }
           />
@@ -662,8 +606,7 @@ export function FittingPage() {
               setSelectedTraceId(id);
               setResult(null);
               setReportArtifacts(emptyReportArtifacts);
-              setDataBoundsReport(null);
-              setNoTraceRunAttempted(false);
+                        setNoTraceRunAttempted(false);
             }}
             setActiveView={setActiveView}
             config={config}
@@ -674,29 +617,15 @@ export function FittingPage() {
             fitActions={fitActionsNode}
             fitStatus={fitStatusNode}
             fitMessages={fitMessagesNode}
+            language={language}
             result={result}
             registry={registry}
             model={model}
             updateParameterModel={(next) => {
               setModel(next);
               setReportArtifacts(emptyReportArtifacts);
-              setDataBoundsReport(null);
-            }}
-            canRestoreInitialValues={preFitInitialModel !== null}
-            onRestoreInitialValues={() => {
-              if (preFitInitialModel) {
-                setModel((current) =>
-                  restoreModelParameterValues(current, preFitInitialModel),
-                );
-                setDataBoundsReport(null);
-              }
-            }}
-            onApplyDataBounds={applyDataBounds}
-            canSeedSyntheticGroundTruth={canSeedSyntheticGroundTruth}
-            onSeedSyntheticGroundTruth={seedFromSyntheticGroundTruth}
-            dataBoundsReport={dataBoundsReport}
+                      }}
             isFitting={isFitting}
-            language={language}
             leftPct={fittingPanePct}
             plotPct={plotPanePct}
             onResizeStart={(event) =>
@@ -722,7 +651,6 @@ export function FittingPage() {
             onExportReportCsv={downloadReportCsv}
             onExportReportHtml={downloadReportHtml}
             setActiveView={setActiveView}
-            language={language}
             appVersion={APP_VERSION}
             leftPct={reportPanePct}
             onResizeStart={(event) =>
@@ -734,28 +662,7 @@ export function FittingPage() {
             view={activeView}
             registry={registry}
             appVersion={APP_VERSION}
-            language={language}
           />
-        )}
-        {activeView === "fitting" && (
-          <div className="mobile-action-bar">
-            <button
-              className={
-                hasSelectedTrace ? "primary" : "fit-action-unavailable"
-              }
-              disabled={isFitting || !hasSelectedTrace}
-              onClick={runFit}
-            >
-              {t(language, "runFit")}
-            </button>
-            <button
-              className={isFitting ? "danger-soft active" : "danger-soft"}
-              disabled={!isFitting}
-              onClick={stopFit}
-            >
-              {language === "zh" ? "Stop fit" : "Stop fit"}
-            </button>
-          </div>
         )}
       </main>
     </div>

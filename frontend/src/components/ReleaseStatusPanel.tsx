@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Language } from "../model/i18n";
-import { checkLatestRelease, evaluateReleaseReadiness, type ReleaseCheckResult } from "../services/releaseCheck";
+import { checkLatestRelease, type ReleaseCheckResult } from "../services/releaseCheck";
 import { APP_VERSION } from "../utils/version";
 
 const TEXT = {
@@ -26,9 +26,6 @@ const TEXT = {
     showDetails: "Show release details",
     hideDetails: "Hide release details",
     compactHelp: "The manual is local. Update checking is read-only and never blocks fitting.",
-    readiness: "Local release gate",
-    blocker: "blocker",
-    blockers: "blockers",
   },
   zh: {
     title: "更新",
@@ -52,9 +49,6 @@ const TEXT = {
     showDetails: "显示 release 详情",
     hideDetails: "隐藏 release 详情",
     compactHelp: "手册是本地内容。更新检查是只读的，不会阻塞拟合。",
-    readiness: "本地 release gate",
-    blocker: "阻塞项",
-    blockers: "阻塞项",
   },
 } as const;
 
@@ -100,18 +94,6 @@ export function ReleaseStatusPanel({ language, compact = false }: { language: La
   const title = compact ? text(language, "compactTitle") : text(language, "title");
   const releaseNotes = result?.bodyExcerpt ? result.bodyExcerpt : "";
   const hasDetails = Boolean(result?.releaseName || result?.publishedAt || releaseNotes || result?.assetNames.length);
-  const readiness = evaluateReleaseReadiness({
-    appVersion: APP_VERSION,
-    declaredVersions: {
-      "frontend/package.json": APP_VERSION,
-      "runtime APP_VERSION": APP_VERSION,
-    },
-    releaseText: releaseNotes,
-    backendTestsPassed: false,
-    frontendBuildPassed: false,
-    manualBrowserChecked: false,
-    portableSmokePassed: false,
-  });
 
   return <section className={compact ? "release-status-panel compact" : "release-status-panel"} aria-label={title}>
     <div className="release-status-header">
@@ -125,18 +107,6 @@ export function ReleaseStatusPanel({ language, compact = false }: { language: La
       {!compact ? <span><strong>{text(language, "status")}</strong><b>{statusText(result, language)}</b></span> : null}
     </div>
     {compact ? <p className="muted small-note">{result?.checkedAt ? `${text(language, "checked")}: ${formatDate(result.checkedAt)}` : text(language, "compactHelp")}</p> : null}
-    <div className="release-readiness-summary">
-      <strong>{text(language, "readiness")}</strong>
-      <span className={readiness.ok ? "release-readiness-ok" : "release-readiness-blocked"}>
-        {readiness.ok ? "OK" : `${readiness.blockingCount} ${readiness.blockingCount === 1 ? text(language, "blocker") : text(language, "blockers")}`}
-      </span>
-    </div>
-    <details className="release-readiness-details">
-      <summary>{language === "zh" ? "查看 release gate 明细" : "Show release gate details"}</summary>
-      <ul>
-        {readiness.items.map((item) => <li key={item.id} className={item.ok ? "ok" : item.required ? "blocker" : "warning"}><strong>{item.label}:</strong> {item.detail}</li>)}
-      </ul>
-    </details>
     {result?.error ? <p className="release-status-error">{result.error}</p> : null}
     {!compact && releaseNotes ? <p className="muted release-status-excerpt">{releaseNotes}</p> : null}
     {!compact && result?.assetNames.length ? <p className="muted"><strong>{text(language, "assets")}:</strong> {result.assetNames.join(", ")}</p> : null}

@@ -45,3 +45,12 @@ Use `docs/TESTED_CURRENT.md` for the exact commands and result status of the cur
 - Backend compileall passed.
 - Frontend npm validation was not run because dependencies are not installed in sandbox; local validation remains required.
 - This version intentionally consolidates the prior partial promises into one version instead of producing more partial packages.
+
+
+## v1.7.3 — User-facing UI declutter and fitting-action cleanup
+
+- Backend pytest passed in sandbox: 122 tests.
+- Backend compileall passed.
+- Static scan confirmed removed user-facing strings/components and removed parameter-filter CSS are absent from `frontend/src`.
+- Report action was moved under the fit check/status summary; mobile/bottom duplicate Run/Stop controls were removed.
+- Frontend npm validation remains local-only because sandbox dependency installation is environment-dependent.
