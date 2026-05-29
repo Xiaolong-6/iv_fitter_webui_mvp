@@ -10,6 +10,7 @@ from __future__ import annotations
 import numpy as np
 from scipy.optimize import root
 
+from ivfitter.components.common import softplus
 from ivfitter.components.diode import diode_current
 from ivfitter.components.parallel import shunt_current, power_law_current, soft_breakdown_current
 from ivfitter.components.custom import evaluate_custom_expression
@@ -49,7 +50,7 @@ def _edge_current(comp: GraphComponent, v_component: np.ndarray, temperature_K: 
         vt = param_value(comp, "Vt_ph_V", 0.0)
         vs = max(param_value(comp, "Vs_ph_V", 1.0), 1e-30)
         m = param_value(comp, "m_ph", 1.0)
-        threshold = threshold_amp * np.power(np.logaddexp(0.0, (np.abs(arr) - vt) / vs), m)
+        threshold = threshold_amp * np.power(softplus((np.abs(arr) - vt) / vs), m)
         return sign * np.maximum(base * (1.0 + gain * np.abs(arr)) + threshold, 0.0) * active
     if ft == "custom":
         expr = comp.metadata.get("expression", "s*A*softplus(u)**m")

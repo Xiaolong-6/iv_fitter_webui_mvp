@@ -34,7 +34,13 @@ def _cors_origins() -> list[str]:
     raw = os.getenv("IVFITTER_CORS_ORIGINS", "http://127.0.0.1:5173,http://localhost:5173")
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
-app.add_middleware(CORSMiddleware, allow_origins=_cors_origins(), allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins(),
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "X-IVFITTER-API-Key"],
+)
 
 def _api_token() -> str | None:
     token = os.getenv("IVFITTER_API_TOKEN", "").strip()
@@ -50,6 +56,24 @@ def _raise_internal_error(exc: Exception, context: str) -> NoReturn:
     detail = str(exc) if _debug_errors_enabled() else "Internal server error. See backend log for details."
     raise HTTPException(status_code=500, detail=detail) from exc
 
+
+
+
+def _is_loopback_request(request: Request) -> bool:
+    host = (request.client.host if request.client else "").strip().lower()
+    return host in {"127.0.0.1", "::1", "localhost", "testclient"}
+
+
+def _require_loopback_for_local_file_dialog(request: Request) -> None:
+    """Keep the server-side file picker unavailable to remote LAN clients.
+
+    The dialog opens on the backend host and reads a selected local file from
+    that same host.  Desktop localhost use remains unchanged, while LAN clients
+    must use paste/upload text endpoints instead of remotely triggering local
+    server file access.
+    """
+    if not _is_loopback_request(request):
+        raise HTTPException(status_code=403, detail="Local file dialog is only available from localhost.")
 
 def _public_selected_name(path: str) -> str:
     # Handle both native paths and Windows paths when tests run on POSIX.
@@ -162,10 +186,6 @@ def export_report(result: FitResult) -> ReportResponse:
     """Return a Markdown report for one fit result."""
     return ReportResponse(markdown=fit_result_markdown(result))
 
-class ImportTraceResponse(BaseModel):
-    trace: object
-    quality: object
-
 class TextResponse(BaseModel):
     text: str
 
@@ -218,8 +238,9 @@ def import_csv_text_multi_endpoint(payload: ImportCsvTextRequest):
         _raise_internal_error(exc, "Unhandled API error")
 
 @app.post("/api/open-import-file-dialog", response_model=OpenImportFileDialogResponse)
-def open_import_file_dialog() -> OpenImportFileDialogResponse:
+def open_import_file_dialog(request: Request) -> OpenImportFileDialogResponse:
     """Open a local file picker at the demo IV traces folder when supported."""
+    _require_loopback_for_local_file_dialog(request)
     default_dir = resolve_default_import_dir()
     try:
         import tkinter as tk

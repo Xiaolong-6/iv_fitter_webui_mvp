@@ -753,3 +753,29 @@
 .chart-toolbar-hint {
   display: none;
 }
+
+/* v1.7.13: keep Manual Sections vertical in portrait/narrow readers. */
+@media (orientation: portrait) {
+  .manual-reader-one-column .manual-reader-nav {
+    position: sticky;
+    top: calc(8px * var(--app-zoom));
+    right: auto;
+    width: 100%;
+    max-height: min(46vh, calc(420px * var(--app-zoom)));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .manual-reader-one-column .manual-reader-nav button {
+    width: 100%;
+    min-width: 0;
+    justify-content: start;
+  }
+}
+
+@media (max-width: 900px) and (orientation: portrait) {
+  .manual-reader-one-column .manual-reader-nav {
+    max-height: min(38vh, calc(320px * var(--app-zoom)));
+  }
+}

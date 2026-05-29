@@ -63,3 +63,47 @@ def test_softplus_extreme_negative_values_do_not_warn():
     assert out[0] == 0.0
     assert 0.0 < out[1] < 1e-250
     assert np.all(np.isfinite(out))
+
+
+def test_local_file_dialog_rejects_non_loopback_request():
+    class DummyClient:
+        host = "192.168.1.50"
+
+    class DummyRequest:
+        client = DummyClient()
+
+    try:
+        main._require_loopback_for_local_file_dialog(DummyRequest())
+    except Exception as exc:
+        assert getattr(exc, "status_code", None) == 403
+        assert "localhost" in getattr(exc, "detail", "")
+    else:
+        raise AssertionError("remote local-file-dialog request was not rejected")
+
+
+def test_local_file_dialog_allows_loopback_request():
+    class DummyClient:
+        host = "127.0.0.1"
+
+    class DummyRequest:
+        client = DummyClient()
+
+    main._require_loopback_for_local_file_dialog(DummyRequest())
+
+
+def test_cors_methods_are_explicit_not_wildcard(monkeypatch):
+    monkeypatch.delenv("IVFITTER_API_TOKEN", raising=False)
+    client = TestClient(app)
+    response = client.options(
+        "/api/component-registry",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type,x-ivfitter-api-key",
+        },
+    )
+    assert response.status_code == 200
+    allow_methods = response.headers.get("access-control-allow-methods", "")
+    assert "POST" in allow_methods
+    assert "GET" in allow_methods
+    assert "DELETE" not in allow_methods

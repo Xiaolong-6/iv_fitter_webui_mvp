@@ -168,14 +168,15 @@ def solve_single_vj(v_ext: float, model, rs_eff_fn=series_resistance_effective) 
     lo, hi = v_ext - span, v_ext + span
     flo, fhi = f(lo), f(hi)
     tries = 0
-    while flo * fhi > 0 and tries < 5:
+    max_expansions = 10
+    while np.isfinite(flo) and np.isfinite(fhi) and flo * fhi > 0 and tries < max_expansions:
         span *= 2
         lo, hi = v_ext - span, v_ext + span
         flo, fhi = f(lo), f(hi)
         tries += 1
-    if flo * fhi <= 0:
+    if np.isfinite(flo) and np.isfinite(fhi) and flo * fhi <= 0:
         try:
-            root = float(brentq(f, lo, hi, maxiter=80))
+            root = float(brentq(f, lo, hi, maxiter=120))
             return root if np.isfinite(root) else float("nan")
         except Exception:
             return float("nan")

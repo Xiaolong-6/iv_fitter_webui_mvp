@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.7.13 — Audit hardening and Manual portrait fix
+
+- Restricted the server-side local file dialog endpoint to localhost/loopback requests so LAN clients cannot remotely trigger backend-host file access.
+- Replaced wildcard CORS methods with explicit GET/POST/OPTIONS and explicit allowed headers for the current API surface.
+- Made the legacy junction-voltage bracketing path more tolerant of difficult high-resistance models by adding finite-value checks and a wider expansion budget.
+- Aligned the experimental graph solver bias-dependent current branch with the shared softplus formulation used by composite evaluation.
+- Fixed the User Manual portrait responsive rule so the Sections locator remains a vertical scrollable list instead of becoming horizontal tabs.
+- Removed the stale unused `ImportTraceResponse` class from the API module.
+- Added backend regression tests for localhost-only dialog access and explicit CORS method behavior.
+
 ## v1.7.12 — Version consistency self-check
 
 - Bumped root, frontend, and backend package metadata from v1.7.11 to v1.7.12.
