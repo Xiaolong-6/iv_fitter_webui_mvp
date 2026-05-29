@@ -1,6 +1,9 @@
-# Tested current — v1.7.22
+# Tested current — v1.7.23
 
-## v1.7.22 Interactive equivalent-circuit Model Builder validation
+## v1.7.23 Model Builder schematic readability validation
+- Polished the interactive equivalent-circuit canvas for better schematic readability after screenshot review.
+- Fixed terminal-label layering and reduced nested component-row scrollbars.
+- Kept the fixed-topology/no-drag ModelSpec-compatible design.
 
 Scope validated in this container:
 

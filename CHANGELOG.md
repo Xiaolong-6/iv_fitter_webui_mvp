@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.7.23 - Model Builder schematic readability polish
+- Improved the interactive Model Builder circuit canvas after screenshot review.
+- Kept the no-drag fixed-topology design but made the schematic more circuit-like and less cramped.
+- Fixed terminal-label drawing order so Vext, Vi, and V=0 remain readable.
+- Removed misleading drag-handle affordance by replacing grips with simple schematic node markers.
+- Reduced nested horizontal scrollbars inside component rows and widened the canvas/inspector balance.
+- Tightened preset toolbar, component cards, and inspector spacing for large-screen use.
+
+
 ## v1.7.22 - Interactive equivalent-circuit Model Builder
 
 - Replaced the old Model Builder list layout with a fixed-topology equivalent-circuit canvas.

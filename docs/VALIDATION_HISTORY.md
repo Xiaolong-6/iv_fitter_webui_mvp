@@ -1,3 +1,8 @@
+## v1.7.23
+- Polished the v1.7.22 interactive Model Builder schematic layout after screenshot review.
+- Kept fixed topology and no drag-and-drop.
+- Improved terminal labels, canvas width, internal row overflow, component markers, and inspector proportions.
+
 # Validation history
 
 ## v1.7.22

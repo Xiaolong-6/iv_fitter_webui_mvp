@@ -39,7 +39,7 @@ function cloneModelForPreset(model: ModelSpec): ModelSpec {
 }
 
 function makeSingleDiodePreset(model: ModelSpec): ModelSpec {
-  return createInitialModel(String(model.version ?? "1.7.22"));
+  return createInitialModel(String(model.version ?? "1.7.23"));
 }
 
 function makeDoubleDiodePreset(model: ModelSpec): ModelSpec {
@@ -257,7 +257,7 @@ function CircuitNodeCard({ refItem, selected, language, onSelect, disabled, onRe
     aria-pressed={selected}
     title={componentDisplayName(comp, language)}
   >
-    <span className="node-grip" aria-hidden="true">⋮⋮</span>
+    <span className="node-grip" aria-hidden="true">{isBranch ? "●" : "◆"}</span>
     <span className="node-main">
       <strong>{nickname(comp)}</strong>
       <small>{componentDisplayName(comp, language)}</small>
@@ -328,21 +328,21 @@ function CircuitWireLayer({ mainCount, branchCount }: { mainCount: number; branc
         <path d="M0,0 L9,4.5 L0,9 Z" className="builder-arrow" />
       </marker>
     </defs>
-    <line className="builder-wire" x1="90" y1="120" x2={width - 120} y2="120" markerEnd="url(#builder-arrow)" />
+    <rect className="builder-terminal" x="18" y="94" width="96" height="52" rx="8" />
+    <rect className="builder-terminal" x="18" y="324" width="96" height="52" rx="8" />
+    <circle className="builder-terminal-circle" cx={width - 120} cy="120" r="34" />
+    <line className="builder-wire" x1="114" y1="120" x2={width - 120} y2="120" markerEnd="url(#builder-arrow)" />
     <line className="builder-wire-muted" x1={branchStart} y1="120" x2={branchStart} y2="300" />
     <line className="builder-wire-muted" x1={branchStart} y1="300" x2={width - 120} y2="300" />
-    <line className="builder-wire-ground" x1="90" y1="350" x2={width - 120} y2="350" />
+    <line className="builder-wire-ground" x1="114" y1="350" x2={width - 120} y2="350" />
     <line className="builder-wire-muted" x1={width - 120} y1="120" x2={width - 120} y2="350" />
     <circle className="builder-node-dot" cx={branchStart} cy="120" r="5" />
     <circle className="builder-node-dot" cx={branchStart} cy="350" r="5" />
     <circle className="builder-node-dot" cx={width - 120} cy="120" r="6" />
     <circle className="builder-node-dot" cx={width - 120} cy="350" r="5" />
-    <text className="builder-wire-label" x="55" y="126">Vext</text>
-    <text className="builder-wire-label" x={width - 96} y="126">Vi</text>
-    <text className="builder-wire-label" x="55" y="356">V=0</text>
-    <rect className="builder-terminal" x="18" y="94" width="82" height="52" rx="8" />
-    <rect className="builder-terminal" x="18" y="324" width="82" height="52" rx="8" />
-    <circle className="builder-terminal-circle" cx={width - 120} cy="120" r="34" />
+    <text className="builder-wire-label builder-wire-label-terminal" x="66" y="121" textAnchor="middle">Vext</text>
+    <text className="builder-wire-label builder-wire-label-terminal" x="66" y="351" textAnchor="middle">V=0</text>
+    <text className="builder-wire-label builder-wire-label-vi" x={width - 120} y="120" textAnchor="middle">Vi</text>
   </svg>;
 }
 

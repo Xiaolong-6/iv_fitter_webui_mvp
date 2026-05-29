@@ -769,3 +769,160 @@
     grid-column: span 1;
   }
 }
+
+/* v1.7.23: schematic readability pass for the interactive Model Builder. */
+.circuit-builder-toolbar {
+  align-items: center;
+  padding-bottom: 10px;
+}
+.circuit-builder-toolbar > div:first-child {
+  min-width: 320px;
+  flex: 1 1 420px;
+}
+.circuit-builder-presets {
+  flex: 0 1 520px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+.circuit-builder-presets label {
+  min-width: min(320px, 42vw);
+}
+.model-preset-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.circuit-builder-layout {
+  grid-template-columns: minmax(720px, 1fr) minmax(300px, 360px);
+  gap: 18px;
+}
+.equivalent-circuit-builder {
+  min-height: 520px;
+  overflow: auto;
+  isolation: isolate;
+}
+.circuit-wire-layer {
+  min-width: 1040px;
+  width: max(100%, 1040px);
+}
+.builder-terminal,
+.builder-terminal-circle {
+  fill: rgba(255,255,255,0.96);
+}
+.builder-wire-label-terminal {
+  fill: #0f172a;
+  font-size: 17px;
+  font-weight: 800;
+}
+.builder-wire-label-vi {
+  fill: #0f172a;
+  font-size: 18px;
+  font-weight: 850;
+}
+.circuit-zone-frame {
+  min-width: 0;
+  background: rgba(255,255,255,0.70);
+  backdrop-filter: blur(2px);
+}
+.circuit-main-frame {
+  left: 210px;
+  right: 110px;
+  top: 70px;
+}
+.circuit-branch-frame {
+  left: 250px;
+  right: 110px;
+  top: 270px;
+}
+.circuit-zone-heading {
+  align-items: end;
+}
+.circuit-zone-heading strong {
+  font-size: 16px;
+  line-height: 1.1;
+}
+.circuit-add-menu select {
+  max-width: 300px;
+  min-width: 240px;
+}
+.circuit-node-row {
+  overflow: visible;
+  flex-wrap: wrap;
+  row-gap: 12px;
+  padding: 4px 2px 2px;
+}
+.circuit-node-card {
+  min-width: 185px;
+  max-width: 220px;
+  min-height: 78px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+.node-grip {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  color: #2563eb;
+  background: #eff6ff;
+  font-size: 12px;
+  line-height: 1;
+}
+.circuit-zone-branches .node-grip {
+  color: #7c3aed;
+  background: #f5f3ff;
+}
+.node-main strong {
+  font-size: 16px;
+}
+.node-main small {
+  max-width: 150px;
+}
+.component-inspector {
+  padding: 14px;
+}
+.inspector-param-header,
+.inspector-param-row {
+  grid-template-columns: minmax(76px, 1fr) minmax(76px, 1fr) 34px minmax(76px, 1fr) minmax(76px, 1fr);
+  gap: 5px;
+}
+.circuit-model-summary {
+  padding-left: 2px;
+}
+
+@media (max-width: 1260px) {
+  .circuit-builder-layout {
+    grid-template-columns: 1fr;
+  }
+  .component-inspector {
+    order: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .circuit-builder-presets {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .circuit-builder-presets label {
+    min-width: min(100%, 360px);
+  }
+  .equivalent-circuit-builder {
+    min-height: 590px;
+  }
+  .circuit-main-frame,
+  .circuit-branch-frame {
+    left: 170px;
+    right: auto;
+    width: 760px;
+  }
+  .circuit-branch-frame {
+    top: 310px;
+  }
+}
