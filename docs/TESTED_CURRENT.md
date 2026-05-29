@@ -1,4 +1,11 @@
-# Tested current — v1.7.18
+# Tested current — v1.7.19
+
+## v1.7.19 Manual rail / all-trace spreadsheet validation
+
+- Manual uses one webpage-style scroll root with a floating vertical section rail; no independent body/nav scroll panels are used.
+- Spreadsheet preview keeps all traces visible simultaneously; the trace menu only jumps to a trace group.
+- Obsolete archived v1.5 audit/self-audit markdown files are excluded from the active release package.
+
 
 Validated after reverting the Manual reader to one continuous webpage-style scroll root.
 

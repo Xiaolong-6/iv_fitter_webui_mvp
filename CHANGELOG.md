@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.7.19 - Manual section rail and spreadsheet all-trace preview
+
+- Replaced the Manual inline section directory with a slim floating vertical section rail that preserves normal webpage scrolling.
+- Added shaped rail nodes with hover/focus tooltips for section headers while keeping the rail vertical across breakpoints.
+- Kept Spreadsheet preview in all-traces-visible mode; the trace selector now jumps to a group instead of filtering out other traces.
+- Strengthened Spreadsheet preview horizontal scrolling for large/multi-trace datasets.
+- Removed obsolete archived v1.5 audit/self-audit markdown files and stale delivery audit snapshots from the active release package.
+
+
 ## v1.7.18 — Manual normal webpage scrolling fix
 
 - Reverted the failed two-pane Manual reader with independent nav/body scrollbars.

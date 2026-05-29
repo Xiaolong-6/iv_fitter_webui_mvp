@@ -490,26 +490,25 @@ function SectionNavigator({
 }) {
   const items = sectionLabels[language];
   return (
-    <aside
-      className="manual-reader-nav"
-      aria-label={language === "zh" ? "手册章节" : "Manual sections"}
+    <nav
+      className="manual-section-rail"
+      aria-label={language === "zh" ? "手册章节快速定位" : "Manual section quick locator"}
     >
-      <div className="manual-reader-nav-title">
-        {language === "zh" ? "章节" : "Sections"}
-      </div>
-      {items.map((item) => (
+      <div className="manual-section-rail-spine" aria-hidden="true" />
+      {items.map((item, index) => (
         <button
           key={item.id}
           type="button"
-          className={active === item.id ? "active" : ""}
+          className={`manual-rail-node manual-rail-node-${index % 4}${active === item.id ? " active" : ""}`}
           onClick={() => onSelect(item.id)}
-          title={item.label}
+          aria-label={item.label}
+          aria-current={active === item.id ? "true" : undefined}
         >
-          <span>{item.short}</span>
-          <small>{item.label}</small>
+          <span className="manual-rail-shape" aria-hidden="true" />
+          <span className="manual-rail-tooltip">{item.label}</span>
         </button>
       ))}
-    </aside>
+    </nav>
   );
 }
 

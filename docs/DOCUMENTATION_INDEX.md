@@ -50,8 +50,6 @@ This file is the stable entry point for IV-fitter Web UI documentation.
 
 ## Archived historical docs
 
-Older v1.5 self-audit and release-candidate audit markdown files are archived under:
-
-- `docs/archive/v1_5_audits/`
+Historical v1.5 self-audit and release-candidate audit markdown files were removed from the active release package. Use version-control history if old audit snapshots are needed.
 
 Do not recreate one-off handoff/tested/audit files for every small internal iteration. Update the current handoff/tested documents instead, and only create a version-specific document for a major public release or external audit package.

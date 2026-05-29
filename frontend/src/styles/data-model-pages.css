@@ -1689,3 +1689,33 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
     width: 100%;
   }
 }
+
+/* v1.7.19: Spreadsheet preview shows all traces simultaneously; the trace menu only jumps. */
+.spreadsheet-toolbar select[aria-label*="Jump"],
+.spreadsheet-toolbar select[aria-label*="定位"] {
+  min-width: calc(190px * var(--app-zoom));
+}
+.webpage-data-layout .spreadsheet-card .spreadsheet-wrap,
+.webpage-data-layout .spreadsheet-wrap {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.grouped-spreadsheet {
+  min-width: calc(760px * var(--app-zoom));
+  width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.grouped-spreadsheet th,
+.grouped-spreadsheet td {
+  white-space: nowrap;
+}
+.grouped-spreadsheet .trace-group-row td {
+  scroll-margin-top: calc(38px * var(--app-zoom));
+}
+.grouped-spreadsheet th:nth-child(1),
+.grouped-spreadsheet td:nth-child(1) { min-width: calc(72px * var(--app-zoom)); }
+.grouped-spreadsheet th:nth-child(2),
+.grouped-spreadsheet td:nth-child(2),
+.grouped-spreadsheet th:nth-child(3),
+.grouped-spreadsheet td:nth-child(3) { min-width: calc(180px * var(--app-zoom)); }

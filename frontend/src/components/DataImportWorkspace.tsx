@@ -186,7 +186,6 @@ export function DataImportWorkspace({
     language === "zh"
       ? "选择原始导入列的实际单位。数据会立即换算成 V/A 用于预览、绘图和拟合。"
       : "Select the actual unit of the imported column. Data is immediately converted to V/A for preview, plots, and fitting.";
-  const [previewTraceFilter, setPreviewTraceFilter] = useState("all");
   const [previewSearch, setPreviewSearch] = useState("");
   const appendNextImportRef = useRef(false);
   const isErrorMessage = Boolean(
@@ -220,13 +219,17 @@ export function DataImportWorkspace({
     return () => window.clearTimeout(timer);
   }, [message, isErrorMessage]);
 
+  const traceGroupElementId = (traceId: string) =>
+    `preview-trace-${traceId.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+
+  function jumpToPreviewTrace(traceId: string) {
+    const target = document.getElementById(traceGroupElementId(traceId));
+    target?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+  }
+
   const previewGroups = useMemo(() => {
     const needle = previewSearch.trim().toLowerCase();
-    const filteredTraces = traces.filter(
-      (trace) =>
-        previewTraceFilter === "all" || trace.trace_id === previewTraceFilter,
-    );
-    return filteredTraces
+    return traces
       .map((trace) => {
         const n = Math.min(trace.voltage_V.length, trace.current_A.length);
         const rows = Array.from({ length: n }, (_, idx) => ({
@@ -252,7 +255,7 @@ export function DataImportWorkspace({
         };
       })
       .filter((group) => group.rows.length > 0 || !needle);
-  }, [traces, previewTraceFilter, previewSearch, selected?.trace_id]);
+  }, [traces, previewSearch, selected?.trace_id]);
 
   function importedResponseToTraces(response: ImportCsvTextMultiResponse) {
     const imported = response.traces.map((item) =>
@@ -301,7 +304,6 @@ export function DataImportWorkspace({
     const nextTraces = append ? [...traces, ...nextImported] : nextImported;
     onTraces(nextTraces);
     if (nextImported[0]) onSelectTrace(nextImported[0].trace_id);
-    setPreviewTraceFilter("all");
     setImportExpanded(false);
   }
 
@@ -801,12 +803,15 @@ export function DataImportWorkspace({
             </div>
             <div className="spreadsheet-toolbar">
               <select
-                aria-label={language === "zh" ? "Trace 筛选" : "Trace filter"}
-                value={previewTraceFilter}
-                onChange={(event) => setPreviewTraceFilter(event.target.value)}
+                aria-label={language === "zh" ? "快速定位 trace group" : "Jump to trace group"}
+                defaultValue=""
+                onChange={(event) => {
+                  if (event.target.value) jumpToPreviewTrace(event.target.value);
+                  event.currentTarget.value = "";
+                }}
               >
-                <option value="all">
-                  {language === "zh" ? "全部 traces" : "All traces"}
+                <option value="">
+                  {language === "zh" ? "跳转到 trace…" : "Jump to trace…"}
                 </option>
                 {traces.map((trace) => (
                   <option key={trace.trace_id} value={trace.trace_id}>
@@ -853,6 +858,7 @@ export function DataImportWorkspace({
                   {previewGroups.map((group) => (
                     <Fragment key={group.trace.trace_id}>
                       <tr
+                        id={traceGroupElementId(group.trace.trace_id)}
                         key={`${group.trace.trace_id}-group`}
                         className={
                           group.selected
@@ -883,8 +889,8 @@ export function DataImportWorkspace({
             </div>
             <p className="muted spreadsheet-note">
               {language === "zh"
-                ? "按 trace 分组显示，当前选中 trace 的组标题和行会高亮。"
-                : "Rows are grouped by trace; the selected trace group and rows are highlighted."}
+                ? "所有 traces 同时显示；下拉菜单只用于快速定位某个 trace group。表格可横向滚动。"
+                : "All traces remain visible at the same time; the menu only jumps to a trace group. The table can scroll horizontally."}
             </p>
           </section>
         ) : null}

@@ -1,5 +1,13 @@
 # Validation history
 
+## v1.7.19
+
+- Replaced Manual section directory with a slim floating vertical section rail using shaped nodes and hover/focus labels.
+- Preserved single-page Manual scrolling; no horizontal tabs and no independent two-pane scroll containers.
+- Changed Spreadsheet preview trace selector from filtering to quick group location while keeping all traces visible.
+- Removed obsolete archived audit markdown files from the release package.
+
+
 This document summarizes release-level validation. Use `docs/TESTED_CURRENT.md` for the exact current commands and results.
 
 ## Current validation record
@@ -21,7 +29,7 @@ This document summarizes release-level validation. Use `docs/TESTED_CURRENT.md` 
 - Backend pytest passed: 122 tests.
 - Backend compileall passed.
 - Fixed the Data Import blank-page regression after loading data.
-- Cleaned stale handoff/import docs and archived obsolete v1.5 audit markdown files.
+- Cleaned stale handoff/import docs and removed obsolete archived v1.5 audit markdown files from the active release package.
 
 ## Recent validation summary
 
@@ -52,7 +60,7 @@ This document summarizes release-level validation. Use `docs/TESTED_CURRENT.md` 
 | 1.3.0–1.3.10 | Web UI workflow, plotting, model builder, equation preview, selected trace behavior | Historical alpha stabilization. |
 | 1.3.11–1.3.16 | Audit readiness, import warnings, data-unit safety, mobile layout, manual formulas | Superseded by current webpage-style workflow. |
 | 1.4.x | Photocurrent laws, LAN testing, HappyMeasure CSV import, mobile run-state feedback, user-facing Function Guide | Historical feature expansion. |
-| 1.5.x | Workflow-centered shell, release-manager notes, fitting/data responsive polish | Old v1.5 audit markdown files are archived under `docs/archive/v1_5_audits/`. |
+| 1.5.x | Workflow-centered shell, release-manager notes, fitting/data responsive polish | Old v1.5 audit markdown files are intentionally excluded from the active release package; use version-control history for historical snapshots. |
 
 ## Policy for future validation docs
 
