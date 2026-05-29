@@ -12,7 +12,8 @@ import {
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { HelpTip } from "./HelpTip";
-import { addDefinitionToModel, addSecondaryDiodeToModel, applyNicknameToParams, buildPendingComponent } from "../model-builder/mutations";
+import { addDefinitionToModel, applyNicknameToParams, buildPendingComponent } from "../model-builder/mutations";
+import { createInitialModel } from "../model/defaults";
 import { allowedPolarities, bucketForComponent, bucketLocations, builderBuckets, definitionsForBucket as bucketDefinitions, isDuplicateBlocked, nickname, type BuilderBucket, type ModelLocation } from "../model-builder/rules";
 import { localizedFunctionLabel } from "../content/localizedText";
 
@@ -61,13 +62,7 @@ const BUILDER_PRESET_STORAGE_KEY = "ivfitter.builderCustomPresets.v1";
 type BuilderPreset = { name: string; model: ModelSpec };
 function cloneModelForPreset(model: ModelSpec): ModelSpec { return JSON.parse(JSON.stringify(model)) as ModelSpec; }
 function makeSingleDiodePreset(model: ModelSpec): ModelSpec {
-  const next = cloneModelForPreset(model);
-  const primary = next.core.find((comp) => comp.function_type === "diode") ?? next.core[0];
-  return {
-    ...next,
-    core: primary ? [{ ...primary, id: "D1", metadata: { ...(primary.metadata ?? {}), nickname: "D1", role: "primary" } }] : next.core,
-    parallel: next.parallel.filter((comp) => comp.function_type !== "diode" && String(comp.metadata?.nickname ?? "") !== "D2"),
-  };
+  return createInitialModel(String(model.version ?? "1.7.9"));
 }
 function makeDoubleDiodePreset(model: ModelSpec): ModelSpec {
   const base = makeSingleDiodePreset(model);
@@ -77,8 +72,15 @@ function makeDoubleDiodePreset(model: ModelSpec): ModelSpec {
   return {
     ...base,
     parallel: [
-      ...base.parallel.filter((comp) => comp.function_type !== "diode" && String(comp.metadata?.nickname ?? "") !== "D2"),
-      { ...d2, id: "D2", location: "parallel", placement: "parallel_current_branch", metadata: { ...(d2.metadata ?? {}), nickname: "D2", role: "secondary" } },
+      ...base.parallel,
+      {
+        ...d2,
+        id: "D2",
+        location: "parallel",
+        placement: "parallel_current_branch",
+        params: Object.fromEntries(Object.entries(d2.params).map(([key, param]) => [key, { ...param, value: key === "I0_A" ? 1e-14 : param.value, label: key === "I0_A" ? "I02" : param.label }])) as ComponentSpec["params"],
+        metadata: { ...(d2.metadata ?? {}), nickname: "D2", role: "secondary" },
+      },
     ],
   };
 }
@@ -298,18 +300,6 @@ function ComponentCard(props: {
   );
 }
 
-function branchDiodes(model: ModelSpec) {
-  return [...model.core, ...model.parallel].filter((comp) => comp.function_type === "diode");
-}
-
-function hasSecondaryForwardDiode(model: ModelSpec) {
-  return branchDiodes(model).some((comp) => comp.polarity === "forward" && comp.metadata?.role === "secondary");
-}
-
-function canAddSecondaryDiode(model: ModelSpec) {
-  const forwardDiodes = branchDiodes(model).filter((comp) => comp.polarity === "forward");
-  return forwardDiodes.length === 1 && !hasSecondaryForwardDiode(model);
-}
 
 export function ModelBuilder({ model, registry, onChange, language, disabled = false }: Props) {
   const [selected, setSelected] = useState<Record<string, string>>({});
@@ -362,13 +352,6 @@ export function ModelBuilder({ model, registry, onChange, language, disabled = f
     onChange(result.model);
   }
 
-  function addSecondaryDiode() {
-    if (!canAddSecondaryDiode(model)) return;
-    const diodeDefinition = registry.find((definition) => definition.function_type === "diode");
-    if (!diodeDefinition) return;
-    const result = addSecondaryDiodeToModel(model, diodeDefinition, "forward");
-    onChange(result.model);
-  }
 
   return (
     <section className="card model-builder">
@@ -405,11 +388,6 @@ export function ModelBuilder({ model, registry, onChange, language, disabled = f
               disabledReason={disabled ? (language === "zh" ? "拟合运行中，暂时不能修改模型。" : "Fit is running; model edits are temporarily disabled.") : duplicateBlocked ? duplicateReason : undefined}
             />
             {components.length === 0 && <div className="empty-line">{t(language, "noComponents")}</div>}
-            {bucket === "branches" && registry.some((definition) => definition.function_type === "diode") && canAddSecondaryDiode(model) ? (
-              <button type="button" disabled={disabled} className="secondary-diode-button" onClick={addSecondaryDiode} title={language === "zh" ? "添加带 secondary/recombination 角色的 D2，而不是普通重复 D1。" : "Add a role-aware D2 instead of an ordinary duplicate D1."}>
-                {language === "zh" ? "添加双二极管 D2（secondary）" : "Add secondary diode D2"}
-              </button>
-            ) : null}
             {components.map(({ location, comp }) => (
               <ComponentCard
                 key={comp.id}

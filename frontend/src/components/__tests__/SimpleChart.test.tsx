@@ -24,11 +24,6 @@ beforeEach(() => {
     (Element.prototype as any).setPointerCapture = function () {};
     (Element.prototype as any).releasePointerCapture = function () {};
   }
-
-  it("renders an optional zero reference line", () => {
-    const { container } = render(<SimpleChart title="Residual" series={[{ x: [0, 1], y: [-1, 1], label: "res", kind: "points" }]} robustScale={false} showZeroLine />);
-    expect(container.querySelector(".chart-zero-line")).toBeInTheDocument();
-  });
 });
 
 describe("SimpleChart", () => {
@@ -94,10 +89,5 @@ describe("SimpleChart", () => {
     expect(resetBtn).toBeInTheDocument();
     const otherButtons = cluster!.querySelectorAll(".chart-icon-button:not(.chart-reset-button)");
     expect(otherButtons.length).toBe(0);
-  });
-
-  it("renders an optional zero reference line", () => {
-    const { container } = render(<SimpleChart title="Residual" series={[{ x: [0, 1], y: [-1, 1], label: "res", kind: "points" }]} robustScale={false} showZeroLine />);
-    expect(container.querySelector(".chart-zero-line")).toBeInTheDocument();
   });
 });

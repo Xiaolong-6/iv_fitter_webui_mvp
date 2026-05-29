@@ -346,14 +346,6 @@ button.running { cursor: progress; opacity: 0.85; }
   gap: 4px;
   white-space: nowrap;
 }
-.secondary-diode-button {
-  width: 100%;
-  margin: 6px 0 4px;
-  border-color: #bfdbfe;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-weight: 700;
-}
 @media (max-width: 720px) {
   .interactive-parameter-table {
     min-width: 760px;

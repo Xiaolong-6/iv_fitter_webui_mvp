@@ -550,7 +550,6 @@ export function FittingPage() {
                         setNoTraceRunAttempted(false);
             }}
             onNextToFitting={() => setActiveView("model")}
-            model={model}
           />
         ) : activeView === "model" ? (
           <ModelWorkflowPage
@@ -585,7 +584,8 @@ export function FittingPage() {
                                 setNoTraceRunAttempted(false);
                 }}
                 model={model}
-                    disabled={isFitting}
+                language={language}
+                disabled={isFitting}
               />
             }
           />
@@ -647,7 +647,7 @@ export function FittingPage() {
             appVersion={APP_VERSION}
             leftPct={reportPanePct}
             onResizeStart={(event) =>
-              startPaneResize(event, setReportPanePct, 54, 82)
+              startPaneResize(event as ReactPointerEvent<HTMLDivElement>, setReportPanePct, 54, 82)
             }
           />
         ) : (

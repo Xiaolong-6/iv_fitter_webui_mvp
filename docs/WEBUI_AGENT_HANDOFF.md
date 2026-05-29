@@ -1,310 +1,115 @@
-# IV-fitter Web UI agent handoff
+# Web UI agent handoff — v1.7.11
 
-Current package: **v1.7.5**.
+## Current baseline
 
-This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
+Continue from **v1.7.11**. This version fixes the Data Import blank-page regression after loading data and completes a cleanup pass after the recent UI simplification work.
 
-## First documents to read
+Do not base new work on the old v1.5 audit notes. Historical v1.5 audit files are archived under `docs/archive/v1_5_audits/`.
 
-1. `PROJECT_RULES.md`
-2. `docs/DOCUMENTATION_INDEX.md`
-3. `docs/DEVELOPMENT_PRINCIPLES.md`
-4. this file
-5. `README.md`
-6. `docs/TESTED_CURRENT.md`
+## Non-negotiable project rules
 
-## Product purpose
+- If the architecture or implementation intent is unclear, stop and confirm before changing code.
+- Keep fitting physics, backend APIs, saved-model compatibility, and report numerical semantics unchanged unless the user explicitly asks for a model/physics change.
+- Every versioned change must update version files, changelog, tested-current notes, and relevant docs.
+- Do not claim tests passed unless they were actually run in the current working tree.
+- Do not put human local paths, private names, API tokens, or personal data in commits, changelogs, release notes, screenshots, or generated docs.
+- Keep simulator/debug paths independently testable and separated from normal user workflow.
 
-IV-fitter Web UI has one core job: help users import I-V data, build physically interpretable circuit models, fit traces, inspect residuals/warnings, and export defensible results. Do not add features that make this workflow slower, less reliable, or more confusing.
+## Current page architecture
 
+### Welcome / Start
 
-## Durable engineering principles
+- Welcome is a centered, limited-width webpage-style page.
+- No embedded External tester mode in the user-facing Start page.
 
-The recurring fixes in this repository have turned into operating rules. Read `docs/DEVELOPMENT_PRINCIPLES.md` before changing layout, fitting, parameters, reports, or model semantics. The highest-risk rules are:
+### Import / Data
 
-- Preserve scientific contracts before UI polish: do not silently change equations, optimizer behavior, parameter keys, backend APIs, saved-model compatibility, or report schemas.
-- Protect independent scroll regions: Model Builder, Model Preview / Equation Preview, Parameters, plots, and Report content must remain independently usable after layout changes.
-- Never silently overwrite user intent: user-edited bounds/initials/fixed-state choices must survive unrelated changes; automatic suggestions need visible provenance and rollback.
-- Use Law → Form → Placement vocabulary for models; do not collapse neutral mathematical components into device-specific labels.
-- Update changelog, tested-current notes, handoff/version metadata, and user/transparency docs for every meaningful change.
+- Single-column webpage flow:
+  1. Import data
+  2. Trace selection
+  3. Plot review
+  4. Spreadsheet preview
+- Trace selection, Plot review, and Spreadsheet preview are hidden until data is loaded.
+- After import/parse, Import data collapses into a compact summary but must remain re-expandable.
+- Do not reintroduce a separate user-facing Import quality card.
+- Spreadsheet preview shows all loaded traces and highlights the selected trace.
+- Current runtime-crash guard: `DatasetNameInput` is defined locally in `DataImportWorkspace.tsx` and must remain available because it renders only after data is loaded.
 
+### Model
 
+- Single-column webpage flow: Model Builder first, Model preview underneath.
+- Model Builder shows Main path and Junction branches in two columns on wide screens.
+- Equivalent circuit includes a preset selector.
+- Selecting Single diode model or Double diode model replaces the current model. It must not incrementally add components.
+- Do not reintroduce the standalone `Add secondary diode D2` button; D2 is available through the Double diode preset.
+- Model preview has a Go to Fitting action.
 
-## v1.7.4 blank-page regression hotfix
+### Fit
 
-v1.7.3 blanked Data/Model/Fitting/Report because required `language` props were not passed after UI decluttering. v1.7.4 restores those props and makes translation helpers fall back to English if language is omitted. Keep this as a regression check before future UI cleanup.
+- Single-column webpage flow.
+- Fit setup stays compact and sticky at the top.
+- Objective / run options / solver live in an Advanced popover. The popover must float above content, not push plots/parameters down, and must close on outside click.
+- Fit and Manual pages must scroll normally.
 
-## v1.7.5 webpage-layout rule
+### Report
 
-Data/Import should behave like a normal scrollable webpage, not a dense dashboard: show Import data first, then reveal Trace selection, Plot review, and Spreadsheet preview only after data is loaded. Keep page content centered with a readable maximum width on wide screens. Model should also read top-to-bottom: Model Builder first, Model preview / Equation Preview directly underneath. Avoid duplicate outer section titles when the child component already has its own visible title.
+- Report is a single-column reader layout.
+- Exports is a draggable floating panel that must not overlap the dock/sidebar.
+- The in-app report body should match exported HTML ordering:
+  1. IV-fitter report
+  2. Warnings and diagnostics
+  3. Critical issue
+  4. Fit process and quality metrics
+  5. Parameters
+  6. Plots
+  7. Equivalent circuit
+  8. Model evaluation summary
+  9. Generated report text
+- Report plots must have explicit bounded height so they do not collapse to title-only or grow indefinitely.
+- Fit process and quality metrics must use human-readable labels and formatted values.
 
-## v1.7.3 UI-surface rule
+### User Manual
 
-Do not put internal release-gate, audit, tester-preparation, or debug-seeding controls on the main user-facing UI. Keep those functions in scripts, docs, tests, or developer-only workflows unless the user explicitly requests a visible operator panel. The sidebar should stay task-focused and should not include a persistent newest-version link. Parameter table controls should stay limited to direct user editing and Fit/Fixed toggles; do not reintroduce Restore / Apply bounds / Seed synthetic / global diagnostic filters in the normal workflow.
+- One-column reader layout.
+- Version check is at the top.
+- Sections are a floating locator/navigation aid, not a fixed side panel.
 
-## Current architecture
+## Key files
 
-```text
-React/Vite frontend -> FastAPI API -> Python fitting core
-```
+- `frontend/src/components/DataImportWorkspace.tsx` — Import page, collapsed import card, trace selection, all-trace spreadsheet preview.
+- `frontend/src/components/ModelBuilder.tsx` — model builder, model presets, component layout.
+- `frontend/src/components/FitConfigPanel.tsx` — compact Fit setup and Advanced popover.
+- `frontend/src/pages/components/WorkflowSections.tsx` — page-level Import/Model/Fit composition.
+- `frontend/src/pages/components/ReportWorkflowPage.tsx` — in-app Report layout, floating Exports, report sections.
+- `frontend/src/model/htmlReport.ts` — exported HTML report layout/order.
+- `frontend/src/components/UserDocumentationPage.tsx` — one-column manual and floating section locator.
+- `frontend/src/model/parameterGrouping.ts` — grouped parameters and component Fit/Fix helper.
+- `frontend/src/styles/*.css` — page layout, report/manual responsiveness, chart containment.
 
-- Frontend owns interaction, layout, language selection, and user-facing documentation.
-- Backend owns import parsing, model validation, fitting, warnings, equation summaries, and report data.
-- The model architecture is Law / Form / Placement. User-facing placement is **Main path** and **Branches**.
+## Validation commands
 
-## Current important features
+From the project root:
 
-- HappyMeasure CSV v2 import compatibility for single, wide, and long exports, including current-source conversion.
-- Data workspace unit selectors describe the imported column units and rescale the trace to internal SI V/A.
-- The app is a general compact-circuit fitting tool. Avoid presenting the workflow as specific to one device family; domain-specific interpretations belong in the user's modeling/report narrative.
-- Model Builder equivalent-circuit preview uses a compact topology diagram with main path on top and branches below Vj.
-- Model Builder is compact: component nicknames are edited directly, and parameter initials/bounds/fixed state are handled in the Parameters table rather than duplicated in builder cards.
-- Parameters are displayed by placement and component instance. Keep parameter keys unchanged for fitting, save/load, JSON export/import, and reports. After a completed fit, fitted values are written into the model as next-run initial values only if the fit passes reportability/quality gating; poor fits remain visible but must not silently overwrite trusted initials. Normal users edit initial values and bounds directly in the table; internal restore, synthetic seed, and automatic bounds helpers must stay out of the main UI unless explicitly requested.
-- The UI is workflow-centered: Start, Data, Model, Fitting, Report, and Help. Do not reintroduce a single Workspace tab as the main task surface.
-- Model Builder and model preview belong on Model. Fit setup, plots, and Parameters belong on Fitting. Full fit process/quality diagnostics and exports belong on Report. The full manual belongs on Help.
-- User-facing text should move toward content modules and translation-ready documents; start with `docs/LOCALIZATION_AND_TEXT.md` before adding new visible UI copy.
-- User manual Function Guide is user-facing by default. Internal schema terms are only allowed in collapsed Advanced details.
-- Mobile portrait layout uses the same primary Fit setup controls as desktop; do not reintroduce a duplicate bottom Run/Stop action bar.
-- Fit setup owns Run fit/Stop actions, compact fitting status, no-trace validation, and running feedback. The Report action belongs under the fit check/status summary and should change tone with the check state; do not put Report back into the Run/Stop action row.
-- Fitting has visible running feedback, Stop behavior for ignoring an in-flight result, and expanded app-local zoom. While fitting, disable model/parameter/setup/import/report edits but keep Stop available.
-- LAN testing helper `04c_run_lan_dev.bat` starts both backend and frontend and prints phone/tablet URLs.
-
-## Known boundaries
-
-- Graph DC solver remains experimental; do not present it as the default report-grade solver without additional validation.
-- Two-trace `ΔI(V)` light/dark preview is not implemented.
-- One-click light-response presets are not implemented.
-- The lightweight math renderer is purpose-built for the app's formulas; it is not a general LaTeX engine.
-- Do not introduce new frontend libraries, math-rendering packages, services, or build systems without explicit user approval.
-
-## Documentation policy
-
-- Use `docs/DOCUMENTATION_INDEX.md` as the map.
-- Use `docs/TESTED_CURRENT.md` for current validation.
-- Use `docs/VALIDATION_HISTORY.md` for historical validation summaries.
-- Do not recreate root-level `HANDOFF_*.md` or many `docs/TESTED_*.md` files for routine internal versions.
-- Keep README human-facing. Put agent/process details here or in `PROJECT_RULES.md`.
-
-## Required validation before handoff
-
-For code or UI changes, run when feasible:
-
-```powershell
-npm install
+```bash
+cd frontend
+npm install --include=dev
+npm run test -- --run --reporter=dot
 npm run build
-PYTHONPATH=backend python -m pytest backend/tests -q
-python -m compileall -q backend/ivfitter backend/tests
+
+cd ../backend
+python -m pytest -q
+python -m compileall -q ivfitter
 ```
 
-For docs-only changes, still run the full set if dependency availability allows it; otherwise clearly state what was not run.
-
-## Required manual test in final response
-
-After every change, provide a 3-step browser test that does not require reading source code. The user should be able to verify the change through the UI or visible files.
-
-
-
-## Current frontend structure note
-
-- `frontend/src/pages/FittingPage.tsx` is now a workflow coordinator. Page sections, report rendering, fit actions/messages, layout state, pane resizing, and default model/config are extracted into focused modules. Avoid moving large JSX blocks back into the page.
-- `frontend/src/style.css` is an import manifest. Add CSS to the owning module under `frontend/src/styles/` and follow `docs/FRONTEND_STYLESHEET_ARCHITECTURE.md`.
-- The current release-candidate target is to keep `FittingPage.tsx` under roughly 800 lines and avoid normal `!important` usage in CSS.
-
-## Current validation note
-
-- v1.5.43 validation is recorded in `docs/TESTED_CURRENT.md`.
-- Current expected validation commands are backend pytest, backend compileall, frontend Vitest, and frontend production build.
-
-## v1.4.35 Fit setup and Model Builder interaction note
-
-- Fit setup must remain visually compact. Use small status badges for Ready/Running/Converged, warning counts, and error counts. Do not reintroduce full-width amber backgrounds for successful converged states.
-- Put residual caution and backend warnings inside one Diagnostics disclosure. Avoid separate persistent "Caution" and "Warnings" blocks.
-- Disabled Stop and Report should look neutral. Stop should be visually dangerous only while an actual fit is running.
-- `V min` / `V max` blank placeholders should show the selected trace's actual finite min/max voltage. Leaving them blank still means backend `v_min`/`v_max` are unset and the full selected trace range is used.
-- Duplicate model selections should disable only Add, not the model dropdown. Users must be able to change the dropdown away from a duplicate choice.
-
-## v1.4.33 parameter auto-seeding and localization note
-
-- Parameter table organization is display-only. Do not rename internal parameter keys when changing grouping, filters, labels, export, report, or save/load behavior.
-- Prefer `frontend/src/model/parameterGrouping.ts` for grouping, component batch behavior, whole-model seed-from-fitted logic, and restore-from-snapshot logic instead of reimplementing those rules inside React components.
-- Prefer `frontend/src/content/localizedText.ts` and `frontend/src/model/i18n.ts` for visible labels/help text. Avoid scattering translation strings across component bodies.
-- Keep explanatory text out of the visible task pages when it can live in HelpTips, the Help page, or localization docs.
-
-
-## v1.4.9 selected-column HappyMeasure fix
-
-HappyMeasure combined wide-v2 files contain a trace-metadata table before the actual `# section,data` table. The generic single-trace importer must read the explicit data section before applying user-selected `voltage_col` / `current_col`; otherwise selected columns such as `Voltage_V` and `T001 Device_14 [Current_A]` are reported as missing. Keep the anonymized fixture in `examples/parser_fixtures/happymeasure/` for regression coverage.
-
-
-## Sample data note
-
-The Data page sample loader is intentionally tied to the full anonymized HappyMeasure combined wide-v2 CSV. Do not replace it with a cropped fixture or a synthetic in-memory trace unless the user explicitly asks. The sample is meant to exercise the same importer path users need for HappyMeasure multi-trace files.
-
-
-## Plot selector note
-
-The Plots section now owns a user-facing trace selector. Do not re-add explanatory text like "Showing selected trace only..." in the plot header; the selector itself communicates which trace is active. Keep Data and Plot trace selectors bound to the same selected-trace state.
-
-
-## Main-path transport note
-
-Main path now exposes advanced transport / voltage-drop forms in the Model Builder menu. Keep this distinction intact:
-
-- branch functions contribute current at `V_j`;
-- main-path functions consume voltage or modify effective series transport before branch currents are evaluated.
-
-Do not reframe branch current laws as main-path terms unless they have a clear voltage-drop or transport-modifier evaluation form. Do not add device-specific aliases when the same math is already represented by an existing circuit term or custom expression.
-
-
-## Stabilization note
-
-Current stabilization guards include: APP_VERSION fallback to `dev`, abortable equation-preview requests, expanded ErrorBoundary coverage, diagnostic-only graph_dc reportability, deprecated `seed_scale_factors` warning, stricter photocurrent sign validation, and near-zero-current exclusion for log-magnitude metrics. Keep these regression tests active when changing fitting configuration, equation preview, or model validation.
-
-## v1.4.18 stabilization refactor note
-
-This release is a refactor-only stabilization pass. Model Builder add/duplicate rules now live in pure frontend modules under `frontend/src/model-builder/`. Fitting orchestration stays in `fitting_engine.py`, while model evaluation, residuals, metrics, multistart, warnings, and reportability decisions are split into focused backend helper modules. Do not re-inline these helpers into UI or fitting orchestration unless a testable architecture reason is documented.
-
-## v1.4.18 semantic consistency note
-
-Backend validation is the guardrail for imported or hand-edited model JSON. Location, placement, and evaluation form must agree: series components are only valid as series voltage drops or series conductance modifiers, while core/parallel components are only valid as current branches. Duplicate same law/form/placement/polarity components are non-reportable errors.
-
-
-## v1.4.29 User manual integration note
-
-The in-app User manual now integrates the reviewed tutorial-style manual draft. Treat `frontend/src/components/UserDocumentationPage.tsx` as the source for the UI manual content and `frontend/src/styles/user-documentation.css` as the dedicated style layer. The UI intentionally separates English and Chinese through the language selector; do not paste bilingual paragraphs into one visible panel. Keep formulas rendered through `MathFormula` and keep backend implementation details collapsed in Advanced details.
-
-
-## v1.4.29 manual-reader note
-
-The User Manual is intentionally a navigation-style reader rather than a long scroll page. Keep it one-section-at-a-time. The Function Guide should remain selector/detail, not a full list of expanded model cards. The Law/Form/Placement chapter is integrated into the manual to explain how laws become meaningful model terms.
-
-
-## v1.4.29 workflow note
-
-Default D1 is now explicit forward-polarity with primary role metadata. Ordinary duplicate Add still blocks same law/form/placement/polarity; use the D2 role-aware action for a two-diode model. The Parameters table is interactive and edits the next-fit model parameters. Diagnostics live inside Fit setup. Keep fit controls out of Data and User Manual views.
-
-
-## v1.4.29 layout note
-
-The Parameters table is intentionally responsive: desktop/wide screens should allocate more width to the editable table and avoid cramped horizontal scrolling, while small screens may keep horizontal scroll as a safety fallback.
-
-
-## v1.4.29 compact-status note
-
-The Fit setup action area should stay compact. Do not reintroduce stacked full-height status, verdict, and warning boxes. Keep detailed verdict and warning lists behind one Diagnostics disclosure.
-
-
-## v1.4.29 Parameters layout note
-
-Persistent warnings no longer occupy a result-grid side panel, so the old two-column result grid should not constrain Parameters. Keep `.main-result-grid` single-column unless another persistent side panel is reintroduced.
-
-
-## v1.4.29 Model Builder note
-
-Do not duplicate disabled-button explanations as visible inline warnings under Add rows. Keep duplicate/equivalent guidance available through the disabled button title/hover unless there is a true blocking error that needs a top-level warning.
-
-- v1.4.29 correction: the role-aware D2 action is single-use. Do not allow repeated D3/D4 secondary diodes from the same button.
-
-
-## v1.4.29 Data page note
-
-The Data page should stay in a two-row aligned layout: Import data + Trace selection in row 1, Paste data + Spreadsheet preview in row 2. Do not repeat V/I column names in both Trace facts and Import quality; keep metadata compact.
-
-
-## v1.4.29 mobile Data note
-
-Keep the Data page mobile preview contained: Spreadsheet preview should scroll internally and not extend behind the bottom navigation. Navigation tabs intentionally have no subtitles. Sidebar note: “Fit locally. Review before reporting.”
-
-- v1.4.29 correction: Workspace section-header subtitles are intentionally hidden; do not re-add range/objective/run-option hint text after section titles.
-
-- v1.4.29 correction: keep hover/help wording user-facing. Avoid exposing schema/developer terms in UI titles or HelpTips; put deeper schema language only in advanced documentation.
-
-- v1.4.29 correction: Main path / Junction branches explanatory text is HelpTip-only; do not repeat it visibly below headers.
-
-
-## v1.4.29 sidebar note
-
-Dock/sidebar default is collapsed. Language selector dropdown options are explicitly styled dark-on-light for readability in the dark sidebar.
-
-
-## v1.4.29 audit/workflow note
-
-Run timeout is now part of FitConfig and defaults to 60 s. Frontend abort is paired with backend cooperative timeout checks; do not rely on browser abort alone for long solver runs. Starting a new run must clear old result/report/warning/verdict state. Parameters table should use scientific notation for very small/large numbers.
-
-
-## v1.5.42 release-manager and invalid-report note
-
-- Read `docs/RELEASE_MANAGER.md` before changing release-check or GitHub release scripts.
-- Invalid/non-reportable Report tab states must remain diagnostic-only and must not be presented as normal validated reports.
-- Do not put GitHub write tokens in frontend code or normal runtime code.
-- Parameters table containment was fixed after v1.5.36; verify it after CSS changes.
-
-## v1.5.42 manual/update-panel note
-
-- Keep the User Manual sidebar focused on navigation. Do not place full release notes or asset lists permanently in the sidebar.
-- The in-app release checker must distinguish `Update available`, `Up to date`, `Local version newer than public release`, and `Check failed`.
-- Release notes/assets may be shown in a compact details disclosure, not as always-visible manual content.
-- Manual equations should use readable user-facing labels such as External voltage balance and Total current.
-
-
-## v1.5.42 continuous manual reader note
-
-The User Manual is now one continuous scrollable document. The left section list is quick-position navigation only; clicking a section scrolls the manual content pane and does not replace the body with a single section. Preserve this behavior unless a future design explicitly reintroduces paginated manual reading.
-
-
-## v1.5.42 fitting controls and manual navigation note
-
-- Sidebar label changed from Start here to Start.
-- Start-page primary actions are intentionally larger touch targets.
-- Fitting plot defaults now favor paired diagnostics: Linear I-V + signed residual, with Log |I| + log residual available.
-- Plots and Parameters in the Fitting page have a vertical drag splitter. Preserve this split when changing fitting layout.
-- Chart controls use icon-style zoom/pan/reset buttons with larger click targets. Do not regress to tiny text controls.
-- Manual navigation is a compact quick-position tab list for the continuous manual document; subtitles under section tabs were intentionally removed.
-
-## v1.5.42 compact chart-control hotfix
-
-- Fixed chart toolbar SVG sizing regression by scoping main chart sizing rules to `.simple-chart > svg`.
-- Toolbar icon SVGs now use explicit compact dimensions and no longer inherit chart SVG width/max-height rules.
-- Removed the repeated visible Wheel zoom label; wheel guidance remains in tooltip text.
-- No fitting physics, backend API, report schema, release-manager behavior, or Manual reader flow changed.
-
-
-## v1.5.43 fitting/data responsive polish note
-
-- Fitting page responsive polish is UI-only: no fitting math, backend API, report schema, saved-model, Manual, or release-manager behavior changed.
-- Data page now uses source tabs for Upload/Paste/Sample, includes drag-and-drop upload, and gives imported traces more space for plot/table preview.
-- Chart controls should remain compact header controls; do not reintroduce large overlay controls that cover legends or data.
-- Fit setup must remain pane-width responsive at high zoom; Run should stay full-width when the pane is narrow.
-
-
-## v1.7.1 handoff
-
-Work from v1.7.1 if continuing this branch. The key changed files are:
-
-- `frontend/src/model/parameterGrouping.ts` — placement grouping, filter counts, component law/form/placement metadata, component seed-from-fit.
-- `frontend/src/components/ParameterTable.tsx` — grouped parameter UI, diagnostic strip, component-level seed action.
-- `frontend/src/components/ExternalTesterChecklist.tsx` — embedded external tester workflow on Start page.
-- `frontend/src/services/releaseCheck.ts` and `ReleaseStatusPanel.tsx` — testable release readiness gate and privacy scan.
-
-Do not claim frontend validation until `npm run test -- --run --reporter=dot` and `npm run build` have been run locally.
-
-## v1.7.6 handoff
-
-Continue from v1.7.6 for report-page work. The Report page was intentionally changed so the left column is the control/export panel and the right column is the report document body. Preserve the report-body section order because it is now matched to exported HTML:
-
-1. IV-fitter report
-2. Warnings and diagnostics
-3. Critical issue
-4. Fit process and quality metrics
-5. Parameters
-6. Plots
-7. Model evaluation summary
-8. Generated report text
-
-Key files:
-
-- `frontend/src/pages/components/ReportWorkflowPage.tsx` — in-app Report layout and section order.
-- `frontend/src/model/htmlReport.ts` — exported HTML layout and section order.
-- `frontend/src/styles/fitting-page.css` — report page left-panel/right-document layout overrides.
-
-Do not reintroduce the old Report order or put model evaluation ahead of diagnostics/metrics unless the user explicitly requests it.
+v1.7.11 status: frontend install passed, frontend Vitest passed (11 files / 45 tests), frontend production build passed, backend pytest passed (122 tests), backend compileall passed.
+
+## Manual smoke checks before release
+
+1. Import CSV/paste/sample data; the Import page must not go blank after data loads.
+2. Reopen collapsed Import data and import again.
+3. Rename the selected trace; blur/Enter commits, Escape restores.
+4. Confirm Spreadsheet preview shows all traces and highlights the selected trace.
+5. Confirm Fit page scrolls, Advanced floats, and outside click closes it.
+6. Confirm Manual page scrolls and Sections locator works.
+7. Confirm Report plots render visibly in-app and exported HTML remains ordered and readable.
+8. Confirm model presets replace the current model and D2 appears only via Double diode preset.

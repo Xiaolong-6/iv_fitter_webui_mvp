@@ -1,19 +1,39 @@
 # Data import and export policy
 
-The Web UI must make data handling transparent before fitting.
+The Web UI must make data handling transparent before fitting while keeping the user-facing Import page compact.
 
-## Import quality summary
+## Current Import page behavior
 
-Every imported trace should show:
+The Import page is a single-column, webpage-style flow:
 
-- selected voltage and current columns;
-- rows in file;
-- rows imported;
-- rows dropped;
-- voltage and current ranges;
-- warnings about repeated voltages, ambiguous columns, or non-finite rows.
+1. **Import data** — upload, paste, or load sample data.
+2. **Trace selection** — shown only after at least one trace is loaded.
+3. **Plot review** — shown only after at least one trace is loaded.
+4. **Spreadsheet preview** — shown only after at least one trace is loaded.
 
-Data workspace unit selectors describe the imported voltage/current column units. Changing them rescales the selected trace to SI units, so preview, plots, and fitting all use V and A.
+When no data is loaded, only the Import data card is shown. After import/parse, the Import data card collapses into a compact loaded-data summary but remains re-expandable so the user can import another file or paste new data.
+
+Trace selection should stay compact. Do not reintroduce a separate visible Import quality card or repeated row/column summaries in the main Import page. Detailed import/parser metadata may remain in trace metadata or exported archival files.
+
+## Trace naming and units
+
+Loaded traces can be selected from the Trace selection card. The selected trace name is editable; changes should commit on blur or Enter and should not crash the Import page.
+
+Data workspace unit selectors describe the imported voltage/current column units. Changing them rescales the selected trace to SI units, so preview, plots, and fitting all use V and A internally.
+
+Each imported trace should have safe default metadata when the importer does not provide explicit units:
+
+- `voltage_unit: "V"`
+- `voltage_unit_factor_to_V: 1`
+- `current_unit: "A"`
+- `current_unit_factor_to_A: 1`
+- `unit_mode: "si_internal"`
+
+## Spreadsheet preview
+
+Spreadsheet preview should show all loaded traces, not only the selected trace. The currently selected trace should be visually highlighted.
+
+For very large datasets, prefer an explicit preview/virtualization strategy rather than rendering hidden or duplicate panes. Do not let the Import page go blank after loading data.
 
 ## Default import folder
 
@@ -60,18 +80,11 @@ planar,1,2e-9
 
 For wide and long files, invalid rows are dropped per trace. Summary columns such as PCE, FF, Voc, Jsc, time, wavelength, and EQE are ignored during current-trace detection.
 
-## Synthetic data generator
+## Synthetic/debug data
 
-The Import Data workflow includes a Synthetic IV Trace generator for test and debugging data.
+Synthetic trace generation is a debugging and validation aid, not a normal Import-page requirement. Keep synthetic generation out of the main Import-page UI unless the user explicitly asks to reintroduce it.
 
-- It uses the current Model Builder `ModelSpec`; the Data page does not contain a separate model editor.
-- It forward-simulates I(V) data over the requested voltage start, stop, and step.
-- Optional Gaussian absolute current noise, Gaussian relative current noise, reproducible random seed, and current compliance clipping can be applied.
-- The generated trace is imported into the same trace list as file-imported data and should behave like a normal imported trace.
-- Synthetic metadata is additive and stored under trace metadata, including `synthetic: true`, generator version, model snapshot, ground-truth parameters, voltage sweep settings, noise settings, artifact settings, seed, and creation timestamp.
-- Synthetic recovery is a fitting/debug validation tool. Recovering known parameters from synthetic data does not prove that the same model is physically correct for a real device.
-- Clean synthetic traces use the same backend prediction path as fitting. If no synthetic compliance artifact was applied, generic compliance-point exclusion is skipped during fitting to avoid falsely removing high-current simulated points.
-- The Parameters table can seed initials from stored synthetic ground-truth metadata. This restores only matching parameter keys in the current model and does not change model structure.
+Synthetic metadata, when used by a debug tool, should remain additive and stored under trace metadata. Synthetic recovery does not prove that the same model is physically correct for a real device.
 
 ## HappyMeasure compatibility
 
@@ -103,7 +116,7 @@ Suggested `.meta.json` fields are `title`, `source`, `citation`, `license`, and 
 
 A reproducible fit export must include:
 
-- input trace metadata and import quality summary;
+- input trace metadata and parser/import summary;
 - exact `ModelSpec`;
 - exact `FitConfig`;
 - fitted parameters and bounds;

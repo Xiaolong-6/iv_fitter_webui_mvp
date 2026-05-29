@@ -402,3 +402,22 @@
   }
   .manual-reader-one-column .manual-reader-nav button { min-width: 132px; }
 }
+
+/* v1.7.9: restore manual page scrolling in the single-column reader. */
+.doc-page {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+.manual-reader-one-column {
+  min-height: min-content;
+  padding-bottom: calc(80px * var(--app-zoom));
+}
+.manual-reader-one-column .manual-reader-content,
+.manual-reader-one-column .manual-reader-content-scroll {
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+}

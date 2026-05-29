@@ -1,33 +1,47 @@
-# Tested current — v1.7.8
+# Tested current — v1.7.11
 
-Validated after single-column workflow-page cleanup and report floating-export update.
+Validated after fixing the Data Import blank-page regression and completing a cleanup/audit pass.
 
 ## Scope
 
-- Report page is now a single-column reader with a draggable floating Exports panel.
-- Removed Report Fit result quick-summary card.
-- Moved Review diagnostics / Open bounds-parameters / Try safer model into Exports above download buttons.
-- Added equivalent-circuit section above Model evaluation summary.
-- Bounded Report plots in-app so chart bodies are visible and do not grow infinitely.
-- User Manual is one column with Version check at the top and floating Sections locator.
-- Fitting page is one column: sticky Fit setup, plots, parameters. Objective / run options / solver are inside Advanced details.
-- Import data collapses after import/parse but remains reopenable.
-- Model preview includes preset controls for single diode, double diode, and user-saved custom presets.
+- Fixed the Data Import page crash that appeared after data was loaded. Root cause: `DataImportWorkspace` rendered `DatasetNameInput` in the loaded-data Trace selection card, but the component was not defined.
+- Added a local `DatasetNameInput` component with safe commit behavior: blur/Enter commits the trace name; Escape restores the previous value.
+- Fixed frontend build regressions from recent UI cleanup:
+  - `SyntheticTraceTool` now receives the required `language` prop.
+  - `parameterGrouping.ts` now has a local `updateComponentParams` helper used by component-level Fit/Fix actions.
+  - Report resize callback typing is explicit.
+- Fixed the misplaced SimpleChart zero-line test that made Vitest fail.
+- Cleaned stale documentation references to removed/old UI patterns: old Import quality card, old two-row Data page layout, local release gate as a user-facing UI, and old v1.5 audit handoff notes.
+- Archived obsolete v1.5 audit markdown files under `docs/archive/v1_5_audits/`.
+- No fitting physics, backend API, saved-model schema, or report numerical logic changed.
 
 ## Commands run in this environment
 
 ```bash
-cd backend
+cd frontend
+npm install --include=dev
+npm run test -- --run --reporter=dot
+npm run build
+
+cd ../backend
 python -m pytest -q
 python -m compileall -q ivfitter
 ```
 
 ## Observed result
 
+- Frontend dependency install: passed, 153 packages installed, 0 vulnerabilities reported by npm audit.
+- Frontend Vitest: passed, 11 files / 45 tests.
+- Frontend production build: passed (`tsc && vite build`).
 - Backend pytest: passed, 122 tests.
 - Backend compileall: passed.
 
-## Not verified in this environment
+## Manual browser checks still required
 
-- Frontend Vitest and production build; run locally with `cd frontend && npm install --include=dev && npm run test -- --run --reporter=dot && npm run build`.
-- Manual browser checks for draggable exports, manual section locator, sticky fit setup, and custom preset localStorage behavior.
+1. Import page: load CSV/paste/sample data; page should not go blank after data loads.
+2. Import page: collapsed Import data card should reopen and allow a second import.
+3. Trace selection: rename selected trace; blur/Enter commits, Escape reverts.
+4. Spreadsheet preview: all loaded traces are visible and the selected trace is highlighted.
+5. Fit page: one-column page scrolls; Advanced popover floats and closes on outside click.
+6. User Manual: one-column page scrolls; Sections locator remains usable.
+7. Report page: plots render visibly in-app and exported HTML still matches report order.

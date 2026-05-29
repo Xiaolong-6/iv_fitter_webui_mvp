@@ -132,34 +132,6 @@
   font-size: calc(12px * var(--app-zoom));
   line-height: 1.35;
 }
-.import-quality-panel {
-  margin-top: 10px;
-  padding: 8px;
-  border: 1px solid #dbe4f0;
-  border-radius: 10px;
-  background: #f8fafc;
-}
-.import-quality-title {
-  font-weight: 750;
-  margin-bottom: 6px;
-  color: #334155;
-}
-.import-quality-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.import-quality-grid span {
-  border: 1px solid #dbe4f0;
-  border-radius: 999px;
-  padding: 3px 8px;
-  background: #fff;
-  color: #475569;
-  font-size: calc(12px * var(--app-zoom));
-}
-.import-quality-warnings {
-  margin-top: 7px;
-}
 .circuit-panel-v2 {
   overflow: hidden;
 }

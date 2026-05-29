@@ -1,18 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent as ReactDragEvent } from "react";
-import type { ModelSpec, SyntheticNoiseConfig, TraceData } from "../model/types";
-import { generateSyntheticTrace, importCsvTextMulti, openImportFileDialog, type ImportCsvTextMultiResponse } from "../api/client";
+import type { TraceData } from "../model/types";
+import { importCsvTextMulti, openImportFileDialog, type ImportCsvTextMultiResponse } from "../api/client";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { HelpTip } from "./HelpTip";
-import {
-  appendSyntheticTrace,
-  buildSyntheticTracePayload,
-  defaultSyntheticTraceForm,
-  syntheticTraceCsv,
-  validateSyntheticTraceForm,
-  type SyntheticTraceFormState,
-} from "../model/syntheticTrace";
 import { SimpleChart } from "./SimpleChart";
 
 type ImportQuality = {
@@ -60,62 +52,53 @@ function safeTraceName(name: string, fallback: string) {
   return name.trim().replace(/\s+/g, " ") || fallback;
 }
 
-function qualityForTrace(trace?: TraceData): ImportQuality | null {
-  const quality = trace?.metadata?.quality;
-  return quality && typeof quality === "object" ? quality as ImportQuality : null;
-}
-
 function withDefaultImportedUnits(trace: TraceData): TraceData {
   return {
     ...trace,
     metadata: {
       ...trace.metadata,
       voltage_unit: String(trace.metadata?.voltage_unit ?? "V"),
-      current_unit: String(trace.metadata?.current_unit ?? "A"),
       voltage_unit_factor_to_V: Number(trace.metadata?.voltage_unit_factor_to_V ?? 1),
+      current_unit: String(trace.metadata?.current_unit ?? "A"),
       current_unit_factor_to_A: Number(trace.metadata?.current_unit_factor_to_A ?? 1),
-      unit_mode: "import_unit_to_si_internal",
+      unit_mode: String(trace.metadata?.unit_mode ?? "si_internal"),
     },
   };
 }
 
-function DatasetNameInput({ value, language, onCommit }: { value: string; language: Language; onCommit: (value: string) => void }) {
-  const [draft, setDraft] = useState(value);
-  useEffect(() => { setDraft(value); }, [value]);
-  function commit() {
-    onCommit(draft);
-  }
-  return <input
-    value={draft}
-    onChange={(e) => setDraft(e.target.value)}
-    onBlur={commit}
-    onKeyDown={(e) => {
-      if (e.key === "Enter") commit();
-      if (e.key === "Escape") setDraft(value);
-    }}
-    aria-label={language === "zh" ? "数据集名称" : "Dataset name"}
-  />;
-}
-
-function ImportQualityPanel({ quality, language }: { quality: ImportQuality | null; language: Language }) {
-  if (!quality) return null;
-  const warnings = quality.warnings ?? [];
-  return <div className="import-quality-panel">
-    <div className="import-quality-title">{language === "zh" ? "导入质量" : "Import quality"}</div>
-    <div className="import-quality-grid">
-      <span>{language === "zh" ? "行" : "Rows"}: <strong>{quality.rows_imported ?? "?"}</strong> / {quality.rows_in_file ?? "?"}</span>
-      <span>V: <code>{quality.voltage_col ?? "?"}</code></span>
-      <span>I: <code>{quality.current_col ?? "?"}</code></span>
-      {Number.isFinite(quality.rows_dropped) && Number(quality.rows_dropped) > 0 ? <span>{language === "zh" ? "丢弃" : "Dropped"}: <strong>{quality.rows_dropped}</strong></span> : null}
-    </div>
-    {warnings.length ? <div className="import-quality-warnings">
-      {warnings.map((warning) => <div className="warning" key={warning}>{warning}</div>)}
-    </div> : null}
-  </div>;
-}
-
 function logAbsForReview(values: number[]) {
   return values.map((value) => Math.log10(Math.max(Math.abs(value), 1e-30)));
+}
+
+
+function DatasetNameInput({ value, language, onCommit }: { value: string; language: Language; onCommit: (name: string) => void }) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  function commit() {
+    const next = safeTraceName(draft, value);
+    setDraft(next);
+    onCommit(next);
+  }
+
+  return <input
+    value={draft}
+    aria-label={language === "zh" ? "Trace 名称" : "Trace name"}
+    onChange={(event) => setDraft(event.target.value)}
+    onBlur={commit}
+    onKeyDown={(event) => {
+      if (event.key === "Enter") {
+        event.currentTarget.blur();
+      }
+      if (event.key === "Escape") {
+        setDraft(value);
+        event.currentTarget.blur();
+      }
+    }}
+  />;
 }
 
 function TracePlotReview({ trace, language }: { trace?: TraceData; language: Language }) {
@@ -128,13 +111,12 @@ function TracePlotReview({ trace, language }: { trace?: TraceData; language: Lan
   </div>;
 }
 
-export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelectTrace, onNextToFitting, model, language }: {
+export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelectTrace, onNextToFitting, language }: {
   traces: TraceData[];
   selectedTraceId: string | null;
   onTraces: (t: TraceData[]) => void;
   onSelectTrace: (id: string) => void;
   onNextToFitting?: () => void;
-  model: ModelSpec;
   language: Language;
 }) {
   const [pasteText, setPasteText] = useState("");
@@ -142,28 +124,26 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   const [inputMode, setInputMode] = useState<"upload" | "paste" | "sample">("upload");
   const [importExpanded, setImportExpanded] = useState(true);
   const [dragActive, setDragActive] = useState(false);
-  const [syntheticOpen, setSyntheticOpen] = useState(false);
-  const [syntheticBusy, setSyntheticBusy] = useState(false);
-  const [syntheticError, setSyntheticError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [syntheticForm, setSyntheticForm] = useState<SyntheticTraceFormState>(defaultSyntheticTraceForm);
   const selected = traces.find((tr) => tr.trace_id === selectedTraceId) ?? traces[0];
   const voltageUnit = String(selected?.metadata?.voltage_unit ?? "V");
   const currentUnit = String(selected?.metadata?.current_unit ?? "A");
-  const importQuality = qualityForTrace(selected);
   const unitHelp = language === "zh"
     ? "选择原始导入列的实际单位。数据会立即换算成 V/A 用于预览、绘图和拟合。"
     : "Select the actual unit of the imported column. Data is immediately converted to V/A for preview, plots, and fitting.";
 
   const previewRows = useMemo(() => {
-    if (!selected) return [];
-    const n = Math.min(200, selected.voltage_V.length, selected.current_A.length);
-    return Array.from({ length: n }, (_, idx) => ({
-      idx,
-      v: selected.voltage_V[idx],
-      i: selected.current_A[idx],
-    }));
-  }, [selected]);
+    return traces.flatMap((trace) => {
+      const n = Math.min(trace.voltage_V.length, trace.current_A.length);
+      return Array.from({ length: n }, (_, idx) => ({
+        traceId: trace.trace_id,
+        selected: trace.trace_id === selected?.trace_id,
+        idx,
+        v: trace.voltage_V[idx],
+        i: trace.current_A[idx],
+      }));
+    });
+  }, [traces, selected?.trace_id]);
 
   function importedResponseToTraces(response: ImportCsvTextMultiResponse) {
     const imported = response.traces.map((item) => withDefaultImportedUnits({
@@ -287,62 +267,6 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
     }
   }
 
-  function updateSyntheticForm(patch: Partial<SyntheticTraceFormState>) {
-    setSyntheticForm((current) => ({ ...current, ...patch }));
-    setSyntheticError(null);
-  }
-
-  async function generateAndImportSynthetic() {
-    const validation = validateSyntheticTraceForm(syntheticForm);
-    if (!validation.ok) {
-      setSyntheticError(validation.error);
-      return;
-    }
-    setSyntheticBusy(true);
-    setSyntheticError(null);
-    try {
-      const response = await generateSyntheticTrace(buildSyntheticTracePayload(syntheticForm, model, safeTraceName(syntheticForm.traceName, "synthetic_trace")));
-      const appended = appendSyntheticTrace(traces, response);
-      onTraces(appended.traces);
-      onSelectTrace(appended.selectedTraceId);
-      setSyntheticOpen(false);
-      setImportExpanded(false);
-      setMessage(language === "zh"
-        ? "Synthetic trace generated from the current Model Builder model and imported as test data. Ground-truth parameters are stored in trace metadata."
-        : "Synthetic trace generated from the current Model Builder model and imported as test data. Ground-truth parameters are stored in trace metadata.");
-    } catch (err) {
-      setSyntheticError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSyntheticBusy(false);
-    }
-  }
-
-  async function generateSyntheticCsvOnly() {
-    const validation = validateSyntheticTraceForm(syntheticForm);
-    if (!validation.ok) {
-      setSyntheticError(validation.error);
-      return;
-    }
-    setSyntheticBusy(true);
-    setSyntheticError(null);
-    try {
-      const response = await generateSyntheticTrace(buildSyntheticTracePayload(syntheticForm, model, safeTraceName(syntheticForm.traceName, "synthetic_trace")));
-      const csv = syntheticTraceCsv(response, "Voltage_V,Current_A");
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${response.trace_name.replace(/[^a-z0-9_-]+/gi, "_")}.csv`;
-      link.click();
-      URL.revokeObjectURL(url);
-      setMessage(language === "zh" ? "Synthetic CSV generated." : "Synthetic CSV generated.");
-    } catch (err) {
-      setSyntheticError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSyntheticBusy(false);
-    }
-  }
-
   function handleDrop(event: ReactDragEvent<HTMLElement>) {
     event.preventDefault();
     setDragActive(false);
@@ -360,8 +284,6 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   }
 
   const fileId = "data-workspace-file-input";
-  const qualityWarnings = importQuality?.warnings ?? [];
-  const syntheticValidation = validateSyntheticTraceForm(syntheticForm);
   const hasData = traces.length > 0;
   const showImportControls = !hasData || importExpanded;
   return <section className="data-workspace scroll-page web-page-flow">
@@ -397,46 +319,40 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
           </div> : null}
         </> : <div className="import-compact-summary collapsed-import-summary" aria-label={language === "zh" ? "导入数据已折叠" : "Import data collapsed"}>
           <button type="button" className="compact-import-row compact-import-toggle" onClick={() => setImportExpanded(true)}>
-            <span className="muted">{language === "zh" ? "导入数据" : "Import data"}</span>
             <strong>{language === "zh" ? `已载入 ${traces.length} 条 trace` : `${traces.length} ${traces.length === 1 ? "trace" : "traces"} loaded`}</strong>
             <span className="muted">{language === "zh" ? "点击重新展开导入选项。" : "Click to reopen import options."}</span>
           </button>
         </div>}
       </section>
 
-      {hasData ? <section className="card trace-selection-card webpage-panel">
+      {hasData ? <section className="card trace-selection-card webpage-panel compact-trace-selection-card">
         <div className="card-head"><h3>{t(language, "traceSelection")}</h3><HelpTip text={t(language, "traceSelectionHelp")} /></div>
-        <label className="trace-select-label structured-trace-select"><span>{language === "zh" ? `当前曲线（共 ${traces.length} 条）` : `Current trace (${traces.length} total)`}</span><select title={t(language, "selectedTraceHelp")} value={selected?.trace_id ?? ""} onChange={(e) => onSelectTrace(e.target.value)}>
-          {traces.map((tr) => <option key={tr.trace_id} value={tr.trace_id}>{tr.trace_id}</option>)}
-        </select></label>
-        <div className="trace-property-grid">
-          <span>{language === "zh" ? "数据点数" : "Points"}</span><strong>{selected?.voltage_V.length ?? 0}</strong>
-          <span>{language === "zh" ? "单位映射" : "Unit mapping"}</span><strong>{voltageUnit}/{currentUnit} → V/A</strong>
-          {qualityWarnings.length ? <><span>{language === "zh" ? "质量提示" : "Quality notes"}</span><strong>{qualityWarnings.length}</strong></> : null}
+        <div className="compact-trace-selection-row">
+          <label className="trace-select-label structured-trace-select"><span>{language === "zh" ? "当前 trace" : "Current trace"}</span><select title={t(language, "selectedTraceHelp")} value={selected?.trace_id ?? ""} onChange={(e) => onSelectTrace(e.target.value)}>
+            {traces.map((tr) => <option key={tr.trace_id} value={tr.trace_id}>{tr.trace_id}</option>)}
+          </select></label>
+          <span className="trace-count-pill">{language === "zh" ? `${traces.length} 条 trace` : `${traces.length} ${traces.length === 1 ? "trace" : "traces"}`}</span>
+          <span className="trace-count-pill">{language === "zh" ? `${selected?.voltage_V.length ?? 0} 点` : `${selected?.voltage_V.length ?? 0} points`}</span>
+          {onNextToFitting ? <button type="button" className="primary data-next-action compact-next-action" onClick={onNextToFitting}>{language === "zh" ? "前往模型构建" : "Go to Model Builder"}</button> : null}
         </div>
-        {qualityWarnings.length ? <div className="import-quality-warnings compact-quality-warnings">
-          {qualityWarnings.map((warning) => <div className="warning" key={warning}>{warning}</div>)}
-        </div> : null}
-        <div className="parsed-settings compact-parsed-settings structured-units">
+        <div className="parsed-settings compact-parsed-settings structured-units compact-unit-row">
           <label>
-            <span>{language === "zh" ? "数据集名称" : "Dataset name"}</span>
+            <span>{language === "zh" ? "名称" : "Name"}</span>
             <DatasetNameInput value={selected?.trace_id ?? ""} language={language} onCommit={renameSelected} />
           </label>
           <label>
-            <span>{language === "zh" ? "电压单位" : "V unit"}</span>
+            <span>{language === "zh" ? "电压" : "V unit"}</span>
             <select value={voltageUnit} onChange={(e) => changeUnit("voltage", e.target.value)}>
               {voltageUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
             </select>
           </label>
           <label>
-            <span>{language === "zh" ? "电流单位" : "I unit"}</span>
+            <span>{language === "zh" ? "电流" : "I unit"}</span>
             <select value={currentUnit} onChange={(e) => changeUnit("current", e.target.value)}>
               {currentUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
             </select>
           </label>
         </div>
-        {importQuality ? <ImportQualityPanel quality={importQuality} language={language} /> : null}
-        {onNextToFitting ? <button type="button" className="primary data-next-action" onClick={onNextToFitting}>{language === "zh" ? "前往模型构建" : "Go to Model Builder"}</button> : null}
       </section> : null}
 
       {hasData ? <section className="card plot-review-card webpage-panel">
@@ -447,52 +363,13 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
       {hasData ? <section className="card spreadsheet-card webpage-panel">
         <div className="card-head"><h3>{t(language, "dataPreview")}</h3><HelpTip text={t(language, "dataPreviewHelp")} /></div>
         <div className="spreadsheet-wrap" role="region" aria-label={t(language, "dataPreview")}>
-          <table className="data-spreadsheet">
-            <thead><tr><th>#</th><th>V (V)</th><th>I (A)</th></tr></thead>
-            <tbody>{previewRows.map((row) => <tr key={row.idx}><td>{row.idx + 1}</td><td>{formatCell(row.v)}</td><td>{formatCell(row.i)}</td></tr>)}</tbody>
+          <table className="data-spreadsheet all-traces-spreadsheet">
+            <thead><tr><th>Trace</th><th>#</th><th>V (V)</th><th>I (A)</th></tr></thead>
+            <tbody>{previewRows.map((row) => <tr key={`${row.traceId}-${row.idx}`} className={row.selected ? "selected-trace-row" : ""}><td>{row.traceId}</td><td>{row.idx + 1}</td><td>{formatCell(row.v)}</td><td>{formatCell(row.i)}</td></tr>)}</tbody>
           </table>
         </div>
-        {selected && selected.voltage_V.length > previewRows.length && <p className="muted">{t(language, "previewLimited")}</p>}
+        <p className="muted">{language === "zh" ? "显示所有已加载 trace；当前选中 trace 已高亮。" : "All loaded traces are shown; the selected trace is highlighted."}</p>
       </section> : null}
     </div>
-
-    {syntheticOpen ? <div className="drawer synthetic-drawer" role="dialog" aria-modal="true" aria-labelledby="synthetic-trace-title">
-      <div className="drawer-head">
-        <div>
-          <h2 id="synthetic-trace-title">Synthetic IV Trace</h2>
-          <p className="muted">Synthetic traces are forward-simulated from the selected model and known parameters. They are useful for testing fitting stability and parameter recovery. Successful recovery on synthetic data does not prove that the same model is physically correct for a real device.</p>
-        </div>
-        <button onClick={() => setSyntheticOpen(false)} disabled={syntheticBusy}>Cancel</button>
-      </div>
-
-      {syntheticError ? <div className="warning error">{syntheticError}</div> : null}
-      {!syntheticError && !syntheticValidation.ok ? <div className="warning error">{syntheticValidation.error}</div> : null}
-
-      <div className="synthetic-form">
-        <label><span>Model source</span><select value="current" disabled><option>Use current Model Builder model</option></select></label>
-        <label><span>Trace name</span><input value={syntheticForm.traceName} onChange={(e) => updateSyntheticForm({ traceName: e.target.value })} /></label>
-        <div className="synthetic-field-grid">
-          <label><span>V start</span><input type="number" step="any" value={syntheticForm.voltageStart} onChange={(e) => updateSyntheticForm({ voltageStart: e.target.value })} /></label>
-          <label><span>V stop</span><input type="number" step="any" value={syntheticForm.voltageStop} onChange={(e) => updateSyntheticForm({ voltageStop: e.target.value })} /></label>
-          <label><span>V step</span><input type="number" step="any" value={syntheticForm.voltageStep} onChange={(e) => updateSyntheticForm({ voltageStep: e.target.value })} /></label>
-        </div>
-        <p className="muted">Point count: {syntheticValidation.pointCount || "-"}</p>
-        <label><span>Noise</span><select value={syntheticForm.noiseMode} onChange={(e) => updateSyntheticForm({ noiseMode: e.target.value as SyntheticNoiseConfig["mode"] })}>
-          <option value="none">None</option>
-          <option value="gaussian_absolute">Gaussian absolute current noise</option>
-          <option value="gaussian_relative">Gaussian relative current noise</option>
-        </select></label>
-        {syntheticForm.noiseMode === "gaussian_absolute" ? <label><span>noise_level_A</span><input type="number" step="any" value={syntheticForm.noiseLevelA} onChange={(e) => updateSyntheticForm({ noiseLevelA: e.target.value })} /></label> : null}
-        {syntheticForm.noiseMode === "gaussian_relative" ? <label><span>relative_noise_fraction</span><input type="number" step="any" value={syntheticForm.relativeNoiseFraction} onChange={(e) => updateSyntheticForm({ relativeNoiseFraction: e.target.value })} /></label> : null}
-        <label><span>Random seed</span><input type="number" step="1" value={syntheticForm.seed} onChange={(e) => updateSyntheticForm({ seed: e.target.value })} /></label>
-        <label className="inline-check"><input type="checkbox" checked={syntheticForm.complianceEnabled} onChange={(e) => updateSyntheticForm({ complianceEnabled: e.target.checked })} /> <span>Current compliance</span></label>
-        {syntheticForm.complianceEnabled ? <label><span>compliance_current_A</span><input type="number" step="any" value={syntheticForm.complianceCurrentA} onChange={(e) => updateSyntheticForm({ complianceCurrentA: e.target.value })} /></label> : null}
-      </div>
-      <div className="synthetic-actions">
-        <button className="primary" disabled={syntheticBusy || !syntheticValidation.ok} onClick={generateAndImportSynthetic}>{syntheticBusy ? "Generating..." : "Generate and import"}</button>
-        <button disabled={syntheticBusy || !syntheticValidation.ok} onClick={generateSyntheticCsvOnly}>Generate CSV only</button>
-        <button disabled={syntheticBusy} onClick={() => setSyntheticOpen(false)}>Cancel</button>
-      </div>
-    </div> : null}
   </section>;
 }

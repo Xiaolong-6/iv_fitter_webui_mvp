@@ -109,6 +109,27 @@ export function groupParameterRows(rows: ParameterRowModel[], result: FitResult 
   }).filter((group) => group.groups.length > 0);
 }
 
+
+function updateComponentParams(
+  model: ModelSpec,
+  location: Location,
+  componentId: string,
+  updater: (spec: ParameterSpec, paramName: string) => ParameterSpec,
+): ModelSpec {
+  return {
+    ...model,
+    [location]: model[location].map((component) => {
+      if (component.id !== componentId) return component;
+      return {
+        ...component,
+        params: Object.fromEntries(
+          Object.entries(component.params).map(([paramName, spec]) => [paramName, updater(spec, paramName)]),
+        ),
+      };
+    }),
+  };
+}
+
 export function setComponentFitState(model: ModelSpec, location: Location, componentId: string, fit: boolean): ModelSpec {
   return updateComponentParams(model, location, componentId, (spec) => ({ ...spec, fit }));
 }

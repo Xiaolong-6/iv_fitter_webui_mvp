@@ -1,5 +1,35 @@
 # Changelog
 
+## v1.7.11 — Import-page crash fix and handoff cleanup
+
+- Fixed the Data Import blank-page regression after loading data by restoring the missing `DatasetNameInput` component used by Trace selection.
+- Added a defensive editable trace-name input that commits on blur/Enter and reverts on Escape.
+- Fixed frontend build regressions left from earlier UI cleanup: restored the `SyntheticTraceTool` language prop, restored component-level parameter fit-state update helper, and fixed the Report resize callback type.
+- Fixed the misplaced SimpleChart zero-line test that caused Vitest to fail.
+- Confirmed frontend dependency installation works with the sanitized npm registry/lockfile state.
+- Archived obsolete v1.5 self-audit/release-audit markdown files and rewrote current audit/handoff docs around the v1.7.11 workflow.
+- Updated Data Import documentation to the current webpage-style import flow and removed stale Import quality/two-row layout guidance.
+- Kept fitting physics, backend APIs, saved-model compatibility, and report numerical logic unchanged.
+
+## v1.7.10 — Import unit helper runtime hotfix
+
+- Restored the missing `withDefaultImportedUnits` helper used by Data Import after the spreadsheet-preview refactor.
+- Ensured imported traces always receive safe default voltage/current unit metadata before preview, unit conversion, plotting, and fitting.
+- Kept Import, Model, Fit, Report layout behavior from v1.7.9 unchanged.
+- Kept fitting physics, backend APIs, report numerical data, and saved-model compatibility unchanged.
+
+## v1.7.9 — Workflow polish and scrolling hotfix
+
+- Changed Model preset selection so Single diode and Double diode presets replace the current model rather than incrementally modifying it.
+- Removed the separate Add secondary diode D2 button; D2 is now available through the Double diode model preset.
+- Made Fit setup more compact and moved Advanced objective/run options/solver into an overlay popover that does not push plots or parameters down; clicking outside closes it.
+- Restored scrolling for the single-column Fitting and User Manual pages.
+- Kept the Report Exports floating panel constrained away from the left dock/sidebar.
+- Compactified Trace selection and removed Import quality from the user-facing import workflow.
+- Updated Spreadsheet preview to show rows from all loaded traces and highlight the selected trace.
+- Removed the duplicated Import data label inside the collapsed import summary while keeping the import card re-expandable.
+- Kept fitting physics, backend APIs, saved-model compatibility, report data, and exported HTML schemas unchanged.
+
 ## v1.7.8 — Single-column workflow pages and report export controls
 
 - Changed Report to a single-column reader layout and moved exports into a draggable floating panel.
@@ -549,6 +579,17 @@ Tests: `PYTHONPATH=backend pytest -q backend/tests/test_fit_process_diagnostics.
 - Updated Markdown reports to include fit-process diagnostics.
 
 # Changelog
+
+## v1.7.11 — Import-page crash fix and handoff cleanup
+
+- Fixed the Data Import blank-page regression after loading data by restoring the missing `DatasetNameInput` component used by Trace selection.
+- Added a defensive editable trace-name input that commits on blur/Enter and reverts on Escape.
+- Fixed frontend build regressions left from earlier UI cleanup: restored the `SyntheticTraceTool` language prop, restored component-level parameter fit-state update helper, and fixed the Report resize callback type.
+- Fixed the misplaced SimpleChart zero-line test that caused Vitest to fail.
+- Confirmed frontend dependency installation works with the sanitized npm registry/lockfile state.
+- Archived obsolete v1.5 self-audit/release-audit markdown files and rewrote current audit/handoff docs around the v1.7.11 workflow.
+- Updated Data Import documentation to the current webpage-style import flow and removed stale Import quality/two-row layout guidance.
+- Kept fitting physics, backend APIs, saved-model compatibility, and report numerical logic unchanged.
 
 ## v1.7.7 — Webpage flow cleanup and report plot hotfix
 

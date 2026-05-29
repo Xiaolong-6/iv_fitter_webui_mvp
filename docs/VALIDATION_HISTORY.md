@@ -1,29 +1,32 @@
 # Validation history
 
-## v1.7.4 — Blank-page regression hotfix
-
-- Repaired missing language props in the workflow shell.
-- Backend pytest passed, 122 tests; compileall passed.
-- Frontend browser smoke still requires local npm environment.
-
-
-## v1.7.5 — Webpage-style Data and Model layout
-
-- Backend pytest passed in sandbox: 122 tests.
-- Backend compileall passed.
-- Data/Import page was changed to a single vertical webpage flow with Trace selection / Plot review / Spreadsheet preview hidden until data exists.
-- Model page was changed to a single vertical stack with Model preview directly under Model Builder and duplicate outer section titles removed.
-- Frontend npm validation remains local-only because sandbox dependency installation is environment-dependent.
-
-## v1.5.36
-
-Structural-debt cleanup release candidate. Full backend pytest, backend compileall, frontend Vitest, and frontend production build passed. See `docs/TESTED_CURRENT.md`.
-
-This document replaces the old collection of many per-version `TESTED_*` files. It keeps the useful history without forcing future readers to open dozens of stale documents.
+This document summarizes release-level validation. Use `docs/TESTED_CURRENT.md` for the exact current commands and results.
 
 ## Current validation record
 
-Use `docs/TESTED_CURRENT.md` for the exact commands and result status of the current package.
+### v1.7.11 — Import-page crash fix and cleanup audit
+
+- Frontend dependency install passed in sandbox: 153 packages installed, 0 vulnerabilities reported by npm audit.
+- Frontend production build passed: `tsc && vite build`.
+- Frontend Vitest passed: 11 files / 45 tests.
+- Backend pytest passed: 122 tests.
+- Backend compileall passed.
+- Fixed the Data Import blank-page regression after loading data.
+- Cleaned stale handoff/import docs and archived obsolete v1.5 audit markdown files.
+
+## Recent validation summary
+
+| Version | Main validation focus | Result summary |
+|---|---|---|
+| v1.7.11 | Data Import crash fix, frontend build/test restoration, doc cleanup | Frontend install/build/Vitest passed; backend pytest/compileall passed. |
+| v1.7.10 | Import unit metadata helper hotfix | Backend pytest/compileall passed; frontend not yet fully validated before v1.7.11. |
+| v1.7.9 | Workflow polish, Fit/Manual scrolling, compact import controls | Backend pytest/compileall passed; later frontend build exposed additional issues fixed in v1.7.11. |
+| v1.7.8 | Single-column workflow pages and floating Report exports | Backend pytest/compileall passed. |
+| v1.7.6 | Report/export layout alignment | Backend pytest/compileall passed. |
+| v1.7.5 | Webpage-style Import and Model layout | Backend pytest/compileall passed. |
+| v1.7.4 | Blank-page regression hotfix for missing language props | Backend pytest/compileall passed. |
+| v1.7.3 | User-facing UI declutter | Backend pytest/compileall passed and static cleanup scan performed. |
+| v1.7.1 | Consolidated partial feature work | Backend pytest/compileall passed; later UI cleanup removed some user-facing internal controls. |
 
 ## Historical summary
 
@@ -31,49 +34,12 @@ Use `docs/TESTED_CURRENT.md` for the exact commands and result status of the cur
 |---|---|---|
 | 1.0.7–1.1.3 | Early app setup, backend smoke checks, Windows script validation | Historical scaffold. Details are superseded by current scripts and `HUMAN_DEVELOPER_SETUP.md`. |
 | 1.3.0–1.3.10 | Web UI workflow, plotting, model builder, equation preview, selected trace behavior | Historical alpha stabilization. |
-| 1.3.11 | Audit-readiness cleanup | README/rules/docs consistency and package hygiene were improved. |
-| 1.3.12 | Audit-fix regression pass | Solver failure handling, error boundaries, import warnings, and version injection were tested. |
-| 1.3.13 | Model Builder / hover transparency | Topology feedback moved into Model Builder; help/hover behavior was unified. |
-| 1.3.14 | Data-unit safety and backend import quality | Data preview units became display-only; import quality diagnostics reached the UI. |
-| 1.3.15 | Compact equivalent-circuit layout | Parallel branches were folded below the main path for narrow layouts. |
-| 1.3.16 | Rendered manual formulas | User manual and model preview shared a lightweight math renderer. |
-| 1.4.0 | Photocurrent / light-response model laws | Added constant photocurrent, voltage-dependent photocurrent, photoconductive branch, and photo-modulated main path. |
-| 1.4.1–1.4.2 | LAN phone/tablet testing and fetch diagnostics | Added LAN launch helper and backend-health troubleshooting for `Failed to fetch`. |
-| 1.4.3 | HappyMeasure CSV import compatibility | Added HappyMeasure single/wide/long CSV v2 handling, including current-source conversion. |
-| 1.4.4 | Mobile portrait layout | Improved narrow-screen flow, sticky mobile run action, compact voltage range controls, and backend connection banner. |
-| 1.4.5 | Run-state feedback, Stop action, zoom limit | Added visible fitting status, Stop behavior, and expanded UI zoom limit. |
-| 1.4.6–1.4.7 | User-facing Function Guide rewrite | Moved internal schema wording into Advanced details and added a regression check for default Function Guide wording. |
-| 1.4.8 | Documentation cleanup | Removed stale per-version handoff/tested files and consolidated documentation entry points. |
-| 1.5.18 | Bias-dependent current branch rename | Added canonical neutral naming and legacy alias coverage for the former voltage-dependent photocurrent component. |
-| 1.5.19 | Workflow-centered UI shell | Replaced the Workspace-centered shell with Start here, Data, Model, Fitting, Report, and Help pages while preserving fitting behavior. |
+| 1.3.11–1.3.16 | Audit readiness, import warnings, data-unit safety, mobile layout, manual formulas | Superseded by current webpage-style workflow. |
+| 1.4.x | Photocurrent laws, LAN testing, HappyMeasure CSV import, mobile run-state feedback, user-facing Function Guide | Historical feature expansion. |
+| 1.5.x | Workflow-centered shell, release-manager notes, fitting/data responsive polish | Old v1.5 audit markdown files are archived under `docs/archive/v1_5_audits/`. |
 
 ## Policy for future validation docs
 
 - Keep one current validation note: `docs/TESTED_CURRENT.md`.
-- Append short historical summaries here after release-level changes.
-- Do not add `TESTED_1_x_y.md` for every internal handoff package unless the user explicitly asks for a version-specific external audit artifact.
-
-
-## v1.7.1 — Consolidated delivery audit
-
-- Backend pytest passed in sandbox: 122 tests.
-- Backend compileall passed.
-- Frontend npm validation was not run because dependencies are not installed in sandbox; local validation remains required.
-- This version intentionally consolidates the prior partial promises into one version instead of producing more partial packages.
-
-
-## v1.7.3 — User-facing UI declutter and fitting-action cleanup
-
-- Backend pytest passed in sandbox: 122 tests.
-- Backend compileall passed.
-- Static scan confirmed removed user-facing strings/components and removed parameter-filter CSS are absent from `frontend/src`.
-- Report action was moved under the fit check/status summary; mobile/bottom duplicate Run/Stop controls were removed.
-- Frontend npm validation remains local-only because sandbox dependency installation is environment-dependent.
-
-## v1.7.6 — Report/export layout alignment
-
-- Backend pytest passed in sandbox: 122 tests.
-- Backend compileall passed.
-- Report page now places the control/export side panel on the left and uses the same report-body section order as exported HTML.
-- In-app and exported report sections now follow: IV-fitter report, Warnings and diagnostics, Critical issue, Fit process and quality metrics, Parameters, Plots, Model evaluation summary, Generated report text.
-- Frontend npm validation remains local-only because sandbox dependencies are unavailable.
+- Append short release-level summaries here.
+- Do not add one-off `TESTED_1_x_y.md` files for every internal handoff package unless the user explicitly asks for an external audit artifact.

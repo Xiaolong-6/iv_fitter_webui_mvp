@@ -507,8 +507,16 @@ function ReportEquivalentCircuit({ model, language }: { model: ModelSpec; langua
 }
 
 function FloatingExports({ result, report, invalid, reportMessage, onExportReportHtml, onExportReportCsv, setActiveView, language }: { result: FitResult | null; report: string; invalid: boolean | FitResult | null; reportMessage: string; onExportReportHtml: () => void; onExportReportCsv: () => void; setActiveView: (view: AppView) => void; language: Language }) {
-  const [pos, setPos] = useState({ x: 24, y: 96 });
+  const [pos, setPos] = useState({ x: 112, y: 96 });
   const [drag, setDrag] = useState<{ dx: number; dy: number } | null>(null);
+  function clampPosition(x: number, y: number) {
+    const sidebarRight = document.querySelector(".sidebar")?.getBoundingClientRect().right ?? 84;
+    const minX = Math.max(84, sidebarRight + 10);
+    const maxX = Math.max(minX, window.innerWidth - 340);
+    const minY = 8;
+    const maxY = Math.max(minY, window.innerHeight - 220);
+    return { x: Math.min(Math.max(x, minX), maxX), y: Math.min(Math.max(y, minY), maxY) };
+  }
   function start(event: ReactPointerEvent<HTMLDivElement>) {
     const target = event.currentTarget.getBoundingClientRect();
     setDrag({ dx: event.clientX - target.left, dy: event.clientY - target.top });
@@ -516,9 +524,9 @@ function FloatingExports({ result, report, invalid, reportMessage, onExportRepor
   }
   function move(event: ReactPointerEvent<HTMLDivElement>) {
     if (!drag) return;
-    setPos({ x: Math.max(8, event.clientX - drag.dx), y: Math.max(8, event.clientY - drag.dy) });
+    setPos(clampPosition(event.clientX - drag.dx, event.clientY - drag.dy));
   }
-  function end() { setDrag(null); }
+  function end() { setDrag(null); setPos((current) => clampPosition(current.x, current.y)); }
   const diagnostic = Boolean(invalid);
   return <aside className={`card floating-report-exports ${diagnostic ? "diagnostic-export" : ""}`} style={{ left: pos.x, top: pos.y }}>
     <div className="floating-report-exports-head" onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end}>

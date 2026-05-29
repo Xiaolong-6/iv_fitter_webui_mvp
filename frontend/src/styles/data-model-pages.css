@@ -1384,3 +1384,43 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
 }
 .model-preset-controls label { display: grid; gap: 4px; min-width: min(320px, 100%); }
 .model-preset-actions { display: flex; flex-wrap: wrap; gap: calc(7px * var(--app-zoom)); }
+
+/* v1.7.9: compact import trace selector and all-trace spreadsheet preview. */
+.compact-trace-selection-card .card-head { margin-bottom: calc(6px * var(--app-zoom)); }
+.compact-trace-selection-row {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: calc(8px * var(--app-zoom));
+}
+.compact-trace-selection-row .structured-trace-select {
+  flex: 1 1 320px;
+  min-width: 220px;
+}
+.trace-count-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: calc(32px * var(--app-zoom));
+  padding: calc(6px * var(--app-zoom)) calc(9px * var(--app-zoom));
+  border: 1px solid var(--theme-border);
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.compact-next-action { min-height: calc(32px * var(--app-zoom)); }
+.compact-unit-row {
+  margin-top: calc(8px * var(--app-zoom));
+  grid-template-columns: minmax(220px, 2fr) minmax(90px, .7fr) minmax(90px, .7fr);
+}
+.all-traces-spreadsheet th:first-child,
+.all-traces-spreadsheet td:first-child { text-align: left; color: #334155; font-weight: 700; }
+.all-traces-spreadsheet .selected-trace-row td { background: #eff6ff; }
+.all-traces-spreadsheet .selected-trace-row td:first-child { box-shadow: inset 3px 0 0 #2563eb; }
+.collapsed-import-summary .compact-import-row { grid-template-columns: auto 1fr; }
+@media (max-width: 760px) {
+  .compact-unit-row { grid-template-columns: 1fr; }
+  .compact-trace-selection-row { align-items: stretch; }
+  .compact-trace-selection-row > * { width: 100%; }
+}

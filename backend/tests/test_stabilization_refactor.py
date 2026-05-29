@@ -123,15 +123,15 @@ def test_location_placement_mismatch_makes_fit_non_reportable():
     assert any(w.code == "incoherent_location_placement" and w.severity == "error" for w in result.warnings)
 
 
-def test_secondary_diode_action_is_single_use_in_model_builder():
+def test_secondary_diode_button_removed_in_favor_of_model_preset():
     root = Path(__file__).resolve().parents[2]
     model_builder = root / "frontend" / "src" / "components" / "ModelBuilder.tsx"
     text = model_builder.read_text(encoding="utf-8")
-    assert "function canAddSecondaryDiode" in text
-    assert "forwardDiodes.length === 1" in text
-    assert "!hasSecondaryForwardDiode(model)" in text
-    assert "if (!canAddSecondaryDiode(model)) return;" in text
-    assert "allDiodeCount" not in text
+    assert "Add secondary diode D2" not in text
+    assert "secondary-diode-button" not in text
+    assert "canAddSecondaryDiode" not in text
+    assert "Double diode model" in text
+    assert "makeDoubleDiodePreset" in text
 
 
 def test_plot_empty_state_has_import_shortcut():
