@@ -16,7 +16,6 @@ import { buildReportBaseName, emptyReportArtifacts } from "../model/reportArtifa
 import { canGenerateReport, createErrorLifecycle, createRunningLifecycle, createTimeoutLifecycle, elapsedSecondsSince, nextRunId, shouldAcceptRunResult, terminalCancelledState, type FitLifecycleState } from "../model/fitLifecycle";
 import { buildHtmlReportDocument } from "../model/htmlReport";
 import { createInitialModel, initialConfig } from "../model/defaults";
-import { WorkflowContextBar } from "./components/WorkflowStatus";
 import { StartHerePage } from "./components/StartHerePage";
 import { ModelWorkflowPage, FittingWorkflowPage } from "./components/WorkflowSections";
 import { ReportWorkflowPage } from "./components/ReportWorkflowPage";
@@ -526,17 +525,6 @@ export function FittingPage() {
         zoomControl={zoomControl}
       />
       <main className="workspace workflow-shell">
-        {activeView !== "start" ? (
-          <WorkflowContextBar
-            selectedTrace={selectedTrace}
-            hasSelectedTrace={hasSelectedTrace}
-            model={model}
-            result={result}
-            isFitting={isFitting}
-            lifecycle={fitLifecycle}
-            reportAvailable={reportAvailable}
-          />
-        ) : null}
         {activeView === "start" ? (
           <StartHerePage
             setActiveView={setActiveView}
@@ -581,6 +569,7 @@ export function FittingPage() {
             onResizeStart={(event) =>
               startPaneResize(event, setModelPanePct, 28, 65)
             }
+            onGoToFitting={() => setActiveView("fitting")}
             syntheticTool={
               <SyntheticTraceTool
                 traces={traces}

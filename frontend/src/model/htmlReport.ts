@@ -87,9 +87,39 @@ function metricUnit(key: string) {
 }
 
 function fmtMetricValue(key: string, value: number | null | undefined) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  if (key.includes("r2")) return `${(value * 100).toFixed(2)}%`;
+  if (/evaluations|count|failures|fitsRun|degrees_of_freedom|optimizer_status/i.test(key)) return String(Math.round(value));
   const unit = metricUnit(key);
-  const text = fmtNumber(value, key.includes("r2") || key.includes("chi") ? 4 : 3);
+  const text = fmtNumber(value, key.includes("chi") ? 4 : 3);
   return unit && text !== "—" ? `${text} ${unit}` : text;
+}
+
+function metricDisplayName(key: string) {
+  const labels: Record<string, string> = {
+    linear_rmse_A: "Linear RMSE",
+    normalized_rmse: "Normalized RMSE",
+    linear_r2: "Linear R²",
+    log_magnitude_r2: "Log |I| R²",
+    log_magnitude_mae_decades: "Log |I| MAE",
+    reduced_chi_square: "Reduced χ²",
+    weighted_chi_square: "Weighted χ²",
+    max_abs_residual_A: "Max residual",
+    elapsed_s: "Solver time",
+    function_evaluations: "Function evaluations",
+    jacobian_evaluations: "Jacobian evaluations",
+    free_parameter_count: "Free parameters",
+    degrees_of_freedom: "Degrees of freedom",
+    optimizer_status: "Optimizer status",
+    cost: "Final cost",
+    optimality: "Optimality",
+    root_solver_failures: "Root-solver failures",
+    fitsRun: "Fits this session",
+    totalFunctionEvaluations: "Session evaluations",
+    totalElapsedS: "Session solver time",
+    totalRootSolverFailures: "Session root failures",
+  };
+  return labels[key] ?? key.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
 function metricExplanation(key: string) {
@@ -137,7 +167,7 @@ function metricRows(result: FitResult, sessionStats: FitSessionStats) {
   const qualityKeys = ["linear_rmse_A", "normalized_rmse", "linear_r2", "log_magnitude_r2", "log_magnitude_mae_decades", "reduced_chi_square", "weighted_chi_square", "max_abs_residual_A"];
   const quality = qualityKeys
     .filter((key) => m[key] !== undefined)
-    .map((key) => ({ parameter: key, value: fmtMetricValue(key, m[key]), explanation: metricExplanation(key) }));
+    .map((key) => ({ parameter: metricDisplayName(key), value: fmtMetricValue(key, m[key]), explanation: metricExplanation(key) }));
   const solverData: Array<[string, number | null | undefined]> = [
     ["elapsed_s", d?.elapsed_s],
     ["function_evaluations", d?.function_evaluations],
@@ -149,14 +179,14 @@ function metricRows(result: FitResult, sessionStats: FitSessionStats) {
     ["optimality", d?.optimality],
     ["root_solver_failures", d?.root_solver_failures],
   ];
-  const solver = solverData.map(([key, value]) => ({ parameter: key, value: fmtMetricValue(key, value), explanation: solverExplanation(key) }));
+  const solver = solverData.map(([key, value]) => ({ parameter: metricDisplayName(key), value: fmtMetricValue(key, value), explanation: solverExplanation(key) }));
   const sessionData: Array<[string, number | null | undefined]> = [
     ["fitsRun", sessionStats.fitsRun],
     ["totalFunctionEvaluations", sessionStats.totalFunctionEvaluations],
     ["totalElapsedS", sessionStats.totalElapsedS],
     ["totalRootSolverFailures", sessionStats.totalRootSolverFailures],
   ];
-  const session = sessionData.map(([key, value]) => ({ parameter: key, value: fmtMetricValue(key, value), explanation: sessionExplanation(key) }));
+  const session = sessionData.map(([key, value]) => ({ parameter: metricDisplayName(key), value: fmtMetricValue(key, value), explanation: sessionExplanation(key) }));
   return [...quality, ...solver, ...session];
 }
 

@@ -296,6 +296,7 @@ export function ModelBuilder({ model, registry, onChange, language, disabled = f
         <h2>{t(language, "modelBuilder")} <HelpTip text={t(language, "modelBuilderHelp")} /></h2>
       </div>
       <CircuitCard model={model} language={language} />
+      <div className="model-builder-two-column">
       {builderBuckets.map((bucket) => {
         const definitions = definitionsForBucket(bucket);
         const definition = selectedDefinition(bucket);
@@ -343,6 +344,7 @@ export function ModelBuilder({ model, registry, onChange, language, disabled = f
           </div>
         );
       })}
+      </div>
     </section>
   );
 }

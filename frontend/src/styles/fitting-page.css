@@ -1327,3 +1327,28 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* v1.7.7: keep report plots compact and make metric rows readable. */
+.report-plots-card {
+  overflow: hidden;
+}
+.report-plot-grid {
+  align-items: start;
+}
+.report-plots-card .simple-chart {
+  height: clamp(240px, 30vh, 340px);
+  min-height: 240px;
+  max-height: 340px;
+  overflow: hidden;
+}
+.report-plots-card .simple-chart > svg {
+  height: 100%;
+  max-height: 340px;
+}
+.report-metric-table td:first-child {
+  font-family: inherit;
+  letter-spacing: 0;
+}
+.report-metric-table td:nth-child(2) {
+  font-variant-numeric: tabular-nums;
+}

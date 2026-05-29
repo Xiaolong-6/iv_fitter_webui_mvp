@@ -191,9 +191,42 @@ function metricUnit(key: string) {
 }
 
 function fmtMetricValue(key: string, value: number | null | undefined) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  if (key.includes("r2")) return `${(value * 100).toFixed(2)}%`;
+  if (/evaluations|count|failures|fitsRun|degrees_of_freedom|optimizer_status/i.test(key)) return String(Math.round(value));
   const unit = metricUnit(key);
-  const text = fmtNumber(value, key.includes("r2") || key.includes("chi") ? 4 : 3);
+  const text = fmtNumber(value, key.includes("chi") ? 4 : 3);
   return unit && text !== "—" ? `${text} ${unit}` : text;
+}
+
+function metricDisplayName(key: string, language: Language) {
+  const zh = language === "zh";
+  const labels: Record<string, [string, string]> = {
+    linear_rmse_A: ["Linear RMSE", "线性 RMSE"],
+    normalized_rmse: ["Normalized RMSE", "归一化 RMSE"],
+    linear_r2: ["Linear R²", "线性 R²"],
+    log_magnitude_r2: ["Log |I| R²", "Log |I| R²"],
+    log_magnitude_mae_decades: ["Log |I| MAE", "Log |I| 平均误差"],
+    reduced_chi_square: ["Reduced χ²", "Reduced χ²"],
+    weighted_chi_square: ["Weighted χ²", "加权 χ²"],
+    max_abs_residual_A: ["Max residual", "最大残差"],
+    elapsed_s: ["Solver time", "求解耗时"],
+    function_evaluations: ["Function evaluations", "函数评估次数"],
+    jacobian_evaluations: ["Jacobian evaluations", "Jacobian 评估次数"],
+    free_parameter_count: ["Free parameters", "自由参数数"],
+    degrees_of_freedom: ["Degrees of freedom", "自由度"],
+    optimizer_status: ["Optimizer status", "优化器状态"],
+    cost: ["Final cost", "最终代价"],
+    optimality: ["Optimality", "最优性"],
+    root_solver_failures: ["Root-solver failures", "Root 求解失败"],
+    fitsRun: ["Fits this session", "本会话拟合次数"],
+    totalFunctionEvaluations: ["Session evaluations", "会话累计评估"],
+    totalElapsedS: ["Session solver time", "会话累计耗时"],
+    totalRootSolverFailures: ["Session root failures", "会话累计 root 失败"],
+  };
+  const pair = labels[key];
+  if (pair) return zh ? pair[1] : pair[0];
+  return key.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
 function metricExplanation(key: string, language: Language) {
@@ -330,7 +363,7 @@ function metricRows(result: FitResult, sessionStats: FitSessionStats, language: 
   const qualityKeys = ["linear_rmse_A", "normalized_rmse", "linear_r2", "log_magnitude_r2", "log_magnitude_mae_decades", "reduced_chi_square", "weighted_chi_square", "max_abs_residual_A"];
   const quality = qualityKeys
     .filter((key) => m[key] !== undefined)
-    .map((key) => ({ parameter: key, value: fmtMetricValue(key, m[key]), explanation: metricExplanation(key, language) }));
+    .map((key) => ({ parameter: metricDisplayName(key, language), value: fmtMetricValue(key, m[key]), explanation: metricExplanation(key, language) }));
   const solverData: Array<[string, number | null | undefined]> = [
     ["elapsed_s", d?.elapsed_s],
     ["function_evaluations", d?.function_evaluations],
@@ -342,14 +375,14 @@ function metricRows(result: FitResult, sessionStats: FitSessionStats, language: 
     ["optimality", d?.optimality],
     ["root_solver_failures", d?.root_solver_failures],
   ];
-  const solver = solverData.map(([key, value]) => ({ parameter: key, value: fmtMetricValue(key, value), explanation: solverExplanation(key, language) }));
+  const solver = solverData.map(([key, value]) => ({ parameter: metricDisplayName(key, language), value: fmtMetricValue(key, value), explanation: solverExplanation(key, language) }));
   const sessionData: Array<[string, number | null | undefined]> = [
     ["fitsRun", sessionStats.fitsRun],
     ["totalFunctionEvaluations", sessionStats.totalFunctionEvaluations],
     ["totalElapsedS", sessionStats.totalElapsedS],
     ["totalRootSolverFailures", sessionStats.totalRootSolverFailures],
   ];
-  const session = sessionData.map(([key, value]) => ({ parameter: key, value: fmtMetricValue(key, value), explanation: sessionExplanation(key, language) }));
+  const session = sessionData.map(([key, value]) => ({ parameter: metricDisplayName(key, language), value: fmtMetricValue(key, value), explanation: sessionExplanation(key, language) }));
   return [...quality, ...solver, ...session];
 }
 
@@ -401,7 +434,7 @@ function CriticalIssue({ result, semantics, language }: { result: FitResult | nu
 
 function FitMetricsSection({ result, sessionStats, language }: { result: FitResult; sessionStats: FitSessionStats; language: Language }) {
   const rows = metricRows(result, sessionStats, language);
-  return <section className="card report-section report-fit-metrics-card"><h2>{rt(language, "metrics")}</h2><div className="table-wrap"><table className="report-metric-table"><tbody>{rows.map((row) => <tr key={row.parameter}><td><code>{row.parameter}</code></td><td>{row.value}</td><td>{row.explanation}</td></tr>)}</tbody></table></div>{result.fit_diagnostics?.optimizer_message ? <p className="fit-process-note"><strong>Solver message: </strong>{result.fit_diagnostics.optimizer_message}</p> : null}</section>;
+  return <section className="card report-section report-fit-metrics-card"><h2>{rt(language, "metrics")}</h2><div className="table-wrap"><table className="report-metric-table"><tbody>{rows.map((row) => <tr key={row.parameter}><td>{row.parameter}</td><td>{row.value}</td><td>{row.explanation}</td></tr>)}</tbody></table></div>{result.fit_diagnostics?.optimizer_message ? <p className="fit-process-note"><strong>Solver message: </strong>{result.fit_diagnostics.optimizer_message}</p> : null}</section>;
 }
 
 function ParameterSummary({ result, language, diagnosticOnly }: { result: FitResult; language: Language; diagnosticOnly: boolean }) {

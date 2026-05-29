@@ -55,6 +55,7 @@ export function ModelWorkflowPage({
   leftPct,
   onResizeStart,
   syntheticTool,
+  onGoToFitting,
 }: {
   model: ModelSpec;
   setModel: (model: ModelSpec) => void;
@@ -66,6 +67,7 @@ export function ModelWorkflowPage({
   leftPct: number;
   onResizeStart: (event: ReactPointerEvent<HTMLDivElement>) => void;
   syntheticTool?: ReactNode;
+  onGoToFitting?: () => void;
 }) {
   void leftPct;
   void onResizeStart;
@@ -85,6 +87,9 @@ export function ModelWorkflowPage({
           </ErrorBoundary>
         </PageSection>
         <PageSection title={t(language, "equationPreview")} hideHeader className="model-preview-section">
+          <div className="model-preview-action-row">
+            <button type="button" className="primary" onClick={onGoToFitting}>{language === "zh" ? "前往拟合" : "Go to Fitting"}</button>
+          </div>
           <ErrorBoundary label="Equation preview">
             <EquationPreview
               equations={equationSummary}

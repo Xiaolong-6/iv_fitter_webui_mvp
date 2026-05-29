@@ -1329,3 +1329,30 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
     padding-inline: calc(10px * var(--app-zoom));
   }
 }
+
+/* v1.7.7: webpage-like import/model flow refinements. */
+.model-builder-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(14px * var(--app-zoom));
+  align-items: start;
+}
+.model-preview-action-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: calc(10px * var(--app-zoom));
+}
+.collapsed-import-summary {
+  padding: calc(4px * var(--app-zoom)) 0 0;
+}
+.collapsed-import-summary .compact-import-row {
+  border: 1px solid var(--theme-border);
+  border-radius: calc(12px * var(--app-zoom));
+  background: #f8fafc;
+  padding: calc(8px * var(--app-zoom)) calc(10px * var(--app-zoom));
+}
+@media (max-width: 920px) {
+  .model-builder-two-column {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

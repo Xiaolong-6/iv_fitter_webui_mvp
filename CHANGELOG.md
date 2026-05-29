@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.7.7 — Webpage flow cleanup and report plot hotfix
+
+- Removed the global top workflow context/status bar (`Trace / Model / Fit / Report / Next`) so Import, Model, Fit, and Report pages read like normal webpages.
+- Changed the loaded-data Import card to collapse into a compact read-only loaded summary immediately after import/parse; removed the Hide / Change data state from that page flow.
+- Placed Model Builder main-path and junction-branch groups side by side on wide screens, with automatic single-column stacking on narrow screens.
+- Added a `Go to Fitting` action above Model preview.
+- Fixed Report plots by giving the in-report chart grid bounded heights so plots do not grow indefinitely after fitting.
+- Reformatted Fit process and quality metrics with human-readable metric names and cleaner values, and aligned the exported HTML metric names with the in-app Report page.
+- Kept fitting physics, backend APIs, saved-model compatibility, and numerical report data unchanged.
+
 ## v1.7.6 — Report page/export layout alignment
 
 - Moved the Report side/control panel from the right side to the left side while preserving the previous side-panel default width.
@@ -526,6 +536,16 @@ Tests: `PYTHONPATH=backend pytest -q backend/tests/test_fit_process_diagnostics.
 - Updated Markdown reports to include fit-process diagnostics.
 
 # Changelog
+
+## v1.7.7 — Webpage flow cleanup and report plot hotfix
+
+- Removed the global top workflow context/status bar (`Trace / Model / Fit / Report / Next`) so Import, Model, Fit, and Report pages read like normal webpages.
+- Changed the loaded-data Import card to collapse into a compact read-only loaded summary immediately after import/parse; removed the Hide / Change data state from that page flow.
+- Placed Model Builder main-path and junction-branch groups side by side on wide screens, with automatic single-column stacking on narrow screens.
+- Added a `Go to Fitting` action above Model preview.
+- Fixed Report plots by giving the in-report chart grid bounded heights so plots do not grow indefinitely after fitting.
+- Reformatted Fit process and quality metrics with human-readable metric names and cleaner values, and aligned the exported HTML metric names with the in-app Report page.
+- Kept fitting physics, backend APIs, saved-model compatibility, and numerical report data unchanged.
 
 ## v1.5.43 — Fitting and Data responsive polish
 
