@@ -1,4 +1,12 @@
 # Changelog
+## v1.7.15 — Manual reader navigation and scroll stabilization
+
+- Removed the responsive Manual layout branch that changed the Sections locator into a horizontal tab bar.
+- Kept one vertical Sections-list navigation model across wide, narrow, and portrait layouts.
+- Restored reliable Manual page scrolling through the `.doc-page` scroll container.
+- Updated Manual active-section tracking to listen to the actual scroll container instead of only `window`.
+- Added direct scroll-root positioning for section jumps so navigation buttons and content stay synchronized.
+
 
 ## v1.7.14 — Start-page status cards and help affordance
 - Moved workflow status out of the bottom Current state strip and into each Start-page card.

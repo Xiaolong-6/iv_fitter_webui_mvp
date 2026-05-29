@@ -779,3 +779,114 @@
     max-height: min(38vh, calc(320px * var(--app-zoom)));
   }
 }
+
+/* v1.7.15: stabilize Manual reader layout.
+   Keep one Sections-list navigation model across all breakpoints and let the
+   page/body scroll reliably instead of swapping into a horizontal tab bar. */
+.doc-page {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  align-content: start;
+}
+
+.manual-reader-one-column {
+  width: min(100%, calc(1180px * var(--app-zoom)));
+  max-width: calc(1180px * var(--app-zoom));
+  min-height: min-content;
+  margin: 0 auto;
+  padding: calc(16px * var(--app-zoom)) calc(16px * var(--app-zoom)) calc(80px * var(--app-zoom));
+  display: grid;
+  grid-template-columns: clamp(176px, 20vw, 240px) minmax(0, 1fr);
+  grid-template-areas:
+    "release release"
+    "title title"
+    "nav content";
+  gap: calc(14px * var(--app-zoom));
+  align-items: start;
+}
+
+.manual-reader-one-column > .release-status-panel,
+.manual-reader-one-column > .card {
+  grid-area: release;
+  width: 100%;
+}
+
+.manual-reader-one-column .manual-title-top {
+  grid-area: title;
+  margin: 0;
+}
+
+.manual-reader-one-column .manual-reader-nav {
+  grid-area: nav;
+  position: sticky !important;
+  top: calc(10px * var(--app-zoom));
+  right: auto !important;
+  z-index: 2;
+  width: 100% !important;
+  max-height: calc(100vh - 120px);
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: calc(6px * var(--app-zoom));
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  box-shadow: none;
+}
+
+.manual-reader-one-column .manual-reader-nav-title {
+  display: block !important;
+}
+
+.manual-reader-one-column .manual-reader-nav button {
+  width: 100%;
+  min-width: 0 !important;
+  justify-content: start;
+}
+
+.manual-reader-one-column .manual-reader-content {
+  grid-area: content;
+  min-width: 0;
+  min-height: 0;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.manual-reader-one-column .manual-reader-content-scroll {
+  min-height: 0;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.manual-reader-one-column .manual-reader-content-scroll.continuous {
+  display: grid;
+  gap: calc(12px * var(--app-zoom));
+  scroll-behavior: smooth;
+}
+
+.manual-reader-one-column .manual-continuous-section,
+.manual-reader-one-column .manual-continuous-section .manual-section {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .manual-reader-one-column {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "release"
+      "title"
+      "nav"
+      "content";
+    padding-left: calc(10px * var(--app-zoom));
+    padding-right: calc(10px * var(--app-zoom));
+  }
+
+  .manual-reader-one-column .manual-reader-nav {
+    position: sticky !important;
+    top: calc(6px * var(--app-zoom));
+    max-height: min(36vh, calc(320px * var(--app-zoom)));
+  }
+}

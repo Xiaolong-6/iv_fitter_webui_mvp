@@ -1,6 +1,6 @@
-# Tested current — v1.7.14
+# Tested current — v1.7.15
 
-Validated after the v1.7.14 Start-page workflow-status polish pass.
+Validated after the v1.7.15 Manual reader navigation/scroll stabilization pass.
 
 ## Scope
 
@@ -8,7 +8,7 @@ Validated after the v1.7.14 Start-page workflow-status polish pass.
 - Tightened CORS to explicit GET/POST/OPTIONS methods and the current request headers.
 - Increased legacy junction-solver bracket robustness and aligned graph-solver bias-dependent current softplus math.
 - Fixed Manual portrait responsive behavior so Sections remain vertically stacked and scrollable.
-- Bumped root, frontend, and backend package metadata from v1.7.13 to v1.7.14.
+- Bumped root, frontend, and backend package metadata from v1.7.14 to v1.7.15.
 - Polished the Start page with per-card status badges, completion checkmarks, locked-step states, and a higher-visibility Help action.
 - Saved-model schema and report export schemas are unchanged.
 
@@ -42,3 +42,10 @@ python -m compileall -q ivfitter
 
 
 Note: frontend dependency execution may depend on the local npm cache/mirror. Run `npm run test:frontend -- --run --reporter=dot` and `npm run build` locally before tagging if this container cannot execute them.
+
+## v1.7.15 Manual reader validation notes
+
+- Manual Sections navigation now uses a vertical list across all breakpoints.
+- Removed horizontal tab-mode overrides that could leave the content area blank after responsive layout switching.
+- Manual active-section tracking now follows the `.doc-page` scroll container.
+- Backend pytest/compileall passed in this container. Frontend build/test still requires local npm dependencies.

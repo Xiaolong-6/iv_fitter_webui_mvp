@@ -236,12 +236,15 @@ function ManualReader({ registry, appVersion, language }: { registry: FunctionDe
 
   useEffect(() => {
     setActive("solving");
-    const container = contentRef.current;
-    if (container) container.scrollTo({ top: 0 });
+    const scrollRoot = contentRef.current?.closest(".doc-page");
+    if (scrollRoot instanceof HTMLElement) scrollRoot.scrollTo({ top: 0 });
+    else window.scrollTo({ top: 0 });
   }, [language]);
 
   useEffect(() => {
     let frame = 0;
+    const scrollRoot = contentRef.current?.closest(".doc-page");
+    const scrollTarget: HTMLElement | Window = scrollRoot instanceof HTMLElement ? scrollRoot : window;
     const updateActiveFromScroll = () => {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
@@ -249,25 +252,40 @@ function ManualReader({ registry, appVersion, language }: { registry: FunctionDe
           .map((item) => document.getElementById(item.id))
           .filter((el): el is HTMLElement => Boolean(el));
         if (!sections.length) return;
+        const rootTop = scrollRoot instanceof HTMLElement ? scrollRoot.getBoundingClientRect().top : 0;
+        const threshold = rootTop + 120;
         let current = sections[0];
         for (const section of sections) {
-          if (section.getBoundingClientRect().top <= 120) current = section;
+          if (section.getBoundingClientRect().top <= threshold) current = section;
           else break;
         }
         setActive(current.id as ManualSectionKey);
       });
     };
-    window.addEventListener("scroll", updateActiveFromScroll, { passive: true });
+    scrollTarget.addEventListener("scroll", updateActiveFromScroll, { passive: true });
+    window.addEventListener("resize", updateActiveFromScroll, { passive: true });
     updateActiveFromScroll();
     return () => {
       window.cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", updateActiveFromScroll);
+      scrollTarget.removeEventListener("scroll", updateActiveFromScroll);
+      window.removeEventListener("resize", updateActiveFromScroll);
     };
   }, [labels]);
 
   const jumpToSection = (id: ManualSectionKey) => {
     setActive(id);
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const section = document.getElementById(id);
+    const scrollRoot = contentRef.current?.closest(".doc-page");
+    if (section && scrollRoot instanceof HTMLElement) {
+      const rootRect = scrollRoot.getBoundingClientRect();
+      const sectionRect = section.getBoundingClientRect();
+      scrollRoot.scrollTo({
+        top: scrollRoot.scrollTop + sectionRect.top - rootRect.top - 12,
+        behavior: "smooth",
+      });
+      return;
+    }
+    section?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return <div className="manual-reader manual-reader-one-column">
