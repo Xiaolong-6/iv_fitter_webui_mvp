@@ -27,10 +27,11 @@ This document summarizes release-level validation. Use `docs/TESTED_CURRENT.md` 
 
 | Version | Main validation focus | Result summary |
 |---|---|---|
+| v1.7.14 | Start-page workflow-status cards and Help affordance polish | Backend pytest/compileall passed in this container; frontend build/test should be rerun locally before release if npm dependencies are unavailable. |
+| v1.7.13 | Audit hardening, CORS tightening, junction-solver robustness, Manual portrait Sections fix | Backend pytest/compileall passed in this container; frontend build/test should be rerun locally before release if npm dependencies are unavailable. |
 | v1.7.12 | Version consistency self-check | Frontend build/Vitest passed; backend pytest/compileall passed. |
 | v1.7.11 | Data Import crash fix, frontend build/test restoration, doc cleanup | Frontend install/build/Vitest passed; backend pytest/compileall passed. |
 | v1.7.10 | Import unit metadata helper hotfix | Backend pytest/compileall passed; frontend not yet fully validated before v1.7.11. |
-| v1.7.13 | Audit hardening, CORS tightening, junction-solver robustness, Manual portrait Sections fix | Backend pytest/compileall passed in this container; frontend build/test should be rerun locally before release if npm dependencies are unavailable. |
 | v1.7.9 | Workflow polish, Fit/Manual scrolling, compact import controls | Backend pytest/compileall passed; later frontend build exposed additional issues fixed in v1.7.11. |
 | v1.7.8 | Single-column workflow pages and floating Report exports | Backend pytest/compileall passed. |
 | v1.7.6 | Report/export layout alignment | Backend pytest/compileall passed. |

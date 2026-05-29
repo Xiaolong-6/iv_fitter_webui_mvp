@@ -1,6 +1,15 @@
 import type { AppView } from "../../components/WorkflowSidebar";
 import type { FitResult } from "../../model/types";
 
+type StepTone = "done" | "active" | "ready" | "locked" | "running";
+
+function stepIcon(tone: StepTone) {
+  if (tone === "done") return "✓";
+  if (tone === "running") return "…";
+  if (tone === "locked") return "—";
+  return "";
+}
+
 export function StartHerePage({
   setActiveView,
   hasSelectedTrace,
@@ -14,30 +23,48 @@ export function StartHerePage({
   isFitting: boolean;
   reportAvailable: boolean;
 }) {
-  const steps = [
+  const steps: Array<{
+    title: string;
+    text: string;
+    view: AppView;
+    status: string;
+    detail: string;
+    tone: StepTone;
+    locked?: boolean;
+  }> = [
     {
       title: "Data",
       text: "Import and choose a trace.",
-      view: "data" as AppView,
+      view: "data",
       status: hasSelectedTrace ? "Loaded" : "Needed",
+      detail: hasSelectedTrace ? "Trace is selected" : "Start here",
+      tone: hasSelectedTrace ? "done" : "active",
     },
     {
       title: "Model",
       text: "Build the circuit model.",
-      view: "model" as AppView,
+      view: "model",
       status: "Ready",
+      detail: result ? "Used for current fit" : "Default circuit available",
+      tone: result ? "done" : "ready",
     },
     {
       title: "Fitting",
       text: "Run and inspect the fit.",
-      view: "fitting" as AppView,
+      view: "fitting",
       status: isFitting ? "Running" : result ? "Done" : "Not run",
+      detail: isFitting ? "Solver in progress" : result ? "Fit result exists" : "Awaiting run",
+      tone: isFitting ? "running" : result ? "done" : hasSelectedTrace ? "active" : "locked",
+      locked: !hasSelectedTrace,
     },
     {
       title: "Report",
       text: "Review and export results.",
-      view: "report" as AppView,
+      view: "report",
       status: reportAvailable ? "Available" : "Unavailable",
+      detail: reportAvailable ? "Export is ready" : "Needs a completed fit",
+      tone: reportAvailable ? "done" : result ? "active" : "locked",
+      locked: !result,
     },
   ];
   return (
@@ -57,8 +84,9 @@ export function StartHerePage({
           >
             Start with data
           </button>
-          <button type="button" className="hero-large-action" onClick={() => setActiveView("help")}>
-            Open help
+          <button type="button" className="hero-large-action hero-help-action" onClick={() => setActiveView("help")} aria-label="Open help and parameter guide">
+            <span className="hero-help-icon" aria-hidden="true">?</span>
+            <span>Help</span>
           </button>
         </div>
       </div>
@@ -72,25 +100,31 @@ export function StartHerePage({
       <div className="minimal-workflow-grid">
         {steps.map((step, idx) => (
           <article
-            className="minimal-workflow-card"
+            className={`minimal-workflow-card step-${step.tone}${step.locked ? " is-locked" : ""}`}
             key={step.title}
-            onClick={() => setActiveView(step.view)}
+            onClick={() => !step.locked && setActiveView(step.view)}
+            onKeyDown={(event) => {
+              if (!step.locked && (event.key === "Enter" || event.key === " ")) {
+                event.preventDefault();
+                setActiveView(step.view);
+              }
+            }}
             role="button"
-            tabIndex={0}
+            tabIndex={step.locked ? -1 : 0}
+            aria-disabled={step.locked ? "true" : undefined}
           >
-            <span className="minimal-step-index">{idx + 1}</span>
-            <span className="minimal-step-status">{step.status}</span>
+            <div className="minimal-step-topline">
+              <span className="minimal-step-index">{idx + 1}</span>
+              <span className="minimal-step-check" aria-hidden="true">{stepIcon(step.tone)}</span>
+            </div>
             <h3>{step.title}</h3>
             <p>{step.text}</p>
+            <div className="minimal-card-state" aria-label={`${step.title} status: ${step.status}`}>
+              <span className={`minimal-step-status status-${step.tone}`}>{step.status}</span>
+              <span className="minimal-step-detail">{step.detail}</span>
+            </div>
           </article>
         ))}
-      </div>
-      <div className="minimal-current-state">
-        <strong>Current state</strong>
-        <span>Trace: {hasSelectedTrace ? "loaded" : "no trace loaded"}</span>
-        <span>Model: Rs + D1 + Rsh</span>
-        <span>Fit: {isFitting ? "running" : result ? "complete" : "not run"}</span>
-        <span>Report: {reportAvailable ? "available" : "unavailable"}</span>
       </div>
     </section>
   );

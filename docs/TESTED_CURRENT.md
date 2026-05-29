@@ -1,6 +1,6 @@
-# Tested current — v1.7.13
+# Tested current — v1.7.14
 
-Validated after the v1.7.13 audit-hardening and Manual portrait-fix pass.
+Validated after the v1.7.14 Start-page workflow-status polish pass.
 
 ## Scope
 
@@ -8,7 +8,8 @@ Validated after the v1.7.13 audit-hardening and Manual portrait-fix pass.
 - Tightened CORS to explicit GET/POST/OPTIONS methods and the current request headers.
 - Increased legacy junction-solver bracket robustness and aligned graph-solver bias-dependent current softplus math.
 - Fixed Manual portrait responsive behavior so Sections remain vertically stacked and scrollable.
-- Bumped root, frontend, and backend package metadata from v1.7.12 to v1.7.13.
+- Bumped root, frontend, and backend package metadata from v1.7.13 to v1.7.14.
+- Polished the Start page with per-card status badges, completion checkmarks, locked-step states, and a higher-visibility Help action.
 - Saved-model schema and report export schemas are unchanged.
 
 ## Commands run in this environment

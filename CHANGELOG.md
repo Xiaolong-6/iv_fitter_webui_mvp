@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.7.14 — Start-page status cards and help affordance
+- Moved workflow status out of the bottom Current state strip and into each Start-page card.
+- Added active/done/running/locked visual states, green checkmarks for completed steps, and keyboard handling for clickable workflow cards.
+- Made locked future steps visually muted and non-interactive until prerequisites exist.
+- Replaced the low-contrast Open help outline action with a more visible Help button and question-mark icon.
+
 ## v1.7.13 — Audit hardening and Manual portrait fix
 
 - Restricted the server-side local file dialog endpoint to localhost/loopback requests so LAN clients cannot remotely trigger backend-host file access.
