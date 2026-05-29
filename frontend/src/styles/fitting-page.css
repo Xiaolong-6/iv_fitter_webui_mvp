@@ -1141,3 +1141,66 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* v1.7.1: parameter/model usability polish */
+.parameter-diagnostic-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  margin: 0.35rem 0 0.55rem;
+  font-size: 0.78rem;
+}
+.parameter-diagnostic-strip button {
+  border: 1px solid var(--border-color, #d7dee8);
+  border-radius: 999px;
+  background: #f7f9fc;
+  padding: 0.18rem 0.55rem;
+  font-size: 0.76rem;
+}
+.parameter-diagnostic-strip button.active {
+  background: #e9f2ff;
+  border-color: #8bbcff;
+}
+.parameter-diagnostic-strip button:disabled {
+  opacity: 0.55;
+}
+.parameter-diagnostic-ok {
+  color: #3b7a45;
+}
+.parameter-diagnostic-warning,
+.parameter-component-warning {
+  color: #9a5b00;
+  font-weight: 650;
+}
+.parameter-law-form-placement {
+  display: inline-flex;
+  max-width: min(54vw, 760px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted-color, #596779);
+  font-size: 0.75rem;
+}
+.parameter-component-divider td:first-child {
+  border-left: 4px solid #8aa4c7;
+}
+.parameter-component-divider.component-accent-0 td:first-child { border-left-color: #6f95c9; }
+.parameter-component-divider.component-accent-1 td:first-child { border-left-color: #7ba988; }
+.parameter-component-divider.component-accent-2 td:first-child { border-left-color: #c6a15a; }
+.parameter-component-divider.component-accent-3 td:first-child { border-left-color: #b980a6; }
+.parameter-component-divider.component-accent-4 td:first-child { border-left-color: #8c8ed1; }
+.parameter-component-divider.component-accent-5 td:first-child { border-left-color: #70a7ad; }
+.parameter-component-divider.component-accent-6 td:first-child { border-left-color: #b98a6f; }
+.parameter-component-divider.component-accent-7 td:first-child { border-left-color: #8aa0a8; }
+.parameter-fit-batch-toggles {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.parameter-fit-batch-toggles button {
+  font-size: 0.72rem;
+  padding: 0.22rem 0.45rem;
+}

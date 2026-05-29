@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { compareVersions, isNewerVersion, normalizeVersion } from "../../utils/version";
-import { checkLatestRelease } from "../../services/releaseCheck";
+import { checkLatestRelease, detectSensitiveReleaseText, evaluateReleaseReadiness, releaseTextIsPrivacySafe } from "../../services/releaseCheck";
 
 describe("semantic version helpers", () => {
   it("normalizes leading v and compares stable versions", () => {
@@ -53,5 +53,31 @@ describe("release checker", () => {
     expect(result.updateAvailable).toBe(false);
     expect(result.latestVersion).toBeNull();
     expect(result.versionRelation).toBe("unknown");
+  });
+});
+
+
+describe("release privacy scanner", () => {
+  it("detects local paths and email addresses in release text", () => {
+    const findings = detectSensitiveReleaseText("Built from C:\\Users\\name\\repo and /home/name/repo; contact test@example.com");
+    expect(findings.map((item) => item.kind)).toEqual(["windows_path", "unix_home_path", "email"]);
+    expect(releaseTextIsPrivacySafe("Release notes without local paths")).toBe(true);
+  });
+});
+
+
+describe("release readiness gate", () => {
+  it("blocks release when required checks are missing", () => {
+    const result = evaluateReleaseReadiness({ appVersion: "1.7.1", declaredVersions: { frontend: "1.7.1", backend: "1.7.0" }, releaseText: "Built at C:\Users\name\repo" });
+    expect(result.ok).toBe(false);
+    expect(result.blockingCount).toBeGreaterThanOrEqual(4);
+    expect(result.items.find((item) => item.id === "version-consistency")?.ok).toBe(false);
+    expect(result.items.find((item) => item.id === "privacy-scan")?.ok).toBe(false);
+  });
+
+  it("passes only when all required gates are true", () => {
+    const result = evaluateReleaseReadiness({ appVersion: "1.7.1", declaredVersions: { frontend: "v1.7.1", backend: "1.7.1" }, releaseText: "Public release notes", backendTestsPassed: true, frontendBuildPassed: true, manualBrowserChecked: true });
+    expect(result.ok).toBe(true);
+    expect(result.blockingCount).toBe(0);
   });
 });

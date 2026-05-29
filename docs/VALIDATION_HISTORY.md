@@ -37,3 +37,11 @@ Use `docs/TESTED_CURRENT.md` for the exact commands and result status of the cur
 - Keep one current validation note: `docs/TESTED_CURRENT.md`.
 - Append short historical summaries here after release-level changes.
 - Do not add `TESTED_1_x_y.md` for every internal handoff package unless the user explicitly asks for a version-specific external audit artifact.
+
+
+## v1.7.1 — Consolidated delivery audit
+
+- Backend pytest passed in sandbox: 122 tests.
+- Backend compileall passed.
+- Frontend npm validation was not run because dependencies are not installed in sandbox; local validation remains required.
+- This version intentionally consolidates the prior partial promises into one version instead of producing more partial packages.

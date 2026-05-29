@@ -261,3 +261,15 @@ The User Manual is now one continuous scrollable document. The left section list
 - Data page now uses source tabs for Upload/Paste/Sample, includes drag-and-drop upload, and gives imported traces more space for plot/table preview.
 - Chart controls should remain compact header controls; do not reintroduce large overlay controls that cover legends or data.
 - Fit setup must remain pane-width responsive at high zoom; Run should stay full-width when the pane is narrow.
+
+
+## v1.7.1 handoff
+
+Work from v1.7.1 if continuing this branch. The key changed files are:
+
+- `frontend/src/model/parameterGrouping.ts` — placement grouping, filter counts, component law/form/placement metadata, component seed-from-fit.
+- `frontend/src/components/ParameterTable.tsx` — grouped parameter UI, diagnostic strip, component-level seed action.
+- `frontend/src/components/ExternalTesterChecklist.tsx` — embedded external tester workflow on Start page.
+- `frontend/src/services/releaseCheck.ts` and `ReleaseStatusPanel.tsx` — testable release readiness gate and privacy scan.
+
+Do not claim frontend validation until `npm run test -- --run --reporter=dot` and `npm run build` have been run locally.

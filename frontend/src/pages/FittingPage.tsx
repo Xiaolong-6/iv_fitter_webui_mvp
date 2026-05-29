@@ -14,7 +14,7 @@ import { DataImportWorkspace } from "../components/DataImportWorkspace";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { buildReportBaseName, emptyReportArtifacts } from "../model/reportArtifacts";
-import { canGenerateReport, createCancelledLifecycle, createErrorLifecycle, createRunningLifecycle, createTimeoutLifecycle, nextRunId, shouldAcceptRunResult, type FitLifecycleState } from "../model/fitLifecycle";
+import { canGenerateReport, createErrorLifecycle, createRunningLifecycle, createTimeoutLifecycle, elapsedSecondsSince, nextRunId, shouldAcceptRunResult, terminalCancelledState, type FitLifecycleState } from "../model/fitLifecycle";
 import { buildHtmlReportDocument } from "../model/htmlReport";
 import { createInitialModel, initialConfig } from "../model/defaults";
 import { WorkflowContextBar } from "./components/WorkflowStatus";
@@ -355,7 +355,7 @@ export function FittingPage() {
       if (e instanceof DOMException && e.name === "AbortError") {
         cancelledFitRunIdsRef.current.add(runId);
         activeFitRunIdRef.current = null;
-        setFitLifecycle(createCancelledLifecycle(runId, elapsedSeconds));
+        setFitLifecycle(terminalCancelledState(runId, fitStartedAt));
         setError(
           language === "zh"
             ? "拟合请求已中止。本次结果不会写入界面。"
@@ -385,10 +385,12 @@ export function FittingPage() {
     if (runId !== null) cancelledFitRunIdsRef.current.add(runId);
     activeFitRunIdRef.current = null;
     abortFitRef.current?.abort();
+    const stoppedElapsed = elapsedSecondsSince(fitStartedAt);
+    setElapsedSeconds(stoppedElapsed);
     setIsFitting(false);
     setFitStartedAt(null);
     setFitLifecycle(
-      createCancelledLifecycle(runId ?? fitRunSeqRef.current, elapsedSeconds),
+      terminalCancelledState(runId ?? fitRunSeqRef.current, fitStartedAt),
     );
     setError(
       language === "zh"
@@ -587,6 +589,7 @@ export function FittingPage() {
             result={result}
             isFitting={isFitting}
             reportAvailable={reportAvailable}
+            language={language}
           />
         ) : activeView === "data" ? (
           <DataImportWorkspace

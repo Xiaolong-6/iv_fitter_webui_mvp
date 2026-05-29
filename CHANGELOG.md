@@ -1,5 +1,63 @@
 # Changelog
 
+## v1.7.2 — Frontend dependency install hotfix
+
+- Sanitized `package-lock.json` and `frontend/package-lock.json` so resolved tarball URLs point to the public npm registry instead of an internal sandbox mirror.
+- Pinned the locked `electron-to-chromium` package entry to a known public npm tarball already present in the root lockfile, avoiding the stale `1.5.371` tarball URL that returned 404.
+- Added root and frontend `.npmrc` files to force `https://registry.npmjs.org/` and include devDependencies by default.
+- Added `scripts/frontend_dependency_repair.ps1` to clean frontend dependencies, reinstall with devDependencies, verify Vitest is present, then run frontend tests and build.
+- Kept fitting physics, backend APIs, saved-model compatibility, and report schemas unchanged.
+
+## v1.7.1 — Fulfilled usability and release-readiness consolidation
+
+- Completed the previously partial model/parameter usability work: parameter groups are now split into main path, junction core, parallel/leakage branches, and modifiers; each component header shows read-only Law / Form / Placement metadata.
+- Added per-component diagnostic counts for near-bound and weakly identified parameters, filter count chips, and a component-level "Seed from fit" action that copies fitted values back to that component only without changing topology.
+- Added an embedded External tester mode on the Start page with role-specific guidance for UI testers, research users, and synthetic-data testers plus live workflow step status.
+- Expanded the release update panel into a local release gate: version consistency, release-note privacy scan, backend test record, frontend build/test record, manual browser check record, and portable smoke-test recommendation.
+- Added frontend unit-test coverage for parameter grouping, single-component seed-from-fit, and release readiness gate helpers.
+- Kept fitting physics, backend APIs, saved-model compatibility, report schemas, and numerical fitting logic unchanged.
+
+## v1.7.0 — External tester readiness package
+
+- Added `docs/EXTERNAL_TESTING_GUIDE.md` with separate workflows for UI-only testers, research users with real IV data, and software testers using synthetic data.
+- Added `examples/demo_data/TESTER_WORKFLOWS.md` to define the expected demo-data categories and metadata required for external validation.
+- Linked the external testing guide from the README.
+- Carried forward v1.6.1 plot rendering polish, v1.6.2 lifecycle hardening, v1.6.3 parameter filtering, and v1.6.4 release privacy checks.
+- Kept fitting physics, backend APIs, saved-model compatibility, and report schemas unchanged.
+
+
+## v1.6.4 — Release privacy and reproducibility hardening
+
+- Added release-note privacy scanner helpers for Windows user paths, Unix home paths, and email-address leakage.
+- Added tests for release privacy scanning so public release text can be checked before publishing.
+- Added `docs/RELEASE_PRIVACY_CHECKLIST.md` with explicit release-blocking leakage categories and validation wording rules.
+- Preserved frontend UI behavior, fitting physics, backend APIs, saved-model compatibility, and report schemas from v1.6.3.
+
+
+## v1.6.3 — Parameter table filtering and model usability polish
+
+- Added parameter-table filtering for all/free/fixed/near-bound/weakly identified rows to make complex models easier to inspect.
+- Added pure parameter-row status helpers and tests so filtering logic is independent of UI rendering.
+- Preserved existing component grouping, batch fit/fix toggles, seed-from-fit behavior, fitting physics, backend APIs, and saved-model compatibility.
+
+
+## v1.6.2 — Fitting lifecycle cancellation hardening
+
+- Added fit-lifecycle helpers for deterministic elapsed-time calculation from the active run start timestamp.
+- Hardened manual Stop/Abort handling so the cancelled state records a fresh elapsed time instead of relying on possibly stale React state.
+- Kept run-id stale-result rejection, timeout handling, fitting physics, backend APIs, report schemas, saved-model compatibility, and chart behavior unchanged from v1.6.1.
+
+
+## v1.6.1 — Plot rendering and parameter table polish
+
+- Changed `SimpleChart` to use real measured container width/height as its SVG coordinate system instead of stretching a fixed viewBox, preventing distorted text, legends, axes, and traces.
+- Added optional robust X-domain scaling for ordinary I-V/log plots so isolated outlier voltages do not compress the main data region by default.
+- Changed residual plots to use full Y-range scaling and added an optional zero-reference line for signed residual diagnostics.
+- Moved the clipped-points badge and info popover away from the Reset button and made the label clearer.
+- Normalized scientific notation in parameter displays and stabilized numeric table alignment with tabular figures.
+- Kept fitting physics, backend APIs, report schemas, saved-model compatibility, Manual behavior, and release-manager behavior unchanged.
+
+
 ## v1.6.0 — Chart interaction overhaul and Data page layout refactor
 
 - Rewrote SimpleChart to use ResizeObserver for real container dimensions instead of fixed width=520; SVG now fills its container via width/height=100% and preserveAspectRatio.

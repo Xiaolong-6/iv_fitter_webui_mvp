@@ -226,3 +226,8 @@ Fit results now use more consistent parameter formatting in the Parameters table
 ## Release Manager workflow
 
 The app includes a read-only update checker in the User Manual / Updates panel. It queries GitHub public release metadata and never blocks startup or fitting. Maintainer-only release-page auditing and optional release updating live in `tools/audit_release_page.py` and `tools/update_github_release.py`; see `docs/RELEASE_MANAGER.md`. Automatic binary self-update is intentionally not implemented.
+
+
+## External testing
+
+See `docs/EXTERNAL_TESTING_GUIDE.md` for structured UI, research-user, and synthetic-data testing workflows.

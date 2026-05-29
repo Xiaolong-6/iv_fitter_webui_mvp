@@ -78,6 +78,7 @@ export function PlotWorkspace({ traces, selectedTraceId, onSelectTrace, onImport
       {(showAll || showLinearResidual || view === "linear") && <SimpleChart
         title={t(language, "linear")}
         yLabel={t(language, "currentA")}
+        robustXScale
         annotation={anomaly}
         series={[
           ...measuredLinear,
@@ -87,6 +88,7 @@ export function PlotWorkspace({ traces, selectedTraceId, onSelectTrace, onImport
       {(showAll || showLogResidualPair || view === "log") && <SimpleChart
         title={t(language, "log")}
         yLabel="log10(|I|)"
+        robustXScale
         annotation={anomaly}
         regions={logMismatchRegions}
         series={[
@@ -97,12 +99,15 @@ export function PlotWorkspace({ traces, selectedTraceId, onSelectTrace, onImport
       {(showAll || showLinearResidual || view === "residual") && fit && <SimpleChart
         title={t(language, "residual")}
         yLabel={t(language, "residualA")}
+        robustScale={false}
+        showZeroLine
         annotation={anomaly}
         series={[{ x: fit.voltage_V, y: fit.residual_A, label: `residual: ${selected.trace_id}`, kind: "points" }]}
       />}
       {(showAll || showLogResidualPair || view === "logResidual") && fit && <SimpleChart
         title={t(language, "logResidual")}
         yLabel="log10(|residual|)"
+        robustScale={false}
         annotation={anomaly}
         series={[{ x: fit.voltage_V, y: logAbs(fit.residual_A), label: `log residual: ${selected.trace_id}`, kind: "points" }]}
       />}

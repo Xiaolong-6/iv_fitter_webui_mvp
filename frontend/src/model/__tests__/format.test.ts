@@ -28,3 +28,9 @@ describe("format helpers", () => {
     expect(parameterFitStatus(1, 0, 2, 0.1, false)).toBe("free");
   });
 });
+
+
+it("normalizes exponential notation for table display", () => {
+  expect(formatValueWithUnit(17290, "Ω", 4)).toBe("1.729e+4 Ω");
+  expect(formatValueWithUnit(0.0000001234, "A", 4)).toBe("1.234e-7 A");
+});

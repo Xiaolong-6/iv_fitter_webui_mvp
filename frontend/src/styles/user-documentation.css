@@ -356,3 +356,23 @@
 .manual-reader-nav button.active {
   box-shadow: inset 3px 0 0 #2563eb;
 }
+
+/* v1.7.1: local release gate display */
+.release-readiness-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  border: 1px solid #e1e7ef;
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
+  margin: 0.55rem 0;
+  background: #f8fafc;
+}
+.release-readiness-ok { color: #2f7d43; font-weight: 700; }
+.release-readiness-blocked { color: #a15d00; font-weight: 700; }
+.release-readiness-details { margin: 0.35rem 0 0.7rem; font-size: 0.85rem; }
+.release-readiness-details ul { margin: 0.45rem 0 0; padding-left: 1.15rem; }
+.release-readiness-details li.ok { color: #2f7d43; }
+.release-readiness-details li.blocker { color: #9a4d00; }
+.release-readiness-details li.warning { color: #6c6470; }

@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import type {
   ComponentSpec,
   FitResult,
@@ -29,10 +29,16 @@ import { HelpTip } from "./HelpTip";
 import { parameterText } from "../content/localizedText";
 import {
   buildParameterRows,
+  componentDisplayTag,
+  componentLawFormPlacement,
+  countParameterFilters,
+  filterParameterRows,
   groupParameterRows,
   parameterKey,
+  placementGroupTitle,
+  seedComponentFromFittedValues,
   setComponentFitState,
-  type ComponentParameterGroup,
+  type ParameterTableFilter,
 } from "../model/parameterGrouping";
 
 function formatParameterNumber(
@@ -342,8 +348,12 @@ export function ParameterTable({
 }) {
   void registry;
   const [openKey, setOpenKey] = useState<string | null>(null);
-  const allRows = buildParameterRows(model, result);
-  const grouped = groupParameterRows(allRows);
+  const [parameterFilter, setParameterFilter] = useState<ParameterTableFilter>("all");
+  const sourceRows = useMemo(() => buildParameterRows(model, result), [model, result]);
+  const filterCounts = useMemo(() => countParameterFilters(sourceRows, result), [sourceRows, result]);
+  const allRows = useMemo(() => filterParameterRows(sourceRows, result, parameterFilter), [sourceRows, result, parameterFilter]);
+  const grouped = useMemo(() => groupParameterRows(allRows, result), [allRows, result]);
+  const totalNearOrWeak = filterCounts.near_bound + filterCounts.weak;
 
   return (
     <section className="card parameter-card">
@@ -393,18 +403,32 @@ export function ParameterTable({
         >
           {language === "zh" ? "Synthetic 真值" : "Seed synthetic"}
         </button>
+        <label className="inline-select parameter-filter-select">
+          <span>{language === "zh" ? "显示" : "Show"}</span>
+          <select value={parameterFilter} onChange={(e) => setParameterFilter(e.target.value as ParameterTableFilter)}>
+            <option value="all">{language === "zh" ? "全部参数" : "All parameters"} ({filterCounts.all})</option>
+            <option value="free">{language === "zh" ? "自由参数" : "Free"} ({filterCounts.free})</option>
+            <option value="fixed">{language === "zh" ? "固定参数" : "Fixed"} ({filterCounts.fixed})</option>
+            <option value="near_bound">{language === "zh" ? "接近边界" : "Near bound"} ({filterCounts.near_bound})</option>
+            <option value="weak">{language === "zh" ? "弱识别" : "Weakly identified"} ({filterCounts.weak})</option>
+          </select>
+        </label>
       </div>
-      {allRows.length === 0 ? (
+      <div className="parameter-diagnostic-strip" role="status">
+        <span>{language === "zh" ? "参数总数" : "Parameters"}: <strong>{filterCounts.all}</strong></span>
+        <button type="button" className={parameterFilter === "near_bound" ? "active" : ""} onClick={() => setParameterFilter("near_bound")} disabled={filterCounts.near_bound === 0}>{language === "zh" ? "贴近边界" : "Near bound"}: {filterCounts.near_bound}</button>
+        <button type="button" className={parameterFilter === "weak" ? "active" : ""} onClick={() => setParameterFilter("weak")} disabled={filterCounts.weak === 0}>{language === "zh" ? "弱识别" : "Weak"}: {filterCounts.weak}</button>
+        <span className={totalNearOrWeak ? "parameter-diagnostic-warning" : "parameter-diagnostic-ok"}>{totalNearOrWeak ? (language === "zh" ? "需要复核参数诊断" : "Review parameter diagnostics") : (language === "zh" ? "未发现参数诊断警告" : "No parameter diagnostic warnings")}</span>
+      </div>
+      {sourceRows.length === 0 ? (
         <p className="muted">{t(language, "runFitForParameters")}</p>
+      ) : allRows.length === 0 ? (
+        <p className="muted">{language === "zh" ? "当前筛选条件下没有参数。" : "No parameters match the current filter."}</p>
       ) : (
         <div className="parameter-groups-scroll">
           {grouped.map((placement) => (
             <div className="parameter-placement-group" key={placement.id}>
-              <h3>
-                {placement.id === "main"
-                  ? t(language, "mainPath")
-                  : t(language, "branches")}
-              </h3>
+              <h3>{placementGroupTitle(placement.id, language)}</h3>
               <div className="table-wrap">
                 <table className="parameter-table interactive-parameter-table compact-parameter-table">
                   <thead>
@@ -420,31 +444,45 @@ export function ParameterTable({
                     </tr>
                   </thead>
                   <tbody>
-                    {placement.groups.flatMap((group) => {
+                    {placement.groups.flatMap((group, groupIndex) => {
+                      const lawFormPlacement = componentLawFormPlacement(group.component);
+                      const canSeedComponent = group.fittedResultCount > 0 && Boolean(result);
                       const header = (
                         <tr
-                          className="parameter-component-divider"
+                          className={`parameter-component-divider component-accent-${groupIndex % 8}`}
                           key={`${group.component.id}-header`}
                         >
                           <td colSpan={7}>
                             <div className="parameter-component-title">
                               <strong>{nickname(group.component)}</strong>
                               <span
-                                title={componentSummary(
-                                  group.component,
-                                  language,
-                                )}
+                                title={`${componentSummary(group.component, language)}
+Law: ${lawFormPlacement.law}
+Form: ${lawFormPlacement.form}
+Placement: ${lawFormPlacement.placement}`}
                               >
                                 {componentSummary(group.component, language)}
+                              </span>
+                              <span className="parameter-law-form-placement" title={componentDisplayTag(group.component)}>
+                                Law: {lawFormPlacement.law} · Form: {lawFormPlacement.form} · Placement: {lawFormPlacement.placement}
                               </span>
                               <span className="parameter-fit-count">
                                 {group.fittedCount}/{group.totalCount}{" "}
                                 {parameterText("fittedCountSuffix", language)}
                               </span>
+                              {group.nearBoundCount || group.weakCount ? <span className="parameter-component-warning">{group.nearBoundCount ? `${group.nearBoundCount} near bound` : ""}{group.nearBoundCount && group.weakCount ? " · " : ""}{group.weakCount ? `${group.weakCount} weak` : ""}</span> : null}
                             </div>
                           </td>
                           <td>
                             <div className="parameter-fit-batch-toggles">
+                              <button
+                                type="button"
+                                disabled={disabled || !canSeedComponent}
+                                onClick={() => onModelChange(seedComponentFromFittedValues(model, result, group.location, group.component.id))}
+                                title={language === "zh" ? "把这个组件的 fitted value 写回下一轮初值；不会改变模型结构。" : "Seed this component from fitted values for the next run. Model structure is unchanged."}
+                              >
+                                {language === "zh" ? "用拟合值作初值" : "Seed from fit"}
+                              </button>
                               <label
                                 title={componentSummary(
                                   group.component,

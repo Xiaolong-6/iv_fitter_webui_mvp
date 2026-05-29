@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canGenerateReport, createCancelledLifecycle, createErrorLifecycle, createRunningLifecycle, createTimeoutLifecycle, deriveFitUiState, nextRunId, shouldAcceptRunResult } from "../fitLifecycle";
+import { canGenerateReport, createCancelledLifecycle, createErrorLifecycle, createRunningLifecycle, createTimeoutLifecycle, deriveFitUiState, elapsedSecondsSince, nextRunId, shouldAcceptRunResult, terminalCancelledState } from "../fitLifecycle";
 
 describe("fit lifecycle helpers", () => {
   it("increments run ids deterministically", () => {
@@ -33,5 +33,11 @@ describe("fit lifecycle helpers", () => {
     expect(canGenerateReport({ hasSelectedTrace: true, isFitting: true, hasResult: true, lifecycle: createRunningLifecycle(1, 0, 60) })).toBe(false);
     expect(canGenerateReport({ hasSelectedTrace: false, isFitting: false, hasResult: true, lifecycle: { kind: "idle" } })).toBe(false);
     expect(canGenerateReport({ hasSelectedTrace: true, isFitting: false, hasResult: false, lifecycle: createCancelledLifecycle(1, 3) })).toBe(false);
+  });
+
+  it("computes elapsed seconds from a monotonic run timestamp", () => {
+    expect(elapsedSecondsSince(1000, 6200)).toBe(5);
+    expect(elapsedSecondsSince(null, 6200)).toBe(0);
+    expect(terminalCancelledState(9, 1000, 6200)).toEqual({ kind: "cancelled", runId: 9, elapsedSeconds: 5 });
   });
 });

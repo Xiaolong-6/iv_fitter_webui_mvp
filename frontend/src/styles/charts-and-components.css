@@ -546,3 +546,5 @@ details summary { cursor: pointer; font-weight: 650; }
 .parameter-mobile-detail {
   display: none;
 }
+
+.chart-zero-line { stroke: rgba(15, 23, 42, 0.52); stroke-width: 1.4; stroke-dasharray: 5 4; }

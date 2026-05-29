@@ -1,5 +1,7 @@
 import type { AppView } from "../../components/WorkflowSidebar";
 import type { FitResult } from "../../model/types";
+import type { Language } from "../../model/i18n";
+import { ExternalTesterChecklist } from "../../components/ExternalTesterChecklist";
 
 export function StartHerePage({
   setActiveView,
@@ -7,12 +9,14 @@ export function StartHerePage({
   result,
   isFitting,
   reportAvailable,
+  language,
 }: {
   setActiveView: (view: AppView) => void;
   hasSelectedTrace: boolean;
   result: FitResult | null;
   isFitting: boolean;
   reportAvailable: boolean;
+  language: Language;
 }) {
   const steps = [
     {
@@ -92,6 +96,14 @@ export function StartHerePage({
         <span>Fit: {isFitting ? "running" : result ? "complete" : "not run"}</span>
         <span>Report: {reportAvailable ? "available" : "unavailable"}</span>
       </div>
+      <ExternalTesterChecklist
+        setActiveView={setActiveView}
+        hasSelectedTrace={hasSelectedTrace}
+        result={result}
+        isFitting={isFitting}
+        reportAvailable={reportAvailable}
+        language={language}
+      />
     </section>
   );
 }
