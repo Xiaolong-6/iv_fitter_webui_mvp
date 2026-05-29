@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.7.5 — Webpage-style Import and Model pages
+
+- Changed the Import/Data page from a dashboard-style split layout to a normal scrollable webpage flow: Import data first, then Trace selection, Plot review, and Spreadsheet preview.
+- Hid Trace selection, Plot review, and Spreadsheet preview until data is actually loaded, so the blank state focuses only on importing data.
+- Added a fixed maximum content width for Import/Data panels so cards do not stretch across very wide screens.
+- Changed the Model page from a resizable two-column layout to a single webpage-style stack: Model Builder first, then Model preview directly underneath.
+- Removed duplicated section chrome around Model Builder and Model preview; the inner component titles are the only visible titles.
+- Kept the previous v1.7.4 page-restore fix and v1.7.3 user-facing UI declutter intact.
+- Kept fitting physics, backend APIs, saved-model compatibility, and report schemas unchanged.
+
 ## v1.7.4 — Restore workflow pages after UI cleanup
 
 - Fixed a v1.7.3 regression where Data, Model, Fitting, and Report pages could render blank after UI decluttering.

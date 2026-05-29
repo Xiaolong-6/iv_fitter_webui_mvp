@@ -6,6 +6,15 @@
 - Backend pytest passed, 122 tests; compileall passed.
 - Frontend browser smoke still requires local npm environment.
 
+
+## v1.7.5 — Webpage-style Data and Model layout
+
+- Backend pytest passed in sandbox: 122 tests.
+- Backend compileall passed.
+- Data/Import page was changed to a single vertical webpage flow with Trace selection / Plot review / Spreadsheet preview hidden until data exists.
+- Model page was changed to a single vertical stack with Model preview directly under Model Builder and duplicate outer section titles removed.
+- Frontend npm validation remains local-only because sandbox dependency installation is environment-dependent.
+
 ## v1.5.36
 
 Structural-debt cleanup release candidate. Full backend pytest, backend compileall, frontend Vitest, and frontend production build passed. See `docs/TESTED_CURRENT.md`.

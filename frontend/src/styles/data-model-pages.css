@@ -1204,3 +1204,128 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
     grid-template-columns: 1fr;
   }
 }
+
+/* v1.7.5 webpage-style Data and Model pages.
+   Data Import now reads as a normal scrollable webpage: Import data first,
+   then Trace selection, Plot review, and Spreadsheet preview after data exists. */
+.web-page-flow.data-workspace.scroll-page {
+  height: auto;
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: calc(18px * var(--app-zoom)) calc(16px * var(--app-zoom)) calc(36px * var(--app-zoom));
+}
+.webpage-data-layout.data-import-layout,
+.webpage-data-layout.data-import-layout.no-data,
+.webpage-data-layout.data-import-layout.has-data {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: none;
+  grid-template-rows: none;
+  align-items: start;
+  gap: calc(16px * var(--app-zoom));
+  width: min(100%, 1120px);
+  max-width: 1120px;
+  height: auto;
+  min-height: 0;
+  margin: 0 auto;
+}
+.webpage-data-layout.no-data {
+  max-width: 760px;
+}
+.webpage-data-layout > .webpage-panel,
+.webpage-data-layout > .card {
+  grid-area: auto;
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  overflow: visible;
+  display: grid;
+  gap: calc(12px * var(--app-zoom));
+  grid-template-rows: auto;
+  align-content: start;
+}
+.webpage-data-layout .import-actions-card {
+  overflow: visible;
+}
+.webpage-data-layout .trace-selection-card {
+  display: grid;
+  gap: calc(12px * var(--app-zoom));
+}
+.webpage-data-layout .trace-plot-review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(12px * var(--app-zoom));
+  height: auto;
+  min-height: 0;
+}
+.webpage-data-layout .plot-review-card .simple-chart {
+  min-height: clamp(260px, 34vh, 420px);
+}
+.webpage-data-layout .plot-review-card .simple-chart > svg {
+  max-height: none;
+}
+.webpage-data-layout .spreadsheet-card .spreadsheet-wrap,
+.webpage-data-layout .spreadsheet-wrap {
+  max-height: min(54vh, 560px);
+  min-height: 240px;
+  overflow: auto;
+}
+.webpage-data-layout .compact-parsed-settings {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.webpage-data-layout .data-next-action {
+  width: fit-content;
+}
+
+.webpage-model-page.model-page.workflow-page {
+  height: auto;
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: calc(18px * var(--app-zoom)) calc(16px * var(--app-zoom)) calc(36px * var(--app-zoom));
+}
+.model-webpage-stack {
+  display: grid;
+  gap: calc(16px * var(--app-zoom));
+  width: min(100%, 1120px);
+  max-width: 1120px;
+  margin: 0 auto;
+  align-content: start;
+}
+.model-webpage-stack .workspace-section {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  display: block;
+  box-shadow: none;
+  border: 0;
+  background: transparent;
+}
+.model-webpage-stack .workspace-section-body {
+  overflow: visible;
+  padding: 0;
+}
+.model-webpage-stack .model-builder,
+.model-webpage-stack .equation-preview {
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+}
+.model-webpage-stack .model-preview-section {
+  margin-top: calc(2px * var(--app-zoom));
+}
+
+@media (max-width: 900px) {
+  .webpage-data-layout .trace-plot-review-grid,
+  .webpage-data-layout .compact-parsed-settings {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .webpage-data-layout .plot-review-card .simple-chart {
+    min-height: 300px;
+  }
+  .web-page-flow.data-workspace.scroll-page,
+  .webpage-model-page.model-page.workflow-page {
+    padding-inline: calc(10px * var(--app-zoom));
+  }
+}

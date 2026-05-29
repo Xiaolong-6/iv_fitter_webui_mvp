@@ -358,11 +358,11 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   const qualityWarnings = importQuality?.warnings ?? [];
   const syntheticValidation = validateSyntheticTraceForm(syntheticForm);
   const hasData = traces.length > 0;
-  return <section className="data-workspace scroll-page">
+  return <section className="data-workspace scroll-page web-page-flow">
     {message && <div className={message.toLowerCase().includes("error") || message.includes("Error") ? "warning error" : "warning info"}>{message}</div>}
 
-    <div className={hasData ? "data-import-layout has-data" : "data-import-layout no-data"}>
-      <section className="card import-actions-card data-source-card">
+    <div className={hasData ? "data-import-layout webpage-data-layout has-data" : "data-import-layout webpage-data-layout no-data"}>
+      <section className="card import-actions-card data-source-card webpage-panel">
         <div className="card-head"><h3>{language === "zh" ? "导入数据" : "Import data"}</h3><HelpTip text={t(language, "importCsvHelp")} /></div>
 
         {!hasData ? <>
@@ -421,63 +421,58 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
             </div> : null}
           </> : null}
         </div>}
-
-        <div className="trace-selection-subsection">
-          <div className="subsection-head"><h4>{t(language, "traceSelection")}</h4><HelpTip text={t(language, "traceSelectionHelp")} /></div>
-          {!hasData ? <div className="empty-data-invite">
-            <strong>{language === "zh" ? "尚未加载数据" : "No data loaded yet"}</strong>
-            <span>{language === "zh" ? "请上传、粘贴或加载示例 I-V 数据。" : "Upload, paste, or load sample I-V data to begin."}</span>
-          </div> : <>
-            <label className="trace-select-label structured-trace-select"><span>{language === "zh" ? `当前曲线（共 ${traces.length} 条）` : `Current trace (${traces.length} total)`}</span><select title={t(language, "selectedTraceHelp")} value={selected?.trace_id ?? ""} onChange={(e) => onSelectTrace(e.target.value)}>
-              {traces.map((tr) => <option key={tr.trace_id} value={tr.trace_id}>{tr.trace_id}</option>)}
-            </select></label>
-            <div className="trace-property-grid">
-              <span>{language === "zh" ? "数据点数" : "Points"}</span><strong>{selected?.voltage_V.length ?? 0}</strong>
-              <span>{language === "zh" ? "单位映射" : "Unit mapping"}</span><strong>{voltageUnit}/{currentUnit} → V/A</strong>
-              {qualityWarnings.length ? <><span>{language === "zh" ? "质量提示" : "Quality notes"}</span><strong>{qualityWarnings.length}</strong></> : null}
-            </div>
-            {qualityWarnings.length ? <div className="import-quality-warnings compact-quality-warnings">
-              {qualityWarnings.map((warning) => <div className="warning" key={warning}>{warning}</div>)}
-            </div> : null}
-            <div className="parsed-settings compact-parsed-settings structured-units">
-              <label>
-                <span>{language === "zh" ? "数据集名称" : "Dataset name"}</span>
-                <DatasetNameInput value={selected?.trace_id ?? ""} language={language} onCommit={renameSelected} />
-              </label>
-              <label>
-                <span>{language === "zh" ? "电压单位" : "V unit"}</span>
-                <select value={voltageUnit} onChange={(e) => changeUnit("voltage", e.target.value)}>
-                  {voltageUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
-                </select>
-              </label>
-              <label>
-                <span>{language === "zh" ? "电流单位" : "I unit"}</span>
-                <select value={currentUnit} onChange={(e) => changeUnit("current", e.target.value)}>
-                  {currentUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
-                </select>
-              </label>
-            </div>
-            {onNextToFitting ? <button type="button" className="primary data-next-action" onClick={onNextToFitting}>{language === "zh" ? "前往模型构建" : "Go to Model Builder"}</button> : null}
-          </>}
-        </div>
-
       </section>
 
-      <section className="card plot-review-card">
+      {hasData ? <section className="card trace-selection-card webpage-panel">
+        <div className="card-head"><h3>{t(language, "traceSelection")}</h3><HelpTip text={t(language, "traceSelectionHelp")} /></div>
+        <label className="trace-select-label structured-trace-select"><span>{language === "zh" ? `当前曲线（共 ${traces.length} 条）` : `Current trace (${traces.length} total)`}</span><select title={t(language, "selectedTraceHelp")} value={selected?.trace_id ?? ""} onChange={(e) => onSelectTrace(e.target.value)}>
+          {traces.map((tr) => <option key={tr.trace_id} value={tr.trace_id}>{tr.trace_id}</option>)}
+        </select></label>
+        <div className="trace-property-grid">
+          <span>{language === "zh" ? "数据点数" : "Points"}</span><strong>{selected?.voltage_V.length ?? 0}</strong>
+          <span>{language === "zh" ? "单位映射" : "Unit mapping"}</span><strong>{voltageUnit}/{currentUnit} → V/A</strong>
+          {qualityWarnings.length ? <><span>{language === "zh" ? "质量提示" : "Quality notes"}</span><strong>{qualityWarnings.length}</strong></> : null}
+        </div>
+        {qualityWarnings.length ? <div className="import-quality-warnings compact-quality-warnings">
+          {qualityWarnings.map((warning) => <div className="warning" key={warning}>{warning}</div>)}
+        </div> : null}
+        <div className="parsed-settings compact-parsed-settings structured-units">
+          <label>
+            <span>{language === "zh" ? "数据集名称" : "Dataset name"}</span>
+            <DatasetNameInput value={selected?.trace_id ?? ""} language={language} onCommit={renameSelected} />
+          </label>
+          <label>
+            <span>{language === "zh" ? "电压单位" : "V unit"}</span>
+            <select value={voltageUnit} onChange={(e) => changeUnit("voltage", e.target.value)}>
+              {voltageUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>{language === "zh" ? "电流单位" : "I unit"}</span>
+            <select value={currentUnit} onChange={(e) => changeUnit("current", e.target.value)}>
+              {currentUnits.map((unit) => <option key={unit.value} value={unit.value}>{unit.label}</option>)}
+            </select>
+          </label>
+        </div>
+        {importQuality ? <ImportQualityPanel quality={importQuality} language={language} /> : null}
+        {onNextToFitting ? <button type="button" className="primary data-next-action" onClick={onNextToFitting}>{language === "zh" ? "前往模型构建" : "Go to Model Builder"}</button> : null}
+      </section> : null}
+
+      {hasData ? <section className="card plot-review-card webpage-panel">
         <div className="card-head"><h3>{language === "zh" ? "Plot review" : "Plot review"}</h3><HelpTip text={language === "zh" ? "快速检查当前导入 trace 的线性和对数 I-V。" : "Quickly inspect the selected trace before fitting."} /></div>
         <TracePlotReview trace={selected} language={language} />
-      </section>
+      </section> : null}
 
-      <section className="card spreadsheet-card">
+      {hasData ? <section className="card spreadsheet-card webpage-panel">
         <div className="card-head"><h3>{t(language, "dataPreview")}</h3><HelpTip text={t(language, "dataPreviewHelp")} /></div>
-        {!selected ? <div className="empty-table-placeholder">{language === "zh" ? "导入数据后会在这里显示表格预览。" : "A table preview will appear here after data import."}</div> : <div className="spreadsheet-wrap" role="region" aria-label={t(language, "dataPreview")}>
+        <div className="spreadsheet-wrap" role="region" aria-label={t(language, "dataPreview")}>
           <table className="data-spreadsheet">
             <thead><tr><th>#</th><th>V (V)</th><th>I (A)</th></tr></thead>
             <tbody>{previewRows.map((row) => <tr key={row.idx}><td>{row.idx + 1}</td><td>{formatCell(row.v)}</td><td>{formatCell(row.i)}</td></tr>)}</tbody>
           </table>
-        </div>}
+        </div>
         {selected && selected.voltage_V.length > previewRows.length && <p className="muted">{t(language, "previewLimited")}</p>}
-      </section>
+      </section> : null}
     </div>
 
     {syntheticOpen ? <div className="drawer synthetic-drawer" role="dialog" aria-modal="true" aria-labelledby="synthetic-trace-title">

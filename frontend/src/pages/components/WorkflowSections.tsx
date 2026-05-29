@@ -67,15 +67,13 @@ export function ModelWorkflowPage({
   onResizeStart: (event: ReactPointerEvent<HTMLDivElement>) => void;
   syntheticTool?: ReactNode;
 }) {
+  void leftPct;
+  void onResizeStart;
+  void syntheticTool;
   return (
-    <section className="workflow-page model-page">
-      <div
-        className="workflow-two-column resizable-workflow-grid"
-        style={{
-          gridTemplateColumns: `minmax(320px, ${leftPct}fr) 8px minmax(420px, ${100 - leftPct}fr)`,
-        }}
-      >
-        <PageSection title={t(language, "modelBuilder")} action={syntheticTool}>
+    <section className="workflow-page model-page webpage-model-page">
+      <div className="model-webpage-stack">
+        <PageSection title={t(language, "modelBuilder")} hideHeader className="model-builder-section">
           <ErrorBoundary label="Model builder">
             <ModelBuilder
               model={model}
@@ -86,13 +84,7 @@ export function ModelWorkflowPage({
             />
           </ErrorBoundary>
         </PageSection>
-        <div
-          className="pane-resizer"
-          role="separator"
-          aria-label="Resize Model page columns"
-          onPointerDown={onResizeStart}
-        />
-        <PageSection title={t(language, "equationPreview")}>
+        <PageSection title={t(language, "equationPreview")} hideHeader className="model-preview-section">
           <ErrorBoundary label="Equation preview">
             <EquationPreview
               equations={equationSummary}

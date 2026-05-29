@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.7.4**.
+Current package: **v1.7.5**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -33,6 +33,10 @@ The recurring fixes in this repository have turned into operating rules. Read `d
 ## v1.7.4 blank-page regression hotfix
 
 v1.7.3 blanked Data/Model/Fitting/Report because required `language` props were not passed after UI decluttering. v1.7.4 restores those props and makes translation helpers fall back to English if language is omitted. Keep this as a regression check before future UI cleanup.
+
+## v1.7.5 webpage-layout rule
+
+Data/Import should behave like a normal scrollable webpage, not a dense dashboard: show Import data first, then reveal Trace selection, Plot review, and Spreadsheet preview only after data is loaded. Keep page content centered with a readable maximum width on wide screens. Model should also read top-to-bottom: Model Builder first, Model preview / Equation Preview directly underneath. Avoid duplicate outer section titles when the child component already has its own visible title.
 
 ## v1.7.3 UI-surface rule
 
