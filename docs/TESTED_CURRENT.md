@@ -1,6 +1,6 @@
-# Tested current — v1.7.16
+# Tested current — v1.7.17
 
-Validated after the v1.7.16 Import-page density pass and Manual scroll/title follow-up.
+Validated after the v1.7.17 hard Manual containment and body-scroll fix.
 
 ## Scope
 
@@ -11,7 +11,7 @@ Validated after the v1.7.16 Import-page density pass and Manual scroll/title fol
 - Increased the Import page maximum content width to 1600 px for data-analysis layouts on large screens.
 - Fixed Manual scrolling by making the active page occupy the full workflow-shell grid height.
 - Moved the User Manual title above the manual content and aligned it with the reader content width.
-- Bumped root, frontend, and backend package metadata from v1.7.15 to v1.7.16.
+- Bumped root, frontend, and backend package metadata from v1.7.16 to v1.7.17.
 - Saved-model schema, fit API payloads, physics model definitions, and report export schemas are unchanged.
 
 ## Commands run in this environment
@@ -54,3 +54,10 @@ Note: browser checks are still required for the visual layout changes, especiall
 - Removed horizontal tab-mode overrides that could leave the content area blank after responsive layout switching.
 - Manual active-section tracking now follows the `.doc-page` scroll container.
 - Backend pytest/compileall passed in this container. Frontend build/test still requires local npm dependencies.
+
+## v1.7.17 follow-up
+
+- Manual title is rendered inside `.manual-reader-content-scroll`, aligned to the article body rather than the full nav+content grid.
+- Manual active-section tracking and section jumps use `contentRef.current` as the scroll root, not `.doc-page` or `window`.
+- The Manual shell uses fixed internal height with independent nav/body scroll containers to avoid header/dock overlap.
+

@@ -1,4 +1,11 @@
 # Changelog
+## v1.7.17 — Manual body-owned scrolling fix
+
+- Moved the User Manual title into the right-hand article scroll body so it aligns with the manual content width instead of spanning the navigation column.
+- Replaced page-level Manual scrolling with body-owned scrolling: the left Sections list and the right article body now scroll independently inside a fixed-height Manual shell.
+- Removed the remaining dependency on `.doc-page` as the Manual scroll root; active-section tracking and section jumps now use the actual content scroll container.
+- Added a hard `.manual-doc-page` containment override to prevent sidebar/header/dock overlap and responsive horizontal-tab regressions.
+
 ## v1.7.16 — Import page density and Manual scroll/title fix
 
 - Replaced the post-import large Import data card with a compact loaded-summary bar showing trace count, point count, source, Reopen import, and Add more actions.

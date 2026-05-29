@@ -530,16 +530,14 @@ function ManualReader({
 
   useEffect(() => {
     setActive("solving");
-    const scrollRoot = contentRef.current?.closest(".doc-page");
-    if (scrollRoot instanceof HTMLElement) scrollRoot.scrollTo({ top: 0 });
-    else window.scrollTo({ top: 0 });
+    contentRef.current?.scrollTo({ top: 0 });
   }, [language]);
 
   useEffect(() => {
     let frame = 0;
-    const scrollRoot = contentRef.current?.closest(".doc-page");
-    const scrollTarget: HTMLElement | Window =
-      scrollRoot instanceof HTMLElement ? scrollRoot : window;
+    const scrollRoot = contentRef.current;
+    if (!scrollRoot) return;
+    const scrollTarget: HTMLElement = scrollRoot;
     const updateActiveFromScroll = () => {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
@@ -547,11 +545,8 @@ function ManualReader({
           .map((item) => document.getElementById(item.id))
           .filter((el): el is HTMLElement => Boolean(el));
         if (!sections.length) return;
-        const rootTop =
-          scrollRoot instanceof HTMLElement
-            ? scrollRoot.getBoundingClientRect().top
-            : 0;
-        const threshold = rootTop + 120;
+        const rootTop = scrollRoot.getBoundingClientRect().top;
+        const threshold = rootTop + 96;
         let current = sections[0];
         for (const section of sections) {
           if (section.getBoundingClientRect().top <= threshold)
@@ -578,7 +573,7 @@ function ManualReader({
   const jumpToSection = (id: ManualSectionKey) => {
     setActive(id);
     const section = document.getElementById(id);
-    const scrollRoot = contentRef.current?.closest(".doc-page");
+    const scrollRoot = contentRef.current;
     if (section && scrollRoot instanceof HTMLElement) {
       const rootRect = scrollRoot.getBoundingClientRect();
       const sectionRect = section.getBoundingClientRect();
@@ -593,11 +588,6 @@ function ManualReader({
 
   return (
     <div className="manual-reader manual-reader-one-column">
-      <div className="manual-title-block manual-title-top">
-        <h2>{language === "zh" ? "用户手册" : "User Manual"}</h2>
-        <p className="muted">v{appVersion}</p>
-      </div>
-      <ReleaseStatusPanel language={language} compact />
       <SectionNavigator
         language={language}
         active={active}
@@ -609,6 +599,11 @@ function ManualReader({
           ref={contentRef}
           aria-label={activeLabel}
         >
+          <div className="manual-title-block manual-title-top">
+            <h2>{language === "zh" ? "用户手册" : "User Manual"}</h2>
+            <p className="muted">v{appVersion}</p>
+          </div>
+          <ReleaseStatusPanel language={language} compact />
           {labels.map((item) => (
             <div className="manual-continuous-section" key={item.id}>
               {renderManualSection(item.id, registry, language)}
@@ -1899,7 +1894,7 @@ export function UserDocumentationPage({
   language?: Language;
 }) {
   return (
-    <div className="doc-page">
+    <div className="doc-page manual-doc-page">
       {language === "zh" ? (
         <ChineseManual registry={registry} appVersion={appVersion} />
       ) : (
