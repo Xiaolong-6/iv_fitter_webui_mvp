@@ -167,8 +167,9 @@ const REPORT_TEXT = {
   },
 } as const;
 
-function rt(language: Language, key: keyof typeof REPORT_TEXT.en) {
-  return REPORT_TEXT[language][key] ?? REPORT_TEXT.en[key];
+function rt(language: Language | undefined | null, key: keyof typeof REPORT_TEXT.en) {
+  const dictionary = language === "zh" ? REPORT_TEXT.zh : REPORT_TEXT.en;
+  return dictionary[key] ?? REPORT_TEXT.en[key];
 }
 
 function finiteAbs(values: number[] | undefined) {

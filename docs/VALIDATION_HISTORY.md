@@ -1,5 +1,11 @@
 # Validation history
 
+## v1.7.4 — Blank-page regression hotfix
+
+- Repaired missing language props in the workflow shell.
+- Backend pytest passed, 122 tests; compileall passed.
+- Frontend browser smoke still requires local npm environment.
+
 ## v1.5.36
 
 Structural-debt cleanup release candidate. Full backend pytest, backend compileall, frontend Vitest, and frontend production build passed. See `docs/TESTED_CURRENT.md`.

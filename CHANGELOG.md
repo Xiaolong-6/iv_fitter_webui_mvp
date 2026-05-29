@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.7.4 — Restore workflow pages after UI cleanup
+
+- Fixed a v1.7.3 regression where Data, Model, Fitting, and Report pages could render blank after UI decluttering.
+- Restored required `language` props for DataImportWorkspace, ModelWorkflowPage, ReportWorkflowPage, and UserDocumentationPage.
+- Hardened translation helpers to fall back to English if a future caller accidentally omits language.
+- Kept the requested user-facing declutter unchanged: no Check newest version dock action, no External tester mode, no Local release gate, no parameter diagnostic filter controls, and no bottom Fitting action/status bar.
+- Kept fitting physics, backend APIs, saved-model compatibility, and report schemas unchanged.
+
 ## v1.7.3 — User-facing UI declutter and redundancy cleanup
 
 - Removed the dock/footer `Check newest version` link from the workflow sidebar so the main user shell stays focused on fitting tasks.

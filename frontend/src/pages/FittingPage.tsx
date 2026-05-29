@@ -546,6 +546,7 @@ export function FittingPage() {
           />
         ) : activeView === "data" ? (
           <DataImportWorkspace
+            language={language}
             traces={traces}
             selectedTraceId={selectedTraceId}
             onTraces={(next) => {
@@ -564,6 +565,7 @@ export function FittingPage() {
           />
         ) : activeView === "model" ? (
           <ModelWorkflowPage
+            language={language}
             model={model}
             setModel={(next) => {
               setModel(next);
@@ -637,6 +639,7 @@ export function FittingPage() {
           />
         ) : activeView === "report" ? (
           <ReportWorkflowPage
+            language={language}
             selectedTrace={selectedTrace}
             hasSelectedTrace={hasSelectedTrace}
             model={model}
@@ -659,6 +662,7 @@ export function FittingPage() {
           />
         ) : (
           <UserDocumentationPage
+            language={language}
             view={activeView}
             registry={registry}
             appVersion={APP_VERSION}

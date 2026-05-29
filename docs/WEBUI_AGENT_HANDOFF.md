@@ -1,6 +1,6 @@
 # IV-fitter Web UI agent handoff
 
-Current package: **v1.7.3**.
+Current package: **v1.7.4**.
 
 This file is the current handoff for future coding agents. It replaces old root-level `HANDOFF_*` files and version-specific handoff fragments.
 
@@ -28,6 +28,11 @@ The recurring fixes in this repository have turned into operating rules. Read `d
 - Use Law → Form → Placement vocabulary for models; do not collapse neutral mathematical components into device-specific labels.
 - Update changelog, tested-current notes, handoff/version metadata, and user/transparency docs for every meaningful change.
 
+
+
+## v1.7.4 blank-page regression hotfix
+
+v1.7.3 blanked Data/Model/Fitting/Report because required `language` props were not passed after UI decluttering. v1.7.4 restores those props and makes translation helpers fall back to English if language is omitted. Keep this as a regression check before future UI cleanup.
 
 ## v1.7.3 UI-surface rule
 

@@ -291,6 +291,7 @@ const dictionaries = {
 
 export type TranslationKey = keyof typeof dictionaries.en;
 
-export function t(language: Language, key: TranslationKey): string {
-  return dictionaries[language][key] ?? dictionaries.en[key];
+export function t(language: Language | undefined | null, key: TranslationKey): string {
+  const dictionary = language === "zh" ? dictionaries.zh : dictionaries.en;
+  return dictionary[key] ?? dictionaries.en[key];
 }
