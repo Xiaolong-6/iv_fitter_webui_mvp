@@ -241,59 +241,47 @@ function ManualReader({ registry, appVersion, language }: { registry: FunctionDe
   }, [language]);
 
   useEffect(() => {
-    const container = contentRef.current;
-    if (!container) return undefined;
     let frame = 0;
     const updateActiveFromScroll = () => {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-        const containerTop = container.getBoundingClientRect().top;
         const sections = labels
           .map((item) => document.getElementById(item.id))
           .filter((el): el is HTMLElement => Boolean(el));
         if (!sections.length) return;
         let current = sections[0];
         for (const section of sections) {
-          const offset = section.getBoundingClientRect().top - containerTop;
-          if (offset <= 96) current = section;
+          if (section.getBoundingClientRect().top <= 120) current = section;
           else break;
         }
         setActive(current.id as ManualSectionKey);
       });
     };
-    container.addEventListener("scroll", updateActiveFromScroll, { passive: true });
+    window.addEventListener("scroll", updateActiveFromScroll, { passive: true });
     updateActiveFromScroll();
     return () => {
       window.cancelAnimationFrame(frame);
-      container.removeEventListener("scroll", updateActiveFromScroll);
+      window.removeEventListener("scroll", updateActiveFromScroll);
     };
   }, [labels]);
 
   const jumpToSection = (id: ManualSectionKey) => {
     setActive(id);
-    const container = contentRef.current;
-    const target = document.getElementById(id);
-    if (!container || !target) return;
-    const top = target.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
-    container.scrollTo({ top: Math.max(0, top - 8), behavior: "smooth" });
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  return <div className="manual-reader">
-    <div className="manual-reader-shell">
-      <aside className="manual-reader-side">
-        <div className="manual-title-block">
-          <h2>{language === "zh" ? "用户手册" : "User Manual"}</h2>
-          <p className="muted">v{appVersion}</p>
-        </div>
-        <SectionNavigator language={language} active={active} onSelect={jumpToSection} />
-        <ReleaseStatusPanel language={language} compact />
-      </aside>
-      <main className="manual-reader-content">
-        <div className="manual-reader-content-scroll continuous" ref={contentRef} aria-label={activeLabel}>
-          {labels.map((item) => <div className="manual-continuous-section" key={item.id}>{renderManualSection(item.id, registry, language)}</div>)}
-        </div>
-      </main>
+  return <div className="manual-reader manual-reader-one-column">
+    <ReleaseStatusPanel language={language} compact />
+    <div className="manual-title-block manual-title-top">
+      <h2>{language === "zh" ? "用户手册" : "User Manual"}</h2>
+      <p className="muted">v{appVersion}</p>
     </div>
+    <SectionNavigator language={language} active={active} onSelect={jumpToSection} />
+    <main className="manual-reader-content">
+      <div className="manual-reader-content-scroll continuous" ref={contentRef} aria-label={activeLabel}>
+        {labels.map((item) => <div className="manual-continuous-section" key={item.id}>{renderManualSection(item.id, registry, language)}</div>)}
+      </div>
+    </main>
   </div>;
 }
 

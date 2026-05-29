@@ -1356,3 +1356,31 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* v1.7.8: webpage width consistency and model preset controls. */
+.minimal-start-page {
+  width: min(100%, 1120px);
+  max-width: 1120px;
+  margin: 0 auto;
+}
+.compact-import-toggle {
+  width: 100%;
+  text-align: left;
+  display: grid;
+  gap: 2px;
+  cursor: pointer;
+}
+.model-preset-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: calc(10px * var(--app-zoom));
+  border: 1px solid var(--theme-border);
+  border-radius: calc(12px * var(--app-zoom));
+  background: #f8fafc;
+  padding: calc(10px * var(--app-zoom));
+  margin-bottom: calc(12px * var(--app-zoom));
+}
+.model-preset-controls label { display: grid; gap: 4px; min-width: min(320px, 100%); }
+.model-preset-actions { display: flex; flex-wrap: wrap; gap: calc(7px * var(--app-zoom)); }

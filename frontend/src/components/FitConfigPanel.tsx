@@ -331,21 +331,24 @@ export function FitConfigPanel({
           ) : null}
         </div>
       </div>
-      <div
-        className="fit-config-inline-options"
-        aria-label={
-          language === "zh"
-            ? "高级目标函数和运行选项"
-            : "Advanced objective and run options"
-        }
-      >
-        <AdvancedRunOptions
-          config={config}
-          onChange={onChange}
-          language={language}
-          disabled={disabled}
-        />
-      </div>
+      <details className="fit-config-advanced-dropdown">
+        <summary>{language === "zh" ? "高级：目标函数 / 运行选项 / 求解器" : "Advanced: objective / run options / solver"}</summary>
+        <div
+          className="fit-config-inline-options"
+          aria-label={
+            language === "zh"
+              ? "高级目标函数、运行选项和求解器"
+              : "Advanced objective, run options, and solver"
+          }
+        >
+          <AdvancedRunOptions
+            config={config}
+            onChange={onChange}
+            language={language}
+            disabled={disabled}
+          />
+        </div>
+      </details>
     </section>
   );
 }

@@ -1,16 +1,18 @@
-# Tested current — v1.7.7
+# Tested current — v1.7.8
 
-Validated after webpage-flow cleanup and Report plot/metric polish.
+Validated after single-column workflow-page cleanup and report floating-export update.
 
 ## Scope
 
-- Removed the top global workflow context/status bar.
-- Import/Data page now collapses the Import data card into a compact loaded summary after import or parse; the Hide / Change data state is removed.
-- Model Builder now shows Main path and Junction branches as parallel columns on wide screens, with responsive stacking on smaller windows.
-- Model preview includes a Go to Fitting button above the preview.
-- Report plots are height-bounded to prevent the post-fit infinite-height rendering bug.
-- Fit process and quality metrics now use human-readable names and formatted values in both the in-app Report page and exported HTML.
-- Fitting physics, backend APIs, saved-model compatibility, and numerical result data are unchanged.
+- Report page is now a single-column reader with a draggable floating Exports panel.
+- Removed Report Fit result quick-summary card.
+- Moved Review diagnostics / Open bounds-parameters / Try safer model into Exports above download buttons.
+- Added equivalent-circuit section above Model evaluation summary.
+- Bounded Report plots in-app so chart bodies are visible and do not grow infinitely.
+- User Manual is one column with Version check at the top and floating Sections locator.
+- Fitting page is one column: sticky Fit setup, plots, parameters. Objective / run options / solver are inside Advanced details.
+- Import data collapses after import/parse but remains reopenable.
+- Model preview includes preset controls for single diode, double diode, and user-saved custom presets.
 
 ## Commands run in this environment
 
@@ -22,20 +24,10 @@ python -m compileall -q ivfitter
 
 ## Observed result
 
-- Backend pytest: passed.
+- Backend pytest: passed, 122 tests.
 - Backend compileall: passed.
 
 ## Not verified in this environment
 
-- Frontend Vitest/build, because frontend dependencies are not installed in this sandbox.
-- Manual browser checks.
-- Full release packaging and portable smoke test.
-
-## Manual browser checks required
-
-1. No top Trace/Model/Fit/Report/Next context bar should appear on Data, Model, Fitting, or Report pages.
-2. Import page should show only Import data before loading data; after import/parse it should show a compact loaded summary followed by Trace selection, Plot review, and Spreadsheet preview.
-3. Model Builder should show Main path and Junction branches side by side on a wide screen and stacked on narrow screens.
-4. Model preview should show a Go to Fitting button above the preview.
-5. Report plots should remain compact after a fit and must not grow indefinitely.
-6. Fit process and quality metrics should use human-readable metric names and formatted values.
+- Frontend Vitest and production build; run locally with `cd frontend && npm install --include=dev && npm run test -- --run --reporter=dot && npm run build`.
+- Manual browser checks for draggable exports, manual section locator, sticky fit setup, and custom preset localStorage behavior.

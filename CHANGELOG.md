@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.7.8 — Single-column workflow pages and report export controls
+
+- Changed Report to a single-column reader layout and moved exports into a draggable floating panel.
+- Removed the Report quick-summary / Fit result card from the user-facing page.
+- Moved Review diagnostics / Open bounds-parameters / Try safer model into the floating Exports panel above download buttons.
+- Added an in-app equivalent-circuit section directly above Model evaluation summary.
+- Fixed in-app Report plot visibility by giving report charts explicit bounded height.
+- Changed User Manual to a one-column reader with Version check at the top and a floating Sections locator.
+- Changed Fitting to a one-column webpage flow with sticky Fit setup and Advanced objective/run-options/solver dropdown.
+- Kept Import data collapsible after parsing while allowing users to reopen import controls.
+- Added Model preset controls below Equivalent circuit for single diode, double diode, and user-saved custom presets.
+- Kept fitting physics, backend APIs, report data, and saved-model compatibility unchanged.
+
 ## v1.7.7 — Webpage flow cleanup and report plot hotfix
 
 - Removed the global top workflow context/status bar (`Trace / Model / Fit / Report / Next`) so Import, Model, Fit, and Report pages read like normal webpages.

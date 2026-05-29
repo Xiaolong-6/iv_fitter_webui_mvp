@@ -358,3 +358,47 @@
 }
 
 /* v1.7.1: local release gate display */
+/* v1.7.8: manual reads as one column with floating section locator. */
+.manual-reader-one-column {
+  position: relative;
+  width: min(100%, calc(1120px * var(--app-zoom)));
+  max-width: calc(1120px * var(--app-zoom));
+  margin: 0 auto;
+  padding: calc(18px * var(--app-zoom)) calc(16px * var(--app-zoom)) calc(40px * var(--app-zoom));
+  display: grid;
+  gap: calc(14px * var(--app-zoom));
+}
+.manual-reader-one-column .manual-title-top { margin: 0; }
+.manual-reader-one-column .manual-reader-content,
+.manual-reader-one-column .manual-reader-content-scroll {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+}
+.manual-reader-one-column .manual-reader-nav {
+  position: fixed;
+  right: calc(18px * var(--app-zoom));
+  top: calc(88px * var(--app-zoom));
+  z-index: 60;
+  width: calc(190px * var(--app-zoom));
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, .14);
+}
+.manual-reader-one-column > .release-status-panel,
+.manual-reader-one-column > .card {
+  width: 100%;
+}
+@media (max-width: 1280px) {
+  .manual-reader-one-column .manual-reader-nav {
+    position: sticky;
+    top: 8px;
+    right: auto;
+    width: 100%;
+    max-height: none;
+    display: flex;
+    overflow-x: auto;
+  }
+  .manual-reader-one-column .manual-reader-nav button { min-width: 132px; }
+}

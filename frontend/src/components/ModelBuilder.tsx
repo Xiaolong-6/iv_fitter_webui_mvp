@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   ComponentSpec,
   FunctionDefinition,
@@ -54,6 +54,86 @@ interface Props {
   onChange: (model: ModelSpec) => void;
   language: Language;
   disabled?: boolean;
+}
+
+
+const BUILDER_PRESET_STORAGE_KEY = "ivfitter.builderCustomPresets.v1";
+type BuilderPreset = { name: string; model: ModelSpec };
+function cloneModelForPreset(model: ModelSpec): ModelSpec { return JSON.parse(JSON.stringify(model)) as ModelSpec; }
+function makeSingleDiodePreset(model: ModelSpec): ModelSpec {
+  const next = cloneModelForPreset(model);
+  const primary = next.core.find((comp) => comp.function_type === "diode") ?? next.core[0];
+  return {
+    ...next,
+    core: primary ? [{ ...primary, id: "D1", metadata: { ...(primary.metadata ?? {}), nickname: "D1", role: "primary" } }] : next.core,
+    parallel: next.parallel.filter((comp) => comp.function_type !== "diode" && String(comp.metadata?.nickname ?? "") !== "D2"),
+  };
+}
+function makeDoubleDiodePreset(model: ModelSpec): ModelSpec {
+  const base = makeSingleDiodePreset(model);
+  const primary = base.core.find((comp) => comp.function_type === "diode");
+  if (!primary) return base;
+  const d2 = JSON.parse(JSON.stringify(primary)) as ComponentSpec;
+  return {
+    ...base,
+    parallel: [
+      ...base.parallel.filter((comp) => comp.function_type !== "diode" && String(comp.metadata?.nickname ?? "") !== "D2"),
+      { ...d2, id: "D2", location: "parallel", placement: "parallel_current_branch", metadata: { ...(d2.metadata ?? {}), nickname: "D2", role: "secondary" } },
+    ],
+  };
+}
+function readBuilderPresets(): BuilderPreset[] {
+  try {
+    const raw = window.localStorage.getItem(BUILDER_PRESET_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as BuilderPreset[];
+    return Array.isArray(parsed) ? parsed.filter((item) => item && typeof item.name === "string" && item.model) : [];
+  } catch { return []; }
+}
+function writeBuilderPresets(presets: BuilderPreset[]) { window.localStorage.setItem(BUILDER_PRESET_STORAGE_KEY, JSON.stringify(presets)); }
+function ModelPresetControls({ model, language, onChange, disabled }: { model: ModelSpec; language: Language; onChange: (model: ModelSpec) => void; disabled?: boolean }) {
+  const [customPresets, setCustomPresets] = useState<BuilderPreset[]>(() => typeof window === "undefined" ? [] : readBuilderPresets());
+  const [selected, setSelected] = useState("single");
+  const customOptions = useMemo(() => customPresets.map((preset, index) => ({ id: `custom:${index}`, name: preset.name })), [customPresets]);
+  useEffect(() => { if (typeof window !== "undefined") writeBuilderPresets(customPresets); }, [customPresets]);
+  function apply(value: string) {
+    setSelected(value);
+    if (disabled) return;
+    if (value === "single") onChange(makeSingleDiodePreset(model));
+    else if (value === "double") onChange(makeDoubleDiodePreset(model));
+    else if (value.startsWith("custom:")) {
+      const preset = customPresets[Number(value.split(":")[1])];
+      if (preset) onChange(cloneModelForPreset(preset.model));
+    }
+  }
+  function saveCurrent() {
+    if (disabled) return;
+    const name = window.prompt(language === "zh" ? "保存当前模型为：" : "Save current model as:", language === "zh" ? "自定义模型" : "Custom model");
+    if (!name?.trim()) return;
+    setCustomPresets((items) => [...items, { name: name.trim(), model: cloneModelForPreset(model) }]);
+  }
+  function renameCurrent() {
+    if (!selected.startsWith("custom:")) return;
+    const idx = Number(selected.split(":")[1]);
+    const current = customPresets[idx];
+    if (!current) return;
+    const name = window.prompt(language === "zh" ? "重命名模型预设：" : "Rename model preset:", current.name);
+    if (!name?.trim()) return;
+    setCustomPresets((items) => items.map((item, i) => i === idx ? { ...item, name: name.trim() } : item));
+  }
+  function deleteCurrent() {
+    if (!selected.startsWith("custom:")) return;
+    const idx = Number(selected.split(":")[1]);
+    const current = customPresets[idx];
+    if (!current) return;
+    if (!window.confirm(language === "zh" ? `删除预设 ${current.name}？` : `Delete preset ${current.name}?`)) return;
+    setCustomPresets((items) => items.filter((_, i) => i !== idx));
+    setSelected("single");
+  }
+  return <div className="model-preset-controls builder-model-preset-controls">
+    <label><span>{language === "zh" ? "模型预设" : "Model preset"}</span><select disabled={disabled} value={selected} onChange={(event) => apply(event.target.value)}><option value="single">{language === "zh" ? "单二极管模型" : "Single diode model"}</option><option value="double">{language === "zh" ? "双二极管模型" : "Double diode model"}</option>{customOptions.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>
+    <div className="model-preset-actions"><button type="button" disabled={disabled} onClick={saveCurrent}>{language === "zh" ? "保存" : "Save"}</button><button type="button" disabled={disabled || !selected.startsWith("custom:")} onClick={renameCurrent}>{language === "zh" ? "重命名" : "Rename"}</button><button type="button" disabled={disabled || !selected.startsWith("custom:")} onClick={deleteCurrent}>{language === "zh" ? "删除" : "Delete"}</button></div>
+  </div>;
 }
 
 function CircuitCard({ model, language }: { model: ModelSpec; language: Language }) {
@@ -296,6 +376,7 @@ export function ModelBuilder({ model, registry, onChange, language, disabled = f
         <h2>{t(language, "modelBuilder")} <HelpTip text={t(language, "modelBuilderHelp")} /></h2>
       </div>
       <CircuitCard model={model} language={language} />
+      <ModelPresetControls model={model} language={language} onChange={onChange} disabled={disabled} />
       <div className="model-builder-two-column">
       {builderBuckets.map((bucket) => {
         const definitions = definitionsForBucket(bucket);

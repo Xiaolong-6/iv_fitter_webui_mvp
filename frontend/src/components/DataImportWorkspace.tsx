@@ -140,6 +140,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   const [pasteText, setPasteText] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [inputMode, setInputMode] = useState<"upload" | "paste" | "sample">("upload");
+  const [importExpanded, setImportExpanded] = useState(true);
   const [dragActive, setDragActive] = useState(false);
   const [syntheticOpen, setSyntheticOpen] = useState(false);
   const [syntheticBusy, setSyntheticBusy] = useState(false);
@@ -190,6 +191,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
       const imported = importedResponseToTraces(response);
       onTraces(imported);
       if (imported[0]) onSelectTrace(imported[0].trace_id);
+      setImportExpanded(false);
       setMessage(importMessage(response, imported.length));
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
@@ -207,6 +209,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
       const { response, imported } = await parseTextImport(text, file.name);
       onTraces(imported);
       if (imported[0]) onSelectTrace(imported[0].trace_id);
+      setImportExpanded(false);
       setMessage(importMessage(response, imported.length));
     } catch (e) {
       setMessage(String(e));
@@ -218,6 +221,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
       const { response, imported } = await parseTextImport(pasteText, "pasted-data");
       onTraces(imported);
       if (imported[0]) onSelectTrace(imported[0].trace_id);
+      setImportExpanded(false);
       setMessage(importMessage(response, imported.length));
     } catch (e) {
       setMessage(String(e));
@@ -276,6 +280,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
       const { imported: nextTraces } = await parseTextImport(csvText, "happymeasure_combined_wide_v2_anonymized.csv");
       onTraces(nextTraces);
       onSelectTrace(nextTraces[0].trace_id);
+      setImportExpanded(false);
       setMessage(`${t(language, "demoLoaded")} (${nextTraces.length} traces)`);
     } catch (err) {
       setMessage(`Sample data could not be loaded: ${err instanceof Error ? err.message : String(err)}`);
@@ -301,6 +306,7 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
       onTraces(appended.traces);
       onSelectTrace(appended.selectedTraceId);
       setSyntheticOpen(false);
+      setImportExpanded(false);
       setMessage(language === "zh"
         ? "Synthetic trace generated from the current Model Builder model and imported as test data. Ground-truth parameters are stored in trace metadata."
         : "Synthetic trace generated from the current Model Builder model and imported as test data. Ground-truth parameters are stored in trace metadata.");
@@ -357,14 +363,15 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
   const qualityWarnings = importQuality?.warnings ?? [];
   const syntheticValidation = validateSyntheticTraceForm(syntheticForm);
   const hasData = traces.length > 0;
+  const showImportControls = !hasData || importExpanded;
   return <section className="data-workspace scroll-page web-page-flow">
     {message && <div className={message.toLowerCase().includes("error") || message.includes("Error") ? "warning error" : "warning info"}>{message}</div>}
 
     <div className={hasData ? "data-import-layout webpage-data-layout has-data" : "data-import-layout webpage-data-layout no-data"}>
       <section className="card import-actions-card data-source-card webpage-panel">
-        <div className="card-head"><h3>{language === "zh" ? "导入数据" : "Import data"}</h3><HelpTip text={t(language, "importCsvHelp")} /></div>
+        <div className="card-head"><h3>{language === "zh" ? "导入数据" : "Import data"}</h3><HelpTip text={t(language, "importCsvHelp")} />{hasData && importExpanded ? <button type="button" className="ghost small" onClick={() => setImportExpanded(false)}>{language === "zh" ? "折叠" : "Collapse"}</button> : null}</div>
 
-        {!hasData ? <>
+        {showImportControls ? <>
           <div className="data-source-tabs" role="tablist" aria-label={language === "zh" ? "数据来源" : "Data source"}>
             <button type="button" className={inputMode === "upload" ? "active" : ""} onClick={() => setInputMode("upload")}>{language === "zh" ? "上传 CSV/TXT" : "Upload CSV/TXT"}</button>
             <button type="button" className={inputMode === "paste" ? "active" : ""} onClick={() => setInputMode("paste")}>{t(language, "pasteData")}</button>
@@ -389,11 +396,11 @@ export function DataImportWorkspace({ traces, selectedTraceId, onTraces, onSelec
             <button className="import-debug-action" title={t(language, "loadDemoHelp")} onClick={loadSampleData}>{language === "zh" ? "加载示例数据" : "Load sample data"}</button>
           </div> : null}
         </> : <div className="import-compact-summary collapsed-import-summary" aria-label={language === "zh" ? "导入数据已折叠" : "Import data collapsed"}>
-          <div className="compact-import-row">
+          <button type="button" className="compact-import-row compact-import-toggle" onClick={() => setImportExpanded(true)}>
             <span className="muted">{language === "zh" ? "导入数据" : "Import data"}</span>
             <strong>{language === "zh" ? `已载入 ${traces.length} 条 trace` : `${traces.length} ${traces.length === 1 ? "trace" : "traces"} loaded`}</strong>
-            <span className="muted">{language === "zh" ? "下方继续选择和检查数据。" : "Continue with trace selection and review below."}</span>
-          </div>
+            <span className="muted">{language === "zh" ? "点击重新展开导入选项。" : "Click to reopen import options."}</span>
+          </button>
         </div>}
       </section>
 

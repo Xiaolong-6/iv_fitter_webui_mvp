@@ -1,4 +1,4 @@
-import type { PointerEvent as ReactPointerEvent } from "react";
+import { useState, type PointerEvent as ReactPointerEvent } from "react";
 import type { FitResult, FitSessionStats, ModelSpec, ParameterResult, TraceData } from "../../model/types";
 import type { FitLifecycleState } from "../../model/fitLifecycle";
 import type { AppView } from "../../components/WorkflowSidebar";
@@ -493,7 +493,45 @@ function QuickSummary({ result, semantics, setActiveView, language }: { result: 
   </div><div className="report-side-action-links"><button type="button" onClick={() => document.getElementById("report-diagnostics")?.scrollIntoView({ behavior: "smooth", block: "start" })}>{rt(language, "reviewDiagnostics")}</button><button type="button" onClick={() => setActiveView("fitting")}>{rt(language, "openBounds")}</button><button type="button" onClick={() => setActiveView("model")}>{rt(language, "saferModel")}</button></div></div>;
 }
 
-export function ReportWorkflowPage({ selectedTrace, hasSelectedTrace, model, result, report, reportMessage, isFitting, fitLifecycle, fitPromotionNotice, fitSessionStats, onExportReportCsv, onExportReportHtml, setActiveView, language, appVersion, leftPct, onResizeStart }: { selectedTrace: TraceData; hasSelectedTrace: boolean; model: ModelSpec; result: FitResult | null; report: string; reportMessage: string; reportAvailable: boolean; isFitting: boolean; fitLifecycle: FitLifecycleState; fitPromotionNotice: string | null; fitSessionStats: FitSessionStats; onExportReportCsv: () => void; onExportReportHtml: () => void; setActiveView: (view: AppView) => void; language: Language; appVersion: string; leftPct: number; onResizeStart: (event: ReactPointerEvent<HTMLDivElement>) => void; }) {
+
+function ReportEquivalentCircuit({ model, language }: { model: ModelSpec; language: Language }) {
+  const main = model.series.map((item) => String(item.metadata?.nickname ?? item.id)).join(" → ") || (language === "zh" ? "直接连接" : "direct");
+  const branches = [...model.core, ...model.parallel];
+  return <section className="card report-section report-equivalent-circuit-card"><h2>{language === "zh" ? "等效电路" : "Equivalent circuit"}</h2><div className="report-circuit-schematic">
+    <div className="report-circuit-terminal">V+</div>
+    <div className="report-circuit-main"><small>{language === "zh" ? "主路" : "Main path"}</small><strong>{main}</strong></div>
+    <div className="report-circuit-junction">Vj</div>
+    <div className="report-circuit-branches">{branches.length ? branches.map((branch) => <span key={branch.id}>{String(branch.metadata?.nickname ?? branch.id)}</span>) : <span>{language === "zh" ? "无支路" : "no branches"}</span>}</div>
+    <div className="report-circuit-terminal muted-terminal">V−</div>
+  </div></section>;
+}
+
+function FloatingExports({ result, report, invalid, reportMessage, onExportReportHtml, onExportReportCsv, setActiveView, language }: { result: FitResult | null; report: string; invalid: boolean | FitResult | null; reportMessage: string; onExportReportHtml: () => void; onExportReportCsv: () => void; setActiveView: (view: AppView) => void; language: Language }) {
+  const [pos, setPos] = useState({ x: 24, y: 96 });
+  const [drag, setDrag] = useState<{ dx: number; dy: number } | null>(null);
+  function start(event: ReactPointerEvent<HTMLDivElement>) {
+    const target = event.currentTarget.getBoundingClientRect();
+    setDrag({ dx: event.clientX - target.left, dy: event.clientY - target.top });
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+  function move(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!drag) return;
+    setPos({ x: Math.max(8, event.clientX - drag.dx), y: Math.max(8, event.clientY - drag.dy) });
+  }
+  function end() { setDrag(null); }
+  const diagnostic = Boolean(invalid);
+  return <aside className={`card floating-report-exports ${diagnostic ? "diagnostic-export" : ""}`} style={{ left: pos.x, top: pos.y }}>
+    <div className="floating-report-exports-head" onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end}>
+      <h2>{rt(language, "exports")}</h2><span>{language === "zh" ? "拖动" : "Drag"}</span>
+    </div>
+    {diagnostic ? <p className="diagnostic-export-help">{rt(language, "diagnosticExportHelp")}</p> : null}
+    <div className="report-side-action-links export-diagnostics-actions"><button type="button" onClick={() => document.getElementById("report-diagnostics")?.scrollIntoView({ behavior: "smooth", block: "start" })}>{rt(language, "reviewDiagnostics")}</button><button type="button" onClick={() => setActiveView("fitting")}>{rt(language, "openBounds")}</button><button type="button" onClick={() => setActiveView("model")}>{rt(language, "saferModel")}</button></div>
+    <div className="report-actions report-export-actions-grid"><button type="button" className="primary" disabled={!result} onClick={onExportReportHtml}>{diagnostic ? rt(language, "downloadDiagnosticHtml") : rt(language, "downloadHtml")}</button><button type="button" disabled={!report} onClick={onExportReportCsv}>{diagnostic ? rt(language, "downloadDiagnosticCsv") : rt(language, "downloadCsv")}</button></div>
+    {reportMessage ? <p className="muted">{reportMessage}</p> : null}
+  </aside>;
+}
+
+export function ReportWorkflowPage({ selectedTrace, hasSelectedTrace, model, result, report, reportMessage, isFitting, fitLifecycle, fitPromotionNotice, fitSessionStats, onExportReportCsv, onExportReportHtml, setActiveView, language, appVersion, leftPct, onResizeStart }: { selectedTrace: TraceData; hasSelectedTrace: boolean; model: ModelSpec; result: FitResult | null; report: string; reportMessage: string; reportAvailable: boolean; isFitting: boolean; fitLifecycle: FitLifecycleState; fitPromotionNotice: string | null; fitSessionStats: FitSessionStats; onExportReportCsv: () => void; onExportReportHtml: () => void; setActiveView: (view: AppView) => void; language: Language; appVersion: string; leftPct: number; onResizeStart: (event: unknown) => void; }) {
   const verdict = fitStateText(result, isFitting, fitLifecycle);
   const equationLines = modelEquationLines(result?.equations ?? null);
   const traceName = hasSelectedTrace ? String(selectedTrace.metadata?.trace_name ?? selectedTrace.trace_id) : "No trace loaded";
@@ -502,9 +540,12 @@ export function ReportWorkflowPage({ selectedTrace, hasSelectedTrace, model, res
   const mainPct = leftPct;
   const sidePct = 100 - leftPct;
 
-  return <section className="workflow-page report-page scroll-page report-page-two-column resizable-report-grid scientific-report-page" style={{ gridTemplateColumns: `minmax(300px, ${sidePct}fr) 8px minmax(520px, ${mainPct}fr)` }}>
-    <aside className="report-side-column report-control-column"><QuickSummary result={result} semantics={semantics} setActiveView={setActiveView} language={language} /><div className={`card report-export-card report-export-sidebar-card ${invalid ? "diagnostic-export" : ""}`}><h2>{rt(language, "exports")}</h2>{invalid ? <p className="diagnostic-export-help">{rt(language, "diagnosticExportHelp")}</p> : null}<div className="report-actions report-export-actions-grid"><button type="button" className="primary" disabled={!result} onClick={onExportReportHtml}>{invalid ? rt(language, "downloadDiagnosticHtml") : rt(language, "downloadHtml")}</button><button type="button" disabled={!report} onClick={onExportReportCsv}>{invalid ? rt(language, "downloadDiagnosticCsv") : rt(language, "downloadCsv")}</button></div>{reportMessage ? <p className="muted">{reportMessage}</p> : null}</div></aside>
-    <div className="pane-resizer" role="separator" aria-label="Resize Report page columns" onPointerDown={onResizeStart} />
+  void mainPct;
+  void sidePct;
+  void leftPct;
+  void onResizeStart;
+  return <section className="workflow-page report-page scroll-page report-page-single-column scientific-report-page">
+    <FloatingExports result={result} report={report} invalid={invalid} reportMessage={reportMessage} onExportReportHtml={onExportReportHtml} onExportReportCsv={onExportReportCsv} setActiveView={setActiveView} language={language} />
     <main className="report-main-column report-document-flow">
       <ReportHero result={result} semantics={semantics} traceName={traceName} model={model} appVersion={appVersion} verdict={verdict} isFitting={isFitting} setActiveView={setActiveView} language={language} />
       <WarningsAndDiagnostics result={result} semantics={semantics} language={language} />
@@ -513,6 +554,7 @@ export function ReportWorkflowPage({ selectedTrace, hasSelectedTrace, model, res
       {fitPromotionNotice ? <div className="fit-full-note">{fitPromotionNotice}</div> : null}
       {result ? <ParameterSummary result={result} language={language} diagnosticOnly={Boolean(invalid)} /> : null}
       {result ? <ReportPlots result={result} language={language} /> : null}
+      <ReportEquivalentCircuit model={model} language={language} />
       <ModelAssemblyExplanation model={model} equationLines={equationLines.length ? equationLines : [modelSummary(model)]} language={language} />
       <GeneratedReportText report={report} language={language} />
     </main>

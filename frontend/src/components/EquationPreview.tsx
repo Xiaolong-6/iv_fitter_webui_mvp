@@ -123,6 +123,7 @@ function beginnerBranchMeaning(term: Term) {
   return "This branch contributes one current term to the terminal current.";
 }
 
+
 function FormulaCards({ series, branches, language }: { series: Term[]; branches: Term[]; language: Language }) {
   const usesSoftplus = [...series, ...branches].some((term) => isSeriesPowerDrop(term) || isConductanceModifier(term) || isForwardPower(term) || isBreakdown(term) || isBiasDependentCurrent(term));
   return <>
