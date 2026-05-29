@@ -1,9 +1,18 @@
 # Changelog
+
+## v1.7.18 — Manual normal webpage scrolling fix
+
+- Reverted the failed two-pane Manual reader with independent nav/body scrollbars.
+- Restored Manual as one continuous webpage-style document rooted at `.manual-doc-page`.
+- Kept title, release status, Sections directory, and article content in one normal vertical flow.
+- Removed horizontal tab behavior and independent Manual nav/body scrollbar styling.
+- Updated Manual active-section tracking and section jumps to use the page scroll root.
+
 ## v1.7.17 — Manual body-owned scrolling fix
 
 - Moved the User Manual title into the right-hand article scroll body so it aligns with the manual content width instead of spanning the navigation column.
-- Replaced page-level Manual scrolling with body-owned scrolling: the left Sections list and the right article body now scroll independently inside a fixed-height Manual shell.
-- Removed the remaining dependency on `.doc-page` as the Manual scroll root; active-section tracking and section jumps now use the actual content scroll container.
+- Replaced page-level Manual scrolling with body-owned scrolling: the left Sections list and the right article body scroll independently inside a fixed-height Manual shell.
+- Removed the remaining dependency on `.doc-page` as the Manual scroll root; active-section tracking and section jumps use the actual content scroll container.
 - Added a hard `.manual-doc-page` containment override to prevent sidebar/header/dock overlap and responsive horizontal-tab regressions.
 
 ## v1.7.16 — Import page density and Manual scroll/title fix

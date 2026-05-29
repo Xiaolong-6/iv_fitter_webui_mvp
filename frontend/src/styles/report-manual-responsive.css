@@ -950,74 +950,41 @@
   }
 }
 
-/* v1.7.17: hard fix for Manual containment.
-   The Manual has exactly two scroll containers now: the left Sections list and
-   the right article body. The title is inside the article scroll body, so it
-   cannot sit under the sidebar/dock/header and it aligns to the content width. */
+/* v1.7.18: Manual must read like a normal webpage.
+   One scroll root only (.manual-doc-page). No two-column app reader, no
+   independent nav/body scrollbars, and no horizontal tab mode. */
 .workflow-shell > .manual-doc-page {
   grid-row: 1 / -1;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden !important;
-  padding: 0;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0 !important;
   display: block !important;
   align-content: initial !important;
+  -webkit-overflow-scrolling: touch;
 }
-.manual-doc-page .manual-reader-one-column {
-  width: min(100%, calc(1180px * var(--app-zoom))) !important;
-  max-width: calc(1180px * var(--app-zoom)) !important;
-  height: 100% !important;
-  min-height: 0 !important;
+.manual-doc-page .manual-reader-webpage {
+  width: min(100%, calc(1120px * var(--app-zoom))) !important;
+  max-width: calc(1120px * var(--app-zoom)) !important;
+  min-height: min-content !important;
+  height: auto !important;
   margin: 0 auto !important;
-  padding: calc(10px * var(--app-zoom)) calc(14px * var(--app-zoom)) !important;
+  padding: calc(16px * var(--app-zoom)) calc(16px * var(--app-zoom)) calc(90px * var(--app-zoom)) !important;
   display: grid !important;
-  grid-template-columns: clamp(176px, 20vw, 240px) minmax(0, 1fr) !important;
-  grid-template-areas: "nav content" !important;
-  grid-template-rows: minmax(0, 1fr) !important;
-  gap: calc(14px * var(--app-zoom)) !important;
-  align-items: stretch !important;
-  overflow: hidden !important;
-}
-.manual-doc-page .manual-reader-nav {
-  grid-area: nav !important;
-  position: static !important;
-  top: auto !important;
-  right: auto !important;
-  align-self: stretch !important;
-  height: 100% !important;
-  max-height: none !important;
-  min-height: 0 !important;
-  width: 100% !important;
-  display: grid !important;
-  grid-auto-rows: max-content !important;
   grid-template-columns: minmax(0, 1fr) !important;
-  gap: calc(6px * var(--app-zoom)) !important;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-}
-.manual-doc-page .manual-reader-content {
-  grid-area: content !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  height: 100% !important;
-  max-height: none !important;
-  overflow: hidden !important;
-  display: block !important;
-}
-.manual-doc-page .manual-reader-content-scroll {
-  height: 100% !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  display: grid !important;
-  align-content: start !important;
+  grid-template-areas:
+    "title"
+    "release"
+    "nav"
+    "content" !important;
+  grid-template-rows: auto auto auto auto !important;
   gap: calc(12px * var(--app-zoom)) !important;
-  padding: 0 calc(4px * var(--app-zoom)) calc(80px * var(--app-zoom)) 0 !important;
-  scroll-behavior: smooth;
-  scroll-padding-top: calc(12px * var(--app-zoom));
+  align-items: start !important;
+  overflow: visible !important;
 }
-.manual-doc-page .manual-title-top {
+.manual-doc-page .manual-reader-webpage .manual-title-top {
+  grid-area: title !important;
   width: 100% !important;
   margin: 0 !important;
   border: 1px solid #dbe4f0;
@@ -1026,23 +993,66 @@
   padding: calc(10px * var(--app-zoom)) calc(12px * var(--app-zoom));
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
 }
-.manual-doc-page .manual-title-top h2 {
-  margin: 0 0 calc(2px * var(--app-zoom));
-  font-size: calc(18px * var(--app-zoom));
+.manual-doc-page .manual-reader-webpage > .release-status-panel,
+.manual-doc-page .manual-reader-webpage > .card {
+  grid-area: release !important;
+  width: 100% !important;
 }
-.manual-doc-page .manual-title-top p { margin: 0; }
+.manual-doc-page .manual-reader-webpage .manual-reader-nav {
+  grid-area: nav !important;
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: auto !important;
+  width: 100% !important;
+  max-height: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(calc(150px * var(--app-zoom)), 1fr)) !important;
+  gap: calc(6px * var(--app-zoom)) !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+}
+.manual-doc-page .manual-reader-webpage .manual-reader-nav-title {
+  display: block !important;
+  grid-column: 1 / -1;
+}
+.manual-doc-page .manual-reader-webpage .manual-reader-nav button {
+  width: 100% !important;
+  min-width: 0 !important;
+  text-align: left !important;
+}
+.manual-doc-page .manual-reader-webpage .manual-reader-content {
+  grid-area: content !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  display: block !important;
+  overflow: visible !important;
+}
+.manual-doc-page .manual-reader-webpage .manual-reader-content-scroll {
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: calc(12px * var(--app-zoom)) !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  scroll-behavior: smooth;
+}
+.manual-doc-page .manual-reader-webpage .manual-continuous-section,
+.manual-doc-page .manual-reader-webpage .manual-section {
+  min-width: 0 !important;
+}
 @media (max-width: 760px), (orientation: portrait) {
-  .manual-doc-page .manual-reader-one-column {
-    grid-template-columns: minmax(0, 1fr) !important;
-    grid-template-rows: auto minmax(0, 1fr) !important;
-    grid-template-areas:
-      "nav"
-      "content" !important;
+  .manual-doc-page .manual-reader-webpage {
     padding-left: calc(10px * var(--app-zoom)) !important;
     padding-right: calc(10px * var(--app-zoom)) !important;
   }
-  .manual-doc-page .manual-reader-nav {
-    height: auto !important;
-    max-height: min(32vh, calc(300px * var(--app-zoom))) !important;
+  .manual-doc-page .manual-reader-webpage .manual-reader-nav {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 }

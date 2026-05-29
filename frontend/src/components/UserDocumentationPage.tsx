@@ -524,20 +524,22 @@ function ManualReader({
 }) {
   const [active, setActive] = useState<ManualSectionKey>("solving");
   const labels = sectionLabels[language];
-  const contentRef = useRef<HTMLDivElement | null>(null);
+  const readerRef = useRef<HTMLDivElement | null>(null);
   const activeLabel =
     labels.find((item) => item.id === active)?.label ?? labels[0].label;
 
+  const getScrollRoot = () =>
+    readerRef.current?.closest(".manual-doc-page") as HTMLElement | null;
+
   useEffect(() => {
     setActive("solving");
-    contentRef.current?.scrollTo({ top: 0 });
+    getScrollRoot()?.scrollTo({ top: 0 });
   }, [language]);
 
   useEffect(() => {
     let frame = 0;
-    const scrollRoot = contentRef.current;
+    const scrollRoot = getScrollRoot();
     if (!scrollRoot) return;
-    const scrollTarget: HTMLElement = scrollRoot;
     const updateActiveFromScroll = () => {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
@@ -556,7 +558,7 @@ function ManualReader({
         setActive(current.id as ManualSectionKey);
       });
     };
-    scrollTarget.addEventListener("scroll", updateActiveFromScroll, {
+    scrollRoot.addEventListener("scroll", updateActiveFromScroll, {
       passive: true,
     });
     window.addEventListener("resize", updateActiveFromScroll, {
@@ -565,7 +567,7 @@ function ManualReader({
     updateActiveFromScroll();
     return () => {
       window.cancelAnimationFrame(frame);
-      scrollTarget.removeEventListener("scroll", updateActiveFromScroll);
+      scrollRoot.removeEventListener("scroll", updateActiveFromScroll);
       window.removeEventListener("resize", updateActiveFromScroll);
     };
   }, [labels]);
@@ -573,7 +575,7 @@ function ManualReader({
   const jumpToSection = (id: ManualSectionKey) => {
     setActive(id);
     const section = document.getElementById(id);
-    const scrollRoot = contentRef.current;
+    const scrollRoot = getScrollRoot();
     if (section && scrollRoot instanceof HTMLElement) {
       const rootRect = scrollRoot.getBoundingClientRect();
       const sectionRect = section.getBoundingClientRect();
@@ -587,23 +589,19 @@ function ManualReader({
   };
 
   return (
-    <div className="manual-reader manual-reader-one-column">
+    <div className="manual-reader manual-reader-one-column manual-reader-webpage" ref={readerRef}>
+      <div className="manual-title-block manual-title-top">
+        <h2>{language === "zh" ? "用户手册" : "User Manual"}</h2>
+        <p className="muted">v{appVersion}</p>
+      </div>
+      <ReleaseStatusPanel language={language} compact />
       <SectionNavigator
         language={language}
         active={active}
         onSelect={jumpToSection}
       />
-      <main className="manual-reader-content">
-        <div
-          className="manual-reader-content-scroll continuous"
-          ref={contentRef}
-          aria-label={activeLabel}
-        >
-          <div className="manual-title-block manual-title-top">
-            <h2>{language === "zh" ? "用户手册" : "User Manual"}</h2>
-            <p className="muted">v{appVersion}</p>
-          </div>
-          <ReleaseStatusPanel language={language} compact />
+      <main className="manual-reader-content" aria-label={activeLabel}>
+        <div className="manual-reader-content-scroll continuous">
           {labels.map((item) => (
             <div className="manual-continuous-section" key={item.id}>
               {renderManualSection(item.id, registry, language)}
