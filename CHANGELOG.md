@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.7.12 — Version consistency self-check
+
+- Bumped root, frontend, and backend package metadata from v1.7.11 to v1.7.12.
+- Fixed the stale README current-version label that still reported v1.6.0.
+- Removed a duplicate embedded changelog header and repeated historical release snippets before the v1.4.37 history.
+- Re-ran the current frontend and backend validation suite during the handoff self-check.
+- Kept fitting physics, backend APIs, saved-model compatibility, UI behavior, and report numerical logic unchanged.
+
 ## v1.7.11 — Import-page crash fix and handoff cleanup
 
 - Fixed the Data Import blank-page regression after loading data by restoring the missing `DatasetNameInput` component used by Trace selection.
@@ -577,48 +585,6 @@ Tests: `PYTHONPATH=backend pytest -q backend/tests/test_fit_process_diagnostics.
 - Added a compact Fit setup disclosure for process and quality diagnostics near the existing diagnostics area, plus session totals for fit count, total function evaluations, total elapsed fit time, and root-solver failures.
 - Updated manual/reporting transparency text to explain that weighted reduced χ² is a residual-scale diagnostic unless weights represent calibrated measurement uncertainty.
 - Updated Markdown reports to include fit-process diagnostics.
-
-# Changelog
-
-## v1.7.11 — Import-page crash fix and handoff cleanup
-
-- Fixed the Data Import blank-page regression after loading data by restoring the missing `DatasetNameInput` component used by Trace selection.
-- Added a defensive editable trace-name input that commits on blur/Enter and reverts on Escape.
-- Fixed frontend build regressions left from earlier UI cleanup: restored the `SyntheticTraceTool` language prop, restored component-level parameter fit-state update helper, and fixed the Report resize callback type.
-- Fixed the misplaced SimpleChart zero-line test that caused Vitest to fail.
-- Confirmed frontend dependency installation works with the sanitized npm registry/lockfile state.
-- Archived obsolete v1.5 self-audit/release-audit markdown files and rewrote current audit/handoff docs around the v1.7.11 workflow.
-- Updated Data Import documentation to the current webpage-style import flow and removed stale Import quality/two-row layout guidance.
-- Kept fitting physics, backend APIs, saved-model compatibility, and report numerical logic unchanged.
-
-## v1.7.7 — Webpage flow cleanup and report plot hotfix
-
-- Removed the global top workflow context/status bar (`Trace / Model / Fit / Report / Next`) so Import, Model, Fit, and Report pages read like normal webpages.
-- Changed the loaded-data Import card to collapse into a compact read-only loaded summary immediately after import/parse; removed the Hide / Change data state from that page flow.
-- Placed Model Builder main-path and junction-branch groups side by side on wide screens, with automatic single-column stacking on narrow screens.
-- Added a `Go to Fitting` action above Model preview.
-- Fixed Report plots by giving the in-report chart grid bounded heights so plots do not grow indefinitely after fitting.
-- Reformatted Fit process and quality metrics with human-readable metric names and cleaner values, and aligned the exported HTML metric names with the in-app Report page.
-- Kept fitting physics, backend APIs, saved-model compatibility, and numerical report data unchanged.
-
-## v1.5.43 — Fitting and Data responsive polish
-
-- Stabilized Fitting page density at high browser/app zoom by prioritizing plot height, compacting Fit setup actions, and reducing parameter-table overflow pressure.
-- Changed the paired plot default split to favor plots and kept Plots/Parameters manually resizable.
-- Moved chart controls into a compact chart-header row so they no longer overlay legends or data.
-- Simplified Parameters toolbar labels and truncated long component summaries while preserving hover details.
-- Reworked the Data page into a source-tab workflow with upload / paste / sample options, drag-and-drop upload, structured trace metadata, and a clearer Go to Fitting action after data load.
-- Kept fitting physics, backend APIs, report schemas, saved-model compatibility, Manual behavior, and release-manager behavior unchanged.
-
-# v1.5.37 - Report diagnostics and release-manager workflow
-
-- Improved Report tab invalid-fit UX: invalid fits now open as diagnostic reports with a dominant failure summary, grouped root-cause diagnostics, suggested recovery actions, diagnostic-only parameter messaging, and diagnostic export labels.
-- Clarified model evaluation wording and moved technical equations lower/collapsed for invalid-fit states.
-- Fixed Parameters table height/scroll containment regression after stylesheet modularization.
-- Further simplified the User Manual page into a compact left-navigation reader with independent content scrolling and an Updates panel.
-- Added a read-only in-app GitHub release checker; startup and fitting are never blocked by update checks.
-- Added developer release-page audit and optional maintainer release updater scripts with dry-run mode and privacy/security checks.
-- Documented release-manager usage and synchronized release-candidate notes.
 
 ## 1.4.37 - Data bounds detail visibility
 

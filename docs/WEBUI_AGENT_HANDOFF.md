@@ -1,8 +1,8 @@
-# Web UI agent handoff — v1.7.11
+# Web UI agent handoff — v1.7.12
 
 ## Current baseline
 
-Continue from **v1.7.11**. This version fixes the Data Import blank-page regression after loading data and completes a cleanup pass after the recent UI simplification work.
+Continue from **v1.7.12**. This version is a version-consistency self-check on top of v1.7.11: package metadata and README current-version text now agree, a duplicate embedded changelog section was removed, and the current frontend/backend validation suite has been rerun.
 
 Do not base new work on the old v1.5 audit notes. Historical v1.5 audit files are archived under `docs/archive/v1_5_audits/`.
 
@@ -101,7 +101,7 @@ python -m pytest -q
 python -m compileall -q ivfitter
 ```
 
-v1.7.11 status: frontend install passed, frontend Vitest passed (11 files / 45 tests), frontend production build passed, backend pytest passed (122 tests), backend compileall passed.
+v1.7.12 status: frontend Vitest passed (11 files / 45 tests), frontend production build passed, backend pytest passed (122 tests), backend compileall passed.
 
 ## Manual smoke checks before release
 

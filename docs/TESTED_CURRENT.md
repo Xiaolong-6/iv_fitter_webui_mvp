@@ -1,38 +1,30 @@
-# Tested current — v1.7.11
+# Tested current — v1.7.12
 
-Validated after fixing the Data Import blank-page regression and completing a cleanup/audit pass.
+Validated after the v1.7.12 version-consistency self-check.
 
 ## Scope
 
-- Fixed the Data Import page crash that appeared after data was loaded. Root cause: `DataImportWorkspace` rendered `DatasetNameInput` in the loaded-data Trace selection card, but the component was not defined.
-- Added a local `DatasetNameInput` component with safe commit behavior: blur/Enter commits the trace name; Escape restores the previous value.
-- Fixed frontend build regressions from recent UI cleanup:
-  - `SyntheticTraceTool` now receives the required `language` prop.
-  - `parameterGrouping.ts` now has a local `updateComponentParams` helper used by component-level Fit/Fix actions.
-  - Report resize callback typing is explicit.
-- Fixed the misplaced SimpleChart zero-line test that made Vitest fail.
-- Cleaned stale documentation references to removed/old UI patterns: old Import quality card, old two-row Data page layout, local release gate as a user-facing UI, and old v1.5 audit handoff notes.
-- Archived obsolete v1.5 audit markdown files under `docs/archive/v1_5_audits/`.
+- Bumped root, frontend, and backend package metadata from v1.7.11 to v1.7.12.
+- Fixed the stale README current-version label that still reported v1.6.0.
+- Removed a duplicate embedded changelog header and repeated historical release snippets.
+- Revalidated the current v1.7.12 tree after the version/doc cleanup.
 - No fitting physics, backend API, saved-model schema, or report numerical logic changed.
 
 ## Commands run in this environment
 
 ```bash
-cd frontend
-npm install --include=dev
-npm run test -- --run --reporter=dot
+npm run test:frontend -- --run --reporter=dot
 npm run build
 
-cd ../backend
-python -m pytest -q
-python -m compileall -q ivfitter
+cd backend
+..\.venv\Scripts\python.exe -m pytest -q
+..\.venv\Scripts\python.exe -m compileall -q ivfitter
 ```
 
 ## Observed result
 
-- Frontend dependency install: passed, 153 packages installed, 0 vulnerabilities reported by npm audit.
 - Frontend Vitest: passed, 11 files / 45 tests.
-- Frontend production build: passed (`tsc && vite build`).
+- Frontend production build: passed (`tsc -p frontend/tsconfig.json && vite build`).
 - Backend pytest: passed, 122 tests.
 - Backend compileall: passed.
 
