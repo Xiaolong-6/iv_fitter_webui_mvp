@@ -1,4 +1,14 @@
 # Changelog
+## v1.7.16 — Import page density and Manual scroll/title fix
+
+- Replaced the post-import large Import data card with a compact loaded-summary bar showing trace count, point count, source, Reopen import, and Add more actions.
+- Collapsed Trace selection into a single compact control row for trace selection, rename, units, point count, and Model Builder navigation.
+- Reworked Spreadsheet preview into grouped trace sections with toolbar controls for trace filtering, row search, copy visible rows, and CSV export.
+- Changed successful import feedback from a page-wide yellow banner into a transient success toast while keeping errors visually distinct.
+- Expanded the Import page content width for data-analysis use on large screens instead of constraining it like a narrow document page.
+- Fixed the workflow-shell grid containment that could prevent Manual scrolling, and moved the User Manual title above the reader content with aligned width.
+- Routed root dev/build/preview scripts through the frontend package so root `npm run build` uses the installed frontend Vite binary reliably.
+
 ## v1.7.15 — Manual reader navigation and scroll stabilization
 
 - Removed the responsive Manual layout branch that changed the Sections locator into a horizontal tab bar.

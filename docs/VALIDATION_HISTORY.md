@@ -27,6 +27,7 @@ This document summarizes release-level validation. Use `docs/TESTED_CURRENT.md` 
 
 | Version | Main validation focus | Result summary |
 |---|---|---|
+| v1.7.16 | Import page density, grouped spreadsheet preview, success toast, Manual scroll/title fix | Frontend install/Vitest/build passed; backend pytest/compileall passed. |
 | v1.7.15 | Manual reader navigation and scroll stabilization | Backend pytest/compileall passed in this container; frontend build/test should be rerun locally before release if npm dependencies are unavailable. |
 | v1.7.14 | Start-page workflow-status cards and Help affordance polish | Backend pytest/compileall passed in this container; frontend build/test should be rerun locally before release if npm dependencies are unavailable. |
 | v1.7.13 | Audit hardening, CORS tightening, junction-solver robustness, Manual portrait Sections fix | Backend pytest/compileall passed in this container; frontend build/test should be rerun locally before release if npm dependencies are unavailable. |

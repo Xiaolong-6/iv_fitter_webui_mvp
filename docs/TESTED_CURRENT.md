@@ -1,20 +1,25 @@
-# Tested current — v1.7.15
+# Tested current — v1.7.16
 
-Validated after the v1.7.15 Manual reader navigation/scroll stabilization pass.
+Validated after the v1.7.16 Import-page density pass and Manual scroll/title follow-up.
 
 ## Scope
 
-- Restricted `/api/open-import-file-dialog` to localhost/loopback requests for LAN safety.
-- Tightened CORS to explicit GET/POST/OPTIONS methods and the current request headers.
-- Increased legacy junction-solver bracket robustness and aligned graph-solver bias-dependent current softplus math.
-- Fixed Manual portrait responsive behavior so Sections remain vertically stacked and scrollable.
-- Bumped root, frontend, and backend package metadata from v1.7.14 to v1.7.15.
-- Polished the Start page with per-card status badges, completion checkmarks, locked-step states, and a higher-visibility Help action.
-- Saved-model schema and report export schemas are unchanged.
+- Replaced the post-import large Import data card with a compact loaded-summary bar.
+- Combined Trace selection, editable trace name, voltage/current units, point summary, and Model Builder navigation into one compact control row.
+- Reworked Spreadsheet preview into grouped trace blocks with trace filter, search, copy visible rows, and CSV export controls.
+- Replaced the success-like yellow page banner with a transient success toast and separate error toast styling.
+- Increased the Import page maximum content width to 1600 px for data-analysis layouts on large screens.
+- Fixed Manual scrolling by making the active page occupy the full workflow-shell grid height.
+- Moved the User Manual title above the manual content and aligned it with the reader content width.
+- Bumped root, frontend, and backend package metadata from v1.7.15 to v1.7.16.
+- Saved-model schema, fit API payloads, physics model definitions, and report export schemas are unchanged.
 
 ## Commands run in this environment
 
 ```bash
+cd frontend
+npm install
+cd ..
 npm run test:frontend -- --run --reporter=dot
 npm run build
 
@@ -25,23 +30,23 @@ python -m compileall -q ivfitter
 
 ## Observed result
 
-- Frontend Vitest: not run here because `vitest` is not installed in `frontend/node_modules` in this unpacked container (`sh: 1: vitest: not found`).
-- Frontend production build: attempted with `npm run build`, but failed because frontend dependencies are not installed in this unpacked container (`react`, `react/jsx-runtime`, Vite/TypeScript ambient types unavailable). Run after `npm install` locally.
+- Frontend dependency install: passed in the unpacked container.
+- Frontend Vitest: passed, 11 files / 45 tests.
+- Frontend production build: passed through the root `npm run build` script after routing it to `npm --prefix frontend run build`.
 - Backend pytest: passed, 125 tests.
 - Backend compileall: passed.
 
 ## Manual browser checks still required
 
-1. Import page: load CSV/paste/sample data; page should not go blank after data loads.
-2. Import page: collapsed Import data card should reopen and allow a second import.
-3. Trace selection: rename selected trace; blur/Enter commits, Escape reverts.
-4. Spreadsheet preview: all loaded traces are visible and the selected trace is highlighted.
-5. Fit page: one-column page scrolls; Advanced popover floats and closes on outside click.
-6. User Manual: one-column page scrolls; in portrait viewport, Sections locator remains vertical and scrollable, not horizontal tabs.
-7. Report page: plots render visibly in-app and exported HTML still matches report order.
+1. Import page: import CSV/paste/sample data; the Import area should collapse to a 36–44 px loaded-summary bar.
+2. Import page: Reopen import should restore the source controls; Add more should append a file import without replacing existing traces.
+3. Trace control row: trace dropdown, editable name, voltage/current units, point count, and Model Builder action should stay on one compact row on wide screens and wrap cleanly on narrow screens.
+4. Spreadsheet preview: all traces should appear as grouped sections, the selected trace group should be visually stronger, search/filter should reduce visible rows, and copy/export should use visible rows.
+5. Import success feedback: success should appear as a transient green toast, not a yellow page-level warning banner.
+6. Manual page: User Manual title should be visible at the top of the content width; Sections should stay vertical; the manual body should scroll.
+7. Fit/Model/Report pages: verify the workflow-shell full-height rule did not regress their existing scroll behavior.
 
-
-Note: frontend dependency execution may depend on the local npm cache/mirror. Run `npm run test:frontend -- --run --reporter=dot` and `npm run build` locally before tagging if this container cannot execute them.
+Note: browser checks are still required for the visual layout changes, especially responsive Import and Manual scrolling behavior.
 
 ## v1.7.15 Manual reader validation notes
 

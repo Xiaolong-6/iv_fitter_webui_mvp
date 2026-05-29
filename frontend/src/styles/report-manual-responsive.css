@@ -890,3 +890,62 @@
     max-height: min(36vh, calc(320px * var(--app-zoom)));
   }
 }
+
+/* v1.7.16: Manual title/content alignment and scroll containment fix. */
+.workflow-shell > .doc-page {
+  grid-row: 1 / -1;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0;
+}
+.manual-reader-one-column {
+  width: min(100%, calc(1180px * var(--app-zoom))) !important;
+  max-width: calc(1180px * var(--app-zoom)) !important;
+  margin: 0 auto !important;
+  padding-top: calc(10px * var(--app-zoom));
+}
+.manual-reader-one-column .manual-title-top {
+  grid-area: title;
+  width: 100%;
+  border: 1px solid #dbe4f0;
+  border-radius: calc(12px * var(--app-zoom));
+  background: #ffffff;
+  padding: calc(10px * var(--app-zoom)) calc(12px * var(--app-zoom));
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+.manual-reader-one-column .manual-title-top h2 {
+  margin: 0 0 calc(2px * var(--app-zoom));
+  font-size: calc(18px * var(--app-zoom));
+}
+.manual-reader-one-column .manual-title-top p {
+  margin: 0;
+}
+@media (max-width: 1280px) {
+  .manual-reader-one-column .manual-reader-nav {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  .manual-reader-one-column .manual-reader-nav button {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+}
+.manual-reader-one-column {
+  grid-template-areas:
+    "title title"
+    "release release"
+    "nav content" !important;
+}
+@media (max-width: 760px) {
+  .manual-reader-one-column {
+    grid-template-areas:
+      "title"
+      "release"
+      "nav"
+      "content" !important;
+  }
+}
