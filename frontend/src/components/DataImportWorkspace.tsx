@@ -227,35 +227,36 @@ export function DataImportWorkspace({
     target?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
   }
 
-  const previewGroups = useMemo(() => {
+  const previewTraceGroups = useMemo(
+    () =>
+      traces.map((trace) => ({
+        trace,
+        selected: trace.trace_id === selected?.trace_id,
+        pointCount: Math.min(trace.voltage_V.length, trace.current_A.length),
+      })),
+    [traces, selected?.trace_id],
+  );
+
+  const previewRows = useMemo(() => {
     const needle = previewSearch.trim().toLowerCase();
-    return traces
-      .map((trace) => {
-        const n = Math.min(trace.voltage_V.length, trace.current_A.length);
-        const rows = Array.from({ length: n }, (_, idx) => ({
-          traceId: trace.trace_id,
-          selected: trace.trace_id === selected?.trace_id,
-          idx,
-          v: trace.voltage_V[idx],
-          i: trace.current_A[idx],
-        })).filter((row) => {
-          if (!needle) return true;
-          return [
-            row.traceId,
-            String(row.idx + 1),
-            formatCell(row.v),
-            formatCell(row.i),
-          ].some((value) => value.toLowerCase().includes(needle));
+    const maxPoints = previewTraceGroups.reduce(
+      (max, group) => Math.max(max, group.pointCount),
+      0,
+    );
+    return Array.from({ length: maxPoints }, (_, idx) => ({ idx })).filter(
+      (row) => {
+        if (!needle) return true;
+        if (String(row.idx + 1).includes(needle)) return true;
+        return previewTraceGroups.some((group) => {
+          const v = group.trace.voltage_V[row.idx];
+          const i = group.trace.current_A[row.idx];
+          return [group.trace.trace_id, formatCell(v), formatCell(i)].some((value) =>
+            value.toLowerCase().includes(needle),
+          );
         });
-        return {
-          trace,
-          rows,
-          selected: trace.trace_id === selected?.trace_id,
-          pointCount: n,
-        };
-      })
-      .filter((group) => group.rows.length > 0 || !needle);
-  }, [traces, previewSearch, selected?.trace_id]);
+      },
+    );
+  }, [previewTraceGroups, previewSearch]);
 
   function importedResponseToTraces(response: ImportCsvTextMultiResponse) {
     const imported = response.traces.map((item) =>
@@ -489,11 +490,13 @@ export function DataImportWorkspace({
   }
 
   function visibleCsvRows() {
-    return previewGroups.flatMap((group) =>
-      group.rows.map(
-        (row) =>
-          `${JSON.stringify(row.traceId)},${row.idx + 1},${formatCell(row.v)},${formatCell(row.i)}`,
-      ),
+    return previewRows.flatMap((row) =>
+      previewTraceGroups.flatMap((group) => {
+        const v = group.trace.voltage_V[row.idx];
+        const i = group.trace.current_A[row.idx];
+        if (!Number.isFinite(v) || !Number.isFinite(i)) return [];
+        return `${JSON.stringify(group.trace.trace_id)},${row.idx + 1},${formatCell(v)},${formatCell(i)}`;
+      }),
     );
   }
 
@@ -738,28 +741,30 @@ export function DataImportWorkspace({
               </label>
               <div className="unit-inline-group" title={unitHelp}>
                 <span>{language === "zh" ? "单位" : "Units"}</span>
-                <select
-                  aria-label={language === "zh" ? "电压单位" : "Voltage unit"}
-                  value={voltageUnit}
-                  onChange={(e) => changeUnit("voltage", e.target.value)}
-                >
-                  {voltageUnits.map((unit) => (
-                    <option key={unit.value} value={unit.value}>
-                      {unit.label}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  aria-label={language === "zh" ? "电流单位" : "Current unit"}
-                  value={currentUnit}
-                  onChange={(e) => changeUnit("current", e.target.value)}
-                >
-                  {currentUnits.map((unit) => (
-                    <option key={unit.value} value={unit.value}>
-                      {unit.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="unit-control-fields">
+                  <select
+                    aria-label={language === "zh" ? "电压单位" : "Voltage unit"}
+                    value={voltageUnit}
+                    onChange={(e) => changeUnit("voltage", e.target.value)}
+                  >
+                    {voltageUnits.map((unit) => (
+                      <option key={unit.value} value={unit.value}>
+                        {unit.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    aria-label={language === "zh" ? "电流单位" : "Current unit"}
+                    value={currentUnit}
+                    onChange={(e) => changeUnit("current", e.target.value)}
+                  >
+                    {currentUnits.map((unit) => (
+                      <option key={unit.value} value={unit.value}>
+                        {unit.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <span className="trace-count-pill compact-data-pill">
                 {language === "zh"
@@ -846,51 +851,69 @@ export function DataImportWorkspace({
               role="region"
               aria-label={t(language, "dataPreview")}
             >
-              <table className="data-spreadsheet all-traces-spreadsheet grouped-spreadsheet">
+              <table className="data-spreadsheet all-traces-spreadsheet horizontal-trace-spreadsheet">
                 <thead>
                   <tr>
-                    <th>#</th>
-                    <th>V (V)</th>
-                    <th>I (A)</th>
+                    <th className="row-index-header" rowSpan={2}>#</th>
+                    {previewTraceGroups.map((group) => (
+                      <th
+                        id={traceGroupElementId(group.trace.trace_id)}
+                        key={group.trace.trace_id}
+                        className={
+                          group.selected
+                            ? "trace-column-group selected-trace-group"
+                            : "trace-column-group"
+                        }
+                        colSpan={2}
+                        title={group.trace.trace_id}
+                      >
+                        <span>{group.trace.trace_id}</span>
+                        <small>
+                          {group.pointCount} {language === "zh" ? "点" : "points"}
+                        </small>
+                      </th>
+                    ))}
+                  </tr>
+                  <tr>
+                    {previewTraceGroups.map((group) => (
+                      <Fragment key={`${group.trace.trace_id}-units`}>
+                        <th className={group.selected ? "selected-trace-col" : ""}>
+                          V (V)
+                        </th>
+                        <th className={group.selected ? "selected-trace-col" : ""}>
+                          I (A)
+                        </th>
+                      </Fragment>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {previewGroups.map((group) => (
-                    <Fragment key={group.trace.trace_id}>
-                      <tr
-                        id={traceGroupElementId(group.trace.trace_id)}
-                        key={`${group.trace.trace_id}-group`}
-                        className={
-                          group.selected
-                            ? "trace-group-row selected-trace-group"
-                            : "trace-group-row"
-                        }
-                      >
-                        <td colSpan={3}>
-                          {language === "zh" ? "Trace 组" : "Trace group"}:{" "}
-                          {group.trace.trace_id} · {group.pointCount}{" "}
-                          {language === "zh" ? "点" : "points"}
-                        </td>
-                      </tr>
-                      {group.rows.map((row) => (
-                        <tr
-                          key={`${row.traceId}-${row.idx}`}
-                          className={row.selected ? "selected-trace-row" : ""}
-                        >
-                          <td>{row.idx + 1}</td>
-                          <td>{formatCell(row.v)}</td>
-                          <td>{formatCell(row.i)}</td>
-                        </tr>
-                      ))}
-                    </Fragment>
+                  {previewRows.map((row) => (
+                    <tr key={row.idx}>
+                      <td className="row-index-cell">{row.idx + 1}</td>
+                      {previewTraceGroups.map((group) => {
+                        const v = group.trace.voltage_V[row.idx];
+                        const i = group.trace.current_A[row.idx];
+                        return (
+                          <Fragment key={`${group.trace.trace_id}-${row.idx}`}>
+                            <td className={group.selected ? "selected-trace-col" : ""}>
+                              {Number.isFinite(v) ? formatCell(v) : ""}
+                            </td>
+                            <td className={group.selected ? "selected-trace-col" : ""}>
+                              {Number.isFinite(i) ? formatCell(i) : ""}
+                            </td>
+                          </Fragment>
+                        );
+                      })}
+                    </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <p className="muted spreadsheet-note">
               {language === "zh"
-                ? "所有 traces 同时显示；下拉菜单只用于快速定位某个 trace group。表格可横向滚动。"
-                : "All traces remain visible at the same time; the menu only jumps to a trace group. The table can scroll horizontally."}
+                ? "所有 traces 横向并排显示；下拉菜单只用于快速定位某个 trace group。表格可左右滚动。"
+                : "All traces are arranged side by side; the menu only jumps to a trace group. Scroll horizontally to compare traces."}
             </p>
           </section>
         ) : null}

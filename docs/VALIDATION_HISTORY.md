@@ -1,5 +1,24 @@
 # Validation history
 
+## v1.7.22
+
+- Replaced Model Builder list editing with an interactive equivalent-circuit canvas and fixed topology zones.
+- Preserved the backend ModelSpec schema and fitting behavior.
+- Added component-card selection and right-side inspector editing for names, polarity, parameters, fit toggles, and bounds.
+- Added frontend tests for rendering, inspector selection, preset replacement, and parameter roundtrip.
+- Frontend build/Vitest passed; backend pytest/compileall passed.
+
+
+## v1.7.21
+
+- Fixed Import trace-control vertical alignment after compact-row conversion.
+- Reworked Spreadsheet preview to compare all traces horizontally rather than stacking trace groups vertically.
+
+## v1.7.20
+- Moved update checking out of the Manual page and into startup/refresh flow.
+- Added dock NEW release badge behavior plus a version-click simulation shortcut for testing.
+- Preserved one-line loaded import summary layout with inline source and actions.
+
 ## v1.7.19
 
 - Replaced Manual section directory with a slim floating vertical section rail using shaped nodes and hover/focus labels.

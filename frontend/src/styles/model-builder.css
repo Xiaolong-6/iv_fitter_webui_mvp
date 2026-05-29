@@ -314,3 +314,458 @@
   .circuit-component-text { font-size: 11px; }
   .circuit-node-text { font-size: 10px; }
 }
+
+/* v1.7.22 interactive equivalent-circuit builder */
+.circuit-builder-shell {
+  overflow: visible;
+}
+
+.circuit-builder-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.circuit-builder-toolbar h2 {
+  margin-bottom: 2px;
+}
+
+.circuit-builder-presets {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.circuit-builder-presets label {
+  display: grid;
+  gap: 4px;
+  min-width: 220px;
+}
+
+.circuit-builder-layout {
+  display: grid;
+  grid-template-columns: minmax(560px, 1fr) minmax(340px, 420px);
+  gap: 16px;
+  align-items: stretch;
+  margin-top: 14px;
+}
+
+.circuit-builder-main {
+  min-width: 0;
+}
+
+.equivalent-circuit-builder {
+  position: relative;
+  min-height: 470px;
+  overflow: auto;
+  border: 1px solid var(--border, #d8e1ee);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(78, 115, 223, 0.18) 1.2px, transparent 0) 0 0 / 18px 18px,
+    linear-gradient(180deg, rgba(255,255,255,0.96), rgba(247,250,255,0.96));
+}
+
+.circuit-wire-layer {
+  position: absolute;
+  inset: 0;
+  min-width: 900px;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.builder-wire,
+.builder-wire-muted,
+.builder-wire-ground {
+  fill: none;
+  stroke: #1f2937;
+  stroke-width: 2;
+}
+
+.builder-wire-muted {
+  stroke: #5f6f89;
+  stroke-width: 1.7;
+  stroke-dasharray: 5 5;
+}
+
+.builder-wire-ground {
+  stroke: #111827;
+  stroke-width: 2.2;
+}
+
+.builder-arrow,
+.builder-node-dot,
+.builder-terminal-circle {
+  fill: #111827;
+}
+
+.builder-terminal,
+.builder-terminal-circle {
+  fill: rgba(255, 255, 255, 0.92);
+  stroke: #111827;
+  stroke-width: 2;
+}
+
+.builder-terminal-circle {
+  fill: rgba(255, 255, 255, 0.96);
+}
+
+.builder-wire-label {
+  font-size: 18px;
+  font-weight: 700;
+  fill: #0f172a;
+}
+
+.circuit-zone-frame {
+  position: absolute;
+  z-index: 2;
+  border: 1.5px dashed rgba(37, 99, 235, 0.34);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.56);
+  padding: 12px;
+  min-width: 420px;
+}
+
+.circuit-main-frame {
+  left: clamp(120px, 16vw, 240px);
+  right: clamp(160px, 20vw, 280px);
+  top: 62px;
+}
+
+.circuit-branch-frame {
+  left: clamp(120px, 18vw, 260px);
+  right: clamp(110px, 11vw, 180px);
+  top: 238px;
+  border-color: rgba(124, 58, 237, 0.34);
+}
+
+.circuit-zone-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.circuit-add-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.circuit-add-menu select {
+  max-width: 280px;
+  min-width: 180px;
+}
+
+.circuit-node-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+}
+
+.circuit-node-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(120px, 1fr) 24px;
+  align-items: center;
+  gap: 10px;
+  min-width: 190px;
+  max-width: 240px;
+  min-height: 86px;
+  padding: 10px 10px 10px 12px;
+  border: 2px solid #cbd5e1;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.95);
+  color: #0f172a;
+  box-shadow: 0 7px 18px rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+  text-align: left;
+}
+
+.circuit-node-card:hover,
+.circuit-node-card:focus-visible {
+  border-color: #60a5fa;
+  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.16);
+  outline: none;
+}
+
+.circuit-node-card.is-selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.2);
+}
+
+.node-grip {
+  color: #94a3b8;
+  font-weight: 900;
+  line-height: 0.8;
+}
+
+.node-main {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.node-main strong {
+  font-size: 17px;
+  line-height: 1.1;
+}
+
+.node-main small {
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.node-badges {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+
+.node-badge {
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  padding: 1px 7px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.node-badge-warning {
+  color: #92400e;
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.node-badge-branch {
+  color: #6d28d9;
+  border-color: #ddd6fe;
+  background: #f5f3ff;
+}
+
+.node-badge-main {
+  color: #0f766e;
+  border-color: #99f6e4;
+  background: #f0fdfa;
+}
+
+.node-remove {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  color: #64748b;
+  background: #f8fafc;
+  font-weight: 800;
+}
+
+.node-remove:hover {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.circuit-empty-slot {
+  min-width: 180px;
+  padding: 20px;
+  color: #64748b;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  background: rgba(248,250,252,0.86);
+  text-align: center;
+}
+
+.component-inspector {
+  border: 1px solid var(--border, #d8e1ee);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.96);
+  padding: 16px;
+  min-width: 0;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+}
+
+.empty-inspector {
+  color: #64748b;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.inspector-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+.inspector-title-row h3 {
+  margin: 0;
+}
+
+.inspector-title-row p {
+  margin: 2px 0 0;
+  color: #64748b;
+}
+
+.inspector-zone-pill {
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.inspector-field {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.inspector-field > span,
+.inspector-section-title {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.inspector-param-table {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.inspector-param-header,
+.inspector-param-row {
+  display: grid;
+  grid-template-columns: minmax(86px, 1.1fr) minmax(74px, 1fr) 44px minmax(74px, 1fr) minmax(74px, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.inspector-param-header {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.inspector-param-row {
+  padding: 5px 0;
+  border-top: 1px solid #eef2f7;
+}
+
+.inspector-param-name {
+  display: grid;
+  gap: 1px;
+  font-weight: 800;
+  min-width: 0;
+}
+
+.inspector-param-name small {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.circuit-param-input {
+  min-width: 0;
+  width: 100%;
+  padding-inline: 8px;
+}
+
+.inspector-fit-toggle {
+  display: grid;
+  place-items: center;
+}
+
+.inspector-advanced {
+  margin-top: 14px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 10px;
+}
+
+.inspector-advanced summary {
+  cursor: pointer;
+  color: #475569;
+  font-weight: 800;
+}
+
+.inspector-advanced dl {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 5px 8px;
+  margin: 10px 0 0;
+  font-size: 12px;
+}
+
+.inspector-advanced dt {
+  color: #64748b;
+  font-weight: 800;
+}
+
+.inspector-advanced dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.circuit-model-summary {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  color: #475569;
+  font-size: 13px;
+}
+
+@media (max-width: 1100px) {
+  .circuit-builder-layout {
+    grid-template-columns: 1fr;
+  }
+  .component-inspector {
+    order: -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .equivalent-circuit-builder {
+    min-height: 620px;
+  }
+  .circuit-main-frame,
+  .circuit-branch-frame {
+    left: 18px;
+    right: auto;
+    min-width: 620px;
+  }
+  .circuit-branch-frame {
+    top: 330px;
+  }
+  .circuit-add-menu {
+    flex-wrap: wrap;
+  }
+  .inspector-param-header,
+  .inspector-param-row {
+    grid-template-columns: minmax(80px, 1fr) minmax(90px, 1fr) 44px;
+  }
+  .inspector-param-header span:nth-child(4),
+  .inspector-param-header span:nth-child(5),
+  .inspector-param-row > :nth-child(4),
+  .inspector-param-row > :nth-child(5) {
+    grid-column: span 1;
+  }
+}

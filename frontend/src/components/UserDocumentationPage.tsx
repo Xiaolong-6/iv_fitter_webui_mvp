@@ -3,7 +3,6 @@ import type { AppView } from "./WorkflowSidebar";
 import type { FunctionDefinition } from "../model/types";
 import type { Language } from "../model/i18n";
 import { MathFormula } from "./MathFormula";
-import { ReleaseStatusPanel } from "./ReleaseStatusPanel";
 import {
   USER_FUNCTION_DOCS,
   type UserFunctionDoc,
@@ -593,7 +592,6 @@ function ManualReader({
         <h2>{language === "zh" ? "用户手册" : "User Manual"}</h2>
         <p className="muted">v{appVersion}</p>
       </div>
-      <ReleaseStatusPanel language={language} compact />
       <SectionNavigator
         language={language}
         active={active}

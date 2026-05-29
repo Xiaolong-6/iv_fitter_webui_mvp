@@ -16,6 +16,10 @@ export function WorkflowSidebar({
   language,
   onLanguageChange,
   zoomControl,
+  updateAvailable = false,
+  latestVersion,
+  onVersionClick,
+  onReleaseClick,
 }: {
   activeView: AppView;
   onSelect: (view: AppView) => void;
@@ -25,6 +29,10 @@ export function WorkflowSidebar({
   language: Language;
   onLanguageChange: (language: Language) => void;
   zoomControl?: ReactNode;
+  updateAvailable?: boolean;
+  latestVersion?: string | null;
+  onVersionClick?: () => void;
+  onReleaseClick?: () => void;
 }) {
   function labelFor(tab: AppView) {
     return t(language, tab);
@@ -59,9 +67,28 @@ export function WorkflowSidebar({
         <option value="zh">{t(language, "chinese")}</option>
       </select></label> : <button className="language-icon" title={t(language, "language")} onClick={() => onLanguageChange(language === "en" ? "zh" : "en")}>{language === "en" ? "ZH" : "EN"}</button>}
       {zoomControl ? <div className="sidebar-zoom-slot">{zoomControl}</div> : null}
-      <div className="sidebar-version">
+      <div className={updateAvailable ? "sidebar-version has-update" : "sidebar-version"}>
         {!collapsed && <span>{t(language, "version")}</span>}
-        <strong>v{version}</strong>
+        <button
+          type="button"
+          className="sidebar-version-button"
+          onClick={onVersionClick}
+          title={
+            language === "zh"
+              ? "点击模拟有新版本提示，用于测试 NEW 入口"
+              : "Click to simulate an available update and test the NEW entry"
+          }
+        >
+          v{version}
+        </button>
+        {updateAvailable ? <button
+          type="button"
+          className="sidebar-new-button"
+          onClick={onReleaseClick}
+          title={latestVersion ? `${language === "zh" ? "打开最新 release" : "Open latest release"}: ${latestVersion}` : language === "zh" ? "打开 release 页面" : "Open release page"}
+        >
+          NEW
+        </button> : null}
       </div>
     </div>
   </aside>;

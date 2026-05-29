@@ -25,6 +25,7 @@ import { useWorkflowLayoutState } from "./hooks/useWorkflowLayoutState";
 import { fitResultIsSafeToPromote, warningDismissKey } from "./fitPageUtils";
 import { FitActionButtons, FitMessages, FitReportButton } from "./components/FitActionCluster";
 import { APP_VERSION } from "../utils/version";
+import { checkLatestRelease, type ReleaseCheckResult } from "../services/releaseCheck";
 
 type ZoomStyle = CSSProperties & { "--app-zoom": number };
 
@@ -88,6 +89,18 @@ export function FittingPage() {
     totalElapsedS: 0,
     totalRootSolverFailures: 0,
   });
+  const [releaseCheck, setReleaseCheck] = useState<ReleaseCheckResult | null>(null);
+  const [releaseDemoUpdate, setReleaseDemoUpdate] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    checkLatestRelease().then((next) => {
+      if (!cancelled) setReleaseCheck(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     getRegistry()
@@ -486,6 +499,16 @@ export function FittingPage() {
     />
   );
 
+  const effectiveReleaseUpdateAvailable = releaseDemoUpdate || Boolean(releaseCheck?.updateAvailable);
+  const effectiveLatestVersion = releaseDemoUpdate
+    ? `v${APP_VERSION}-demo-new`
+    : releaseCheck?.latestVersion ?? null;
+  const effectiveReleaseUrl = releaseCheck?.releaseUrl || "https://github.com/Xiaolong-6/iv_fitter_webui_mvp/releases";
+
+  const openReleasePage = () => {
+    window.open(effectiveReleaseUrl, "_blank", "noopener,noreferrer");
+  };
+
   const zoomControl = (
     <div
       className="zoom-control sidebar-zoom-control"
@@ -523,6 +546,10 @@ export function FittingPage() {
         language={language}
         onLanguageChange={setLanguage}
         zoomControl={zoomControl}
+        updateAvailable={effectiveReleaseUpdateAvailable}
+        latestVersion={effectiveLatestVersion}
+        onVersionClick={() => setReleaseDemoUpdate(true)}
+        onReleaseClick={openReleasePage}
       />
       <main className="workspace workflow-shell">
         {activeView === "start" ? (

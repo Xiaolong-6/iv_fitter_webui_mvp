@@ -1719,3 +1719,222 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
 .grouped-spreadsheet td:nth-child(2),
 .grouped-spreadsheet th:nth-child(3),
 .grouped-spreadsheet td:nth-child(3) { min-width: calc(180px * var(--app-zoom)); }
+
+/* v1.7.20: keep the loaded import summary as a true one-line bar. */
+.import-loaded-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: calc(36px * var(--app-zoom));
+  padding-block: calc(4px * var(--app-zoom));
+}
+.import-loaded-summary {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.import-loaded-actions {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .import-loaded-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .import-loaded-summary,
+  .import-loaded-actions {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+  .import-loaded-actions > button {
+    width: auto;
+    flex: 0 0 auto;
+  }
+}
+
+/* v1.7.20: update checking is automatic; the dock version doubles as a test shortcut. */
+.sidebar-version {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(6px * var(--app-zoom));
+}
+.sidebar-version.has-update {
+  grid-template-columns: auto auto auto;
+}
+.sidebar-version-button {
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  padding: 0;
+  font-weight: 900;
+  font-size: calc(12px * var(--app-zoom));
+  line-height: 1.1;
+  cursor: pointer;
+}
+.sidebar-version-button:hover,
+.sidebar-version-button:focus-visible {
+  color: #bfdbfe;
+  text-decoration: underline;
+  outline: none;
+}
+.sidebar-new-button {
+  min-height: calc(22px * var(--app-zoom));
+  padding: calc(2px * var(--app-zoom)) calc(7px * var(--app-zoom));
+  border-radius: 999px;
+  border: 1px solid #fde68a;
+  background: #facc15;
+  color: #422006;
+  font-size: calc(10px * var(--app-zoom));
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.18), 0 8px 18px rgba(250, 204, 21, 0.22);
+}
+.sidebar-new-button:hover,
+.sidebar-new-button:focus-visible {
+  background: #fde047;
+  border-color: #fef3c7;
+  outline: none;
+}
+.sidebar.collapsed .sidebar-version {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: calc(4px * var(--app-zoom));
+}
+.sidebar.collapsed .sidebar-version-button {
+  max-width: 52px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+.sidebar.collapsed .sidebar-new-button {
+  width: 42px;
+  min-width: 0;
+  padding-inline: 0;
+  font-size: 9px;
+}
+
+/* v1.7.21: align import trace controls and arrange preview traces horizontally. */
+.trace-control-card {
+  padding-block: calc(10px * var(--app-zoom));
+}
+.trace-control-row {
+  grid-template-columns: minmax(260px, 1.25fr) minmax(260px, 1.15fr) minmax(150px, auto) auto auto;
+  align-items: end;
+}
+.trace-control-row label,
+.trace-control-row .unit-inline-group {
+  min-height: calc(48px * var(--app-zoom));
+  align-content: end;
+}
+.unit-inline-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: calc(3px * var(--app-zoom));
+}
+.unit-inline-group > span {
+  align-self: auto;
+  padding-bottom: 0;
+}
+.unit-control-fields {
+  display: grid;
+  grid-template-columns: minmax(64px, 1fr) minmax(64px, 1fr);
+  gap: calc(5px * var(--app-zoom));
+}
+.trace-control-row select,
+.trace-control-row input,
+.unit-control-fields select,
+.compact-next-action,
+.compact-data-pill {
+  min-height: calc(36px * var(--app-zoom));
+}
+.compact-data-pill,
+.compact-next-action {
+  align-self: end;
+  margin-bottom: 0;
+}
+
+.horizontal-trace-spreadsheet {
+  min-width: max(100%, calc(220px * var(--app-zoom)));
+  width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.horizontal-trace-spreadsheet th,
+.horizontal-trace-spreadsheet td {
+  white-space: nowrap;
+  min-width: calc(128px * var(--app-zoom));
+  padding: calc(4px * var(--app-zoom)) calc(8px * var(--app-zoom));
+}
+.horizontal-trace-spreadsheet .row-index-header,
+.horizontal-trace-spreadsheet .row-index-cell {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  min-width: calc(56px * var(--app-zoom));
+  width: calc(56px * var(--app-zoom));
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 900;
+  box-shadow: 1px 0 0 #dbe4f0;
+}
+.horizontal-trace-spreadsheet .row-index-header {
+  z-index: 5;
+}
+.horizontal-trace-spreadsheet .trace-column-group {
+  min-width: calc(256px * var(--app-zoom));
+  background: #f8fafc;
+  color: #334155;
+  border-left: 1px solid #dbe4f0;
+  border-right: 1px solid #dbe4f0;
+  scroll-margin-left: calc(72px * var(--app-zoom));
+}
+.horizontal-trace-spreadsheet .trace-column-group > span,
+.horizontal-trace-spreadsheet .trace-column-group > small {
+  display: block;
+  max-width: calc(240px * var(--app-zoom));
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.horizontal-trace-spreadsheet .trace-column-group > span {
+  font-weight: 950;
+}
+.horizontal-trace-spreadsheet .trace-column-group > small {
+  margin-top: 2px;
+  color: #64748b;
+  font-weight: 800;
+}
+.horizontal-trace-spreadsheet .selected-trace-group {
+  background: #dbeafe;
+  color: #1d4ed8;
+  box-shadow: inset 0 3px 0 #2563eb;
+}
+.horizontal-trace-spreadsheet .selected-trace-col {
+  background: #eff6ff;
+}
+.horizontal-trace-spreadsheet tbody tr:hover td {
+  background: #f8fafc;
+}
+.horizontal-trace-spreadsheet tbody tr:hover .selected-trace-col {
+  background: #dbeafe;
+}
+
+@media (max-width: 1180px) {
+  .trace-control-row {
+    grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(150px, auto);
+  }
+}
+@media (max-width: 760px) {
+  .trace-control-row,
+  .unit-inline-group,
+  .unit-control-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .trace-control-row label,
+  .trace-control-row .unit-inline-group {
+    min-height: 0;
+  }
+}

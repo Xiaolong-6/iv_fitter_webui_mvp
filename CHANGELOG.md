@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.7.22 - Interactive equivalent-circuit Model Builder
+
+- Replaced the old Model Builder list layout with a fixed-topology equivalent-circuit canvas.
+- Kept the backend ModelSpec contract unchanged; the canvas is a visual/editor layer only.
+- Added main-path and junction-branch zones with Vext, Vi, and V=0 visual anchors.
+- Added clickable component cards, selected-state highlighting, delete controls, and a right-side inspector.
+- Added inspector editing for nickname, polarity, custom expression, parameter initial values, fit toggles, and bounds.
+- Kept preset selection as a replace-current-model action for single diode, double diode, and saved custom presets.
+- Added frontend regression tests for circuit rendering, component selection, preset replacement, and parameter roundtrip.
+
+## v1.7.21 - Import alignment and horizontal all-trace spreadsheet
+
+- Align the Import Trace/Name/Units/status/action controls to the same control baseline.
+- Change Spreadsheet preview from vertical trace groups to side-by-side trace columns.
+- Keep the trace dropdown as a jump-to-group control only; it no longer filters or hides traces.
+- Preserve horizontal scrolling for large multi-trace datasets.
+
+## v1.7.20 - Automatic update badge and one-line import loaded bar
+- Removed the compact Version and updates panel from the Manual page; update checking now runs automatically on app startup/refresh.
+- Added a highlighted NEW action beside/below the dock version when a newer public release is detected.
+- Made the dock version number clickable as a test shortcut that simulates the NEW update badge.
+- Changed the post-import loaded summary into a true one-line bar with actions on the same row.
+
 ## v1.7.19 - Manual section rail and spreadsheet all-trace preview
 
 - Replaced the Manual inline section directory with a slim floating vertical section rail that preserves normal webpage scrolling.

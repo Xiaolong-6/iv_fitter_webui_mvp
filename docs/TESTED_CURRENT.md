@@ -1,6 +1,52 @@
-# Tested current — v1.7.19
+# Tested current — v1.7.22
 
-## v1.7.19 Manual rail / all-trace spreadsheet validation
+## v1.7.22 Interactive equivalent-circuit Model Builder validation
+
+Scope validated in this container:
+
+- Model Builder now renders a visual equivalent-circuit canvas with Vext, Vi, V=0, a main-path zone, and a junction-branch zone.
+- No arbitrary free-form SPICE topology or drag-and-drop wiring was added.
+- Existing backend ModelSpec remains the single data contract.
+- Component cards can be selected and edited through a right-side inspector.
+- Inspector supports nickname, polarity, custom expression, initial parameter value, fit toggle, lower bound, and upper bound edits.
+- Preset selection still replaces the current model rather than appending to it.
+- Regression tests cover single-diode rendering, component selection, double-diode preset replacement, and ModelSpec parameter roundtrip.
+
+Commands run:
+
+```bash
+npm --prefix frontend install
+npm run build
+npm run test:frontend -- --run --reporter=dot
+
+cd backend
+python -m pytest -q
+python -m compileall -q ivfitter
+```
+
+Observed result:
+
+- Frontend build: passed.
+- Frontend Vitest: passed, 12 files / 49 tests.
+- Backend pytest: passed, 125 tests.
+- Backend compileall: passed.
+
+## Previous current records
+
+
+Additional v1.7.21 checks:
+- Manual no longer renders the compact Version and updates panel.
+- App startup/refresh calls the read-only GitHub release checker from the main workflow shell.
+- Dock version number is clickable and simulates the highlighted NEW release entry for UI testing.
+- NEW appears beside the dock version when expanded and below the version when collapsed.
+- Import loaded summary keeps loaded state, trace count, point count, source, Reopen import, and Add more on one compact row when space allows.
+## v1.7.21 Import alignment / horizontal spreadsheet validation
+
+- Import trace control row updated so Trace, Name, Units, status pill, and Model Builder align on the same control baseline.
+- Spreadsheet preview now arranges traces horizontally as side-by-side V/I column groups.
+- Trace dropdown in Spreadsheet preview remains a jump control only.
+
+## v1.7.20 Automatic update badge / one-line import bar validation
 
 - Manual uses one webpage-style scroll root with a floating vertical section rail; no independent body/nav scroll panels are used.
 - Spreadsheet preview keeps all traces visible simultaneously; the trace menu only jumps to a trace group.
