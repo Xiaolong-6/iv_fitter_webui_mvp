@@ -1560,3 +1560,42 @@
   margin: 0 !important;
   transform: translateY(0) !important;
 }
+
+/* --- Unified fit action toolbar --- */
+.fit-action-row {
+  display: inline-flex !important;
+  gap: 6px !important;
+  align-items: center !important;
+}
+.fit-action-row button {
+  white-space: nowrap;
+}
+.fit-action-stop {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: #fff !important;
+}
+.fit-action-stop:hover {
+  background: #b91c1c !important;
+}
+.fit-report-inline {
+  padding: 6px 12px !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #f8fafc !important;
+  color: #64748b !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}
+.fit-report-inline.available {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  border-color: #bfdbfe !important;
+  cursor: pointer !important;
+  opacity: 1;
+}
+.fit-report-inline.available:hover {
+  background: #dbeafe !important;
+}

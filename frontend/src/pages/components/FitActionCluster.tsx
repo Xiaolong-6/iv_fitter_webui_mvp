@@ -6,41 +6,54 @@ import { t } from "../../model/i18n";
 export function FitActionButtons({
   hasSelectedTrace,
   isFitting,
+  result,
   language,
   onRunFit,
   onStopFit,
 }: {
   hasSelectedTrace: boolean;
   isFitting: boolean;
+  result: FitResult | null;
   language: Language;
   onRunFit: () => void;
   onStopFit: () => void;
 }) {
-  return (
-    <>
-      <button
-        className={hasSelectedTrace ? "primary" : "fit-action-unavailable"}
-        disabled={isFitting || !hasSelectedTrace}
-        title={!hasSelectedTrace ? "Import data before running a fit." : undefined}
-        onClick={onRunFit}
-      >
-        <span className="button-icon" aria-hidden="true">▶</span>
-        {t(language, "runFit")}
-      </button>
-      <button className={isFitting ? "danger-soft active" : "danger-soft"} disabled={!isFitting} onClick={onStopFit}>
-        <span className="button-icon" aria-hidden="true">■</span>
-        {language === "zh" ? "停止拟合" : "Stop fit"}
-      </button>
-    </>
-  );
-}
+  const completed = !!result && !isFitting;
+  const canRun = hasSelectedTrace && !isFitting;
 
-function reportTone(result: FitResult | null, reportAvailable: boolean) {
-  if (!result) return "idle";
-  const errors = (result.warnings ?? []).filter((w) => w.severity === "error").length;
-  if (reportAvailable && (result.reportable ?? result.success) && errors === 0) return "ok";
-  if (errors > 0 || result.success === false) return "error";
-  return "warning";
+  let label: string;
+  let icon: string;
+  let className: string;
+  let title: string | undefined;
+
+  if (isFitting) {
+    label = language === "zh" ? "停止拟合" : "Stop fit";
+    icon = "■";
+    className = "primary fit-action-stop";
+    title = language === "zh" ? "中断当前拟合" : "Abort the running fit";
+  } else if (completed) {
+    label = language === "zh" ? "重新拟合" : "Run again";
+    icon = "▶";
+    className = "primary";
+    title = undefined;
+  } else {
+    label = t(language, "runFit");
+    icon = "▶";
+    className = hasSelectedTrace ? "primary" : "fit-action-unavailable";
+    title = !hasSelectedTrace ? (language === "zh" ? "请先导入数据" : "Import data before running a fit.") : undefined;
+  }
+
+  return (
+    <button
+      className={className}
+      disabled={!canRun && !isFitting}
+      title={title}
+      onClick={isFitting ? onStopFit : onRunFit}
+    >
+      <span className="button-icon" aria-hidden="true">{icon}</span>
+      {label}
+    </button>
+  );
 }
 
 export function FitReportButton({
@@ -54,33 +67,23 @@ export function FitReportButton({
   onMakeReport: () => void;
   reportAvailable: boolean;
 }) {
-  const tone = reportTone(result, reportAvailable);
-  const label = language === "zh" ? "生成报告" : t(language, "report");
+  const label = language === "zh" ? "报告 →" : "Report →";
   const hint = !result
-    ? language === "zh"
-      ? "完成拟合后可用。"
-      : "Available after a completed fit."
+    ? (language === "zh" ? "完成拟合后可用" : "Available after fit")
     : reportAvailable
-      ? language === "zh"
-        ? "当前 check 允许生成报告。"
-        : "Current check allows report generation."
-      : language === "zh"
-        ? "当前 check 未通过，报告暂不可用。"
-        : "Current check has not passed; report is unavailable.";
+      ? (language === "zh" ? "查看报告" : "View report")
+      : (language === "zh" ? "报告暂不可用" : "Report unavailable");
+
   return (
-    <div className={`report-gate-action ${tone}`}>
-      <button
-        type="button"
-        className={`report-gate-button ${tone}`}
-        disabled={!reportAvailable}
-        title={hint}
-        onClick={onMakeReport}
-      >
-        <span className="button-icon" aria-hidden="true">▣</span>
-        {label}
-      </button>
-      <span className="report-gate-hint">{hint}</span>
-    </div>
+    <button
+      type="button"
+      className={`fit-report-inline ${reportAvailable ? "available" : "locked"}`}
+      disabled={!reportAvailable}
+      title={hint}
+      onClick={onMakeReport}
+    >
+      {label}
+    </button>
   );
 }
 

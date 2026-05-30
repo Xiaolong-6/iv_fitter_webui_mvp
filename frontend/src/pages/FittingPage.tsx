@@ -469,23 +469,26 @@ export function FittingPage() {
         elapsedSeconds={elapsedSeconds}
         lifecycleStatus={fitLifecycle}
       />
+    </div>
+  );
+
+  const fitActionsNode = (
+    <>
+      <FitActionButtons
+        hasSelectedTrace={hasSelectedTrace}
+        isFitting={isFitting}
+        result={result}
+        language={language}
+        onRunFit={runFit}
+        onStopFit={stopFit}
+      />
       <FitReportButton
         result={result}
         language={language}
         onMakeReport={makeReport}
         reportAvailable={reportAvailable}
       />
-    </div>
-  );
-
-  const fitActionsNode = (
-    <FitActionButtons
-      hasSelectedTrace={hasSelectedTrace}
-      isFitting={isFitting}
-      language={language}
-      onRunFit={runFit}
-      onStopFit={stopFit}
-    />
+    </>
   );
 
   const fitMessagesNode = (
