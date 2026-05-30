@@ -4,6 +4,7 @@ import { t } from "../../model/i18n";
 import { createInitialModel } from "../../model/defaults";
 import { formatValueWithUnit } from "../../model/format";
 import { localizedFunctionLabel } from "../../content/localizedText";
+import { componentPhysicalRole } from "../../model/modelDisplaySemantics";
 import { buildPendingComponent } from "../../model-builder/mutations";
 import {
   allowedPolarities,
@@ -228,28 +229,7 @@ export function latexComponentToken(value: string) {
 }
 
 export function componentRoleLabel(comp: ComponentSpec, language: Language) {
-  return zoneForComponent(comp) === "main"
-    ? (language === "zh" ? "主路径压降 / 传输项" : "Main-path voltage drop / transport term")
-    : (language === "zh" ? "并联分流支路" : "Parallel branch current contribution");
+  return componentPhysicalRole(comp, language)[language === "zh" ? "zh" : "en"];
 }
 
-export function componentEquation(comp: ComponentSpec) {
-  const name = latexComponentToken(nickname(comp));
-  const lower = `${comp.function_type} ${comp.law_id ?? ""}`.toLowerCase();
-  const zone = zoneForComponent(comp);
-  if (lower.includes("diode")) return "I_D = I_0\\left[\\exp\\left(\\frac{V_i}{n V_T}\\right)-1\\right]";
-  if (lower.includes("ohmic") && zone === "branches") return `I_{${name}} = \\frac{V_i}{${name}}`;
-  if (lower.includes("ohmic")) return `\\Delta V_{${name}} = I\\,${name}`;
-  if (lower.includes("softplus") || lower.includes("bias")) return `\\Delta V_{${name}} = f\\left(I,V_i;\\theta\\right)`;
-  if (lower.includes("power")) return zone === "branches" ? `I_{${name}} = f\\left(V_i;\\theta\\right)` : `\\Delta V_{${name}} = f\\left(I;\\theta\\right)`;
-  if (lower.includes("photo")) return `I_{${name}} = I_{ph}\\left(V_i;\\theta\\right)`;
-  return zone === "branches" ? `I_{${name}} = f\\left(V_i;\\theta\\right)` : `\\Delta V_{${name}} = f\\left(I,V_i;\\theta\\right)`;
-}
-
-export function aggregateVoltageEquation() {
-  return "V_j = V_{ext} - \\sum_k \\Delta V_k";
-}
-
-export function aggregateCurrentEquation() {
-  return "I = \\sum_m I_m(V_j;\\theta)";
-}
+export { componentEquation, aggregateVoltageEquation, aggregateCurrentEquation } from "../../model/modelDisplaySemantics";

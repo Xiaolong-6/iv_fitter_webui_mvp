@@ -4,6 +4,7 @@ import { t } from "../model/i18n";
 import { fmtEng } from "../model/format";
 import { parameterValueRows } from "../model/diagnostics";
 import { MathFormula } from "./MathFormula";
+import { componentPhysicalRole, beginnerBranchMeaning, termToComponentSpec } from "../model/modelDisplaySemantics";
 
 interface Props { equations?: EquationSummary | null; model: ModelSpec; result?: FitResult | null; language: Language; }
 
@@ -105,22 +106,12 @@ function residualLatex(branches: Term[]) {
   return `F(I;V_{ext}) = I - \\left(${branches.map((b) => symbolFor(b).i).join(" + ") || "0"}\\right) = 0`;
 }
 function termMeaning(term: Term, language: Language) {
-  if (term.form === "conductance_modifier" || term.placement.includes("series_conductance_modifier")) return language === "zh" ? "串联电导调制，改变有效主路电阻" : "series conductance modifier; changes effective main-path resistance";
-  if (isSeriesDiodeBarrier(term)) return term.polarity === "reverse"
-    ? (language === "zh" ? "反向激活的类二极管串联势垒压降；改变结点电压" : "reverse-activated diode-like series barrier drop; modifies junction voltage")
-    : (language === "zh" ? "正向激活的类二极管串联势垒压降；改变结点电压" : "forward-activated diode-like series barrier drop; modifies junction voltage");
-  if (term.form === "voltage_drop" || term.placement.includes("series")) return language === "zh" ? "主路电压降，改变结点电压" : "main-path voltage drop; modifies junction voltage";
-  if (term.form === "current_branch" || term.placement.includes("branch")) return language === "zh" ? "并联支路电流，加入总电流" : "parallel branch current; adds to terminal current";
-  return language === "zh" ? "模型项" : "model term";
+  const compSpec = termToComponentSpec(term);
+  return componentPhysicalRole(compSpec, language)[language === "zh" ? "zh" : "en"];
 }
-function beginnerBranchMeaning(term: Term) {
-  if (isDiode(term)) return "Exponential diode-like current evaluated at the junction voltage.";
-  if (isOhmic(term)) return "Linear leakage path: higher Vj gives proportionally higher leakage current.";
-  if (isPhotocurrentConstant(term)) return "Light-generated current with nearly constant magnitude.";
-  if (isBiasDependentCurrent(term)) return "Empirical branch current whose magnitude can change with bias.";
-  if (isForwardPower(term)) return "Extra empirical current that turns on softly near a threshold.";
-  if (isBreakdown(term)) return "Reverse-bias leakage or soft breakdown contribution.";
-  return "This branch contributes one current term to the terminal current.";
+function beginnerBranchMeaningLocal(term: Term) {
+  const compSpec = termToComponentSpec(term);
+  return beginnerBranchMeaning(compSpec, "en");
 }
 
 
@@ -151,7 +142,7 @@ function FormulaCards({ series, branches, language }: { series: Term[]; branches
         <MathFormula latex={totalCurrentLatex(branches)} />
       </div>
       <div className="branch-formula-list">{branches.map((b) => <div className="preview-formula-block" key={b.id}>
-        <div className="preview-formula-head"><strong>{b.nick}</strong><span>{beginnerBranchMeaning(b)}</span></div>
+        <div className="preview-formula-head"><strong>{b.nick}</strong><span>{beginnerBranchMeaningLocal(b)}</span></div>
         <MathFormula latex={branchCurrentLatex(b)} />
       </div>)}</div>
     </div>

@@ -9,6 +9,7 @@ import { EquivalentCircuitView } from "../../components/ModelBuilder";
 import { fmtEng, formatValueWithUnit } from "../../model/format";
 import { type Language } from "../../model/i18n";
 import { fitStateText, modelSummary } from "./WorkflowStatus";
+import { componentPlainRoleText } from "../../model/modelDisplaySemantics";
 
 type ReportTone = "valid" | "review" | "invalid" | "none";
 type ReportMode = "report" | "review" | "diagnostic" | "unavailable";
@@ -318,18 +319,7 @@ function parameterDisplayFromKey(key: string, model: ModelSpec) {
 }
 
 function componentPlainRole(component: ModelSpec["series"][number], language: Language) {
-  const name = String(component.metadata?.nickname ?? component.id);
-  const isZh = language === "zh";
-  const law = component.law_id ?? component.function_type;
-  const isMain = (component.placement ?? "").includes("series") || component.location === "series";
-  if (/ohmic/i.test(law)) {
-    return isMain
-      ? isZh ? `${name}: 主路串联电阻，消耗一部分外部电压。` : `${name}: main-path series resistance; it consumes part of the applied voltage.`
-      : isZh ? `${name}: 欧姆漏电/旁路支路，在内部电压下产生近似线性电流。` : `${name}: Ohmic leakage/shunt branch; it adds a nearly linear current at the internal voltage.`;
-  }
-  if (/shockley/i.test(law) || component.function_type === "diode") return isZh ? `${name}: Shockley 二极管支路，在内部电压下产生指数结电流。` : `${name}: Shockley diode branch; it adds exponential junction current at the internal voltage.`;
-  if (component.function_type === "series_diode_barrier") return isZh ? `${name}: 主路类二极管势垒，改变端口电压到内部电压的映射。` : `${name}: diode-like main-path barrier; it changes how terminal voltage maps to internal voltage.`;
-  return isZh ? `${name}: ${isMain ? "主路" : "支路"}模型项，使用 ${law} law。` : `${name}: ${isMain ? "main-path" : "branch"} term using ${law}.`;
+  return componentPlainRoleText(component, language);
 }
 
 function deriveReportSemantics(result: FitResult | null, language: Language): ReportSemantics {

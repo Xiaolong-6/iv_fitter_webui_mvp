@@ -1,5 +1,6 @@
 import type { FitResult, FitSessionStats, TraceData } from "./types";
 import { fmtEng } from "./format";
+import { componentPlainRoleText } from "./modelDisplaySemantics";
 
 function escapeHtml(value: unknown) {
   return String(value ?? "")
@@ -231,22 +232,7 @@ function parameterSection(result: FitResult) {
 }
 
 function componentPlainRole(component: FitResult["model"]["series"][number]) {
-  const name = String(component.metadata?.nickname ?? component.id);
-  const placement = component.placement ?? "";
-  const law = component.law_id ?? component.function_type;
-  const isMain = placement.includes("series") || component.location === "series";
-  if (/ohmic/i.test(law)) {
-    return isMain
-      ? `${name}: main-path series resistance; it consumes part of the applied voltage before branch currents are evaluated.`
-      : `${name}: Ohmic leakage/shunt branch; it adds a nearly linear current at the internal junction voltage.`;
-  }
-  if (/shockley/i.test(law) || component.function_type === "diode") {
-    return `${name}: Shockley diode branch; it adds the exponential junction current evaluated at the internal voltage.`;
-  }
-  if (component.function_type === "series_diode_barrier") {
-    return `${name}: diode-like main-path barrier; it changes how terminal voltage maps to internal voltage.`;
-  }
-  return `${name}: ${isMain ? "main-path" : "branch"} term using ${law}.`;
+  return componentPlainRoleText(component, "en");
 }
 
 function modelEquationSection(result: FitResult) {
