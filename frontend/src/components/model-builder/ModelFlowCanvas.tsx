@@ -90,12 +90,14 @@ export function ModelFlowCanvas({ model, registry, selectedId, setSelectedId, se
     const definition = definitionsForBucket(registry, bucket).find((item) => item.function_type === functionType);
     if (!definition) return;
     const replacement = createComponentInLocation(definition, ref.location, addPolarityFor(model, bucket, definition));
+    const prevNick = typeof ref.comp.metadata?.nickname === "string" ? ref.comp.metadata.nickname : null;
+    const nick = prevNick ?? ref.comp.id;
     const renamed = applyNicknameToParams({
       ...replacement,
       id: ref.comp.id,
       location: ref.location,
-      metadata: { ...(replacement.metadata ?? {}), nickname: ref.comp.metadata?.nickname ?? ref.comp.id },
-    }, ref.comp.metadata?.nickname ?? ref.comp.id);
+      metadata: { ...(replacement.metadata ?? {}), nickname: nick },
+    }, nick);
     onChange(updateComponent(model, ref.location, ref.comp.id, renamed));
   }, [disabled, model, onChange, readOnly, registry]);
 

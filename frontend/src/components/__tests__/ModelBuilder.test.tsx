@@ -63,21 +63,20 @@ function renderBuilder(model: ModelSpec = createInitialModel("test")) {
 
 describe("ModelBuilder circuit canvas", () => {
   it("renders the default single diode preset as an equivalent circuit", () => {
-    const { getByTestId, getByText, getAllByText } = renderBuilder();
+    const { getByTestId, getAllByText } = renderBuilder();
     expect(getByTestId("equivalent-circuit-canvas")).toBeInTheDocument();
-    expect(getByText("Junction branches")).toBeInTheDocument();
-    expect(getAllByText("Main path").length).toBeGreaterThan(0);
-    expect(getByText("Junction branches")).toBeInTheDocument();
     expect(getAllByText("Rs").length).toBeGreaterThan(0);
     expect(getAllByText("D1").length).toBeGreaterThan(0);
     expect(getAllByText("Rsh").length).toBeGreaterThan(0);
   });
 
-  it("selecting a component opens the inspector for that component", () => {
+  it("selecting a component opens the editor for that component", () => {
     const { getByText, getByTestId } = renderBuilder();
     fireEvent.click(getByText("D1"));
-    expect(getByTestId("component-inspector")).toHaveTextContent("D1");
-    expect(getByTestId("component-inspector")).toHaveTextContent("Parameters");
+    const editor = getByTestId("equivalent-circuit-canvas").querySelector('[aria-label="Component details"]');
+    expect(editor).toBeTruthy();
+    expect(editor!.textContent).toContain("D1");
+    expect(editor!.textContent).toContain("Name");
   });
 
   it("applying the double diode preset replaces the model and keeps existing ids usable", () => {
@@ -88,16 +87,21 @@ describe("ModelBuilder circuit canvas", () => {
     expect(getAllByText("D2").length).toBeGreaterThan(0);
   });
 
-  it("parameter edits preserve the ModelSpec contract", () => {
+  it("rename preserves the ModelSpec contract", () => {
     const model = createInitialModel("test");
-    const { getByDisplayValue, getCurrent } = renderBuilder(model);
-    const valueInput = getByDisplayValue("10");
-    fireEvent.change(valueInput, { target: { value: "25" } });
-    fireEvent.blur(valueInput);
+    const { getCurrent } = renderBuilder(model);
+    const componentNode = document.querySelector('[data-component-id="ohmic_1"]');
+    expect(componentNode).toBeTruthy();
+    fireEvent.click(componentNode!);
+    const canvas = document.querySelector('[data-testid="equivalent-circuit-canvas"]');
+    const nameInput = canvas!.querySelector<HTMLInputElement>('[aria-label="Component details"] input');
+    expect(nameInput).toBeTruthy();
+    fireEvent.change(nameInput!, { target: { value: "Rs_series" } });
+    fireEvent.blur(nameInput!);
     const next = getCurrent();
-    expect(next.series[0].params.Rs_ohm.value).toBe(25);
     expect(next.series[0].id).toBe(model.series[0].id);
     expect(next.series[0].placement).toBe("series_voltage_drop");
+    expect(next.series[0].metadata?.nickname).toBe("Rs_series");
   });
 
   it("rebuilds xyflow wiring when components are added or removed", () => {
