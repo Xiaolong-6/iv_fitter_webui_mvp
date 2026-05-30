@@ -112,6 +112,17 @@ export function ModelFlowCanvas({ model, registry, selectedId, setSelectedId, se
     onChange(updateComponent(model, ref.location, ref.comp.id, nextComponent));
   }, [disabled, model, onChange, readOnly]);
 
+  const updatePolarityById = useCallback((componentId: string, polarity: string) => {
+    if (disabled || readOnly) return;
+    const ref = findComponentRef(model, componentId);
+    if (!ref) return;
+    const nextComponent = {
+      ...ref.comp,
+      polarity: polarity as "forward" | "reverse" | "symmetric" | null,
+    };
+    onChange(updateComponent(model, ref.location, ref.comp.id, nextComponent));
+  }, [disabled, model, onChange, readOnly]);
+
   const graph = useMemo(() => buildFlowGraph(model, selectedId, language, {
     readOnly,
     disabled,
@@ -137,7 +148,8 @@ export function ModelFlowCanvas({ model, registry, selectedId, setSelectedId, se
     renameById,
     replaceDefinitionById,
     updateExpressionById,
-  }), [addFrom, disabled, language, model, readOnly, registry, removeById, renameById, replaceDefinitionById, updateExpressionById, selectedDefinitions, setAddDefinition]);
+    updatePolarityById,
+  }), [addFrom, disabled, language, model, readOnly, registry, removeById, renameById, replaceDefinitionById, updateExpressionById, updatePolarityById, selectedDefinitions, setAddDefinition]);
 
   return <ModelFlowContextProvider value={contextValue}>
     <div className={`xy-model-workspace ${readOnly ? "xy-model-readonly" : ""}`} data-testid="equivalent-circuit-canvas">

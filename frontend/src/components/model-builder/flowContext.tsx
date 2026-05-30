@@ -16,6 +16,7 @@ export type ModelFlowContextValue = {
   renameById: (componentId: string, nextName: string) => void;
   replaceDefinitionById: (componentId: string, functionType: string) => void;
   updateExpressionById: (componentId: string, expression: string) => void;
+  updatePolarityById: (componentId: string, polarity: string) => void;
 };
 
 const ModelFlowContext = createContext<ModelFlowContextValue | null>(null);
