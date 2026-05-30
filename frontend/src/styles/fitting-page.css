@@ -1569,6 +1569,11 @@
 }
 .fit-action-row button {
   white-space: nowrap;
+  min-height: 32px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
 }
 .fit-action-stop {
   background: #dc2626 !important;
@@ -1579,23 +1584,24 @@
   background: #b91c1c !important;
 }
 .fit-report-inline {
-  padding: 6px 12px !important;
-  border-radius: 999px !important;
-  font-size: 12px !important;
+  padding: 0 14px !important;
+  min-height: 32px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
   font-weight: 700 !important;
-  border: 1px solid #e2e8f0 !important;
-  background: #f8fafc !important;
-  color: #64748b !important;
+  border: 1px solid #d1d5db !important;
+  background: #fff !important;
+  color: #6b7280 !important;
   cursor: not-allowed !important;
   opacity: 0.6;
 }
 .fit-report-inline.available {
-  background: #eff6ff !important;
+  background: #fff !important;
   color: #2563eb !important;
-  border-color: #bfdbfe !important;
+  border-color: #2563eb !important;
   cursor: pointer !important;
   opacity: 1;
 }
 .fit-report-inline.available:hover {
-  background: #dbeafe !important;
+  background: #eff6ff !important;
 }

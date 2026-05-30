@@ -326,9 +326,6 @@ export function FitConfigPanel({
         <div className="fit-config-title">
           <h2>{t(language, "fitSetup")}</h2>
         </div>
-        {actionDock ? (
-          <div className="fit-config-actions">{actionDock}</div>
-        ) : null}
         <FitVoltageRangeControls
           config={config}
           onChange={onChange}
@@ -344,6 +341,9 @@ export function FitConfigPanel({
         >
           {language === "zh" ? "高级" : "Advanced"}
         </button>
+        {actionDock ? (
+          <div className="fit-config-actions">{actionDock}</div>
+        ) : null}
         <div className="fit-config-status" aria-live="polite">
           {statusDock}
           {messageDock ? (
