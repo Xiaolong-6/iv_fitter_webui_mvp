@@ -953,3 +953,153 @@
   overflow-y: auto !important;
   overscroll-behavior: contain !important;
 }
+
+/* ============================================================
+   v1.8.17 stabilization: design tokens, selected-state, edge highlight.
+   ============================================================ */
+
+/* --- Design tokens --- */
+:root {
+  --mb-color-primary: #2563eb;
+  --mb-color-primary-light: #eff6ff;
+  --mb-color-branch: #7c3aed;
+  --mb-color-branch-light: #f5f3ff;
+  --mb-color-border: #d7e0ec;
+  --mb-color-border-strong: #94a3b8;
+  --mb-color-surface: #ffffff;
+  --mb-color-surface-hover: #f8fafc;
+  --mb-color-text: #0f172a;
+  --mb-color-text-muted: #64748b;
+  --mb-color-danger: #dc2626;
+  --mb-color-danger-bg: #fef2f2;
+  --mb-color-danger-border: #fecaca;
+  --mb-radius-sm: 8px;
+  --mb-radius-md: 14px;
+  --mb-radius-lg: 18px;
+  --mb-radius-pill: 999px;
+  --mb-shadow-sm: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --mb-shadow-md: 0 10px 28px rgba(15, 23, 42, 0.12);
+  --mb-shadow-lg: 0 22px 56px rgba(15, 23, 42, 0.18);
+  --mb-shadow-selected: 0 0 0 3px rgba(37, 99, 235, 0.35), 0 8px 24px rgba(37, 99, 235, 0.15);
+  --mb-shadow-selected-branch: 0 0 0 3px rgba(124, 58, 237, 0.35), 0 8px 24px rgba(124, 58, 237, 0.15);
+  --mb-transition-fast: 0.12s ease;
+  --mb-transition-normal: 0.18s ease;
+}
+
+/* --- Selected node: component --- */
+.xy-component-node.is-selected {
+  border-color: var(--mb-color-primary) !important;
+  box-shadow: var(--mb-shadow-selected) !important;
+  background: var(--mb-color-primary-light) !important;
+  z-index: 10 !important;
+}
+.xy-component-node-branches.is-selected {
+  border-color: var(--mb-color-branch) !important;
+  box-shadow: var(--mb-shadow-selected-branch) !important;
+  background: var(--mb-color-branch-light) !important;
+}
+
+/* --- Delete button: hidden by default, visible on hover/selected --- */
+.xy-node-delete {
+  opacity: 0 !important;
+  transform: scale(0.85);
+  transition: opacity var(--mb-transition-fast), transform var(--mb-transition-fast) !important;
+  pointer-events: none;
+}
+.xy-component-node:hover .xy-node-delete,
+.xy-component-node:focus .xy-node-delete,
+.xy-component-node.is-selected .xy-node-delete {
+  opacity: 1 !important;
+  transform: scale(1);
+  pointer-events: all;
+}
+
+/* --- Edge highlight: selected component --- */
+.react-flow__edge.is-edge-highlighted .react-flow__edge-path {
+  stroke: var(--mb-color-primary) !important;
+  stroke-width: 3.5px !important;
+  filter: drop-shadow(0 0 4px rgba(37, 99, 235, 0.3));
+  transition: stroke var(--mb-transition-normal), stroke-width var(--mb-transition-normal);
+}
+.react-flow__edge.is-edge-highlighted-branch .react-flow__edge-path {
+  stroke: var(--mb-color-branch) !important;
+  stroke-width: 3.5px !important;
+  filter: drop-shadow(0 0 4px rgba(124, 58, 237, 0.3));
+  transition: stroke var(--mb-transition-normal), stroke-width var(--mb-transition-normal);
+}
+
+/* --- Default edge: subtle transition --- */
+.react-flow__edge .react-flow__edge-path {
+  transition: stroke var(--mb-transition-normal), stroke-width var(--mb-transition-normal), filter var(--mb-transition-normal);
+}
+
+/* --- Component node hover --- */
+.xy-component-node:not(.is-selected):hover {
+  border-color: var(--mb-color-border-strong) !important;
+  box-shadow: var(--mb-shadow-sm) !important;
+}
+
+/* --- Terminal node: subtle hover --- */
+.xy-model-terminal {
+  transition: box-shadow var(--mb-transition-fast), border-color var(--mb-transition-fast);
+}
+
+/* --- Canvas editor panel: consistent with design tokens --- */
+.xy-canvas-component-editor {
+  border-color: var(--mb-color-border) !important;
+  box-shadow: var(--mb-shadow-lg) !important;
+}
+.xy-canvas-component-editor header strong {
+  color: var(--mb-color-text) !important;
+}
+.xy-canvas-component-equation {
+  border-color: #dbeafe !important;
+  background: linear-gradient(180deg, #f8fbff 0%, #eff6ff 100%) !important;
+}
+
+/* --- Preset panel: consistent shadows --- */
+.xy-canvas-preset-panel {
+  box-shadow: var(--mb-shadow-md) !important;
+}
+
+/* --- Edge add button: consistent with tokens --- */
+.xy-edge-add-button {
+  border-color: var(--mb-color-primary) !important;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.16) !important;
+}
+.xy-edge-action:hover .xy-edge-add-button,
+.xy-edge-add-button:focus-visible {
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28), 0 0 0 4px rgba(255, 255, 255, 0.9) !important;
+}
+
+/* --- Model preview: consistent tokens --- */
+.canvas-model-preview {
+  border-color: #dbe4f0 !important;
+  box-shadow: var(--mb-shadow-md) !important;
+}
+.canvas-model-preview summary {
+  min-height: 48px !important;
+}
+.canvas-model-preview summary .preview-summary-title {
+  font-weight: 900 !important;
+}
+.canvas-model-preview summary .preview-summary-formula {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+}
+.canvas-model-preview[open] .equation-preview {
+  overscroll-behavior: contain !important;
+}
+
+/* --- Parameter badges in editor: larger, clearer --- */
+.xy-canvas-component-units .physics-badge {
+  padding: 5px 10px !important;
+  font-size: 12px !important;
+}
+.xy-canvas-component-units .physics-badge strong {
+  font-weight: 800 !important;
+}
+.xy-canvas-component-units .physics-badge small {
+  color: var(--mb-color-text-muted) !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+}

@@ -5,8 +5,9 @@ import type { BuilderBucket } from "../../model-builder/rules";
 import { allRefsForZone } from "./modelHelpers";
 import type { CircuitEdge, CircuitEdgeData, FlowGraph, ModelFlowNodeData } from "./types";
 
-function edge(id: string, source: string, target: string, sourceHandle?: string, targetHandle?: string, data?: CircuitEdgeData, route: "main" | "branch" = "main"): CircuitEdge {
+function edge(id: string, source: string, target: string, sourceHandle?: string, targetHandle?: string, data?: CircuitEdgeData, route: "main" | "branch" = "main", highlight?: "main" | "branch" | null): CircuitEdge {
   const stroke = route === "branch" ? "#7c3aed" : "#2563eb";
+  const highlightClass = highlight === "branch" ? "is-edge-highlighted-branch" : highlight === "main" ? "is-edge-highlighted" : "";
   return {
     id,
     source,
@@ -14,7 +15,7 @@ function edge(id: string, source: string, target: string, sourceHandle?: string,
     sourceHandle,
     targetHandle,
     type: data?.addBucket ? "circuitButton" : "smoothstep",
-    className: `xy-model-edge xy-circuit-wire xy-circuit-wire-${route} ${data?.addBucket ? "xy-insertable-edge" : ""}`,
+    className: `xy-model-edge xy-circuit-wire xy-circuit-wire-${route} ${data?.addBucket ? "xy-insertable-edge" : ""} ${highlightClass}`.trim(),
     data: { ...(data ?? {}), route },
     style: { strokeWidth: route === "branch" ? 2.2 : 2.4, stroke },
   };
@@ -73,8 +74,14 @@ export function buildFlowGraph(
 
   const addData = (bucket: BuilderBucket): CircuitEdgeData => ({ addBucket: bucket });
   const edges: CircuitEdge[] = [];
+
+  const hl = (componentId: string): "main" | "branch" | null => {
+    if (!selectedId || selectedId !== componentId) return null;
+    return branchRefs.some((r) => r.comp.id === componentId) ? "branch" : "main";
+  };
+
   if (mainRefs.length) {
-    edges.push(edge("edge:vext-main0", "terminal:vext", `component:${mainRefs[0].comp.id}`, "out", "in"));
+    edges.push(edge("edge:vext-main0", "terminal:vext", `component:${mainRefs[0].comp.id}`, "out", "in", undefined, "main", hl(mainRefs[0].comp.id)));
     mainRefs.forEach((refItem, index) => {
       const next = mainRefs[index + 1];
       edges.push(edge(
@@ -84,6 +91,8 @@ export function buildFlowGraph(
         "out",
         "in",
         !next ? addData("main") : undefined,
+        "main",
+        hl(refItem.comp.id) ?? (next ? hl(next.comp.id) : null),
       ));
     });
   } else {
@@ -92,8 +101,9 @@ export function buildFlowGraph(
 
   if (branchRefs.length) {
     branchRefs.forEach((refItem, index) => {
-      edges.push(edge(`edge:vi-${refItem.comp.id}`, "terminal:vi", `component:${refItem.comp.id}`, `branch-out-${index}`, "in", index === 0 ? addData("branches") : undefined, "branch"));
-      edges.push(edge(`edge:${refItem.comp.id}-ground`, `component:${refItem.comp.id}`, "terminal:ground", "out", `branch-in-${index}`, undefined, "branch"));
+      const branchHl = hl(refItem.comp.id);
+      edges.push(edge(`edge:vi-${refItem.comp.id}`, "terminal:vi", `component:${refItem.comp.id}`, `branch-out-${index}`, "in", index === 0 ? addData("branches") : undefined, "branch", branchHl));
+      edges.push(edge(`edge:${refItem.comp.id}-ground`, `component:${refItem.comp.id}`, "terminal:ground", "out", `branch-in-${index}`, undefined, "branch", branchHl));
     });
   } else {
     edges.push(edge("edge:vi-ground-empty-branches", "terminal:vi", "terminal:ground", "branch-out-0", "branch-in-0", addData("branches"), "branch"));
