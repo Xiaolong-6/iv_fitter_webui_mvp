@@ -3,7 +3,13 @@ import type { FitResult, ModelSpec, TraceData } from "../types";
 import { buildHtmlReportDocument } from "../htmlReport";
 
 function model(): ModelSpec {
-  return { core: [], parallel: [], series: [], temperature_K: 300, version: "test" };
+  return {
+    core: [{ id: "D1", location: "core", function_type: "diode", law_id: "shockley_diode", evaluation_form: "current_branch", placement: "junction_current_branch", polarity: "forward", params: { I0_A: { value: 1e-12 }, n: { value: 1.5 } }, metadata: { nickname: "D1" } }],
+    parallel: [{ id: "ohmic_2", location: "parallel", function_type: "constant_rs", law_id: "ohmic", evaluation_form: "current_branch", placement: "parallel_current_branch", params: { Rs_ohm: { value: 1e9 } }, metadata: { nickname: "Rsh" } }],
+    series: [{ id: "ohmic_1", location: "series", function_type: "constant_rs", law_id: "ohmic", evaluation_form: "voltage_drop", placement: "series_voltage_drop", params: { Rs_ohm: { value: 10 } }, metadata: { nickname: "Rs" } }],
+    temperature_K: 300,
+    version: "test",
+  };
 }
 
 function result(): FitResult {
@@ -35,5 +41,17 @@ describe("HTML report export", () => {
     expect(html).toContain("Linear I-V");
     expect(html).toContain("Log |I|");
     expect(html).toContain("Signed residual");
+  });
+
+  it("includes an equivalent circuit section with SVG and component names", () => {
+    const html = buildHtmlReportDocument({ result: result(), trace });
+    expect(html).toContain("Equivalent circuit");
+    expect(html).toContain("<svg");
+    expect(html).toContain("Vext");
+    expect(html).toContain("Vi");
+    expect(html).toContain("V=0");
+    expect(html).toContain("Rs");
+    expect(html).toContain("D1");
+    expect(html).toContain("Rsh");
   });
 });

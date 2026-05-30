@@ -39,7 +39,7 @@ function formatParameterNumber(
   v: number | undefined | null,
   unit?: string | null,
 ) {
-  return formatValueWithUnit(v, unit, 4); // uses 4 significant digits, equivalent to toExponential(3) for scientific notation when abs < 1e-3 || abs >= 1e4
+  return formatValueWithUnit(v, unit, 4);
 }
 
 function num(v: number | undefined | null) {
@@ -167,36 +167,19 @@ function nickname(comp: ComponentSpec) {
 function componentSummary(comp: ComponentSpec, language: Language) {
   const location =
     comp.placement?.includes("series") || comp.location === "series"
-      ? language === "zh"
-        ? "主路"
-        : "main path"
-      : language === "zh"
-        ? "电流支路"
-        : "current branch";
+      ? language === "zh" ? "主路" : "main path"
+      : language === "zh" ? "电流支路" : "current branch";
   const role =
     comp.function_type === "diode" || /shockley/i.test(comp.law_id ?? "")
-      ? language === "zh"
-        ? "Shockley 二极管"
-        : "Shockley diode"
+      ? language === "zh" ? "Shockley 二极管" : "Shockley diode"
       : /ohmic/i.test(comp.law_id ?? "")
         ? comp.location === "series"
-          ? language === "zh"
-            ? "欧姆串联电阻"
-            : "Ohmic series resistance"
-          : language === "zh"
-            ? "欧姆漏电/旁路"
-            : "Ohmic leakage/shunt"
+          ? language === "zh" ? "欧姆串联电阻" : "Ohmic series resistance"
+          : language === "zh" ? "欧姆漏电/旁路" : "Ohmic leakage/shunt"
         : comp.function_type === "series_diode_barrier"
-          ? language === "zh"
-            ? "类二极管串联势垒压降"
-            : "diode-like series barrier drop"
-          : language === "zh"
-            ? "经验模型项"
-            : "empirical model term";
-  const polarity = comp.polarity
-    ? `${parameterText("polarity", language)}: ${comp.polarity}`
-    : parameterText("noPolarity", language);
-  return `${role} | ${location} | ${polarity}`;
+          ? language === "zh" ? "类二极管串联势垒压降" : "diode-like series barrier drop"
+          : language === "zh" ? "经验模型项" : "empirical model term";
+  return `${role} · ${location}`;
 }
 
 function parameterMeaningFromSpec(
@@ -211,62 +194,51 @@ function parameterMeaningFromSpec(
   let base = "";
   if (/^n$/i.test(paramName)) {
     base = en(
-      `Ideality factor for ${componentName}. It controls how steeply the diode-like exponential turns on. Typical diode-like values are around 1–2; larger values usually need model/data review.`,
-      `${componentName} 的理想因子，控制类二极管指数开启的陡峭程度。典型值约 1–2；更大值通常需要检查模型或数据。`,
+      `Ideality factor for ${componentName}. Controls diode-like exponential steepness. Typical: 1-2.`,
+      `${componentName} 的理想因子，控制类二极管指数开启的陡峭程度。典型值约 1-2。`,
     );
   } else if (/I0|I_?0/i.test(paramName) || /I0/i.test(label)) {
     base = en(
-      `Current scale for ${componentName}. For diode-like terms this is the saturation-current scale; it may span many decades, so use physically reasonable bounds.`,
-      `${componentName} 的电流尺度。对类二极管项通常是饱和电流尺度，可能跨很多数量级，应使用物理合理边界。`,
+      `Saturation current scale for ${componentName}. May span many decades.`,
+      `${componentName} 的电流尺度。可能跨很多数量级。`,
     );
   } else if (/Rs_ohm|^Rs$/i.test(paramName) || /^rs$/i.test(componentName)) {
     base = en(
-      `Series resistance for ${componentName}. It controls high-current voltage loss and forward-bias roll-off.`,
-      `${componentName} 的串联电阻，控制大电流区压降和正向高偏压弯折。`,
+      `Series resistance for ${componentName}. Controls high-current voltage loss.`,
+      `${componentName} 的串联电阻，控制大电流区压降。`,
     );
-  } else if (
-    /Rsh|Rsh_ohm/i.test(paramName) ||
-    /rsh|shunt/i.test(componentName)
-  ) {
+  } else if (/Rsh|Rsh_ohm/i.test(paramName) || /rsh|shunt/i.test(componentName)) {
     base = en(
-      `Shunt/leakage resistance for ${componentName}. Smaller values mean stronger linear leakage.`,
-      `${componentName} 的并联/漏电电阻；数值越小表示线性漏电越强。`,
+      `Shunt/leakage resistance for ${componentName}. Smaller = stronger leakage.`,
+      `${componentName} 的并联/漏电电阻；越小漏电越强。`,
     );
   } else if (/Vt|Vbr/i.test(paramName)) {
     base = en(
-      `Threshold voltage for ${componentName}. It shifts where this empirical term starts to turn on.`,
-      `${componentName} 的阈值电压，决定经验项从哪个电压附近开始开启。`,
+      `Threshold voltage for ${componentName}.`,
+      `${componentName} 的阈值电压。`,
     );
   } else if (/Vs|w_V/i.test(paramName)) {
     base = en(
-      `Voltage softness/scale for ${componentName}. It controls how gradual the turn-on is.`,
-      `${componentName} 的电压软化/尺度参数，控制开启过程有多平滑。`,
+      `Voltage softness/scale for ${componentName}.`,
+      `${componentName} 的电压软化/尺度参数。`,
     );
   } else if (/^A$|Aph|amplitude|scale/i.test(paramName)) {
     base = en(
-      `Amplitude scale for ${componentName}. Compare it with the measured current or voltage range before trusting the fitted value.`,
-      `${componentName} 的幅值尺度。可信前应和实测电流或电压范围对照。`,
+      `Amplitude scale for ${componentName}.`,
+      `${componentName} 的幅值尺度。`,
     );
   } else if (/gain/i.test(paramName)) {
     base = en(
-      `Bias coefficient for ${componentName}. It controls how strongly this current branch changes with voltage.`,
-      `${componentName} 的偏压系数，控制该电流支路随电压变化的强弱。`,
+      `Bias coefficient for ${componentName}.`,
+      `${componentName} 的偏压系数。`,
     );
   } else if (/direction_sign/i.test(paramName)) {
     base = en(
-      `Direction sign for ${componentName}. It controls whether this branch adds to or subtracts from terminal current.`,
-      `${componentName} 的方向符号，控制该支路是增加还是减少端口电流。`,
+      `Direction sign for ${componentName}.`,
+      `${componentName} 的方向符号。`,
     );
   } else {
-    base =
-      spec.description ||
-      en(
-        `Parameter ${label} for ${componentName}. Review fitted value, uncertainty, and bounds together.`,
-        `${componentName} 的参数 ${label}。请结合拟合值、不确定度和边界一起判断。`,
-      );
-  }
-  if (spec.description && !base.includes(spec.description)) {
-    base += ` ${spec.description}`;
+    base = spec.description || en(`Parameter ${label} for ${componentName}.`, `${componentName} 的参数 ${label}。`);
   }
   return base;
 }
@@ -291,6 +263,7 @@ export function ParameterTable({
   const [openKey, setOpenKey] = useState<string | null>(null);
   const sourceRows = useMemo(() => buildParameterRows(model, result), [model, result]);
   const grouped = useMemo(() => groupParameterRows(sourceRows, result), [sourceRows, result]);
+  const hasResult = !!result;
 
   return (
     <section className="card parameter-card">
@@ -301,305 +274,178 @@ export function ParameterTable({
       {sourceRows.length === 0 ? (
         <p className="muted">{t(language, "runFitForParameters")}</p>
       ) : (
-        <div className="parameter-groups-scroll">
-          {grouped.map((placement) => (
-            <div className="parameter-placement-group" key={placement.id}>
-              <h3>{placementGroupTitle(placement.id, language)}</h3>
-              <div className="table-wrap">
-                <table className="parameter-table interactive-parameter-table compact-parameter-table">
-                  <thead>
-                    <tr>
-                      <th>{t(language, "parameter")}</th>
-                      <th>{parameterText("initial", language)}</th>
-                      <th>{parameterText("fitted", language)}</th>
-                      <th>{language === "zh" ? "状态" : "Status"}</th>
-                      <th>{t(language, "stdErr")}</th>
-                      <th>{parameterText("lower", language)}</th>
-                      <th>{parameterText("upper", language)}</th>
-                      <th>{parameterText("fitQuestion", language)}</th>
+        <div className="parameter-table-scroll">
+          <table className="parameter-table unified-parameter-table">
+            <thead>
+              <tr>
+                <th className="param-col-name">{t(language, "parameter")}</th>
+                <th className="param-col-initial">{parameterText("initial", language)}</th>
+                {hasResult && <th className="param-col-fitted">{parameterText("fitted", language)}</th>}
+                {hasResult && <th className="param-col-stderr">{t(language, "stdErr")}</th>}
+                <th className="param-col-lower">{parameterText("lower", language)}</th>
+                <th className="param-col-upper">{parameterText("upper", language)}</th>
+                <th className="param-col-fit">{parameterText("fitQuestion", language)}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {grouped.map((placement) => {
+                const sectionTitle = placementGroupTitle(placement.id, language);
+                const totalFitted = placement.groups.reduce((s, g) => s + g.fittedCount, 0);
+                const totalParams = placement.groups.reduce((s, g) => s + g.totalCount, 0);
+                const allFitted = totalFitted === totalParams;
+
+                return (
+                  <Fragment key={placement.id}>
+                    <tr className="param-section-header">
+                      <td colSpan={hasResult ? 7 : 5}>
+                        <div className="param-section-title-row">
+                          <strong>{sectionTitle}</strong>
+                          <span className="param-section-count">
+                            {totalFitted}/{totalParams} {parameterText("fittedCountSuffix", language)}
+                          </span>
+                          <label className="param-section-batch-toggle" title={allFitted ? parameterText("batchFixAll", language) : parameterText("batchFitAll", language)}>
+                            <input
+                              type="checkbox"
+                              disabled={disabled}
+                              checked={allFitted}
+                              onChange={(e) => {
+                                let next = model;
+                                for (const g of placement.groups) {
+                                  next = setComponentFitState(next, g.location, g.component.id, e.target.checked);
+                                }
+                                onModelChange(next);
+                              }}
+                            />
+                            {allFitted ? parameterText("batchFixAll", language) : parameterText("batchFitAll", language)}
+                          </label>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {placement.groups.flatMap((group, groupIndex) => {
+                    {placement.groups.map((group, groupIndex) => {
                       const lawFormPlacement = componentLawFormPlacement(group.component);
-                      const header = (
-                        <tr
-                          className={`parameter-component-divider component-accent-${groupIndex % 8}`}
-                          key={`${group.component.id}-header`}
-                        >
-                          <td colSpan={7}>
-                            <div className="parameter-component-title">
-                              <strong>{nickname(group.component)}</strong>
-                              <span
-                                title={`${componentSummary(group.component, language)}
-Law: ${lawFormPlacement.law}
-Form: ${lawFormPlacement.form}
-Placement: ${lawFormPlacement.placement}`}
-                              >
-                                {componentSummary(group.component, language)}
-                              </span>
-                              <span className="parameter-law-form-placement" title={componentDisplayTag(group.component)}>
-                                Law: {lawFormPlacement.law} · Form: {lawFormPlacement.form} · Placement: {lawFormPlacement.placement}
-                              </span>
-                              <span className="parameter-fit-count">
-                                {group.fittedCount}/{group.totalCount}{" "}
-                                {parameterText("fittedCountSuffix", language)}
-                              </span>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="parameter-fit-batch-toggles">
-                              <label
-                                title={componentSummary(
-                                  group.component,
-                                  language,
-                                )}
-                              >
-                                <input
-                                  type="checkbox"
-                                  disabled={disabled}
-                                  checked={
-                                    group.fittedCount === group.totalCount
-                                  }
-                                  onChange={(e) =>
-                                    onModelChange(
-                                      setComponentFitState(
-                                        model,
-                                        group.location,
-                                        group.component.id,
-                                        e.target.checked,
-                                      ),
-                                    )
-                                  }
-                                />{" "}
-                                {group.fittedCount === group.totalCount
-                                  ? parameterText("batchFixAll", language)
-                                  : parameterText("batchFitAll", language)}
-                              </label>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                      const parameterRows = group.rows.map(
-                        ({ location, component: comp, paramName, spec }) => {
-                          const key = parameterKey(comp.id, paramName);
-                          const open = openKey === key;
-                          const fitted = result?.parameters[key];
-                          const prefitMeaning = parameterMeaningFromSpec(
-                            comp,
-                            paramName,
-                            spec,
-                            language,
-                          );
-                          const meaning = result
-                            ? parameterMeaning(result, key, language)
-                            : prefitMeaning;
-                          const short = result
-                            ? parameterShortAssessment(result, key, language)
-                            : prefitMeaning;
-                          const information = short;
-                          const informationTitle = meaning;
-                          return (
-                            <Fragment key={key}>
-                              <tr className="parameter-summary-row">
-                                <td
-                                  title={meaning}
-                                  onClick={() => setOpenKey(open ? null : key)}
-                                >
-                                  {labelForModelParameter(
-                                    model,
-                                    comp.id,
-                                    paramName,
-                                  )}
+                      const compTooltip = `${componentSummary(group.component, language)}\nLaw: ${lawFormPlacement.law}\nForm: ${lawFormPlacement.form}\nPlacement: ${lawFormPlacement.placement}`;
+
+                      return (
+                        <Fragment key={group.component.id}>
+                          <tr className={`param-component-row component-accent-${groupIndex % 8}`}>
+                            <td colSpan={hasResult ? 7 : 5}>
+                              <div className="param-component-title">
+                                <strong>{nickname(group.component)}</strong>
+                                <span className="param-component-role" title={compTooltip}>
+                                  {componentSummary(group.component, language)}
+                                </span>
+                                <span className="param-component-fit-count">
+                                  {group.fittedCount}/{group.totalCount}
+                                </span>
+                                <label className="param-component-batch" title={group.fittedCount === group.totalCount ? parameterText("batchFixAll", language) : parameterText("batchFitAll", language)}>
+                                  <input
+                                    type="checkbox"
+                                    disabled={disabled}
+                                    checked={group.fittedCount === group.totalCount}
+                                    onChange={(e) =>
+                                      onModelChange(
+                                        setComponentFitState(model, group.location, group.component.id, e.target.checked),
+                                      )
+                                    }
+                                  />
+                                </label>
+                              </div>
+                            </td>
+                          </tr>
+                          {group.rows.map(({ location, component: comp, paramName, spec }) => {
+                            const key = parameterKey(comp.id, paramName);
+                            const fitted = result?.parameters[key];
+                            const meaning = result
+                              ? parameterMeaning(result, key, language)
+                              : parameterMeaningFromSpec(comp, paramName, spec, language);
+                            const short = result
+                              ? parameterShortAssessment(result, key, language)
+                              : "";
+
+                            return (
+                              <tr className="param-data-row" key={key}>
+                                <td className="param-col-name" title={meaning}>
+                                  {labelForModelParameter(model, comp.id, paramName)}
                                 </td>
-                                <td>
+                                <td className="param-col-initial">
                                   <DraftNumberInput
                                     disabled={disabled}
                                     value={spec.value}
-                                    title={parameterText(
-                                      "initialTitle",
-                                      language,
-                                    )}
+                                    title={parameterText("initialTitle", language)}
                                     onCommit={(value) => {
                                       if (value !== null)
                                         onModelChange(
                                           markParameterUserEdited(
-                                            updateParameter(
-                                              model,
-                                              location,
-                                              comp.id,
-                                              paramName,
-                                              { value },
-                                            ),
-                                            comp.id,
-                                            paramName,
-                                            "initial",
+                                            updateParameter(model, location, comp.id, paramName, { value }),
+                                            comp.id, paramName, "initial",
                                           ),
                                         );
                                     }}
                                   />
                                 </td>
-                                <td title={fitted ? String(fitted.value) : ""}>
-                                  {fitted
-                                    ? formatParameterNumber(
-                                        fitted.value,
-                                        fitted.unit ?? spec.unit,
-                                      )
-                                    : "-"}
-                                </td>
-                                <td>
-                                  <span className="parameter-status-pill">
-                                    {fitted
-                                      ? parameterFitStatus(
-                                          fitted.value,
-                                          fitted.lower,
-                                          fitted.upper,
-                                          fitted.stderr,
-                                          fitted.fixed,
-                                        )
-                                      : (spec.fit ?? true)
-                                        ? "free"
-                                        : "fixed"}
-                                  </span>
-                                </td>
-                                <td
-                                  className="desktop-detail"
-                                  title={
-                                    fitted?.stderr === null ||
-                                    fitted?.stderr === undefined
-                                      ? ""
-                                      : String(fitted.stderr)
-                                  }
-                                >
-                                  {fitted?.stderr === null ||
-                                  fitted?.stderr === undefined
-                                    ? "-"
-                                    : formatParameterNumber(
-                                        fitted.stderr,
-                                        fitted.unit ?? spec.unit,
-                                      )}
-                                </td>
-                                <td>
+                                {hasResult && <td className="param-col-fitted" title={fitted ? String(fitted.value) : ""}>
+                                  {fitted ? formatParameterNumber(fitted.value, fitted.unit ?? spec.unit) : <span className="param-empty">—</span>}
+                                </td>}
+                                {hasResult && <td className="param-col-stderr" title={fitted?.stderr != null ? String(fitted.stderr) : ""}>
+                                  {fitted?.stderr != null ? formatParameterNumber(fitted.stderr, fitted.unit ?? spec.unit) : <span className="param-empty">—</span>}
+                                </td>}
+                                <td className="param-col-lower">
                                   <DraftNumberInput
                                     disabled={disabled}
                                     value={spec.lower}
-                                    placeholder="-"
+                                    placeholder="—"
                                     title={`${parameterText("lowerTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`}
                                     onCommit={(value) =>
                                       onModelChange(
                                         markParameterUserEdited(
-                                          updateParameter(
-                                            model,
-                                            location,
-                                            comp.id,
-                                            paramName,
-                                            { lower: value },
-                                          ),
-                                          comp.id,
-                                          paramName,
-                                          "bounds",
+                                          updateParameter(model, location, comp.id, paramName, { lower: value }),
+                                          comp.id, paramName, "bounds",
                                         ),
                                       )
                                     }
                                   />
                                 </td>
-                                <td>
+                                <td className="param-col-upper">
                                   <DraftNumberInput
                                     disabled={disabled}
                                     value={spec.upper}
-                                    placeholder="-"
+                                    placeholder="—"
                                     title={`${parameterText("upperTitle", language)}\n${boundsSourceTitle(model, comp.id, paramName, language)}`}
                                     onCommit={(value) =>
                                       onModelChange(
                                         markParameterUserEdited(
-                                          updateParameter(
-                                            model,
-                                            location,
-                                            comp.id,
-                                            paramName,
-                                            { upper: value },
-                                          ),
-                                          comp.id,
-                                          paramName,
-                                          "bounds",
+                                          updateParameter(model, location, comp.id, paramName, { upper: value }),
+                                          comp.id, paramName, "bounds",
                                         ),
                                       )
                                     }
                                   />
                                 </td>
-                                <td>
-                                  <label
-                                    className="parameter-fit-toggle"
-                                    title={informationTitle || meaning}
-                                  >
+                                <td className="param-col-fit">
+                                  <label className="parameter-fit-toggle" title={meaning}>
                                     <input
                                       type="checkbox"
                                       disabled={disabled}
                                       checked={spec.fit ?? true}
                                       onChange={(e) =>
                                         onModelChange(
-                                          updateParameter(
-                                            model,
-                                            location,
-                                            comp.id,
-                                            paramName,
-                                            { fit: e.target.checked },
-                                          ),
+                                          updateParameter(model, location, comp.id, paramName, { fit: e.target.checked }),
                                         )
                                       }
-                                    />{" "}
-                                    {(spec.fit ?? true)
-                                      ? t(language, "fitState")
-                                      : t(language, "fixed")}
+                                    />
                                   </label>
                                 </td>
                               </tr>
-                              <tr
-                                className={
-                                  open
-                                    ? "parameter-mobile-detail open"
-                                    : "parameter-mobile-detail"
-                                }
-                              >
-                                <td colSpan={8}>
-                                  <div
-                                    title={boundsSourceTitle(
-                                      model,
-                                      comp.id,
-                                      paramName,
-                                      language,
-                                    )}
-                                  >
-                                    <strong>
-                                      {parameterText("currentBounds", language)}
-                                      :
-                                    </strong>{" "}
-                                    {fmtBounds(spec.lower, spec.upper)}
-                                  </div>
-                                  <div>
-                                    <strong>{t(language, "stdErr")}:</strong>{" "}
-                                    {fitted?.stderr === null ||
-                                    fitted?.stderr === undefined
-                                      ? "-"
-                                      : formatParameterNumber(
-                                          fitted.stderr,
-                                          fitted.unit ?? spec.unit,
-                                        )}
-                                  </div>
-                                  <p title={meaning}>{short}</p>
-                                </td>
-                              </tr>
-                            </Fragment>
-                          );
-                        },
+                            );
+                          })}
+                        </Fragment>
                       );
-                      return [header, ...parameterRows];
                     })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ))}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </section>
