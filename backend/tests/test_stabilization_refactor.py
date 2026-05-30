@@ -148,9 +148,13 @@ def test_collapsed_language_icon_reflects_next_language():
     assert 'language === "en" ? "ZH" : "EN"' in text
 
 
-def test_parameter_table_uses_scientific_format_for_extreme_values():
+def test_parameter_table_uses_shared_scientific_format_for_extreme_values():
     root = Path(__file__).resolve().parents[2]
-    text = (root / "frontend" / "src" / "components" / "ParameterTable.tsx").read_text(encoding="utf-8")
-    assert "formatParameterNumber" in text
-    assert "toExponential(3)" in text
-    assert "abs < 1e-3 || abs >= 1e4" in text
+    table_text = (root / "frontend" / "src" / "components" / "ParameterTable.tsx").read_text(encoding="utf-8")
+    format_text = (root / "frontend" / "src" / "model" / "format.ts").read_text(encoding="utf-8")
+    format_test_text = (root / "frontend" / "src" / "model" / "__tests__" / "format.test.ts").read_text(encoding="utf-8")
+    assert "formatParameterNumber" in table_text
+    assert "formatValueWithUnit(v, unit, 4)" in table_text
+    assert "abs < 1e-3 || abs >= 1e4" in format_text
+    assert "toExponential(Math.max(digits - 1, 0))" in format_text
+    assert 'formatValueWithUnit(0.0000001234, "A", 4)' in format_test_text

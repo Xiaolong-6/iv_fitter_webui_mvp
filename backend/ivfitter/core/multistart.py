@@ -6,6 +6,12 @@ import numpy as np
 
 
 def multistart_candidates(x0: np.ndarray, lower: np.ndarray, upper: np.ndarray, n_seeds: int) -> list[np.ndarray]:
+    """Return deterministic low-discrepancy start points inside the bounds.
+
+    The extra seeds use a golden-ratio sequence to cover each parameter range
+    reproducibly without pseudo-random sampling. Do not replace this with
+    random.uniform; deterministic coverage is intentional for reproducible fits.
+    """
     candidates = [np.clip(np.asarray(x0, dtype=float), lower, upper)]
     n_extra = max(int(n_seeds) - 1, 0)
     if n_extra <= 0 or len(x0) == 0:

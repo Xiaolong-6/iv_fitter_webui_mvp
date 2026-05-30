@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import type { EquationSummary, FitConfig, FitResult, FitSessionStats, FunctionDefinition, ModelSpec, TraceData } from "../model/types";
 import { exportReport, exportReportCsv, fitTrace, getRegistry, equations } from "../api/client";
@@ -12,7 +12,7 @@ import { SyntheticTraceTool } from "../components/SyntheticTraceTool";
 import { DataImportWorkspace } from "../components/DataImportWorkspace";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
-import { buildReportBaseName, emptyReportArtifacts } from "../model/reportArtifacts";
+import { buildReportBaseName, emptyReportArtifacts, type ReportArtifacts } from "../model/reportArtifacts";
 import { canGenerateReport, createErrorLifecycle, createRunningLifecycle, createTimeoutLifecycle, elapsedSecondsSince, nextRunId, shouldAcceptRunResult, terminalCancelledState, type FitLifecycleState } from "../model/fitLifecycle";
 import { buildHtmlReportDocument } from "../model/htmlReport";
 import { createInitialModel, initialConfig } from "../model/defaults";
@@ -29,34 +29,166 @@ import { checkLatestRelease, type ReleaseCheckResult } from "../services/release
 
 type ZoomStyle = CSSProperties & { "--app-zoom": number };
 
+type FitStatusState = {
+  isFitting: boolean;
+  fitStartedAt: number | null;
+  elapsedSeconds: number;
+  lifecycle: FitLifecycleState;
+};
+
+type FittingPageState = {
+  registry: FunctionDefinition[];
+  traces: TraceData[];
+  selectedTraceId: string | null;
+  model: ModelSpec;
+  config: FitConfig;
+  fitDrawerMode: FitDrawerMode;
+  result: FitResult | null;
+  error: string | null;
+  fitPromotionNotice: string | null;
+  noTraceRunAttempted: boolean;
+  fitStatus: FitStatusState;
+  reportArtifacts: ReportArtifacts;
+  equationSummary: EquationSummary | null;
+  openSections: Record<string, boolean>;
+  dismissedWarningKey: string;
+  fitSessionStats: FitSessionStats;
+  releaseCheck: ReleaseCheckResult | null;
+  releaseDemoUpdate: boolean;
+};
+
+type StateUpdater<T> = T | ((current: T) => T);
+
+type FittingPageAction = {
+  [K in keyof FittingPageState]: {
+    type: "set";
+    key: K;
+    value: StateUpdater<FittingPageState[K]>;
+  };
+}[keyof FittingPageState];
+
+function resolveStateValue<T>(current: T, value: StateUpdater<T>): T {
+  return typeof value === "function" ? (value as (current: T) => T)(current) : value;
+}
+
+function fittingPageReducer(
+  state: FittingPageState,
+  action: FittingPageAction,
+): FittingPageState {
+  if (action.type !== "set") return state;
+  return {
+    ...state,
+    [action.key]: resolveStateValue(
+      state[action.key],
+      action.value as StateUpdater<FittingPageState[typeof action.key]>,
+    ),
+  };
+}
+
+function createInitialFittingPageState(): FittingPageState {
+  return {
+    registry: [],
+    traces: [],
+    selectedTraceId: null,
+    model: createInitialModel(APP_VERSION),
+    config: initialConfig,
+    fitDrawerMode: "none",
+    result: null,
+    error: null,
+    fitPromotionNotice: null,
+    noTraceRunAttempted: false,
+    fitStatus: {
+      isFitting: false,
+      fitStartedAt: null,
+      elapsedSeconds: 0,
+      lifecycle: { kind: "idle" },
+    },
+    reportArtifacts: emptyReportArtifacts,
+    equationSummary: null,
+    openSections: {
+      fitSetup: true,
+      model: false,
+      plots: false,
+      parameters: false,
+      preview: false,
+    },
+    dismissedWarningKey: "",
+    fitSessionStats: {
+      fitsRun: 0,
+      totalFunctionEvaluations: 0,
+      totalElapsedS: 0,
+      totalRootSolverFailures: 0,
+    },
+    releaseCheck: null,
+    releaseDemoUpdate: false,
+  };
+}
+
+
 export function FittingPage() {
-  const [registry, setRegistry] = useState<FunctionDefinition[]>([]);
-  const [traces, setTraces] = useState<TraceData[]>([]);
-  const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
-  const [model, setModel] = useState<ModelSpec>(() => createInitialModel(APP_VERSION));
-  const [config, setConfig] = useState<FitConfig>(initialConfig);
-  const [fitDrawerMode, setFitDrawerMode] = useState<FitDrawerMode>("none");
-  const [result, setResult] = useState<FitResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [fitPromotionNotice, setFitPromotionNotice] = useState<string | null>(
-    null,
+  const [pageState, dispatchPageState] = useReducer(
+    fittingPageReducer,
+    undefined,
+    createInitialFittingPageState,
   );
-  const [noTraceRunAttempted, setNoTraceRunAttempted] = useState(false);
-  const [isFitting, setIsFitting] = useState(false);
-  const [fitStartedAt, setFitStartedAt] = useState<number | null>(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [fitLifecycle, setFitLifecycle] = useState<FitLifecycleState>({
-    kind: "idle",
-  });
+  const {
+    registry,
+    traces,
+    selectedTraceId,
+    model,
+    config,
+    fitDrawerMode,
+    result,
+    error,
+    fitPromotionNotice,
+    noTraceRunAttempted,
+    fitStatus,
+    reportArtifacts,
+    equationSummary,
+    openSections,
+    dismissedWarningKey,
+    fitSessionStats,
+    releaseCheck,
+    releaseDemoUpdate,
+  } = pageState;
+  const { isFitting, fitStartedAt, elapsedSeconds, lifecycle: fitLifecycle } = fitStatus;
+
+  function setPageState<K extends keyof FittingPageState>(
+    key: K,
+    value: StateUpdater<FittingPageState[K]>,
+  ) {
+    dispatchPageState({ type: "set", key, value } as FittingPageAction);
+  }
+
+  const setRegistry = (value: StateUpdater<FunctionDefinition[]>) => setPageState("registry", value);
+  const setTraces = (value: StateUpdater<TraceData[]>) => setPageState("traces", value);
+  const setSelectedTraceId = (value: StateUpdater<string | null>) => setPageState("selectedTraceId", value);
+  const setModel = (value: StateUpdater<ModelSpec>) => setPageState("model", value);
+  const setConfig = (value: StateUpdater<FitConfig>) => setPageState("config", value);
+  const setFitDrawerMode = (value: StateUpdater<FitDrawerMode>) => setPageState("fitDrawerMode", value);
+  const setResult = (value: StateUpdater<FitResult | null>) => setPageState("result", value);
+  const setError = (value: StateUpdater<string | null>) => setPageState("error", value);
+  const setFitPromotionNotice = (value: StateUpdater<string | null>) => setPageState("fitPromotionNotice", value);
+  const setNoTraceRunAttempted = (value: StateUpdater<boolean>) => setPageState("noTraceRunAttempted", value);
+  const setReportArtifacts = (value: StateUpdater<ReportArtifacts>) => setPageState("reportArtifacts", value);
+  const setEquationSummary = (value: StateUpdater<EquationSummary | null>) => setPageState("equationSummary", value);
+  const setOpenSections = (value: StateUpdater<Record<string, boolean>>) => setPageState("openSections", value);
+  const setDismissedWarningKey = (value: StateUpdater<string>) => setPageState("dismissedWarningKey", value);
+  const setFitSessionStats = (value: StateUpdater<FitSessionStats>) => setPageState("fitSessionStats", value);
+  const setReleaseCheck = (value: StateUpdater<ReleaseCheckResult | null>) => setPageState("releaseCheck", value);
+  const setReleaseDemoUpdate = (value: StateUpdater<boolean>) => setPageState("releaseDemoUpdate", value);
+  const updateFitStatus = (patch: Partial<FitStatusState> | ((current: FitStatusState) => FitStatusState)) => {
+    setPageState("fitStatus", (current) =>
+      typeof patch === "function" ? patch(current) : { ...current, ...patch },
+    );
+  };
+
   const abortFitRef = useRef<AbortController | null>(null);
   const fitRunSeqRef = useRef(0);
   const activeFitRunIdRef = useRef<number | null>(null);
   const cancelledFitRunIdsRef = useRef(new Set<number>());
-  const [reportArtifacts, setReportArtifacts] = useState(emptyReportArtifacts);
   const report = reportArtifacts.report;
   const reportMessage = reportArtifacts.message;
-  const [equationSummary, setEquationSummary] =
-    useState<EquationSummary | null>(null);
   const { zoom, setZoom } = useAppZoom(0.92);
   const {
     activeView,
@@ -75,23 +207,6 @@ export function FittingPage() {
     setLanguage,
   } = useWorkflowLayoutState();
   const startPaneResize = usePaneResize();
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    fitSetup: true,
-    model: false,
-    plots: false,
-    parameters: false,
-    preview: false,
-  });
-  const [dismissedWarningKey, setDismissedWarningKey] = useState("");
-  const [fitSessionStats, setFitSessionStats] = useState<FitSessionStats>({
-    fitsRun: 0,
-    totalFunctionEvaluations: 0,
-    totalElapsedS: 0,
-    totalRootSolverFailures: 0,
-  });
-  const [releaseCheck, setReleaseCheck] = useState<ReleaseCheckResult | null>(null);
-  const [releaseDemoUpdate, setReleaseDemoUpdate] = useState(false);
-
   useEffect(() => {
     let cancelled = false;
     checkLatestRelease().then((next) => {
@@ -111,9 +226,9 @@ export function FittingPage() {
   useEffect(() => {
     if (!isFitting || fitStartedAt === null) return;
     const timer = window.setInterval(() => {
-      setElapsedSeconds(
-        Math.max(0, Math.floor((Date.now() - fitStartedAt) / 1000)),
-      );
+      updateFitStatus({
+        elapsedSeconds: Math.max(0, Math.floor((Date.now() - fitStartedAt) / 1000)),
+      });
     }, 500);
     return () => window.clearInterval(timer);
   }, [isFitting, fitStartedAt]);
@@ -197,10 +312,12 @@ export function FittingPage() {
       activeFitRunIdRef.current = null;
       setResult(null);
       setNoTraceRunAttempted(true);
-      setFitLifecycle({
-        kind: "error",
-        runId,
-        message: t(language, "noTraceError"),
+      updateFitStatus({
+        lifecycle: {
+          kind: "error",
+          runId,
+          message: t(language, "noTraceError"),
+        },
       });
       setError(t(language, "noTraceError"));
       return;
@@ -211,10 +328,12 @@ export function FittingPage() {
     const controller = new AbortController();
     abortFitRef.current = controller;
     const startedAt = Date.now();
-    setElapsedSeconds(0);
-    setFitStartedAt(startedAt);
-    setFitLifecycle(createRunningLifecycle(runId, startedAt, timeoutS));
-    setIsFitting(true);
+    updateFitStatus({
+      elapsedSeconds: 0,
+      fitStartedAt: startedAt,
+      lifecycle: createRunningLifecycle(runId, startedAt, timeoutS),
+      isFitting: true,
+    });
     const timeoutId = window.setTimeout(() => {
       if (
         !shouldAcceptRunResult({
@@ -226,10 +345,12 @@ export function FittingPage() {
       cancelledFitRunIdsRef.current.add(runId);
       activeFitRunIdRef.current = null;
       controller.abort();
-      setIsFitting(false);
-      setFitStartedAt(null);
-      setElapsedSeconds(timeoutS);
-      setFitLifecycle(createTimeoutLifecycle(runId, timeoutS));
+      updateFitStatus({
+        isFitting: false,
+        fitStartedAt: null,
+        elapsedSeconds: timeoutS,
+        lifecycle: createTimeoutLifecycle(runId, timeoutS),
+      });
       setError(
         language === "zh"
           ? `拟合超过 ${timeoutS} 秒，已中止请求；本次结果不会写入界面。`
@@ -316,7 +437,7 @@ export function FittingPage() {
           });
         }
       }
-      setFitLifecycle({ kind: "idle" });
+      updateFitStatus({ lifecycle: { kind: "idle" } });
     } catch (e) {
       if (
         !shouldAcceptRunResult({
@@ -329,7 +450,7 @@ export function FittingPage() {
       if (e instanceof DOMException && e.name === "AbortError") {
         cancelledFitRunIdsRef.current.add(runId);
         activeFitRunIdRef.current = null;
-        setFitLifecycle(terminalCancelledState(runId, fitStartedAt));
+        updateFitStatus({ lifecycle: terminalCancelledState(runId, fitStartedAt) });
         setError(
           language === "zh"
             ? "拟合请求已中止。本次结果不会写入界面。"
@@ -337,7 +458,7 @@ export function FittingPage() {
         );
       } else {
         const message = String(e);
-        setFitLifecycle(createErrorLifecycle(runId, message));
+        updateFitStatus({ lifecycle: createErrorLifecycle(runId, message) });
         setError(message);
       }
     } finally {
@@ -348,8 +469,7 @@ export function FittingPage() {
         activeFitRunIdRef.current === runId ||
         fitRunSeqRef.current === runId
       ) {
-        setIsFitting(false);
-        setFitStartedAt(null);
+        updateFitStatus({ isFitting: false, fitStartedAt: null });
       }
     }
   }
@@ -360,12 +480,12 @@ export function FittingPage() {
     activeFitRunIdRef.current = null;
     abortFitRef.current?.abort();
     const stoppedElapsed = elapsedSecondsSince(fitStartedAt);
-    setElapsedSeconds(stoppedElapsed);
-    setIsFitting(false);
-    setFitStartedAt(null);
-    setFitLifecycle(
-      terminalCancelledState(runId ?? fitRunSeqRef.current, fitStartedAt),
-    );
+    updateFitStatus({
+      elapsedSeconds: stoppedElapsed,
+      isFitting: false,
+      fitStartedAt: null,
+      lifecycle: terminalCancelledState(runId ?? fitRunSeqRef.current, fitStartedAt),
+    });
     setError(
       language === "zh"
         ? "已停止当前拟合请求。本次结果不会写入界面。"

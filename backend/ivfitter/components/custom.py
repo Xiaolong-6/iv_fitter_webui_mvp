@@ -34,8 +34,8 @@ _ALLOWED_NODE_TYPES = (
 )
 
 
-def validate_expression(expression: str) -> None:
-    """Raise ValueError if expression contains unsupported syntax."""
+def _parse_and_validate_expression(expression: str) -> ast.Expression:
+    """Parse once and validate the exact AST that will be compiled."""
     tree = ast.parse(expression, mode="eval")
     for node in ast.walk(tree):
         if not isinstance(node, _ALLOWED_NODE_TYPES):
@@ -43,11 +43,18 @@ def validate_expression(expression: str) -> None:
         if isinstance(node, ast.Call):
             if not isinstance(node.func, ast.Name) or node.func.id not in _ALLOWED_FUNCS:
                 raise ValueError("Only approved numeric functions may be called")
+    return tree
+
+
+def validate_expression(expression: str) -> None:
+    """Raise ValueError if expression contains unsupported syntax."""
+    _parse_and_validate_expression(expression)
 
 
 def evaluate_custom_expression(vj, expression: str, params: dict[str, float], polarity: str):
     """Evaluate a vectorized custom expression using Vj, absVj, u, s, and parameters."""
-    validate_expression(expression)
+    tree = _parse_and_validate_expression(expression)
+    code = compile(tree, "<custom_expr>", "eval")
     vt = float(params.get("Vt_V", params.get("Vt", 0.0)))
     vs = float(params.get("Vs_V", params.get("Vs", 1.0)))
     env = dict(_ALLOWED_FUNCS)
@@ -59,4 +66,4 @@ def evaluate_custom_expression(vj, expression: str, params: dict[str, float], po
         "s": polarity_sign(arr, polarity),
     })
     env.update(params)
-    return eval(compile(ast.parse(expression, mode="eval"), "<custom_expr>", "eval"), {"__builtins__": {}}, env)
+    return eval(code, {"__builtins__": {}}, env)

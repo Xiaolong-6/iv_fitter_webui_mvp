@@ -1,3 +1,13 @@
+## v1.8.18
+
+| Area | Result | Notes |
+|---|---|---|
+| Backend pytest | Passed | `PYTHONPATH=backend pytest -q backend/tests` |
+| Backend compile | Passed | API, custom expression, fitting engine, and importer modules compiled |
+| Frontend Vitest | Passed | `npm --prefix frontend test -- --run`: 14 files / 107 tests |
+| Frontend build | Passed | `npm --prefix frontend run build`; existing Vite chunk-size warning only |
+| Audit closure | Passed | SEC-1/2, ARCH-1/2/3/4, PERF-1/2, QUAL-1..7 addressed or already fixed |
+
 ## v1.8.17
 - Backend pytest and compileall were run in the delivery environment.
 - Frontend build/test should be run locally after npm ci because this container does not have a reliable frontend node_modules installation.

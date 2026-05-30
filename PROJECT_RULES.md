@@ -338,13 +338,16 @@ Backend/API rules:
 
 - API, UI, exported model, and package versions must come from a single dynamic source where practical;
 - column inference fallbacks must warn users instead of silently choosing ambiguous columns;
-- request validation errors and runtime failures should use distinct HTTP status classes.
+- request validation errors and runtime failures should use distinct HTTP status classes;
+- breaking or compatibility-sensitive API changes must be introduced under a versioned `/api/vN/...` prefix while preserving existing routes until the frontend and docs have migrated;
+- CPU-heavy endpoints must have explicit backpressure/concurrency limits and honest timeout behavior; never imply that Python can forcibly kill an in-flight SciPy optimizer unless that is actually implemented in a separate killable process.
 
 Frontend rules:
 
 - major panels that render external data, plots, or fit results need ErrorBoundary protection;
 - equation/preview requests triggered by model editing must be debounced or explicitly user-triggered;
 - large React components must be split into readable subcomponents before they become agent-hostile patch targets;
+- broad page-level state should be grouped behind reducers or dedicated hooks instead of accumulating many independent top-level state variables;
 - accessibility basics for charts include `role`, `aria-label`, `<title>`, and keyboard focus support.
 
 ## 20. Physical-semantic display rules

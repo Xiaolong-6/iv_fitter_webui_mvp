@@ -1349,6 +1349,13 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
   margin: 0 auto;
   align-content: start;
 }
+
+.model-page-tool-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: calc(8px * var(--app-zoom));
+}
 .model-webpage-stack .workspace-section {
   height: auto;
   min-height: 0;

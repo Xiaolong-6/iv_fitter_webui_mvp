@@ -107,3 +107,66 @@ def test_cors_methods_are_explicit_not_wildcard(monkeypatch):
     assert "POST" in allow_methods
     assert "GET" in allow_methods
     assert "DELETE" not in allow_methods
+
+
+def test_api_token_uses_constant_time_compare():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[2]
+    text = (root / "backend" / "ivfitter" / "api" / "main.py").read_text(encoding="utf-8")
+    assert "hmac.compare_digest" in text
+    assert "supplied != token" not in text
+
+
+def test_oversized_import_returns_413_not_sanitized_500(monkeypatch):
+    monkeypatch.delenv("IVFITTER_API_TOKEN", raising=False)
+    monkeypatch.setattr(main, "MAX_IMPORT_TEXT_CHARS", 4)
+    client = TestClient(app)
+
+    response = client.post("/api/import-csv-text", json={"text": "voltage,current\n0,0"})
+
+    assert response.status_code == 413
+    assert "too large" in response.json()["detail"]
+
+
+def test_rate_limit_can_reject_runaway_requests(monkeypatch):
+    monkeypatch.delenv("IVFITTER_API_TOKEN", raising=False)
+    monkeypatch.setenv("IVFITTER_RATE_LIMIT_PER_MIN", "1")
+    main._RATE_LIMIT_BUCKETS.clear()
+    client = TestClient(app)
+
+    first = client.get("/api/component-registry")
+    second = client.get("/api/component-registry")
+
+    assert first.status_code == 200
+    assert second.status_code == 429
+    main._RATE_LIMIT_BUCKETS.clear()
+    monkeypatch.delenv("IVFITTER_RATE_LIMIT_PER_MIN", raising=False)
+
+
+def test_cpu_endpoint_slot_returns_503_when_cap_exhausted():
+    assert main._CPU_SEMAPHORE.acquire(blocking=False)
+    assert main._CPU_SEMAPHORE.acquire(blocking=False)
+    try:
+        try:
+            with main._cpu_endpoint_slot("Fit"):
+                raise AssertionError("slot should not be available")
+        except Exception as exc:
+            assert getattr(exc, "status_code", None) == 503
+            assert getattr(exc, "headers", {}).get("Retry-After") == "2"
+    finally:
+        main._CPU_SEMAPHORE.release()
+        main._CPU_SEMAPHORE.release()
+
+
+def test_v2_api_aliases_keep_legacy_routes_available(monkeypatch):
+    monkeypatch.delenv("IVFITTER_API_TOKEN", raising=False)
+    client = TestClient(app)
+    legacy = client.get("/api/version")
+    versioned = client.get("/api/v2/version")
+    assert legacy.status_code == 200
+    assert versioned.status_code == 200
+    assert versioned.json() == legacy.json()
+
+    registry = client.get("/api/v2/component-registry")
+    assert registry.status_code == 200
+    assert isinstance(registry.json(), list)

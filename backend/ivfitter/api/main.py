@@ -1,9 +1,17 @@
 """FastAPI application for the greenfield IV-fitter backend."""
 
 from __future__ import annotations
+import asyncio
+import hmac
+import json
 import logging
 import ntpath
 import os
+import subprocess
+import sys
+import threading
+import time
+from contextlib import contextmanager
 from typing import NoReturn
 
 from fastapi import FastAPI, HTTPException, Request
@@ -76,8 +84,8 @@ def _require_loopback_for_local_file_dialog(request: Request) -> None:
         raise HTTPException(status_code=403, detail="Local file dialog is only available from localhost.")
 
 def _public_selected_name(path: str) -> str:
-    # Handle both native paths and Windows paths when tests run on POSIX.
-    return ntpath.basename(os.path.basename(path))
+    # ntpath handles both POSIX and Windows separators on every platform.
+    return ntpath.basename(path)
 
 
 @app.middleware("http")
@@ -89,15 +97,74 @@ async def require_api_token_when_configured(request: Request, call_next):
     as X-IVFITTER-API-Key. Health/version remain open for diagnostics.
     """
     token = _api_token()
-    if token and request.method.upper() != "OPTIONS" and request.url.path not in {"/api/health", "/api/version"}:
+    if token and request.method.upper() != "OPTIONS" and request.url.path not in {"/api/health", "/api/version", "/api/v2/health", "/api/v2/version"}:
         supplied = request.headers.get("X-IVFITTER-API-Key", "")
-        if supplied != token:
+        if not hmac.compare_digest(supplied, token):
             return JSONResponse(status_code=401, content={"detail": "Missing or invalid IV-fitter API token."})
     return await call_next(request)
 
 
 MAX_IMPORT_TEXT_CHARS = int(os.getenv("IVFITTER_MAX_IMPORT_TEXT_CHARS", "5000000"))
 MAX_FIT_POINTS = int(os.getenv("IVFITTER_MAX_FIT_POINTS", "50000"))
+MAX_CONCURRENT_CPU_REQUESTS = max(1, int(os.getenv("IVFITTER_MAX_CONCURRENT_FITS", "2")))
+FILE_DIALOG_TIMEOUT_S = float(os.getenv("IVFITTER_FILE_DIALOG_TIMEOUT_S", "30"))
+_CPU_SEMAPHORE = threading.BoundedSemaphore(MAX_CONCURRENT_CPU_REQUESTS)
+_RATE_LIMIT_LOCK = threading.Lock()
+_RATE_LIMIT_BUCKETS: dict[str, tuple[float, float]] = {}
+
+
+@contextmanager
+def _cpu_endpoint_slot(endpoint_label: str):
+    """Bound local CPU-heavy endpoints so accidental multi-clicks cannot saturate the host."""
+    acquired = _CPU_SEMAPHORE.acquire(blocking=False)
+    if not acquired:
+        raise HTTPException(
+            status_code=503,
+            detail=f"{endpoint_label} is busy. Try again after the current compute job finishes.",
+            headers={"Retry-After": "2"},
+        )
+    try:
+        yield
+    finally:
+        _CPU_SEMAPHORE.release()
+
+
+def _rate_limit_per_minute() -> int:
+    try:
+        return max(0, int(os.getenv("IVFITTER_RATE_LIMIT_PER_MIN", "600")))
+    except ValueError:
+        return 600
+
+
+@app.middleware("http")
+async def local_rate_limit_guard(request: Request, call_next):
+    """Lightweight token-bucket guard for runaway local/LAN automation.
+
+    Set IVFITTER_RATE_LIMIT_PER_MIN=0 to disable. Health/version and CORS
+    preflight remain unthrottled for diagnostics and browser startup.
+    """
+    if request.method.upper() == "OPTIONS" or request.url.path in {"/api/health", "/api/version", "/api/v2/health", "/api/v2/version"}:
+        return await call_next(request)
+    limit = _rate_limit_per_minute()
+    if limit <= 0:
+        return await call_next(request)
+    key = request.client.host if request.client else "unknown"
+    now = time.monotonic()
+    capacity = float(limit)
+    refill_per_s = capacity / 60.0
+    with _RATE_LIMIT_LOCK:
+        tokens, last_seen = _RATE_LIMIT_BUCKETS.get(key, (capacity, now))
+        tokens = min(capacity, tokens + max(0.0, now - last_seen) * refill_per_s)
+        if tokens < 1.0:
+            retry_after = max(1, int((1.0 - tokens) / refill_per_s) + 1)
+            _RATE_LIMIT_BUCKETS[key] = (tokens, now)
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Too many IV-fitter API requests. Please slow down."},
+                headers={"Retry-After": str(retry_after)},
+            )
+        _RATE_LIMIT_BUCKETS[key] = (tokens - 1.0, now)
+    return await call_next(request)
 
 def _check_import_size(text: str) -> None:
     if len(text) > MAX_IMPORT_TEXT_CHARS:
@@ -113,26 +180,31 @@ def _check_fit_size(request: FitRequest) -> None:
 class ReportResponse(BaseModel):
     markdown: str
 
+@app.get("/api/v2/health")
 @app.get("/api/health")
 def health() -> dict[str, str]:
     """Return service health."""
     return {"status": "ok"}
 
+@app.get("/api/v2/component-registry")
 @app.get("/api/component-registry")
 def get_component_registry():
     """Return function-library definitions consumed by the frontend."""
     return component_registry()
 
+@app.post("/api/v2/validate-model")
 @app.post("/api/validate-model")
 def validate_model(model: ModelSpec) -> list[FitWarning]:
     """Validate a ModelSpec and return physics, schema, and UX warnings."""
     return validate_model_spec(model)
 
+@app.post("/api/v2/equations")
 @app.post("/api/equations")
 def equations(model: ModelSpec):
     """Return generated equations for a ModelSpec."""
     return generate_equations(model)
 
+@app.post("/api/v2/topology-preview")
 @app.post("/api/topology-preview")
 def topology_preview(model: ModelSpec):
     """Return user-readable topology graph preview."""
@@ -140,47 +212,60 @@ def topology_preview(model: ModelSpec):
     return {"graph": graph, "summary": graph_text_summary(graph)}
 
 
+@app.post("/api/v2/suggest-bounds", response_model=BoundsSuggestionResponse)
 @app.post("/api/suggest-bounds", response_model=BoundsSuggestionResponse)
 def suggest_bounds_endpoint(request: BoundsSuggestionRequest) -> BoundsSuggestionResponse:
     """Return conservative data-aware bound suggestions for the selected trace/model."""
     try:
-        _check_fit_size(FitRequest(trace=request.trace, model=request.model, config=request.config))
-        return suggest_bounds(request)
+        with _cpu_endpoint_slot("Bounds suggestion"):
+            _check_fit_size(FitRequest(trace=request.trace, model=request.model, config=request.config))
+            return suggest_bounds(request)
+    except HTTPException:
+        raise
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
         _raise_internal_error(exc, "Unhandled API error")
 
+@app.post("/api/v2/generate-synthetic-trace", response_model=SyntheticTraceResult)
 @app.post("/api/generate-synthetic-trace", response_model=SyntheticTraceResult)
 def generate_synthetic_trace_endpoint(request: SyntheticTraceRequest) -> SyntheticTraceResult:
     """Forward-simulate an IV trace from the supplied ModelSpec."""
     try:
-        return generate_synthetic_trace(
-            model=request.model,
-            voltage_start=request.voltage_start,
-            voltage_stop=request.voltage_stop,
-            voltage_step=request.voltage_step,
-            noise_config=request.noise_config,
-            artifact_config=request.artifact_config,
-            trace_name=request.trace_name,
-            seed=request.seed,
-        )
+        with _cpu_endpoint_slot("Synthetic trace generation"):
+            return generate_synthetic_trace(
+                model=request.model,
+                voltage_start=request.voltage_start,
+                voltage_stop=request.voltage_stop,
+                voltage_step=request.voltage_step,
+                noise_config=request.noise_config,
+                artifact_config=request.artifact_config,
+                trace_name=request.trace_name,
+                seed=request.seed,
+            )
+    except HTTPException:
+        raise
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
         _raise_internal_error(exc, "Unhandled API error")
 
+@app.post("/api/v2/fit")
 @app.post("/api/fit")
 def fit(request: FitRequest):
     """Run one local trace fit."""
     try:
-        _check_fit_size(request)
-        return fit_trace(request)
+        with _cpu_endpoint_slot("Fit"):
+            _check_fit_size(request)
+            return fit_trace(request)
+    except HTTPException:
+        raise
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
         _raise_internal_error(exc, "Unhandled API error")
 
+@app.post("/api/v2/export-report", response_model=ReportResponse)
 @app.post("/api/export-report", response_model=ReportResponse)
 def export_report(result: FitResult) -> ReportResponse:
     """Return a Markdown report for one fit result."""
@@ -201,11 +286,11 @@ class OpenImportFileDialogResponse(BaseModel):
 
 def _multi_import_response(items) -> dict:
     traces = [{"trace": trace, "quality": quality} for trace, quality in items]
-    warnings: list[str] = []
+    seen_warnings: dict[str, None] = {}
     for _trace, quality in items:
         for warning in getattr(quality, "warnings", []) or []:
-            if warning not in warnings:
-                warnings.append(warning)
+            seen_warnings[str(warning)] = None
+    warnings = list(seen_warnings)
     summary = None
     if len(items) > 1:
         first_meta = getattr(items[0][0], "metadata", {}) or {}
@@ -214,6 +299,7 @@ def _multi_import_response(items) -> dict:
             summary = f"Imported {len(items)} traces."
     return {"traces": traces, "summary": summary, "warnings": warnings}
 
+@app.post("/api/v2/import-csv-text")
 @app.post("/api/import-csv-text")
 def import_csv_text_endpoint(payload: ImportCsvTextRequest):
     """Import CSV/TXT text and return TraceData plus import-quality summary."""
@@ -221,55 +307,57 @@ def import_csv_text_endpoint(payload: ImportCsvTextRequest):
         _check_import_size(payload.text)
         trace, quality = import_csv_text(payload)
         return {"trace": trace, "quality": quality}
+    except HTTPException:
+        raise
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
         _raise_internal_error(exc, "Unhandled API error")
 
+@app.post("/api/v2/import-csv-text-multi")
 @app.post("/api/import-csv-text-multi")
 def import_csv_text_multi_endpoint(payload: ImportCsvTextRequest):
     """Import plain/HappyMeasure CSV text and return one or more traces."""
     try:
         _check_import_size(payload.text)
         return _multi_import_response(import_csv_text_multi(payload))
+    except HTTPException:
+        raise
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
         _raise_internal_error(exc, "Unhandled API error")
 
+def _open_file_dialog_subprocess(default_dir) -> str:
+    """Open tkinter in a child process so the API worker is bounded by a timeout."""
+    script = '\nimport json\nimport sys\ntry:\n    import tkinter as tk\n    from tkinter import filedialog\n    initialdir = sys.argv[1] or None\n    root = tk.Tk()\n    root.withdraw()\n    root.update()\n    try:\n        root.attributes("-topmost", True)\n        root.lift()\n        root.focus_force()\n        root.after(500, lambda: root.attributes("-topmost", False))\n        selected = filedialog.askopenfilename(\n            parent=root,\n            title="Import CSV/TXT",\n            initialdir=initialdir,\n            filetypes=[\n                ("IV trace files", "*.csv *.txt *.dat"),\n                ("CSV files", "*.csv"),\n                ("Text files", "*.txt"),\n                ("DAT files", "*.dat"),\n                ("All files", "*.*"),\n            ],\n        )\n    finally:\n        root.destroy()\n    print(json.dumps({"selected": selected}))\nexcept Exception as exc:\n    print(json.dumps({"error": str(exc)}))\n    raise SystemExit(2)\n'
+    try:
+        completed = subprocess.run(
+            [sys.executable, "-c", script, str(default_dir) if default_dir else ""],
+            capture_output=True,
+            text=True,
+            timeout=FILE_DIALOG_TIMEOUT_S,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise HTTPException(status_code=408, detail="Local file dialog timed out. Use drag-and-drop, file upload, or paste import instead.") from exc
+    payload_text = (completed.stdout or "").strip().splitlines()[-1] if (completed.stdout or "").strip() else "{}"
+    try:
+        payload = json.loads(payload_text)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=501, detail="Local file dialog did not return a valid selection payload.") from exc
+    if completed.returncode != 0 or payload.get("error"):
+        raise HTTPException(status_code=501, detail=f"Local file dialog is not available: {payload.get('error') or completed.stderr.strip()}")
+    return str(payload.get("selected") or "")
+
+
+@app.post("/api/v2/open-import-file-dialog", response_model=OpenImportFileDialogResponse)
 @app.post("/api/open-import-file-dialog", response_model=OpenImportFileDialogResponse)
-def open_import_file_dialog(request: Request) -> OpenImportFileDialogResponse:
+async def open_import_file_dialog(request: Request) -> OpenImportFileDialogResponse:
     """Open a local file picker at the demo IV traces folder when supported."""
     _require_loopback_for_local_file_dialog(request)
     default_dir = resolve_default_import_dir()
-    try:
-        import tkinter as tk
-        from tkinter import filedialog
-    except Exception as exc:
-        raise HTTPException(status_code=501, detail=f"Local file dialog is not available: {exc}") from exc
-
-    root = tk.Tk()
-    root.withdraw()
-    root.update()
-    try:
-        root.attributes("-topmost", True)
-        root.lift()
-        root.focus_force()
-        root.after(500, lambda: root.attributes("-topmost", False))
-        selected = filedialog.askopenfilename(
-            parent=root,
-            title="Import CSV/TXT",
-            initialdir=str(default_dir) if default_dir else None,
-            filetypes=[
-                ("IV trace files", "*.csv *.txt *.dat"),
-                ("CSV files", "*.csv"),
-                ("Text files", "*.txt"),
-                ("DAT files", "*.dat"),
-                ("All files", "*.*"),
-            ],
-        )
-    finally:
-        root.destroy()
+    selected = await asyncio.to_thread(_open_file_dialog_subprocess, default_dir)
 
     if not selected:
         return OpenImportFileDialogResponse(canceled=True, default_dir=str(default_dir) if default_dir else None)
@@ -291,18 +379,22 @@ def open_import_file_dialog(request: Request) -> OpenImportFileDialogResponse:
             summary=imported.get("summary"),
             warnings=imported.get("warnings", []),
         )
+    except HTTPException:
+        raise
     except (ValueError, ValidationError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
         _raise_internal_error(exc, "Unhandled API error")
 
 
+@app.post("/api/v2/export-report-csv", response_model=TextResponse)
 @app.post("/api/export-report-csv", response_model=TextResponse)
 def export_report_csv(result: FitResult) -> TextResponse:
     """Return a sectioned, spreadsheet-friendly fit report CSV."""
     return TextResponse(text=report_csv_text(result))
 
 
+@app.post("/api/v2/export-result-json", response_model=TextResponse)
 @app.post("/api/export-result-json", response_model=TextResponse)
 def export_result_json(result: FitResult) -> TextResponse:
     """Return a reproducible FitResult JSON document."""
@@ -310,6 +402,7 @@ def export_result_json(result: FitResult) -> TextResponse:
 
 
 
+@app.get("/api/v2/version")
 @app.get("/api/version")
 def version() -> dict[str, str]:
     """Return backend version and schema milestone."""

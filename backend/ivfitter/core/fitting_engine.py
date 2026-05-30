@@ -10,6 +10,7 @@ embedding all implementation details.
 
 from __future__ import annotations
 
+import concurrent.futures
 import copy
 import time
 import numpy as np
@@ -30,6 +31,46 @@ from .warnings import deprecated_config_warnings, graph_solver_not_reportable_wa
 
 class FitTimeoutError(RuntimeError):
     """Raised when a fit exceeds the user-configured runtime budget."""
+
+
+def _timeout_message(timeout_s: float) -> str:
+    return f"Fit exceeded run timeout of {timeout_s:g} s."
+
+
+def _remaining_timeout_s(deadline: float | None, timeout_s: float) -> float | None:
+    if deadline is None:
+        return None
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise FitTimeoutError(_timeout_message(timeout_s))
+    return remaining
+
+
+def _least_squares_with_timeout(timeout_s: float, deadline: float | None, *args, **kwargs):
+    """Run SciPy least_squares with an outer wall-clock timeout.
+
+    The residual callback still cooperatively checks the deadline.  This wrapper
+    also returns control to the API when SciPy itself is busy inside one optimizer
+    call.  SciPy cannot be killed safely mid-call, so a timed-out worker is left
+    to finish naturally while the caller returns a timeout result.
+    """
+    remaining = _remaining_timeout_s(deadline, timeout_s)
+    if remaining is None:
+        return least_squares(*args, **kwargs)
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="ivfit-scipy")
+    future = executor.submit(least_squares, *args, **kwargs)
+    try:
+        result = future.result(timeout=remaining)
+    except concurrent.futures.TimeoutError as exc:
+        future.cancel()
+        executor.shutdown(wait=False, cancel_futures=True)
+        raise FitTimeoutError(_timeout_message(timeout_s)) from exc
+    except BaseException:
+        executor.shutdown(wait=True, cancel_futures=False)
+        raise
+    else:
+        executor.shutdown(wait=True, cancel_futures=False)
+        return result
 
 
 # Backwards-compatible aliases kept for tests and downstream scripts that used
@@ -191,10 +232,12 @@ def fit_trace(request: FitRequest) -> FitResult:
     deadline = time.monotonic() + timeout_s if timeout_s > 0 else None
 
     def check_timeout() -> None:
-        if deadline is not None and time.monotonic() > deadline:
-            raise FitTimeoutError(f"Fit exceeded run timeout of {timeout_s:g} s.")
+        _remaining_timeout_s(deadline, timeout_s)
 
     x0, lower, upper, records = _pack(request)
+    model_before_fit = copy.deepcopy(request.model)
+    result_model = request.model
+    output_records = records
     v_fit, i_meas, range_mask = select_range(request)
     exclude_compliance = bool(request.config.exclude_compliance)
     trace_metadata = getattr(request.trace, "metadata", {}) or {}
@@ -248,7 +291,15 @@ def fit_trace(request: FitRequest) -> FitResult:
             for start in starts:
                 check_timeout()
                 y_start, _yl, _yu, _transforms = _build_internal_transform(records, np.asarray(start, dtype=float), lower, upper)
-                res = least_squares(fun_internal, y_start, bounds=(y_lower, y_upper), loss=request.config.loss, max_nfev=request.config.max_nfev)
+                res = _least_squares_with_timeout(
+                    timeout_s,
+                    deadline,
+                    fun_internal,
+                    y_start,
+                    bounds=(y_lower, y_upper),
+                    loss=request.config.loss,
+                    max_nfev=request.config.max_nfev,
+                )
                 optimizer_nfev_total += int(getattr(res, "nfev", 0) or 0)
                 optimizer_njev_total += int(getattr(res, "njev", 0) or 0)
                 cost = float(np.sum(res.fun**2))
@@ -275,6 +326,8 @@ def fit_trace(request: FitRequest) -> FitResult:
             timed_out = True
             success = False
             message = str(exc)
+            result_model = copy.deepcopy(model_before_fit)
+            output_records = _pack(FitRequest(trace=request.trace, model=result_model, config=request.config))[3]
             warnings.append(FitWarning(code="fit_timeout", message=message, severity="error"))
         except Exception as exc:
             success = False
@@ -308,8 +361,9 @@ def fit_trace(request: FitRequest) -> FitResult:
         i_pred = np.asarray(i_pred, dtype=float)
     residual = i_pred - i_all
     params: dict[str, ParameterResult] = {}
-    stderrs = parameter_stderr(records, fit_jac, fit_residual_vector)
-    for key, comp, name, spec in _all_fit_params(request):
+    all_output_params = _all_fit_params(FitRequest(trace=request.trace, model=result_model, config=request.config))
+    stderrs = parameter_stderr(output_records, fit_jac, fit_residual_vector)
+    for key, comp, name, spec in output_records if len(output_records) else all_output_params:
         params[key] = ParameterResult(value=spec.value, unit=spec.unit, fixed=not spec.fit, lower=spec.lower, upper=spec.upper, stderr=stderrs.get(key))
     excluded_mask = np.zeros_like(v_all, dtype=bool)
     range_indices = np.where(range_mask)[0]
@@ -329,7 +383,7 @@ def fit_trace(request: FitRequest) -> FitResult:
         finite_weighted = np.asarray([], dtype=float)
     weighted_chi_square = float(np.sum(finite_weighted ** 2)) if finite_weighted.size else float("nan")
     free_parameter_count = len(records)
-    total_parameter_count = len(_all_fit_params(request))
+    total_parameter_count = len(all_output_params)
     fixed_parameter_count = total_parameter_count - free_parameter_count
     points_used = int(np.sum(use))
     degrees_of_freedom = max(points_used - free_parameter_count, 0)
@@ -341,7 +395,7 @@ def fit_trace(request: FitRequest) -> FitResult:
 
     quality_ok, quality_warnings = evaluate_fit_quality(i_pred, i_all, metrics.get("linear_rmse_A"))
     warnings.extend(quality_warnings)
-    warnings.extend(photocurrent_fit_warnings(request.model))
+    warnings.extend(photocurrent_fit_warnings(result_model))
     if not quality_ok:
         success = False
         if "quality gate" not in message.lower():
@@ -351,7 +405,7 @@ def fit_trace(request: FitRequest) -> FitResult:
     diagnostics = FitDiagnosticsSummary(
         fit_run_id=f"{request.trace.trace_id or 'trace'}-{int(time.time() * 1000)}",
         trace_name=request.trace.trace_id,
-        model_signature=_model_signature(request.model),
+        model_signature=_model_signature(result_model),
         fit_mode=request.config.fit_speed,
         voltage_range_used=[request.config.v_min, request.config.v_max],
         points_total=int(len(v_all)),
@@ -383,13 +437,13 @@ def fit_trace(request: FitRequest) -> FitResult:
         reportable=reportable,
         reportability_reason=reportability_reason,
         message=message,
-        model=request.model,
+        model=result_model,
         config=request.config,
         parameters=params,
         metrics=metrics,
         warnings=warnings,
         fit_diagnostics=diagnostics,
         curves=FitCurves(voltage_V=v_all.tolist(), current_measured_A=i_all.tolist(), current_fit_A=i_pred.tolist(), residual_A=residual.tolist(), branch_currents_A={k: v.tolist() for k, v in branches.items()}, excluded_mask=excluded_mask.tolist()),
-        equations=generate_equations(request.model),
+        equations=generate_equations(result_model),
         software_version=__version__,
     )

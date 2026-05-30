@@ -1,3 +1,15 @@
+## 1.8.18 - Audit hardening, timeout control, and test restoration
+
+- Replaced API token equality checks with timing-safe `hmac.compare_digest`.
+- Hardened custom-expression evaluation by parsing and validating one AST, then compiling the same validated tree.
+- Added bounded CPU endpoint slots and lightweight per-client rate limiting for runaway local/LAN requests.
+- Wrapped SciPy fitting calls with a real API-level timeout path so the UI can receive a timeout result instead of waiting indefinitely.
+- Moved the server-side tkinter import picker into a bounded subprocess and kept LAN clients on upload/paste import paths.
+- Added `/api/v2/...` aliases for current API routes while preserving legacy `/api/...` compatibility; the frontend now calls the v2 prefix.
+- Split import-column and HappyMeasure section helpers out of `import_trace.py` to reduce mixed responsibility in the importer.
+- Refactored `FittingPage` state into a reducer-backed page state and added component tests for smoke rendering plus a mocked import/fit flow.
+- Restored backend and frontend test reliability, moved PyInstaller out of runtime requirements, and documented the golden-ratio multistart sequence.
+
 ## 1.8.17 - Model Builder visual hierarchy and semantic polish
 - Unify terminal/component card styling so the canvas uses one visual language.
 - Strengthen selected-node feedback and align editor colors with main/branch semantics.

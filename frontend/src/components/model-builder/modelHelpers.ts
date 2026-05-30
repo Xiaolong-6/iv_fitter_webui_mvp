@@ -31,7 +31,7 @@ export function cloneModelForPreset(model: ModelSpec): ModelSpec {
 }
 
 export function makeSingleDiodePreset(model: ModelSpec): ModelSpec {
-  return createInitialModel(String(model.version ?? "1.8.17"));
+  return createInitialModel(String(model.version ?? "1.8.18"));
 }
 
 export function makeDoubleDiodePreset(model: ModelSpec): ModelSpec {

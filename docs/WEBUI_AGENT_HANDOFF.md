@@ -1,3 +1,15 @@
+# IV-fitter Web UI agent handoff
+
+Continue from **v1.8.18**. This version is an audit-hardening and stabilization release on top of Branch20260528 / v1.8.17. It closes the security/availability audit items, restores frontend test reliability, adds `/api/v2` route aliases, refactors `FittingPage` state to a reducer, splits importer helper responsibilities, and adds FittingPage component tests.
+
+Critical next-agent context:
+
+- Do not remove the legacy `/api/...` routes yet; the current frontend calls `/api/v2/...`, but old local workflows may still rely on `/api/...`.
+- Fit timeout is API-level and truthful: SciPy is not force-killed mid-call. The concurrency semaphore is required to prevent stale optimizer work from saturating the backend.
+- The local server-side file picker now runs in a bounded subprocess. Remote/LAN users should use drag/drop, file input, or paste import.
+- `FittingPage` should not be allowed to grow back into many independent top-level state hooks; add reducer fields or extract dedicated hooks/components.
+- Standard validation for this handoff: backend pytest, backend py_compile on edited modules, frontend Vitest, and frontend build.
+
 # Web UI agent handoff — v1.7.12
 
 ## Current baseline
