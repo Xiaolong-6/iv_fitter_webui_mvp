@@ -1474,7 +1474,7 @@
 }
 .compact-fit-setup-panel .compact-fit-config-row {
   display: grid;
-  grid-template-columns: auto minmax(160px, 1fr) minmax(260px, 1.2fr) auto minmax(220px, 1fr);
+  grid-template-columns: auto auto auto auto 1fr;
   align-items: center;
   gap: calc(8px * var(--app-zoom));
   padding: calc(7px * var(--app-zoom)) calc(10px * var(--app-zoom));
@@ -1483,7 +1483,13 @@
 .compact-fit-setup-panel .fit-config-title h2 { font-size: calc(15px * var(--app-zoom)); white-space: nowrap; }
 .compact-fit-setup-panel .fit-config-actions,
 .compact-fit-setup-panel .fit-bottom-voltage,
-.compact-fit-setup-panel .fit-config-status { flex: initial; }
+.compact-fit-setup-panel .fit-config-status { flex: initial; white-space: nowrap; }
+.compact-fit-setup-panel .fit-config-actions {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
 .compact-fit-setup-panel .fit-bottom-voltage { margin: 0; }
 .compact-fit-setup-panel .fit-bottom-voltage-title { display: none; }
 .compact-fit-setup-panel .fit-bottom-voltage-grid { display: grid; grid-template-columns: repeat(2, minmax(88px, 1fr)); gap: calc(6px * var(--app-zoom)); }
@@ -1495,6 +1501,8 @@
   border-radius: calc(10px * var(--app-zoom));
   padding: calc(7px * var(--app-zoom)) calc(10px * var(--app-zoom));
   font-weight: 900;
+  white-space: nowrap;
+  width: auto;
 }
 .fit-advanced-popover-button.active { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
 .fit-config-advanced-popover {
