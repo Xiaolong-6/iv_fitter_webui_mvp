@@ -27,32 +27,48 @@ function shortLabel(name: string, maxLen = 12): string {
 export function ModelTerminalNode({ data }: NodeProps<Node<ModelFlowNodeData>>) {
   const role = data.role ?? "vi";
   const branchPortCount = Math.max(1, data.branchPortCount ?? 1);
+  const branchYPositions = data.branchYPositions;
+  const terminalY = 0;
+  const terminalHeight = 72;
+
   return <div className={`xy-model-terminal xy-model-terminal-${role}`}>
     {role === "vext" ? <Handle type="source" position={Position.Right} id="out" className="xy-port xy-port-out" style={centerHandleStyle} /> : null}
     {role === "vi" ? <>
       <Handle type="target" position={Position.Left} id="in" className="xy-port xy-port-in" style={centerHandleStyle} />
       <Handle type="source" position={Position.Right} id="out" className="xy-port xy-port-out xy-port-main-out" style={centerHandleStyle} />
-      {Array.from({ length: branchPortCount }, (_, index) => (
-        <Handle
-          key={`branch-out-${index}`}
-          type="source"
-          position={Position.Right}
-          id={`branch-out-${index}`}
-          className="xy-port xy-port-out xy-port-branch-out xy-branch-port"
-          style={{ top: `${distributedPortTop(index, branchPortCount)}%`, transform: "translateY(-50%)" }}
-        />
-      ))}
+      {Array.from({ length: branchPortCount }, (_, index) => {
+        const yPos = branchYPositions?.[index];
+        const style = yPos !== undefined
+          ? { top: `${yPos - terminalY}px`, transform: "translateY(-50%)" }
+          : { top: `${distributedPortTop(index, branchPortCount)}%`, transform: "translateY(-50%)" };
+        return (
+          <Handle
+            key={`branch-out-${index}`}
+            type="source"
+            position={Position.Right}
+            id={`branch-out-${index}`}
+            className="xy-port xy-port-out xy-port-branch-out xy-branch-port"
+            style={style}
+          />
+        );
+      })}
     </> : null}
-    {role === "ground" ? Array.from({ length: branchPortCount }, (_, index) => (
-      <Handle
-        key={`branch-in-${index}`}
-        type="target"
-        position={Position.Left}
-        id={`branch-in-${index}`}
-        className="xy-port xy-port-in xy-port-ground-in xy-branch-port"
-        style={{ top: `${distributedPortTop(index, branchPortCount)}%`, transform: "translateY(-50%)" }}
-      />
-    )) : null}
+    {role === "ground" ? Array.from({ length: branchPortCount }, (_, index) => {
+      const yPos = branchYPositions?.[index];
+      const style = yPos !== undefined
+        ? { top: `${yPos - terminalY}px`, transform: "translateY(-50%)" }
+        : { top: `${distributedPortTop(index, branchPortCount)}%`, transform: "translateY(-50%)" };
+      return (
+        <Handle
+          key={`branch-in-${index}`}
+          type="target"
+          position={Position.Left}
+          id={`branch-in-${index}`}
+          className="xy-port xy-port-in xy-port-ground-in xy-branch-port"
+          style={style}
+        />
+      );
+    }) : null}
     <strong>{data.label}</strong>
     {data.subtitle ? <small>{data.subtitle}</small> : null}
   </div>;

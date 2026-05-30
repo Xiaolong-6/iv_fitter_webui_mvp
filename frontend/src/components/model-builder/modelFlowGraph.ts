@@ -48,10 +48,13 @@ export function buildFlowGraph(
   const groundX = branchX + 260;
   const groundY = mainY;
 
+  // Calculate branch component Y positions for port alignment
+  const branchYPositions = branchRefs.map((_, index) => branchStartY + index * branchGapY);
+
   const nodes: Node<ModelFlowNodeData>[] = [
     { id: "terminal:vext", type: "modelTerminal", position: { x: startX, y: mainY }, data: { kind: "terminal", role: "vext", label: "Vext", subtitle: language === "zh" ? "外加偏压" : "external" }, draggable: false, selectable: false },
-    { id: "terminal:vi", type: "modelTerminal", position: { x: viX, y: mainY }, data: { kind: "terminal", role: "vi", label: "Vi", subtitle: language === "zh" ? "内结点" : "internal node", branchPortCount }, draggable: false, selectable: false },
-    { id: "terminal:ground", type: "modelTerminal", position: { x: groundX, y: groundY }, data: { kind: "terminal", role: "ground", label: "V=0", subtitle: language === "zh" ? "参考端" : "reference", branchPortCount }, draggable: false, selectable: false },
+    { id: "terminal:vi", type: "modelTerminal", position: { x: viX, y: mainY }, data: { kind: "terminal", role: "vi", label: "Vi", subtitle: language === "zh" ? "内结点" : "internal node", branchPortCount, branchYPositions }, draggable: false, selectable: false },
+    { id: "terminal:ground", type: "modelTerminal", position: { x: groundX, y: groundY }, data: { kind: "terminal", role: "ground", label: "V=0", subtitle: language === "zh" ? "参考端" : "reference", branchPortCount, branchYPositions }, draggable: false, selectable: false },
   ];
 
   mainRefs.forEach((refItem, index) => {

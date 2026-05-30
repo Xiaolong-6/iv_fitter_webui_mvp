@@ -28,6 +28,7 @@ export type ModelFlowNodeData = {
   selected?: boolean;
   language?: Language;
   branchPortCount?: number;
+  branchYPositions?: number[];
   compact?: boolean;
 };
 
