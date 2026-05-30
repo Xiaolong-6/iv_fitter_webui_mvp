@@ -79,6 +79,20 @@ function isCustom(comp: ComponentSpec): boolean {
   return funcType(comp) === "custom" || /custom_expression/i.test(lawId(comp));
 }
 
+/**
+ * Returns true if polarity is physically meaningful for this component.
+ * Polarity is meaningful for: diodes, barriers, breakdown, bias-dependent.
+ * Polarity is NOT meaningful for: ohmic, photocurrent (symmetric), custom (unless specified).
+ */
+export function isPolarityMeaningful(comp: ComponentSpec): boolean {
+  if (isDiode(comp)) return true;
+  if (isBarrier(comp)) return true;
+  if (isBreakdown(comp)) return true;
+  if (isBiasDependent(comp)) return true;
+  if (isForwardPower(comp)) return true;
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 // LaTeX helpers
 // ---------------------------------------------------------------------------

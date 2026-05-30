@@ -33,16 +33,20 @@ export function buildFlowGraph(
   const branchCount = Math.max(1, branchRefs.length);
   const branchPortCount = branchCount;
   const compactMain = mainRefs.length >= 3;
+
+  // --- Main path layout ---
   const mainGap = mainRefs.length >= 7 ? 145 : mainRefs.length >= 5 ? 165 : mainRefs.length >= 3 ? 190 : 260;
-  const branchGapY = 96;
   const mainY = 170;
   const startX = 120;
   const firstMainX = 300;
   const viX = firstMainX + Math.max(mainRefs.length, 1) * mainGap + 70;
-  const branchX = viX + 210;
-  const branchStartY = mainY + 104;
-  const groundX = branchX + 250;
-  const groundY = branchStartY + ((branchCount - 1) * branchGapY) / 2;
+
+  // --- Branch layout: clear parallel rows ---
+  const branchGapY = 110;
+  const branchX = viX + 220;
+  const branchStartY = mainY - ((branchCount - 1) * branchGapY) / 2;
+  const groundX = branchX + 260;
+  const groundY = mainY;
 
   const nodes: Node<ModelFlowNodeData>[] = [
     { id: "terminal:vext", type: "modelTerminal", position: { x: startX, y: mainY }, data: { kind: "terminal", role: "vext", label: "Vext", subtitle: language === "zh" ? "外加偏压" : "external" }, draggable: false, selectable: false },
@@ -75,6 +79,7 @@ export function buildFlowGraph(
   const addData = (bucket: BuilderBucket): CircuitEdgeData => ({ addBucket: bucket });
   const edges: CircuitEdge[] = [];
 
+  // Edge highlight: only the selected component's own complete path
   const hl = (componentId: string): "main" | "branch" | null => {
     if (!selectedId || selectedId !== componentId) return null;
     return branchRefs.some((r) => r.comp.id === componentId) ? "branch" : "main";
@@ -102,9 +107,13 @@ export function buildFlowGraph(
   if (branchRefs.length) {
     branchRefs.forEach((refItem, index) => {
       const branchHl = hl(refItem.comp.id);
-      edges.push(edge(`edge:vi-${refItem.comp.id}`, "terminal:vi", `component:${refItem.comp.id}`, `branch-out-${index}`, "in", index === 0 ? addData("branches") : undefined, "branch", branchHl));
+      // Vi → branch component: use the corresponding branch port
+      edges.push(edge(`edge:vi-${refItem.comp.id}`, "terminal:vi", `component:${refItem.comp.id}`, `branch-out-${index}`, "in", undefined, "branch", branchHl));
+      // Branch component → V=0: use the corresponding ground port
       edges.push(edge(`edge:${refItem.comp.id}-ground`, `component:${refItem.comp.id}`, "terminal:ground", "out", `branch-in-${index}`, undefined, "branch", branchHl));
     });
+    // Add button on a separate edge between Vi and ground (not on a junction)
+    edges.push(edge("edge:vi-branches-add", "terminal:vi", "terminal:ground", "branch-out-0", "branch-in-0", addData("branches"), "branch", null));
   } else {
     edges.push(edge("edge:vi-ground-empty-branches", "terminal:vi", "terminal:ground", "branch-out-0", "branch-in-0", addData("branches"), "branch"));
   }

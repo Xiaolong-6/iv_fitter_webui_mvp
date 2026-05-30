@@ -5,6 +5,7 @@ import {
   polarityLabel,
   zoneForComponent,
 } from "./modelHelpers";
+import { isPolarityMeaningful } from "../../model/modelDisplaySemantics";
 import type { ModelFlowNodeData } from "./types";
 import { useModelFlowContext } from "./flowContext";
 
@@ -16,6 +17,12 @@ function distributedPortTop(index: number, count: number) {
 }
 
 const centerHandleStyle = { top: "50%", transform: "translateY(-50%)" };
+
+/** Shorten display name for node badges if too long */
+function shortLabel(name: string, maxLen = 12): string {
+  if (name.length <= maxLen) return name;
+  return name.slice(0, maxLen - 1) + "…";
+}
 
 export function ModelTerminalNode({ data }: NodeProps<Node<ModelFlowNodeData>>) {
   const role = data.role ?? "vi";
@@ -57,14 +64,16 @@ export function ModelComponentNode({ data }: NodeProps<Node<ModelFlowNodeData>>)
   if (!refItem) return null;
   const { comp } = refItem;
   const zone = zoneForComponent(comp);
-  const polarity = comp.polarity ? polarityLabel(language, comp.polarity) : null;
+  const showPolarity = comp.polarity && isPolarityMeaningful(comp);
+  const polarity = showPolarity ? polarityLabel(language, comp.polarity!) : null;
   const roleBadge = zone === "main" ? "ΔV" : "I(Vi)";
+  const displayName = componentDisplayName(comp, language);
   return <div
     role="button"
     tabIndex={0}
     className={`xy-component-node xy-component-node-${zone} ${data.compact ? "is-compact" : ""} ${data.selected ? "is-selected" : ""}`}
     data-component-id={comp.id}
-    title={`${nickname(comp)} · ${componentDisplayName(comp, language)}`}
+    title={`${nickname(comp)} · ${displayName}`}
     onKeyDown={(event) => {
       if (event.key === "Enter" || event.key === " ") event.currentTarget.click();
     }}
@@ -81,7 +90,7 @@ export function ModelComponentNode({ data }: NodeProps<Node<ModelFlowNodeData>>)
     <span className="xy-node-symbol" aria-hidden="true">{zone === "main" ? "◆" : "●"}</span>
     <span className="xy-node-body">
       <strong>{nickname(comp)}</strong>
-      <small>{componentDisplayName(comp, language)}</small>
+      <small title={displayName}>{shortLabel(displayName)}</small>
       <span className="xy-node-badges" aria-hidden="true">
         {polarity ? <span>{polarity}</span> : null}
         <span>{roleBadge}</span>
