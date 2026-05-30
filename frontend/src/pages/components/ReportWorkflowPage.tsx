@@ -4,6 +4,7 @@ import type { FitLifecycleState } from "../../model/fitLifecycle";
 import type { AppView } from "../../components/WorkflowSidebar";
 import { MathFormula } from "../../components/MathFormula";
 import { SimpleChart } from "../../components/SimpleChart";
+import { EquivalentCircuitView } from "../../components/ModelBuilder";
 // FitProcessDiagnostics is intentionally replaced in Report by the compact three-column report metrics table.
 import { fmtEng, formatValueWithUnit } from "../../model/format";
 import { type Language } from "../../model/i18n";
@@ -495,15 +496,7 @@ function QuickSummary({ result, semantics, setActiveView, language }: { result: 
 
 
 function ReportEquivalentCircuit({ model, language }: { model: ModelSpec; language: Language }) {
-  const main = model.series.map((item) => String(item.metadata?.nickname ?? item.id)).join(" → ") || (language === "zh" ? "直接连接" : "direct");
-  const branches = [...model.core, ...model.parallel];
-  return <section className="card report-section report-equivalent-circuit-card"><h2>{language === "zh" ? "等效电路" : "Equivalent circuit"}</h2><div className="report-circuit-schematic">
-    <div className="report-circuit-terminal">V+</div>
-    <div className="report-circuit-main"><small>{language === "zh" ? "主路" : "Main path"}</small><strong>{main}</strong></div>
-    <div className="report-circuit-junction">Vj</div>
-    <div className="report-circuit-branches">{branches.length ? branches.map((branch) => <span key={branch.id}>{String(branch.metadata?.nickname ?? branch.id)}</span>) : <span>{language === "zh" ? "无支路" : "no branches"}</span>}</div>
-    <div className="report-circuit-terminal muted-terminal">V−</div>
-  </div></section>;
+  return <section className="card report-section report-equivalent-circuit-card"><h2>{language === "zh" ? "等效电路" : "Equivalent circuit"}</h2><EquivalentCircuitView model={model} language={language} /></section>;
 }
 
 function FloatingExports({ result, report, invalid, reportMessage, onExportReportHtml, onExportReportCsv, setActiveView, language }: { result: FitResult | null; report: string; invalid: boolean | FitResult | null; reportMessage: string; onExportReportHtml: () => void; onExportReportCsv: () => void; setActiveView: (view: AppView) => void; language: Language }) {

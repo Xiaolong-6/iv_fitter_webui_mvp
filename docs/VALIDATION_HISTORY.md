@@ -1,3 +1,47 @@
+## v1.8.17
+- Backend pytest and compileall were run in the delivery environment.
+- Frontend build/test should be run locally after npm ci because this container does not have a reliable frontend node_modules installation.
+- Focus: full-canvas Model Builder workspace, selected component editor panel, stable edge-add selection, and preview drawer scrolling.
+
+# Validation history
+
+## v1.8.17
+- Refactored Model Builder into modular React Flow components and helpers.
+- Removed callback functions from React Flow node data; actions now come from model-builder context.
+- Added popover dismissal and safer preset inline dialogs.
+- Backend regression suite passed: 125 tests.
+
+## v1.8.11
+- Modernized Model preview into collapsed summary + compact cards.
+- Unified cross-page width/zoom rules with final CSS overrides.
+- Moved selected component detail to bottom mini-inspector to avoid graph overlap.
+
+## v1.8.4
+
+- Compact in-canvas Model Builder cleanup.
+- Report reuses read-only equivalent-circuit view.
+- Unified workflow page width and chart reset placement.
+
+## v1.8.3
+
+- Reworked Model Builder controls/details layout to avoid covering xyflow nodes and edges.
+- Verified code-level wiring generation remains deterministic from ModelSpec: Vext to main path to Vi; Vi to each branch to V=0.
+
+## v1.8.2
+
+- Moved all Model Builder controls and selected-component details into the xyflow canvas.
+- Kept fixed-topology wiring and ModelSpec compatibility.
+- Preserved the existing preset, custom-preset, add/remove, parameter, fit/bounds, polarity, custom expression, and advanced detail functions.
+
+## v1.8.1
+
+- Replaced the custom Model Builder canvas with a minimal `@xyflow/react` fixed-topology graph.
+- Kept ModelSpec and backend fitting unchanged.
+- Disabled drag/drop and free edge editing.
+- Verified adaptive node/edge rebuilding for added/removed model components.
+- Updated Windows setup/start scripts to install/check/run frontend dependencies from `frontend/package.json`.
+- Frontend build passed; Vitest passed 12 files / 50 tests; backend pytest passed 125 tests; backend compileall passed.
+
 ## v1.7.23
 - Polished the v1.7.22 interactive Model Builder schematic layout after screenshot review.
 - Kept fixed topology and no drag-and-drop.
@@ -91,3 +135,8 @@ This document summarizes release-level validation. Use `docs/TESTED_CURRENT.md` 
 - Keep one current validation note: `docs/TESTED_CURRENT.md`.
 - Append short release-level summaries here.
 - Do not add one-off `TESTED_1_x_y.md` files for every internal handoff package unless the user explicitly asks for an external audit artifact.
+
+
+## v1.8.11 topology-first Model Builder cleanup
+- Backend pytest/compileall should remain unchanged; frontend changes are xyflow topology/CSS/inspector updates.
+- Validate visually that Vi connects independently to each branch and each branch connects independently to V=0.

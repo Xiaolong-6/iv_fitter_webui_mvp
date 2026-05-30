@@ -1174,3 +1174,58 @@
     right: calc(27px * var(--app-zoom));
   }
 }
+
+/* v1.8.4 final cross-page width/zoom and chart-control overrides. */
+.workflow-shell > .workflow-page,
+.workflow-shell > .doc-page,
+.workflow-page,
+.doc-page {
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box;
+}
+.webpage-data-layout.data-import-layout,
+.webpage-data-layout.data-import-layout.no-data,
+.webpage-data-layout.data-import-layout.has-data,
+.model-webpage-stack,
+.report-workflow-stack,
+.manual-doc-page .manual-reader-webpage,
+.start-workflow-page,
+.workflow-page > .workflow-page-inner {
+  width: min(100%, 1600px) !important;
+  max-width: 1600px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+.simple-chart {
+  position: relative;
+  overflow: hidden !important;
+}
+.simple-chart .compact-chart-toolbar {
+  position: absolute !important;
+  z-index: 8;
+  top: 8px;
+  right: 8px;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.simple-chart .chart-control-cluster {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+/* v1.8.5: neutralize older report/manual width overrides so scaling matches other pages. */
+.workflow-shell > .manual-doc-page,
+.workflow-shell > .doc-page,
+.workflow-shell > .workflow-page {
+  width: 100% !important;
+  max-width: none !important;
+}
+.manual-doc-page .manual-reader-webpage,
+.report-workflow-stack {
+  width: min(100%, var(--workflow-content-max, 1600px)) !important;
+  max-width: var(--workflow-content-max, 1600px) !important;
+  margin-inline: auto !important;
+}

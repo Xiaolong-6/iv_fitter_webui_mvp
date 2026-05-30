@@ -1,4 +1,131 @@
+## 1.8.17 - Model Builder visual hierarchy and semantic polish
+- Unify terminal/component card styling so the canvas uses one visual language.
+- Strengthen selected-node feedback and align editor colors with main/branch semantics.
+- Reweight the in-canvas editor around the governing equation and add custom-expression editing for custom laws.
+- Add semantic main/branch edge colors and clearer parameter-unit tooltips.
+- Modernize the suspended Model preview strip with clearer equation hierarchy and expand affordance.
+
+## 1.8.16 - Hard Model Builder canvas height repair
+
+- Added an active workflow-view class to the main shell so the Model Builder layout no longer depends on CSS :has() support.
+- Forced the Model page, Model Builder section, React Flow shell, and React Flow internal containers to share a single full-height workspace chain.
+- Kept Model preview as a bottom canvas drawer with an internally scrollable expanded body.
+
+## 1.8.15 - Full-canvas Model Builder workspace fix
+- Made the Model Builder page use the React Flow canvas as the full workspace instead of a small card above empty page area.
+- Moved selected-component editing into an in-canvas panel so nodes no longer expand and distort topology.
+- Kept Go to Fit to the left of the preset selector and widened the preset toolbar so Save/Reset are not squeezed.
+- Changed edge-add menus to keep a local selection until Add is clicked, preventing option selection from closing the menu.
+- Tightened long main-path spacing and set React Flow zoom limits so longer series chains remain usable with pan/zoom instead of shrinking to thumbnails.
+- Made Model preview a suspended bottom drawer with an internally scrollable expanded body.
+
 # Changelog
+
+## 1.8.15 - Model Builder canvas workspace cleanup
+
+- Made the Model Builder behave as a full canvas workspace with the model preview suspended inside the canvas bottom area.
+- Moved Go to Fit to the left of the preset selector and tightened the preset control cluster so actions no longer squeeze the selector.
+- Replaced the edge-add native select with a stable option list so choosing another model definition does not close the popover prematurely.
+- Added inline expanded component editing inside selected React Flow nodes, including rename and model replacement controls.
+- Added compact-main rendering and tighter deterministic spacing for long main-path model chains.
+- Removed the Fitting page no-trace hero state; the Plots card remains the import entry point and its Import data action is more prominent.
+- Realigned parameter-table Fit all / Fix all controls.
+
+## v1.8.12 - Modular Model Builder and interaction cleanup
+- Split the large `ModelBuilder.tsx` into focused modules under `frontend/src/components/model-builder/` for flow graph generation, nodes, edges, context, presets, math, and physics inspection.
+- Moved React Flow node/edge actions out of node data and into a dedicated context to reduce callback churn and re-render coupling.
+- Stabilized edge `+` popovers with fixed width, ellipsis-safe selects, option titles, and outside-click/Escape dismissal.
+- Replaced native `window.prompt` / `window.confirm` preset actions with inline dialogs.
+- Hid custom-only preset rename/delete controls for built-in presets to reduce visual noise.
+- Added a model-summary empty inspector state and strengthened selected-node visual feedback.
+- Replaced JSON deep-copy preset cloning with `structuredClone` fallback, centralized function-type aliases, and expanded LaTeX escaping for `^` and `~`.
+
+## v1.8.11 - Model Builder branch port runtime fix
+- Fixed a React runtime crash in Model Builder caused by `branchPortCount` being referenced before definition in the xyflow graph builder.
+- Explicitly derives branch port count from the current branch component count before creating Vi and V=0 terminal nodes.
+- Kept v1.8.10 frontend dependency guard behavior unchanged.
+
+## v1.8.11 - Frontend dependency guard fix
+
+- Fixed Windows launch scripts so stale `frontend/node_modules` cannot bypass newly added frontend dependencies.
+- Added `scripts/ensure_frontend_dependencies.ps1` to verify Vite, `@xyflow/react`, `katex`, and `react-katex` before startup.
+- Updated dev, frontend-only, and LAN launchers to run the dependency guard before starting Vite.
+- Kept public npm registry installation path for frontend dependency repair.
+
+## v1.8.9 — React Flow routing and KaTeX hard fix
+- Use real `react-katex` / KaTeX rendering for selected-component equations instead of showing raw LaTeX source strings.
+- Increase deterministic main-path spacing so `Rs → Vi` and similar insertable main edges do not knot under smoothstep routing.
+- Add multi-handle branch ports on `Vi` and `V=0` so branch wires use independent ports instead of visually collapsing onto one ghost route.
+- Make edge-label `+` insert buttons opaque, high-contrast, and visually discoverable above grid/wire layers.
+
+## v1.8.9 — topology-first Model Builder cleanup
+- Reworked xyflow branch wiring so each branch has independent Vi → component → V=0 conductors; removed virtual merge/split behavior.
+- Standardized horizontal ports and branch/ground multi-port handles to avoid unnecessary bends and shared-air junctions.
+- Reduced Main path / Junction branches labels to small add anchors instead of large visual boxes.
+- Rebalanced component card hierarchy: larger centered component names, weaker secondary law/type tags, hover-only remove control.
+- Replaced the fake editable bottom name field with a read-only physics inspector.
+- Added selected-component physical role, governing equation, and consistent parameter/unit badges.
+
+## v1.8.6 — hard layout and Model Builder cleanup
+- Fixed the workflow width rule by adding the actual Start and Fitting page containers, plus Report/Manual inner document flows, to the same 1500 px content rail.
+- Made Model Builder controls genuinely compact inside the canvas instead of a large preset card overlay.
+- Moved selected-component details out of the graph overlay and into a compact inline inspector strip below the xyflow graph.
+- Reduced xyflow graph height and tightened deterministic node spacing so the canvas no longer has large unused blank regions.
+- Reworked Model preview into a collapsed modern formula strip with compact expandable equation cards.
+
+## v1.8.5 — model preview and layout discipline fix
+- Rebuilt Model preview as a collapsed modern summary strip with compact equation cards when expanded.
+- Added a final shared workflow width rule so Data, Model, Report, Manual, and Start pages use the same 1600 px content rail and zoom behavior.
+- Compressed the in-canvas preset controls and moved selected-component details to a bottom mini-inspector so it no longer covers branch nodes.
+- Tightened xyflow layout spacing and add-menu placement to reduce component overlap.
+
+## v1.8.4 — compact in-canvas Model Builder cleanup
+
+- Removed the Model Builder subtitle and external toolbar; controls now live inside the xyflow canvas.
+- Moved Add main/Add branch actions to the corresponding canvas zone titles with click-to-open options.
+- Added per-component remove buttons on component cards instead of a global delete control.
+- Simplified selected-component details to name editing plus parameter/unit list only.
+- Added the Go to Fit action inside the canvas upper-right corner.
+- Reused the same read-only equivalent-circuit view in Report without edit controls.
+- Modernized the Model preview block and removed duplicate navigation/actions from it.
+- Unified workflow page width and zoom behavior across pages.
+- Returned chart reset controls to the chart interior and removed redundant spreadsheet text.
+
+## v1.8.3 — readable xyflow Model Builder layout
+
+- Converted the crowded in-canvas controls into a compact Model Builder toolbar.
+- Moved selected-component details below the graph so the equivalent circuit is never covered.
+- Reworked xyflow branch layout: main path runs Vext → main components → Vi; branches run horizontally from Vi to each branch and then to V=0.
+- Removed minimap/large overlay panels from the normal builder view.
+- Kept fixed-topology ModelSpec wiring, no dragging, no free connections, and no backend fitting changes.
+- Bumped version metadata to v1.8.3.
+
+# Changelog
+
+## v1.8.2 — in-canvas xyflow Model Builder controls
+
+- Moved Model Builder preset selection, preset save/rename/delete, add-main/add-branch controls, reset view, reset model, remove selected, model summary, and selected-component details into the xyflow canvas.
+- Removed the external right-side inspector layout from the active Model Builder path.
+- Kept ModelSpec as the single source of truth and retained fixed-topology wiring.
+- Preserved parameter editing, fit toggles, bounds editing, polarity editing, custom expression editing, and advanced law/form/placement details inside the canvas inspector.
+- Bumped version metadata to v1.8.2.
+
+## v1.8.1 — npm public-registry lockfile and Windows install reliability
+
+- Rewrote frontend package-lock resolved tarball URLs from the sandbox-only internal package gateway to the public npm registry.
+- Updated Windows setup guidance and startup scripts to use deterministic frontend dependency installation through the frontend package.
+- Added npm install diagnostics for the xyflow dependency path so first-run setup does not silently retry unreachable internal URLs.
+
+
+## v1.8.1 - xyflow fixed-topology Model Builder
+
+- Replaced the failed hand-built Model Builder schematic with a minimal `@xyflow/react` implementation.
+- Kept the backend ModelSpec contract unchanged and did not add arbitrary SPICE-style wiring.
+- Disabled node dragging, free connections, edge deletion, and user-created topology edits.
+- Added deterministic adaptive layout: main-path components chain from Vext to Vi; all junction branches connect from Vi to V=0; add/remove operations rebuild the graph and wiring automatically.
+- Kept only required builder actions: preset replacement, add main/branch component, remove selected component, select component, reset view, and inspector parameter editing.
+- Updated Windows setup/start scripts so `02_setup_dev.bat`, `04_run_dev.bat`, `04b_run_frontend_only.bat`, and `04c_run_lan_dev.bat` install/check/run dependencies from `frontend/package.json`.
+- Added frontend regression coverage for xyflow wiring after adding/removing components.
 
 ## v1.7.23 - Model Builder schematic readability polish
 - Improved the interactive Model Builder circuit canvas after screenshot review.

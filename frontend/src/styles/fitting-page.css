@@ -1536,3 +1536,27 @@
 .floating-report-exports {
   left: max(var(--floating-left, 112px), 84px);
 }
+
+/* v1.8.13: Fitting empty state and batch-toggle polish. */
+.empty-plot-state .import-primary-empty {
+  min-height: 42px;
+  padding: 0 24px;
+  font-size: 0.98rem;
+  border-radius: 10px;
+}
+.parameter-fit-batch-toggles {
+  justify-content: end !important;
+  align-items: center !important;
+}
+.parameter-fit-batch-toggles label {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
+  min-height: 24px !important;
+  line-height: 1 !important;
+}
+.parameter-fit-batch-toggles input[type="checkbox"] {
+  margin: 0 !important;
+  transform: translateY(0) !important;
+}

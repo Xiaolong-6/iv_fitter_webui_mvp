@@ -1938,3 +1938,91 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
     min-height: 0;
   }
 }
+
+/* v1.8.4 unified page width and stable zoom behavior across all workflow pages. */
+.workflow-shell > .workflow-page,
+.workflow-shell > .doc-page,
+.workflow-page,
+.doc-page {
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box;
+}
+.webpage-data-layout.data-import-layout,
+.webpage-data-layout.data-import-layout.no-data,
+.webpage-data-layout.data-import-layout.has-data,
+.model-webpage-stack,
+.report-workflow-stack,
+.manual-doc-page .manual-reader-webpage,
+.start-workflow-page,
+.workflow-page > .workflow-page-inner {
+  width: min(100%, 1600px) !important;
+  max-width: 1600px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+.model-webpage-stack,
+.webpage-data-layout.data-import-layout {
+  transition: none !important;
+}
+.webpage-data-layout .spreadsheet-note {
+  display: none !important;
+}
+/* Keep chart reset controls attached to their chart, not the page corner. */
+.simple-chart {
+  position: relative;
+  overflow: hidden !important;
+}
+.simple-chart .compact-chart-toolbar {
+  position: absolute;
+  z-index: 8;
+  top: 8px;
+  right: 8px;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.simple-chart .chart-control-cluster {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+.simple-chart > svg {
+  display: block;
+}
+
+/* v1.8.5: one real workflow width rule across pages; no page-specific narrow document shell. */
+:root { --workflow-content-max: 1600px; }
+.workflow-shell > .workflow-page,
+.workflow-shell > .doc-page,
+.workflow-shell > .web-page-flow,
+.workflow-page,
+.doc-page,
+.web-page-flow {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+.workflow-shell :is(.model-webpage-stack,
+  .webpage-data-layout.data-import-layout,
+  .webpage-data-layout.data-import-layout.no-data,
+  .webpage-data-layout.data-import-layout.has-data,
+  .report-workflow-stack,
+  .manual-reader-webpage,
+  .start-workflow-page,
+  .workflow-page-inner,
+  .workflow-page > .workflow-page-inner) {
+  width: min(100%, var(--workflow-content-max)) !important;
+  max-width: var(--workflow-content-max) !important;
+  margin-inline: auto !important;
+  box-sizing: border-box !important;
+}
+.workflow-shell :is(.model-webpage-stack,
+  .webpage-data-layout.data-import-layout,
+  .report-workflow-stack,
+  .manual-reader-webpage,
+  .start-workflow-page) {
+  padding-inline: clamp(8px, 1vw, 18px) !important;
+}
+.model-webpage-stack { gap: 14px !important; }

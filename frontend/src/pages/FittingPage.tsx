@@ -551,7 +551,7 @@ export function FittingPage() {
         onVersionClick={() => setReleaseDemoUpdate(true)}
         onReleaseClick={openReleasePage}
       />
-      <main className="workspace workflow-shell">
+      <main className={`workspace workflow-shell workflow-view-${activeView}`}>
         {activeView === "start" ? (
           <StartHerePage
             setActiveView={setActiveView}

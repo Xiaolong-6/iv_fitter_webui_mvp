@@ -83,19 +83,17 @@ export function ModelWorkflowPage({
               onChange={setModel}
               language={language}
               disabled={isFitting}
-            />
-          </ErrorBoundary>
-        </PageSection>
-        <PageSection title={t(language, "equationPreview")} hideHeader className="model-preview-section">
-          <div className="model-preview-action-row">
-            <button type="button" className="primary" onClick={onGoToFitting}>{language === "zh" ? "前往拟合" : "Go to Fitting"}</button>
-          </div>
-          <ErrorBoundary label="Equation preview">
-            <EquationPreview
-              equations={equationSummary}
-              model={model}
-              result={result}
-              language={language}
+              onGoToFitting={onGoToFitting}
+              previewContent={
+                <ErrorBoundary label="Equation preview">
+                  <EquationPreview
+                    equations={equationSummary}
+                    model={model}
+                    result={result}
+                    language={language}
+                  />
+                </ErrorBoundary>
+              }
             />
           </ErrorBoundary>
         </PageSection>
@@ -160,17 +158,10 @@ export function FittingWorkflowPage({
   void fitDrawerMode;
   void setFitDrawerMode;
   const hasTrace = selectedTrace.voltage_V.length > 0;
+  void hasTrace;
+  void setActiveView;
   return (
     <section className="workflow-page fitting-page fitting-page-one-column">
-      {!hasTrace ? (
-        <div className="card workflow-empty-state">
-          <h2>No trace loaded</h2>
-          <p>Import data before running a fit.</p>
-          <button type="button" className="primary" onClick={() => setActiveView("data")}>
-            Go to Data
-          </button>
-        </div>
-      ) : null}
       <div className="fitting-webpage-stack">
         <div className="fit-setup-sticky">
           <ErrorBoundary label="Fit config panel">

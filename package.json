@@ -1,6 +1,6 @@
 {
   "name": "iv-fitter-webui-mvp-root",
-  "version": "1.7.23",
+  "version": "1.8.17",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,14 +13,18 @@
     "portable:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_portable_windows.ps1"
   },
   "dependencies": {
+    "katex": "^0.16.22",
+    "prop-types": "^15.8.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-katex": "^3.1.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^5.0.0",
-    "vite": "^7.0.0",
-    "typescript": "^5.8.0",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react-dom": "^19.0.0",
+    "@types/react-katex": "^3.0.4",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "^5.8.0",
+    "vite": "^7.0.0"
   }
 }

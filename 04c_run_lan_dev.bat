@@ -21,24 +21,30 @@ echo   University/company Wi-Fi may block device-to-device access.
 echo   A phone hotspot is often the fastest fallback.
 echo.
 
-if not exist ".venv\Scripts\python.exe" (
-  echo ERROR: .venv was not found.
-  echo Run 02_setup_dev.bat first, then try this LAN launcher again.
-  pause
-  exit /b 1
-)
-
 where npm >nul 2>nul
 if errorlevel 1 (
   echo ERROR: npm was not found.
-  echo Install Node.js LTS or run 01a_install_node_lts.bat, then rerun 02_setup_dev.bat.
+  echo Install Node.js LTS or run 01a_install_node_lts.bat, then rerun this launcher.
   pause
   exit /b 1
 )
 
-if not exist "node_modules\.bin\vite.cmd" (
-  echo ERROR: frontend dependencies are missing.
-  echo Run 02_setup_dev.bat first. If npm install failed, fix that error and rerun setup.
+if not exist ".venv\Scripts\python.exe" (
+  echo Root .venv was not found. Running setup first...
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\setup_dev.ps1"
+  if errorlevel 1 (
+    echo.
+    echo Setup failed. Copy the error above and send it to the assistant.
+    pause
+    exit /b 1
+  )
+)
+
+echo Checking frontend dependencies...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\ensure_frontend_dependencies.ps1"
+if errorlevel 1 (
+  echo.
+  echo Frontend dependency check/install failed. Copy the error above and send it to the assistant.
   pause
   exit /b 1
 )
@@ -109,7 +115,7 @@ if errorlevel 1 (
 echo Backend health check passed.
 echo.
 echo Starting frontend window...
-start "IV-fitter frontend LAN" powershell.exe -NoExit -ExecutionPolicy Bypass -Command "Set-Location -LiteralPath '%~dp0'; $env:VITE_API_BASE='http://%LAN_IP%:8000'; $env:VITE_IVFITTER_API_TOKEN='%IVFITTER_API_TOKEN%'; npm run dev -- --host 0.0.0.0 --port 5173 --strictPort"
+start "IV-fitter frontend LAN" powershell.exe -NoExit -ExecutionPolicy Bypass -Command "Set-Location -LiteralPath '%~dp0'; $env:VITE_API_BASE='http://%LAN_IP%:8000'; $env:VITE_IVFITTER_API_TOKEN='%IVFITTER_API_TOKEN%'; npm.cmd --prefix frontend run dev -- --host 0.0.0.0 --port 5173 --strictPort"
 
 echo.
 echo == LAN launcher is ready ==

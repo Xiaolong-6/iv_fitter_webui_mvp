@@ -910,11 +910,6 @@ export function DataImportWorkspace({
                 </tbody>
               </table>
             </div>
-            <p className="muted spreadsheet-note">
-              {language === "zh"
-                ? "所有 traces 横向并排显示；下拉菜单只用于快速定位某个 trace group。表格可左右滚动。"
-                : "All traces are arranged side by side; the menu only jumps to a trace group. Scroll horizontally to compare traces."}
-            </p>
           </section>
         ) : null}
       </div>

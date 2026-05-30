@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { ModelBuilder } from "../ModelBuilder";
+import { ModelBuilder, buildFlowGraph } from "../ModelBuilder";
 import { createInitialModel } from "../../model/defaults";
 import type { FunctionDefinition, ModelSpec } from "../../model/types";
 
@@ -90,10 +90,7 @@ describe("ModelBuilder circuit canvas", () => {
 
   it("parameter edits preserve the ModelSpec contract", () => {
     const model = createInitialModel("test");
-    const { getAllByRole, getByDisplayValue, getCurrent } = renderBuilder(model);
-    const rsButton = getAllByRole("button").find((button) => button.textContent?.includes("Rs"));
-    expect(rsButton).toBeTruthy();
-    fireEvent.click(rsButton!);
+    const { getByDisplayValue, getCurrent } = renderBuilder(model);
     const valueInput = getByDisplayValue("10");
     fireEvent.change(valueInput, { target: { value: "25" } });
     fireEvent.blur(valueInput);
@@ -101,5 +98,34 @@ describe("ModelBuilder circuit canvas", () => {
     expect(next.series[0].params.Rs_ohm.value).toBe(25);
     expect(next.series[0].id).toBe(model.series[0].id);
     expect(next.series[0].placement).toBe("series_voltage_drop");
+  });
+
+  it("rebuilds xyflow wiring when components are added or removed", () => {
+    const single = createInitialModel("test");
+    const singleGraph = buildFlowGraph(single, null, "en");
+    expect(singleGraph.edges.map((item) => item.id)).toEqual(expect.arrayContaining([
+      "edge:vext-main0",
+      "edge:main-ohmic_1-vi",
+      "edge:vi-D1",
+      "edge:D1-ground",
+      "edge:vi-ohmic_2",
+      "edge:ohmic_2-ground",
+    ]));
+
+    const double = {
+      ...single,
+      parallel: [
+        ...single.parallel,
+        { ...single.core[0], id: "D2", location: "parallel" as const, placement: "parallel_current_branch" as const, metadata: { nickname: "D2", role: "secondary" } },
+      ],
+    };
+    const doubleGraph = buildFlowGraph(double, "D2", "en");
+    expect(doubleGraph.nodes.some((item) => item.id === "component:D2")).toBe(true);
+    expect(doubleGraph.edges.map((item) => item.id)).toEqual(expect.arrayContaining(["edge:vi-D2", "edge:D2-ground"]));
+
+    const removedMain = { ...single, series: [] };
+    const removedGraph = buildFlowGraph(removedMain, null, "en");
+    expect(removedGraph.edges.map((item) => item.id)).toContain("edge:vext-vi");
+    expect(removedGraph.edges.map((item) => item.id)).not.toContain("edge:vext-main0");
   });
 });

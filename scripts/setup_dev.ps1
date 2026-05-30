@@ -61,13 +61,9 @@ Write-Host "Installing root Python dependencies..."
 Write-Host "Installing backend package in editable dev mode..."
 & $Python -m pip install -e ".\backend"
 
-if (Test-Path ".\package.json") {
-    if (Get-Command npm -ErrorAction SilentlyContinue) {
-        Write-Host "Installing frontend dependencies from root package.json..."
-        npm install --registry=https://registry.npmjs.org/
-        if ($LASTEXITCODE -ne 0) {
-            throw "npm install failed. Check your network/npm registry, then rerun 02_setup_dev.bat."
-        }
+if (Test-Path ".\frontend\package.json") {
+    if (Get-Command npm.cmd -ErrorAction SilentlyContinue) {
+        & "$Root\scripts\ensure_frontend_dependencies.ps1" -Force
     } else {
         Write-Warning "npm was not found. Backend setup completed. To enable the frontend, double-click 01a_install_node_lts.bat, then rerun 02_setup_dev.bat."
     }
