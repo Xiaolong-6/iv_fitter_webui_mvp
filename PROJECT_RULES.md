@@ -346,3 +346,47 @@ Frontend rules:
 - equation/preview requests triggered by model editing must be debounced or explicitly user-triggered;
 - large React components must be split into readable subcomponents before they become agent-hostile patch targets;
 - accessibility basics for charts include `role`, `aria-label`, `<title>`, and keyboard focus support.
+
+## 20. Physical-semantic display rules
+
+User-facing physical semantics must not be generated from generic fallback templates. Every component's displayed equation, role description, and parameter meaning must be driven by the centralized mapping in `modelDisplaySemantics.ts`, not by ad-hoc string matching or fallback templates.
+
+### 20a. Single source of truth
+
+All UI surfaces (Model Builder, Model Preview, Report, Manual, HTML export) must consume equations, role descriptions, and parameter meanings from `modelDisplaySemantics.ts`. No UI surface may invent its own equation representation independently.
+
+### 20b. Custom law display
+
+When a component uses a custom law:
+
+- The displayed equation must show the actual custom expression, not a generic `f(I, V_j; θ)` fallback.
+- Custom expressions use backend variables (`u`, `s`, `V`, `absV`) that must be mapped to user-friendly aliases with explanations.
+- Main-path custom laws display as `ΔV_custom = <expression>`.
+- Branch custom laws display as `I_custom = <expression>`.
+- Raw LaTeX must never appear as the primary user-facing formula.
+
+### 20c. Variable naming conventions
+
+- Junction voltage is always `V_j` (not `V_i`).
+- Main-path components use `ΔV` notation (voltage drop).
+- Branch components use `I` notation (current).
+- Backend variables `u`, `s`, `V`, `absV` must be explained in the Custom Law Builder UI.
+
+### 20d. Fallback behavior
+
+If the UI cannot confidently map a component to a physical role, it must show:
+
+```
+Equation unavailable for this component mapping.
+```
+
+Do not invent a misleading formula.
+
+### 20e. Audit requirement
+
+Before any release, audit all user-facing model explanation surfaces for:
+- Consistent variable naming (V_j, not V_i)
+- Consistent sign conventions
+- Correct physical role (voltage drop vs current)
+- No generic fallback equations where specific equations exist
+- No raw LaTeX in visible UI

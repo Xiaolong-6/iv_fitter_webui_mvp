@@ -428,3 +428,101 @@ describe("termToComponentSpec", () => {
     expect(eq).toContain("\\Delta V");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Custom law builder tests
+// ---------------------------------------------------------------------------
+
+describe("Custom law builder", () => {
+  describe("custom main-path law", () => {
+    const customMain = makeComp({
+      id: "custom_main",
+      function_type: "custom",
+      law_id: "custom_expression",
+      location: "series",
+      evaluation_form: "voltage_drop",
+      placement: "series_voltage_drop",
+      metadata: { nickname: "Xm", expression: "A * I" },
+    });
+
+    it("equation shows custom expression, not generic fallback", () => {
+      const eq = componentEquation(customMain);
+      expect(eq).toContain("\\Delta V_{Xm}");
+      expect(eq).toContain("A * I");
+      expect(eq).not.toContain("f_{");
+    });
+
+    it("role label describes custom main-path term", () => {
+      const role = componentPhysicalRole(customMain, "en");
+      expect(role.en).toContain("custom");
+      expect(role.en).toContain("main-path");
+    });
+
+    it("is NOT rendered as a current branch", () => {
+      const eq = componentEquation(customMain);
+      expect(eq).not.toMatch(/^I_{/);
+    });
+  });
+
+  describe("custom branch law", () => {
+    const customBranch = makeComp({
+      id: "custom_branch",
+      function_type: "custom",
+      law_id: "custom_expression",
+      location: "parallel",
+      evaluation_form: "current_branch",
+      placement: "parallel_current_branch",
+      metadata: { nickname: "Xb", expression: "A * Vi" },
+    });
+
+    it("equation shows custom expression, not generic fallback", () => {
+      const eq = componentEquation(customBranch);
+      expect(eq).toContain("I_{Xb}");
+      expect(eq).toContain("A * Vi");
+      expect(eq).not.toContain("f_{");
+    });
+
+    it("role label describes custom branch term", () => {
+      const role = componentPhysicalRole(customBranch, "en");
+      expect(role.en).toContain("custom");
+      expect(role.en).toContain("branch");
+    });
+
+    it("is NOT rendered as a voltage drop", () => {
+      const eq = componentEquation(customBranch);
+      expect(eq).not.toContain("\\Delta V");
+    });
+  });
+
+  describe("custom law with softplus expression", () => {
+    const customSoftplus = makeComp({
+      id: "custom_sp",
+      function_type: "custom",
+      law_id: "custom_expression",
+      location: "parallel",
+      evaluation_form: "current_branch",
+      placement: "parallel_current_branch",
+      metadata: { nickname: "Sp", expression: "A*softplus(u)**m" },
+    });
+
+    it("equation renders the actual softplus expression", () => {
+      const eq = componentEquation(customSoftplus);
+      expect(eq).toContain("I_{Sp}");
+      expect(eq).toContain("softplus");
+    });
+  });
+
+  describe("custom law nickname preservation", () => {
+    it("preserves user-edited nickname", () => {
+      const comp = makeComp({
+        id: "custom1",
+        function_type: "custom",
+        law_id: "custom_expression",
+        location: "series",
+        metadata: { nickname: "MyCustomTerm" },
+      });
+      const eq = componentEquation(comp);
+      expect(eq).toContain("MyCustomTerm");
+    });
+  });
+});
