@@ -1474,10 +1474,17 @@
 }
 .compact-fit-setup-panel .compact-fit-config-row {
   display: grid;
-  grid-template-columns: auto auto auto auto 1fr;
+  grid-template-columns: auto auto auto minmax(200px, auto) 1fr;
   align-items: center;
   gap: calc(8px * var(--app-zoom));
   padding: calc(7px * var(--app-zoom)) calc(10px * var(--app-zoom));
+}
+.compact-fit-setup-panel .fit-config-actions {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 .compact-fit-setup-panel .fit-config-title { flex: initial; }
 .compact-fit-setup-panel .fit-config-title h2 { font-size: calc(15px * var(--app-zoom)); white-space: nowrap; }
@@ -1485,10 +1492,21 @@
 .compact-fit-setup-panel .fit-bottom-voltage,
 .compact-fit-setup-panel .fit-config-status { flex: initial; white-space: nowrap; }
 .compact-fit-setup-panel .fit-config-actions {
-  display: inline-flex;
-  gap: 6px;
-  align-items: center;
-  flex-wrap: nowrap;
+  display: inline-flex !important;
+  gap: 6px !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  flex: none !important;
+}
+.compact-fit-setup-panel .fit-config-actions .fit-action-row {
+  display: inline-flex !important;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+  align-items: center !important;
+}
+.compact-fit-setup-panel .fit-config-actions .fit-action-row button {
+  white-space: nowrap !important;
 }
 .compact-fit-setup-panel .fit-bottom-voltage { margin: 0; }
 .compact-fit-setup-panel .fit-bottom-voltage-title { display: none; }
