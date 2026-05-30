@@ -54,7 +54,9 @@ function isBarrier(comp: ComponentSpec): boolean {
 }
 
 function isForwardPower(comp: ComponentSpec): boolean {
-  return /forward.*power|softplus_power_law/i.test(funcType(comp)) || /forward.*power/i.test(lawId(comp));
+  const ft = funcType(comp);
+  const lid = lawId(comp);
+  return /softplus_power_law|power_law|forward.*power/i.test(ft) || /softplus_power_law|forward.*power/i.test(lid);
 }
 
 function isBreakdown(comp: ComponentSpec): boolean {
