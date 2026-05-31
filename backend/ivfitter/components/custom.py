@@ -59,9 +59,19 @@ def evaluate_custom_expression(vj, expression: str, params: dict[str, float], po
     vs = float(params.get("Vs_V", params.get("Vs", 1.0)))
     env = dict(_ALLOWED_FUNCS)
     arr = np.asarray(vj, dtype=float)
+    abs_arr = np.abs(arr)
     env.update({
+        # User-facing aliases used by the Model Builder. For branch laws,
+        # Vi/Vj/V all refer to the component/junction voltage.
+        "Vi": arr,
         "Vj": arr,
-        "absVj": np.abs(arr),
+        "V": arr,
+        "absVi": abs_arr,
+        "absVj": abs_arr,
+        "absV": abs_arr,
+        # Main-path custom expressions may be written as A*I in the UI.
+        # The caller supplies the relevant scalar/vector argument as arr.
+        "I": arr,
         "u": polarity_argument(arr, vt, vs, polarity),
         "s": polarity_sign(arr, polarity),
     })

@@ -48,8 +48,8 @@ function truncateLabel(s: string, maxLen: number): string {
 export function renderEquivalentCircuitSvg(
   model: ModelSpec,
   language: Language,
-  width = 720,
-  height = 200,
+  width = 760,
+  height = 220,
 ): string {
   const mainComps = model.series;
   const branchComps = [...model.core, ...model.parallel];
@@ -57,13 +57,15 @@ export function renderEquivalentCircuitSvg(
   // Layout constants
   const padX = 40;
   const padY = 30;
-  const termW = 72;
+  const termW = 88;
   const termH = 40;
-  const compW = 80;
-  const compH = 44;
-  const mainY = height / 2;
-  const mainGap = 100;
-  const branchGap = 60;
+  const compW = 128;
+  const compH = 56;
+  const branchGap = 78;
+  const branchCountForHeight = Math.max(1, [...model.core, ...model.parallel].length);
+  const svgHeightTarget = Math.max(height, padY * 2 + termH + (branchCountForHeight - 1) * branchGap + 36);
+  const mainY = svgHeightTarget / 2;
+  const mainGap = 150;
 
   // Calculate positions
   const nodes: CircuitNode[] = [];
@@ -85,8 +87,8 @@ export function renderEquivalentCircuitSvg(
       y: mainY,
       width: compW,
       height: compH,
-      label: truncateLabel(nickname(comp), 8),
-      subtitle: truncateLabel(componentPhysicalRole(comp, language).en.split(";")[0], 18),
+      label: truncateLabel(nickname(comp), 16),
+      subtitle: truncateLabel(componentPhysicalRole(comp, language).en.split(";")[0], 22),
       kind: "component",
       zone: "main",
     });
@@ -121,8 +123,8 @@ export function renderEquivalentCircuitSvg(
       y,
       width: compW,
       height: compH,
-      label: truncateLabel(nickname(comp), 8),
-      subtitle: truncateLabel(componentPhysicalRole(comp, language).en.split(";")[0], 18),
+      label: truncateLabel(nickname(comp), 16),
+      subtitle: truncateLabel(componentPhysicalRole(comp, language).en.split(";")[0], 22),
       kind: "component",
       zone: "branches",
     });
@@ -159,37 +161,46 @@ export function renderEquivalentCircuitSvg(
 
   // Render SVG
   const svgWidth = groundX + termW + padX;
-  const svgHeight = height;
+  const svgHeight = svgHeightTarget;
 
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="${svgWidth}" height="${svgHeight}" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; border-radius: 8px;">`;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="${svgWidth}" height="${svgHeight}" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; border-radius: 10px;">`;
+  svg += `<defs><marker id="arrow-main" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,4 L0,8 z" fill="#111827"/></marker></defs>`;
 
   // Wires
   wires.forEach((w) => {
-    svg += `<line x1="${w.x1}" y1="${w.y1}" x2="${w.x2}" y2="${w.y2}" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>`;
+    svg += `<line x1="${w.x1}" y1="${w.y1}" x2="${w.x2}" y2="${w.y2}" stroke="#111827" stroke-width="2" stroke-linecap="round"/>`;
   });
 
-  // Arrow markers on main path
-  if (mainComps.length > 0) {
-    const arrowX = vextX + termW + 4;
-    svg += `<polygon points="${arrowX},${mainY - 4} ${arrowX + 6},${mainY} ${arrowX},${mainY + 4}" fill="#2563eb"/>`;
+  // Junction dots clarify the split/merge buses without showing editor-only add buttons.
+  if (branchPositions.length) {
+    svg += `<circle cx="${busX}" cy="${mainY}" r="3.2" fill="#111827"/>`;
+    svg += `<circle cx="${rightBusX}" cy="${mainY}" r="3.2" fill="#111827"/>`;
+    branchPositions.forEach(({ y }) => {
+      svg += `<circle cx="${busX}" cy="${y}" r="2.6" fill="#111827"/>`;
+      svg += `<circle cx="${rightBusX}" cy="${y}" r="2.6" fill="#111827"/>`;
+    });
   }
 
-  // Branch direction arrows
+  // Direction marker: one neutral arrow on the main path and one on each branch input.
+  if (mainComps.length > 0) {
+    const arrowX = vextX + termW + 8;
+    svg += `<polygon points="${arrowX},${mainY - 4} ${arrowX + 7},${mainY} ${arrowX},${mainY + 4}" fill="#111827"/>`;
+  }
   branchPositions.forEach(({ x, y }) => {
-    const arrowX = x - 8;
-    svg += `<polygon points="${arrowX},${y - 3} ${arrowX + 5},${y} ${arrowX},${y + 3}" fill="#7c3aed"/>`;
+    const arrowX = x - 10;
+    svg += `<polygon points="${arrowX},${y - 3.5} ${arrowX + 6},${y} ${arrowX},${y + 3.5}" fill="#111827"/>`;
   });
 
   // Nodes
   nodes.forEach((n) => {
     const isTerminal = n.kind === "terminal";
-    const fill = isTerminal ? "#f8fafc" : (n.zone === "main" ? "#eff6ff" : "#f5f3ff");
-    const stroke = isTerminal ? "#94a3b8" : (n.zone === "main" ? "#2563eb" : "#7c3aed");
-    const rx = 8;
+    const fill = isTerminal ? "#f8fafc" : "#ffffff";
+    const stroke = isTerminal ? "#cbd5e1" : "#d6dee9";
+    const rx = 12;
 
-    svg += `<rect x="${n.x}" y="${n.y - n.height / 2}" width="${n.width}" height="${n.height}" rx="${rx}" fill="${fill}" stroke="${stroke}" stroke-width="${isTerminal ? 1.5 : 2}"/>`;
-    svg += `<text x="${n.x + n.width / 2}" y="${n.y - 2}" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">${escapeXml(n.label)}</text>`;
-    svg += `<text x="${n.x + n.width / 2}" y="${n.y + 12}" text-anchor="middle" font-size="9" fill="#64748b">${escapeXml(truncateLabel(n.subtitle, 16))}</text>`;
+    svg += `<rect x="${n.x}" y="${n.y - n.height / 2}" width="${n.width}" height="${n.height}" rx="${rx}" fill="${fill}" stroke="${stroke}" stroke-width="${isTerminal ? 1.2 : 1.6}"/>`;
+    svg += `<text x="${n.x + n.width / 2}" y="${n.y - 5}" text-anchor="middle" font-size="${isTerminal ? 13 : 15}" font-weight="800" fill="#0f172a">${escapeXml(n.label)}</text>`;
+    svg += `<text x="${n.x + n.width / 2}" y="${n.y + 12}" text-anchor="middle" font-size="9.5" fill="#64748b">${escapeXml(truncateLabel(n.subtitle, 20))}</text>`;
   });
 
   svg += `</svg>`;

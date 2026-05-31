@@ -10,7 +10,7 @@ import type { ModelBuilderProps } from "./model-builder/types";
 
 export { buildFlowGraph } from "./model-builder/modelFlowGraph";
 
-export function ModelBuilder({ model, registry, onChange, language, disabled = false, onGoToFitting, previewContent }: ModelBuilderProps) {
+export function ModelBuilder({ model, registry, onChange, language, disabled = false, onGoToFitting, previewContent, canvasActions }: ModelBuilderProps) {
   const [selectedDefinitions, setSelectedDefinitions] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<string | null>(() => firstComponentId(model));
   useEffect(() => {
@@ -31,6 +31,7 @@ export function ModelBuilder({ model, registry, onChange, language, disabled = f
         disabled={disabled}
         onGoToFitting={onGoToFitting}
         previewContent={previewContent}
+        canvasActions={canvasActions}
       />
     </ReactFlowProvider>
   </section>;

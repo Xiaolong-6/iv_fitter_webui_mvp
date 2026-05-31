@@ -1,6 +1,8 @@
+Continue from **v1.8.21**. This version is a Model Builder layout polish on top of v1.8.20. The important design decision is that add actions are now semantic local canvas controls: `+ Main` sits over the Vext main-path insertion segment and `+ Branch` sits over the Vi-to-parallel-junction segment. Debug/synthetic tools are hidden behind Advanced. Preset dirty state, reset wording, canvas centering, compact inspector sizing, and HTML report junction dots were also updated.
+
 # IV-fitter Web UI agent handoff
 
-Continue from **v1.8.18**. This version is an audit-hardening and stabilization release on top of Branch20260528 / v1.8.17. It closes the security/availability audit items, restores frontend test reliability, adds `/api/v2` route aliases, refactors `FittingPage` state to a reducer, splits importer helper responsibilities, and adds FittingPage component tests.
+Continue from **v1.8.21**. This version is a Model Builder visual-semantic fix on top of v1.8.19 audit hardening. It preserves the security/availability fixes and makes the React Flow circuit canvas read like a circuit editor: neutral wires, hidden connection handles, toolbar add controls instead of plus buttons on wires, subtler selected state, wider readable component cards, and matching neutral HTML export SVG.
 
 Critical next-agent context:
 
@@ -8,6 +10,9 @@ Critical next-agent context:
 - Fit timeout is API-level and truthful: SciPy is not force-killed mid-call. The concurrency semaphore is required to prevent stale optimizer work from saturating the backend.
 - The local server-side file picker now runs in a bounded subprocess. Remote/LAN users should use drag/drop, file input, or paste import.
 - `FittingPage` should not be allowed to grow back into many independent top-level state hooks; add reducer fields or extract dedicated hooks/components.
+
+- Model Builder visual rules: default wires must remain neutral black/gray; blue/purple must not imply a physical path. Do not put persistent add buttons on circuit wires. React Flow handles should remain visually hidden; use explicit toolbar actions and the right-side component editor for interactions.
+- Equivalent-circuit export should follow the same visual semantics as the canvas. Do not fix one without checking the other.
 - Standard validation for this handoff: backend pytest, backend py_compile on edited modules, frontend Vitest, and frontend build.
 
 # Web UI agent handoff — v1.7.12

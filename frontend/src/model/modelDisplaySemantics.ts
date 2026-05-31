@@ -11,7 +11,7 @@
  * MUST consume these functions instead of inventing equations independently.
  *
  * Conventions:
- * - Junction voltage is always V_j (not V_i).
+ * - User-facing branch custom-law voltage is displayed as V_i; built-in physics formulas may still use V_j.
  * - Voltage-drop convention: V_j = V_ext - ΣΔV_k.
  * - Current convention: I = Σ I_m(V_j).
  * - If the UI cannot confidently identify the physical role, it must show
@@ -31,6 +31,14 @@ function zone(comp: ComponentSpec): "main" | "branches" {
 
 function nick(comp: ComponentSpec): string {
   return String(comp.metadata?.nickname ?? comp.id);
+}
+
+function equationNick(comp: ComponentSpec): string {
+  const value = nick(comp);
+  if (isCustom(comp) && /^(D\d+|Rs|Rsh|Barrier\d+|Softplus\d+|Ibias\(V\)|Iph)$/i.test(value)) {
+    return "custom";
+  }
+  return value;
 }
 
 function lawId(comp: ComponentSpec): string {
@@ -110,6 +118,33 @@ function latexEscape(text: string): string {
     .replace(/~/g, "\\textasciitilde{}");
 }
 
+
+function customExpressionToLatex(text: string): string {
+  const raw = text.trim();
+  if (!raw) return "0";
+  let out = raw
+    .replace(/\*\*/g, "^")
+    .replace(/\bsoftplus\s*\(/gi, "\\operatorname{softplus}(")
+    .replace(/\bexp\s*\(/gi, "\\exp(")
+    .replace(/\blog\s*\(/gi, "\\log(")
+    .replace(/\bln\s*\(/gi, "\\ln(")
+    .replace(/\bsqrt\s*\(/gi, "\\sqrt(")
+    .replace(/\babs\s*\(/gi, "\\operatorname{abs}(")
+    .replace(/\bVi\b/g, "V_i")
+    .replace(/\bVj\b/g, "V_i")
+    .replace(/\bVext\b/g, "V_{ext}")
+    .replace(/\bVt_V\b/g, "V_t")
+    .replace(/\bVs_V\b/g, "V_s")
+    .replace(/\babsVi\b/g, "|V_i|")
+    .replace(/\bsignVi\b/g, "\\operatorname{sign}(V_i)")
+    .replace(/\babsV\b/g, "|V|")
+    .replace(/\*/g, "\\,")
+    .replace(/\s*\^\s*([A-Za-z0-9_]+)/g, "^{$1}")
+    .replace(/\s+/g, "");
+  out = out.replace(/\\,([A-Za-z0-9_\\])/g, "\\,$1");
+  return out;
+}
+
 function latexToken(name: string): string {
   const trimmed = name.trim();
   if (/^D\d+$/i.test(trimmed)) return `D_{${trimmed.replace(/^[dD]/, "")}}`;
@@ -131,8 +166,17 @@ function latexToken(name: string): string {
  * Uses V_j consistently for junction voltage.
  */
 export function componentEquation(comp: ComponentSpec): string {
-  const name = latexToken(nick(comp));
+  const name = latexToken(equationNick(comp));
   const z = zone(comp);
+
+  // --- Custom expression: must be checked before any preset-like custom modes. ---
+  if (isCustom(comp)) {
+    const expr = String(comp.metadata?.expression ?? (z === "main" ? "A * I" : "A * Vi"));
+    const renderedExpr = customExpressionToLatex(expr);
+    return z === "branches"
+      ? `I_{${name}} = ${renderedExpr}`
+      : `\\Delta V_{${name}} = ${renderedExpr}`;
+  }
 
   // --- Diode (Shockley) ---
   if (isDiode(comp)) {
@@ -184,14 +228,6 @@ export function componentEquation(comp: ComponentSpec): string {
     return `I_{${name}} = I_{ph}`;
   }
 
-  // --- Custom expression ---
-  if (isCustom(comp)) {
-    const expr = String(comp.metadata?.expression ?? (z === "main" ? "A*softplus(u)" : "s*A*softplus(u)**m"));
-    return z === "branches"
-      ? `I_{${name}} = ${latexEscape(expr)}`
-      : `\\Delta V_{${name}} = ${latexEscape(expr)}`;
-  }
-
   // --- Fallback: no confident mapping ---
   return z === "branches"
     ? `I_{${name}} = f_{${name}}(V_j)`
@@ -203,7 +239,7 @@ export function componentEquation(comp: ComponentSpec): string {
  * Convention: V_j = V_ext - Σ ΔV_k
  */
 export function aggregateVoltageEquation(): string {
-  return "V_j = V_{ext} - \\sum_k \\Delta V_k";
+  return "V_i = V_{ext} - \\sum_k \\Delta V_k";
 }
 
 /**
@@ -211,7 +247,7 @@ export function aggregateVoltageEquation(): string {
  * Convention: I = Σ I_m(V_j)
  */
 export function aggregateCurrentEquation(): string {
-  return "I = \\sum_m I_m(V_j;\\theta)";
+  return "I = \\sum_m I_m(V_i;\\theta)";
 }
 
 // ---------------------------------------------------------------------------
@@ -246,6 +282,12 @@ export function componentPhysicalRole(comp: ComponentSpec, language: Language): 
         zh: `${name}: 主路类二极管势垒，改变端口电压到内部电压的映射。`,
       };
     }
+    if (isCustom(comp)) {
+      return {
+        en: `${name}: custom/user-defined main-path voltage drop term; contributes ΔV along the main current path.`,
+        zh: `${name}: 用户自定义主路压降项，沿主电流路径贡献 ΔV。`,
+      };
+    }
     if (isConductanceModifier(comp)) {
       return {
         en: `${name}: series conductance modifier; it changes effective main-path resistance.`,
@@ -256,12 +298,6 @@ export function componentPhysicalRole(comp: ComponentSpec, language: Language): 
       return {
         en: `${name}: main-path softplus voltage drop; it adds a nonlinear voltage loss.`,
         zh: `${name}: 主路 softplus 电压降，增加非线性压降。`,
-      };
-    }
-    if (isCustom(comp)) {
-      return {
-        en: `${name}: custom main-path transport term.`,
-        zh: `${name}: 自定义主路传输项。`,
       };
     }
     return {
@@ -315,8 +351,8 @@ export function componentPhysicalRole(comp: ComponentSpec, language: Language): 
   }
   if (isCustom(comp)) {
     return {
-      en: `${name}: custom branch current term.`,
-      zh: `${name}: 自定义支路电流项。`,
+      en: `${name}: custom/user-defined branch current term.`,
+      zh: `${name}: 用户自定义支路电流项。`,
     };
   }
   return {
@@ -436,7 +472,7 @@ export function parameterMeaning(
 export function seriesDropLatex(mainComponents: ComponentSpec[]): string {
   if (!mainComponents.length) return "V_j = V_{ext}";
   const drops = mainComponents.map((comp) => {
-    const name = latexToken(nick(comp));
+    const name = latexToken(equationNick(comp));
     if (isOhmic(comp)) return `I\\,${name}`;
     if (isBarrier(comp)) return `\\Delta V_{${name}}`;
     if (isConductanceModifier(comp)) return `\\frac{I\\,R_{base}}{1+A\\,\\operatorname{softplus}(u)}`;
@@ -450,7 +486,7 @@ export function seriesDropLatex(mainComponents: ComponentSpec[]): string {
  * Returns the branch-current LaTeX for a single branch component.
  */
 export function branchCurrentLatex(comp: ComponentSpec): string {
-  const name = latexToken(nick(comp));
+  const name = latexToken(equationNick(comp));
   if (isDiode(comp)) return `I_{${name}} = I_0\\left[\\exp\\!\\left(\\frac{V_j}{nV_T}\\right)-1\\right]`;
   if (isOhmic(comp)) return `I_{${name}} = \\frac{V_j}{${name}}`;
   if (isForwardPower(comp)) return `I_{${name}} = A\\,\\operatorname{softplus}\\!\\left(\\frac{V_j-V_t}{V_s}\\right)^{m}`;
@@ -459,6 +495,10 @@ export function branchCurrentLatex(comp: ComponentSpec): string {
     return `I_{${name}} = I_0(1+a|V_j|)+A\\,\\operatorname{softplus}\\!\\left(\\frac{|V_j|-V_t}{V_s}\\right)^m`;
   }
   if (isPhotocurrent(comp)) return `I_{${name}} = I_{ph}`;
+  if (isCustom(comp)) {
+    const expr = String(comp.metadata?.expression ?? "A * Vi");
+    return `I_{${name}} = ${customExpressionToLatex(expr)}`;
+  }
   return `I_{${name}} = f_{${name}}(V_j)`;
 }
 
@@ -467,7 +507,7 @@ export function branchCurrentLatex(comp: ComponentSpec): string {
  */
 export function totalCurrentLatex(branches: ComponentSpec[]): string {
   if (!branches.length) return "I = 0";
-  const terms = branches.map((comp) => `I_{${latexToken(nick(comp))}}`);
+  const terms = branches.map((comp) => `I_{${latexToken(equationNick(comp))}}`);
   return `I = ${terms.join(" + ")}`;
 }
 
@@ -486,14 +526,15 @@ export function concreteLatex(mainComponents: ComponentSpec[], branches: Compone
   const vj = mainComponents.length ? "V_j" : "V_{ext}";
   const pieces = branches.map((comp) => {
     if (isDiode(comp)) return `I_0\\left[\\exp\\!\\left(\\frac{${vj}}{nV_T}\\right)-1\\right]`;
-    if (isOhmic(comp)) return `\\frac{${vj}}{${latexToken(nick(comp))}}`;
+    if (isOhmic(comp)) return `\\frac{${vj}}{${latexToken(equationNick(comp))}}`;
     if (isForwardPower(comp)) return `A\\,\\operatorname{softplus}\\!\\left(\\frac{${vj}-V_t}{V_s}\\right)^m`;
     if (isBreakdown(comp)) return `I_{br0}\\,\\operatorname{softplus}\\!\\left(\\frac{-${vj}-V_{br}}{V_s}\\right)^m`;
     if (isPhotocurrent(comp) && isBiasDependent(comp)) {
       return `I_0(1+a|${vj}|)+A\\,\\operatorname{softplus}\\!\\left(\\frac{|${vj}|-V_t}{V_s}\\right)^m`;
     }
     if (isPhotocurrent(comp)) return `I_{ph}`;
-    return `f_{${latexToken(nick(comp))}}(${vj})`;
+    if (isCustom(comp)) return customExpressionToLatex(String(comp.metadata?.expression ?? "A * Vi"));
+    return `f_{${latexToken(equationNick(comp))}}(${vj})`;
   });
   return `I = ${pieces.length ? pieces.join(" + ") : "0"}`;
 }
@@ -503,7 +544,7 @@ export function concreteLatex(mainComponents: ComponentSpec[], branches: Compone
  */
 export function residualLatex(branches: ComponentSpec[]): string {
   if (!branches.length) return "F(I;V_{ext}) = I = 0";
-  const terms = branches.map((comp) => `I_{${latexToken(nick(comp))}}`);
+  const terms = branches.map((comp) => `I_{${latexToken(equationNick(comp))}}`);
   return `F(I;V_{ext}) = I - \\left(${terms.join(" + ")}\\right) = 0`;
 }
 

@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ModelBuilder, buildFlowGraph } from "../ModelBuilder";
 import { createInitialModel } from "../../model/defaults";
-import type { FunctionDefinition, ModelSpec } from "../../model/types";
+import type { ComponentSpec, FunctionDefinition, ModelSpec } from "../../model/types";
 
 const registry: FunctionDefinition[] = [
   {
@@ -46,16 +46,39 @@ const registry: FunctionDefinition[] = [
     equation_template: "",
     help_text: "",
   },
+  {
+    function_type: "custom",
+    location: "parallel",
+    display_name: "Custom expression law",
+    role: "user_defined_law",
+    law_id: "custom_expression",
+    law_name: "User-defined mathematical relation",
+    canonical_equation: "expression",
+    available_forms: ["current_branch", "conductance_modifier"],
+    default_form: "current_branch",
+    allowed_placements: ["parallel_current_branch", "junction_current_branch", "series_conductance_modifier"],
+    default_placement: "parallel_current_branch",
+    allowed_polarities: ["forward", "reverse", "symmetric"],
+    default_polarity: "forward",
+    parameters: [
+      { name: "A", default: 1e-9, lower: -1e3, upper: 1e3, unit: "A", fit: true, description: "Scale parameter" },
+      { name: "Vt_V", default: 0, lower: -200, upper: 200, unit: "V", fit: true, description: "Threshold" },
+      { name: "Vs_V", default: 1, lower: 1e-9, upper: 100, unit: "V", fit: true, description: "Softness" },
+      { name: "m", default: 1, lower: -10, upper: 10, unit: "", fit: true, description: "Exponent" },
+    ],
+    equation_template: "expression",
+    help_text: "Safe custom expression",
+  },
 ];
 
 afterEach(cleanup);
 
-function renderBuilder(model: ModelSpec = createInitialModel("test")) {
+function renderBuilder(model: ModelSpec = createInitialModel("test"), canvasActions?: ReactNode) {
   let latest = model;
   function Harness() {
     const [current, setCurrent] = useState(model);
     latest = current;
-    return <ModelBuilder model={current} registry={registry} language="en" onChange={(next) => { latest = next; setCurrent(next); }} />;
+    return <ModelBuilder model={current} registry={registry} language="en" onChange={(next) => { latest = next; setCurrent(next); }} canvasActions={canvasActions} />;
   }
   const view = render(<Harness />);
   return { ...view, getCurrent: () => latest };
@@ -132,4 +155,105 @@ describe("ModelBuilder circuit canvas", () => {
     expect(removedGraph.edges.map((item) => item.id)).toContain("edge:vext-vi");
     expect(removedGraph.edges.map((item) => item.id)).not.toContain("edge:vext-main0");
   });
+  it("renders semantic add entry nodes at circuit locations rather than toolbar add buttons", () => {
+    const { getByText, container } = renderBuilder();
+    expect(getByText("+ Branch")).toBeInTheDocument();
+    expect(getByText("+ Main term")).toBeInTheDocument();
+    expect(container.querySelector(".xy-canvas-add-controls")).toBeNull();
+    const graph = buildFlowGraph(createInitialModel("test"), null, "en");
+    expect(graph.nodes.map((item) => item.id)).toEqual(expect.arrayContaining(["action:add-main", "action:add-branch"]));
+    expect(graph.edges.some((item) => item.data?.addBucket)).toBe(false);
+  });
+
+  it("shows the synthetic trace action directly instead of nesting it in Advanced", () => {
+    const { queryByText, getByText } = renderBuilder(createInitialModel("test"), <button type="button">Synthetic IV trace</button>);
+    expect(queryByText("Advanced")).toBeNull();
+    expect(getByText("Synthetic IV trace")).toBeInTheDocument();
+  });
+
+
+  it("removes the bottom model preview drawer and uses inline equation annotation nodes", () => {
+    const { queryByText } = renderBuilder();
+    expect(queryByText("Model preview")).toBeNull();
+    const graph = buildFlowGraph(createInitialModel("test"), null, "en");
+    expect(graph.nodes.map((item) => item.id)).toEqual(expect.arrayContaining(["annotation:voltage", "annotation:current"]));
+  });
+
+  it("keeps selected component equations in the inspector instead of adding cramped canvas overlays", () => {
+    const graph = buildFlowGraph(createInitialModel("test"), "D1", "en");
+    expect(graph.nodes.some((item) => String(item.id).startsWith("annotation:selected:"))).toBe(false);
+  });
+
+  it("uses neutral circuit wires and only lightweight linked-edge selected state", () => {
+    const model = createInitialModel("test");
+    const selectedGraph = buildFlowGraph(model, "D1", "en");
+    expect(selectedGraph.edges.every((item) => item.style?.stroke === "#111827" || item.style?.stroke === "#0f172a")).toBe(true);
+    expect(selectedGraph.edges.some((item) => item.className?.includes("is-edge-highlighted-branch"))).toBe(false);
+    expect(selectedGraph.edges.some((item) => item.className?.includes("is-edge-linked-to-selected"))).toBe(true);
+  });
+
+
+
+  it("switches an auto-named branch to a user-facing custom branch law", () => {
+    const { getCurrent } = renderBuilder(createInitialModel("test"));
+    const componentNode = document.querySelector('[data-component-id="D1"]');
+    expect(componentNode).toBeTruthy();
+    fireEvent.click(componentNode!);
+    const editor = document.querySelector('[aria-label="Component details"]') as HTMLElement | null;
+    expect(editor).toBeTruthy();
+    const modelSelect = editor!.querySelector("select") as HTMLSelectElement | null;
+    expect(modelSelect).toBeTruthy();
+    fireEvent.change(modelSelect!, { target: { value: "custom" } });
+
+    const next = getCurrent();
+    expect(next.core[0].function_type).toBe("custom");
+    expect(next.core[0].metadata?.nickname).toBe("custom");
+    expect(next.core[0].metadata?.expression).toBe("A * Vi");
+    expect(next.core[0].params.A.unit).toBe("A/V");
+
+    const updatedEditor = document.querySelector('[aria-label="Component details"]') as HTMLElement | null;
+    expect(updatedEditor?.textContent).toContain("Custom branch current law");
+    expect(updatedEditor?.textContent).not.toContain("Advanced · Custom expression law");
+    expect(updatedEditor?.textContent).toContain("Multiplication: A * Vi");
+    expect(updatedEditor?.textContent).toContain("Powers: Vi**2");
+    expect(updatedEditor?.textContent).not.toContain("I^2");
+    expect(updatedEditor?.textContent).toContain("unit A/V");
+    const equation = updatedEditor!.querySelector(".xy-canvas-component-equation");
+    const compactText = equation?.textContent?.replace(/\s/g, "") ?? "";
+    expect(compactText).toContain("Icustom=AVi");
+    expect(compactText).not.toContain("Rbase");
+  });
+
+  it("binds custom expression validation to the editor value and previews the entered formula", () => {
+    const customMain: ComponentSpec = {
+      id: "custom_main",
+      location: "series",
+      function_type: "custom",
+      law_id: "custom_expression",
+      evaluation_form: "voltage_drop",
+      placement: "series_voltage_drop",
+      polarity: null,
+      mode: null,
+      params: {
+        A: { value: 1e-9, lower: -1e3, upper: 1e3, fit: true, unit: "A", label: "A", description: "Scale parameter" },
+      },
+      metadata: { nickname: "custom", expression: "A * I", expressionSource: "user" },
+    };
+    const model: ModelSpec = { ...createInitialModel("test"), series: [customMain] };
+    renderBuilder(model);
+    const componentNode = document.querySelector('[data-component-id="custom_main"]');
+    expect(componentNode).toBeTruthy();
+    fireEvent.click(componentNode!);
+    const editor = document.querySelector('[aria-label="Component details"]') as HTMLElement | null;
+    expect(editor).toBeTruthy();
+    const textarea = editor!.querySelector("textarea") as HTMLTextAreaElement | null;
+    expect(textarea?.value).toBe("A * I");
+    expect(editor!.textContent).not.toContain("Expression cannot be empty");
+    const equation = editor!.querySelector(".xy-canvas-component-equation");
+    const compactText = equation?.textContent?.replace(/\s/g, "") ?? "";
+    expect(compactText).toContain("ΔVcustom=AI");
+    expect(compactText).not.toContain("Rbase");
+    expect(compactText).not.toContain("softplus(u)");
+  });
+
 });

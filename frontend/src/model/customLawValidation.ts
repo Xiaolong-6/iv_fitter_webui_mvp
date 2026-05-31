@@ -17,17 +17,22 @@ export type ValidationResult = {
   errors: ValidationError[];
 };
 
+export type VariableLegendItem = {
+  symbol: string;
+  description: string;
+};
+
 // Known backend variables and their user-friendly descriptions
 export const CUSTOM_VARIABLES: Record<string, { en: string; zh: string; example: string }> = {
   I: {
-    en: "Total device current (A)",
-    zh: "总器件电流 (A)",
-    example: "I * Rs",
+    en: "Main-path current I (A)",
+    zh: "主路电流 I (A)",
+    example: "A * I",
   },
   Vi: {
-    en: "Internal junction voltage (V)",
-    zh: "内结点电压 (V)",
-    example: "Vi / Rsh",
+    en: "Junction voltage V_i (V)",
+    zh: "结点电压 V_i (V)",
+    example: "A * Vi",
   },
   Vext: {
     en: "Externally applied voltage (V)",
@@ -35,41 +40,41 @@ export const CUSTOM_VARIABLES: Record<string, { en: string; zh: string; example:
     example: "Vext",
   },
   absVi: {
-    en: "Absolute value of internal junction voltage",
-    zh: "内结点电压绝对值",
-    example: "A * absVi^m",
+    en: "Absolute value of junction voltage",
+    zh: "结点电压绝对值",
+    example: "A * absVi**m",
   },
   signVi: {
-    en: "Sign of internal junction voltage (+1 or -1)",
-    zh: "内结点电压符号 (+1 或 -1)",
-    example: "A * signVi * Vi^m",
+    en: "Sign of junction voltage (+1 or -1)",
+    zh: "结点电压符号 (+1 或 -1)",
+    example: "A * signVi * Vi**m",
   },
   V: {
-    en: "Voltage variable (backend context; prefer Vi or Vext)",
-    zh: "电压变量（后端上下文；建议使用 Vi 或 Vext）",
+    en: "Backend component-voltage alias; prefer Vi in branch laws",
+    zh: "后端元件电压别名；分支定律优先用 Vi",
     example: "V",
   },
   absV: {
-    en: "Absolute value of voltage (backend context; prefer absVi)",
-    zh: "电压绝对值（后端上下文；建议使用 absVi）",
+    en: "Backend absolute-voltage alias; prefer absVi",
+    zh: "后端电压绝对值别名；优先用 absVi",
     example: "absV",
   },
   u: {
-    en: "Normalized transport argument (backend context)",
-    zh: "归一化传输参数（后端上下文）",
+    en: "Backend normalized threshold argument",
+    zh: "后端归一化阈值参数",
     example: "u",
   },
   s: {
-    en: "Sign term / polarity factor (backend context)",
-    zh: "符号项 / 极性因子（后端上下文）",
+    en: "Backend polarity/sign factor",
+    zh: "后端极性/符号因子",
     example: "s",
   },
 };
 
 // Known safe functions
 const SAFE_FUNCTIONS = new Set([
-  "abs", "sign", "sqrt", "exp", "log", "ln", "softplus", "max", "min",
-  "pow", "sin", "cos", "tan", "asin", "acos", "atan",
+  "abs", "sign", "sqrt", "exp", "log", "softplus", "sp", "sigmoid", "S", "minimum", "maximum", "clip",
+  "sin", "cos", "tan", "tanh", "log10", "log1p",
 ]);
 
 // Unsafe characters/patterns
@@ -95,6 +100,7 @@ export function validateCustomExpression(
   zone: "main" | "branches",
   language: Language,
 ): ValidationResult {
+  void language;
   const errors: ValidationError[] = [];
   const trimmed = expression.trim();
 
@@ -105,6 +111,13 @@ export function validateCustomExpression(
       zh: "表达式不能为空。",
     });
     return { valid: false, errors };
+  }
+
+  if (trimmed.includes("^")) {
+    errors.push({
+      en: "Use ** for powers. The ^ operator is not supported in custom expressions.",
+      zh: "幂运算请使用 **。自定义表达式不支持 ^ 运算符。",
+    });
   }
 
   // Check for unsafe patterns
@@ -123,7 +136,7 @@ export function validateCustomExpression(
   const uniqueVars = [...new Set(varMatches)];
 
   // Check for unknown variables
-  const knownVars = new Set([...Object.keys(CUSTOM_VARIABLES), "A", "Vt_V", "Vs_V", "m", "I0", "Rs", "Rsh"]);
+  const knownVars = new Set([...Object.keys(CUSTOM_VARIABLES), "Vj", "absVj", "A", "Vt_V", "Vs_V", "m", "I0", "Rs", "Rsh"]);
   for (const v of uniqueVars) {
     if (!knownVars.has(v) && !SAFE_FUNCTIONS.has(v.toLowerCase()) && !/^\d/.test(v)) {
       errors.push({
@@ -154,21 +167,31 @@ export function validateCustomExpression(
   return { valid: errors.length === 0, errors };
 }
 
+function legendItems(symbols: string[], language: Language): VariableLegendItem[] {
+  return symbols.map((v) => ({
+    symbol: v,
+    description: CUSTOM_VARIABLES[v]?.[language === "zh" ? "zh" : "en"] ?? v,
+  }));
+}
+
 /**
- * Returns the user-facing variable legend for a given zone.
+ * Returns the default user-facing variable legend for a given zone.
  */
 export function variableLegend(
   zone: "main" | "branches",
   language: Language,
-): Array<{ symbol: string; description: string }> {
-  const vars = zone === "main"
-    ? ["I", "Vext", "absVi", "signVi", "V", "absV", "u", "s"]
-    : ["Vi", "Vext", "absVi", "signVi", "V", "absV", "u", "s"];
+): VariableLegendItem[] {
+  return legendItems(zone === "main" ? ["I"] : ["Vi"], language);
+}
 
-  return vars.map((v) => ({
-    symbol: v,
-    description: CUSTOM_VARIABLES[v]?.[language === "zh" ? "zh" : "en"] ?? v,
-  }));
+/**
+ * Returns advanced/backend aliases for users who deliberately need them.
+ */
+export function advancedVariableLegend(
+  zone: "main" | "branches",
+  language: Language,
+): VariableLegendItem[] {
+  return legendItems(zone === "main" ? ["V", "absV", "u", "s", "Vext"] : ["V", "absV", "u", "s", "Vext", "absVi", "signVi"], language);
 }
 
 /**
@@ -179,11 +202,42 @@ export function defaultCustomExpression(zone: "main" | "branches"): string {
 }
 
 /**
+ * Infers a user-facing unit for the scale parameter A in simple custom laws.
+ * This is a UI default/labeling aid; advanced expressions can still document their own units.
+ */
+export function inferredCustomScaleUnit(zone: "main" | "branches", expression: string): string {
+  const compact = expression.replace(/\s+/g, "");
+  const isJustA = /^A$/.test(compact);
+  const usesVoltage = /\b(Vi|Vj|V|Vext|absVi|absVj|absV)\b/.test(expression);
+  const usesCurrent = /\bI\b/.test(expression) && !/\bI0\b/.test(expression);
+  if (zone === "branches") {
+    if (isJustA || !usesVoltage) return "A";
+    return "A/V";
+  }
+  if (isJustA || !usesCurrent) return "V";
+  return "Ω";
+}
+
+export function inferredCustomScaleDescription(zone: "main" | "branches", expression: string, language: Language): string {
+  const unit = inferredCustomScaleUnit(zone, expression);
+  if (language === "zh") {
+    if (unit === "A/V") return "自定义支路电导/电流尺度。";
+    if (unit === "Ω") return "自定义主路电阻/压降尺度。";
+    if (unit === "V") return "自定义主路常数压降。";
+    return "自定义支路电流尺度。";
+  }
+  if (unit === "A/V") return "User-defined branch conductance/current scale.";
+  if (unit === "Ω") return "User-defined main-path resistance/voltage-drop scale.";
+  if (unit === "V") return "User-defined constant main-path voltage drop.";
+  return "User-defined branch current scale.";
+}
+
+/**
  * Returns the physical law form label for a given zone.
  */
 export function physicalFormLabel(zone: "main" | "branches", language: Language): string {
   if (zone === "main") {
     return language === "zh" ? "主路压降：ΔV = f(I)" : "Main-path voltage drop: ΔV = f(I)";
   }
-  return language === "zh" ? "支路电流：I = f(Vi)" : "Branch current: I = f(Vi)";
+  return language === "zh" ? "支路电流：I = f(V_i)" : "Branch current: I = f(V_i)";
 }

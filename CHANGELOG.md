@@ -1,3 +1,111 @@
+## v1.8.34 — Main-path layout and delete affordance hotfix
+
+- Increased and regularized main-path component spacing for models with multiple main-path terms so cards no longer overlap.
+- Added a stronger compact main-path card style for dense main-path chains.
+- Replaced the misleading three-dot delete affordance with an explicit hover/selected delete `×` control.
+- Kept the delete control hidden until hover/selection to avoid clutter while preventing it from looking like a details menu.
+
+## v1.8.33 — Model Builder toolbar alignment hotfix
+
+- Unified the Model Builder canvas toolbar control system: shared height, radius, font metrics, and vertical centering across Go to Fit, preset select, Save as preset, Reset model, Modified state, and Synthetic IV trace.
+- Kept Go to Fit as the only primary blue action while making secondary controls visually consistent.
+- Moved the Modified state before the preset selector and aligned it to the same toolbar centerline.
+- Softened the Synthetic IV trace separator so the toolbar reads as one coherent control group.
+
+## v1.8.32 — Canvas annotation cleanup hotfix
+
+- Removed selected-component formula overlays from the canvas; selected governing equations stay in the inspector where there is enough space.
+- Moved and weakened the global voltage/current annotations so they no longer sit directly under selected components or branch wires.
+- Fixed the branch-current label styling so it reads normally and does not appear clipped.
+- Further downgraded Vext / Vi / V=0 terminal anchors so they remain visual references rather than dominant components.
+- Kept custom-law expression rendering and user-facing V_i wording consistent.
+
+## v1.8.31 — Custom Law semantic consistency hotfix
+
+- Fixed generic main-path custom laws so their governing equation is generated from the current expression, not from the old conductance-modifier preset formula.
+- Standardized user-facing custom branch variables to render `Vi` as `V_i`.
+- Replaced stale custom main-path wording with user-facing voltage-drop descriptions.
+- Shortened main-path polarity text and added explicit branch polarity tooltip semantics.
+- Made custom-law parameter badges more compact and changed UI labels such as `Vt_V` / `Vs_V` to `Vt` / `Vs` while keeping backend keys in tooltips.
+- Aligned expression syntax help with backend-supported operators and functions.
+
+
+## v1.8.30 — Inline equation overlay and terminal-node simplification
+
+- Removed the bottom Model preview drawer from the Model Builder canvas.
+- Restyled Vext / Vi / V=0 as compact black terminal nodes instead of large neutral cards.
+- Added low-key inline equation annotations near the circuit topology: aggregate voltage near Vi, aggregate current near the branch region, and the selected component equation near the selected component.
+- Kept the equations visually subordinate so the circuit remains the main subject.
+- Re-centered the circuit viewport now that the bottom drawer is gone.
+
+## v1.8.29 — Custom Law Builder polish
+
+- Replaced backend-oriented custom-law labels with user-facing branch/main-path labels.
+- Auto-renamed built-in component nicknames such as D1/Rs/Rsh when converting them to custom laws, unless the user supplied a custom name.
+- Defaulted custom branch laws to `A * Vi` and inferred the `A` parameter unit from expression/form.
+- Clarified polarity, advanced variables, syntax help, and custom equation subscripts.
+- Added backend aliases for user-facing custom variables such as `Vi` and `absVi`.
+- Validated with frontend tests/build and backend tests.
+
+## v1.8.25 — Start/report/upload UI cleanup
+
+- Start page Help is now a blue title-adjacent button aligned with the `Welcome to IV-fitter` heading.
+- Report floating panel is now a tighter `Next` panel with a drag icon and Data / Model / Fitting shortcuts instead of diagnostic action buttons.
+- Local file dialog localhost detection now accepts IPv4-mapped loopback and host-header localhost, and the data import UI falls back to browser upload when the server-side dialog is unavailable from non-localhost access.
+- Removed developer-facing report completion language from the UI; the report status now says the report is ready.
+## v1.8.24 — Emergency UI hotfix
+
+- Synthetic IV trace now opens through a document-level modal portal, not a React Flow panel/dropdown.
+- Model preview header no longer renders inline formulas that can overflow into the toolbar.
+- User-facing equation strings use escaped LaTeX commands for reliable KaTeX rendering.
+- Vext, main-path component cards, and Vi are vertically center-aligned on the main path.
+- Main-path arrows stay on straight line segments; branch junction dots are subdued to avoid black corner-dot artifacts.
+
+## 1.8.21 - Model Builder layout polish
+
+## v1.8.24 — User-facing formula rendering polish
+
+- Replaced the custom lightweight LaTeX renderer with real KaTeX rendering through `react-katex`, with the previous lite renderer retained only as a fallback for invalid formulas.
+- Rendered the Model Builder bottom summary formulas as KaTeX instead of plain text.
+- Added a user-facing global I–V model structure card that explains `V_j`, branch current summation, and the residual equation before component-specific formulas.
+- Localized previously English-only formula explanations in the equation preview.
+- Improved formula overflow behavior so long equations scroll horizontally instead of breaking or overflowing the panel.
+
+
+## v1.8.22 — Start and synthetic UI hotfix
+
+- Replaced the Model Builder Advanced popover with a direct Synthetic IV trace button and a centered modal.
+- Simplified the Start page hero/workflow copy and moved Help beside the main title.
+- Added a soft blue animated attention state to the Data card when no trace is loaded.
+- Raised the app zoom upper bound to 200%.
+- Hid React Flow handles/black corner artifacts and made the selected-component inspector draggable.
+- Kept main-path arrows straight by using straight main-path edges.
+- Unified Model Builder toolbar button alignment and styling.
+- Increased Fit setup Advanced dropdown height and tightened the manual page sticky navigation spacing.
+
+
+- Reworked Model Builder add actions so `+ Main` appears over the Vext main-path insertion segment and `+ Branch` appears over the Vi-to-parallel-junction segment instead of living as global toolbar buttons.
+- Moved Debug algorithm/synthetic-trace controls behind an Advanced toolbar menu so normal users see a cleaner production toolbar.
+- Added preset dirty-state labeling, `Save as preset`, and `Reset model` behavior tied to the selected built-in or custom preset.
+- Improved canvas viewport centering, neutral wire styling, junction-dot/bus visual cues, compact inspector sizing, and static HTML report SVG junction markers.
+- Added/updated frontend tests covering semantic add nodes and Advanced-menu debug placement.
+
+## 1.8.20 - Model Builder circuit visual semantics fix
+
+- Reworked Model Builder circuit visual semantics after screenshot review: default wires are neutral black/gray rather than blue/purple physical-looking paths.
+- Hid React Flow connection handles from the normal visual layer so they are not mistaken for circuit nodes or junctions.
+- Moved persistent add actions into the top canvas toolbar (`+ Branch`, `+ Main`, and a component-type options popover); plus buttons no longer sit on wires or branch paths.
+- Made selected state focus on the component card, with only subtle linked-edge emphasis instead of coloring whole main/branch paths.
+- Widened component cards and allowed long nicknames to use two lines, reducing ugly truncation such as `Soft-thre...`.
+- Updated the exported HTML equivalent-circuit SVG to use the same neutral visual semantics.
+- Added frontend tests for toolbar add controls and neutral/selected-edge graph semantics.
+
+## 1.8.19 - Model Builder canvas UI hotfix
+
+- Fixed a layout regression where the Model Builder synthetic/debug tool consumed the first grid row and pushed the React Flow canvas to the bottom of the viewport.
+- Moved the Debug algorithm control into the canvas preset toolbar so the canvas remains full-height and controls stay discoverable.
+- Added targeted CSS containment rules for `workflow-view-model` to keep the Model Builder section full-height with no large blank region.
+
 ## 1.8.18 - Audit hardening, timeout control, and test restoration
 
 - Replaced API token equality checks with timing-safe `hmac.compare_digest`.

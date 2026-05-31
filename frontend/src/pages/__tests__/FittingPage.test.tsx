@@ -8,6 +8,7 @@ const mockGetRegistry = vi.fn<() => Promise<FunctionDefinition[]>>();
 const mockEquations = vi.fn();
 const mockImportCsvTextMulti = vi.fn();
 const mockFitTrace = vi.fn();
+const mockGenerateSyntheticTrace = vi.fn();
 const mockExportReport = vi.fn();
 const mockExportReportCsv = vi.fn();
 
@@ -16,6 +17,7 @@ vi.mock("../../api/client", () => ({
   equations: (...args: unknown[]) => mockEquations(...args),
   importCsvTextMulti: (...args: unknown[]) => mockImportCsvTextMulti(...args),
   fitTrace: (...args: unknown[]) => mockFitTrace(...args),
+  generateSyntheticTrace: (...args: unknown[]) => mockGenerateSyntheticTrace(...args),
   exportReport: (...args: unknown[]) => mockExportReport(...args),
   exportReportCsv: (...args: unknown[]) => mockExportReportCsv(...args),
 }));
@@ -23,8 +25,8 @@ vi.mock("../../api/client", () => ({
 vi.mock("../../services/releaseCheck", () => ({
   checkLatestRelease: () => Promise.resolve({
     updateAvailable: false,
-    currentVersion: "1.8.18",
-    latestVersion: "1.8.18",
+    currentVersion: "1.8.20",
+    latestVersion: "1.8.20",
     releaseUrl: null,
     error: null,
   }),
@@ -38,7 +40,7 @@ const trace: TraceData = {
 };
 
 function fakeFitResult(): FitResult {
-  const model = createInitialModel("1.8.18-test");
+  const model = createInitialModel("1.8.20-test");
   return {
     success: true,
     reportable: true,
@@ -100,7 +102,7 @@ function fakeFitResult(): FitResult {
       parallel: ["I_D = I0(exp(V_j/nV_T)-1)"],
       auxiliary: [],
     },
-    software_version: "1.8.18-test",
+    software_version: "1.8.20-test",
   };
 }
 
@@ -135,6 +137,7 @@ function setupMocks() {
     warnings: [],
   });
   mockFitTrace.mockResolvedValue(fakeFitResult());
+  mockGenerateSyntheticTrace.mockResolvedValue({ trace, trace_name: "synthetic_test_trace" });
   mockExportReport.mockResolvedValue({ markdown: "# IV-fitter report" });
   mockExportReportCsv.mockResolvedValue({ text: "parameter,value\nD1.I0_A,1e-12\n" });
 }
@@ -144,14 +147,15 @@ describe("FittingPage", () => {
     setupMocks();
     render(<FittingPage />);
     expect(await screen.findByText("Welcome to IV-fitter")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Start with data/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Start with data/i })).toBeNull();
+    expect(screen.getByRole("button", { name: /Data status: Needed/i })).toBeInTheDocument();
   });
 
   it("imports a pasted trace, runs a mocked fit, and renders the fitted status", async () => {
     setupMocks();
     render(<FittingPage />);
 
-    fireEvent.click(await screen.findByRole("button", { name: /Start with data/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /Data status: Needed/i }));
     fireEvent.click(screen.getByRole("button", { name: /Paste data/i }));
     fireEvent.change(screen.getByPlaceholderText(/Voltage \(V\), Current \(A\)/i), {
       target: { value: "Voltage (V), Current (A)\n-0.1,-1e-9\n0,0\n0.1,1e-9" },
@@ -166,4 +170,21 @@ describe("FittingPage", () => {
     expect(await screen.findByText(/Converged/i)).toBeInTheDocument();
     await waitFor(() => expect(mockExportReport).toHaveBeenCalled());
   });
+
+  it("shows Synthetic IV trace as a direct canvas toolbar button", async () => {
+    setupMocks();
+    render(<FittingPage />);
+
+    fireEvent.click(await screen.findByTitle(/Build and preview the circuit model/i));
+
+    await waitFor(() => {
+      const stack = document.querySelector(".model-webpage-stack");
+      const syntheticButton = screen.getByRole("button", { name: /Synthetic IV trace/i });
+      expect(stack).not.toBeNull();
+      expect(syntheticButton).toBeInTheDocument();
+      expect(document.querySelector(".xy-canvas-advanced-button")).toBeNull();
+      expect(stack?.firstElementChild?.classList.contains("model-page-tool-row")).toBe(false);
+    });
+  });
+
 });

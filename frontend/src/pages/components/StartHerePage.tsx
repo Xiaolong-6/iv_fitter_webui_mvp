@@ -71,36 +71,21 @@ export function StartHerePage({
     <section className="workflow-page scroll-page start-page minimal-start-page">
       <div className="minimal-hero">
         <div className="hero-kicker">Circuit-based I-V fitting</div>
-        <h2>Welcome to IV-fitter</h2>
+        <div className="hero-title-row">
+          <h2>Welcome to IV-fitter</h2>
+          <button type="button" className="hero-help-action" onClick={() => setActiveView("help")} aria-label="Open help and parameter guide" title="Help">
+            <span className="hero-help-icon" aria-hidden="true">?</span>
+          </button>
+        </div>
         <p>
           Import I-V data, build a model, run the fit, and export a reproducible
           report.
         </p>
-        <div className="hero-actions">
-          <button
-            type="button"
-            className="primary hero-primary hero-large-action"
-            onClick={() => setActiveView("data")}
-          >
-            Start with data
-          </button>
-          <button type="button" className="hero-large-action hero-help-action" onClick={() => setActiveView("help")} aria-label="Open help and parameter guide">
-            <span className="hero-help-icon" aria-hidden="true">?</span>
-            <span>Help</span>
-          </button>
-        </div>
-      </div>
-      <div className="minimal-workflow-head">
-        <div>
-          <h3>Workflow</h3>
-          <p>Four pages, one fitting path.</p>
-        </div>
-        <div className="workflow-mini-path">Data → Model → Fitting → Report</div>
       </div>
       <div className="minimal-workflow-grid">
         {steps.map((step, idx) => (
           <article
-            className={`minimal-workflow-card step-${step.tone}${step.locked ? " is-locked" : ""}`}
+            className={`minimal-workflow-card step-${step.tone}${step.locked ? " is-locked" : ""}${step.view === "data" && !hasSelectedTrace ? " needs-data-attention" : ""}`}
             key={step.title}
             onClick={() => !step.locked && setActiveView(step.view)}
             onKeyDown={(event) => {

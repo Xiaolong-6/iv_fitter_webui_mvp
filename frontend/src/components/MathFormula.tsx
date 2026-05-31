@@ -1,4 +1,5 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { BlockMath, InlineMath } from "react-katex";
 
 export function renderLatexLite(src: string) {
   let s = src;
@@ -56,6 +57,11 @@ export function renderLatexLite(src: string) {
   return s;
 }
 
+function FormulaError({ latex, inline }: { latex: string; inline: boolean }) {
+  const Tag = inline ? "span" : "code";
+  return <Tag className="latex-fallback" dangerouslySetInnerHTML={{ __html: renderLatexLite(latex) }} />;
+}
+
 export function MathFormula({
   latex,
   label,
@@ -71,8 +77,12 @@ export function MathFormula({
 }) {
   const base = inline ? "math-inline" : "latex-card";
   const classes = [base, className].filter(Boolean).join(" ");
-  return <span className={classes} aria-label={label ?? latex} style={style}>
-    <span className="latex-rendered" dangerouslySetInnerHTML={{ __html: renderLatexLite(latex) }} />
-    <span className="latex-copy">{latex}</span>
-  </span>;
+  const rendered: ReactNode = inline
+    ? <InlineMath math={latex} errorColor="#b91c1c" renderError={() => <FormulaError latex={latex} inline />} />
+    : <BlockMath math={latex} errorColor="#b91c1c" renderError={() => <FormulaError latex={latex} inline={false} />} />;
+  const Wrapper = inline ? "span" : "div";
+  return <Wrapper className={classes} aria-label={label ?? latex} style={style}>
+    <span className="latex-rendered katex-formula-rendered">{rendered}</span>
+    <code className="latex-copy">{latex}</code>
+  </Wrapper>;
 }

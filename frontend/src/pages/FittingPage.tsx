@@ -414,10 +414,7 @@ export function FittingPage() {
         ) {
           setReportArtifacts({
             report: autoReport.markdown,
-            message:
-              language === "zh"
-                ? "报告已自动更新。"
-                : "Report updated automatically after fit completion.",
+            message: language === "zh" ? "报告已就绪。" : "Report is ready.",
           });
         }
       } catch {
@@ -647,7 +644,7 @@ export function FittingPage() {
       <span>{Math.round(zoom * 100)}%</span>
       <button
         onClick={() =>
-          setZoom((z) => Math.min(1.6, Number((z + 0.06).toFixed(2))))
+          setZoom((z) => Math.min(2.0, Number((z + 0.06).toFixed(2))))
         }
       >
         +

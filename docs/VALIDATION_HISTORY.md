@@ -1,19 +1,67 @@
-## v1.8.18
+
+## v1.8.29 validation
+
+- `npm --prefix frontend test -- --run`: passed, 14 files / 113 tests.
+- `npm --prefix frontend run build`: passed; existing non-blocking Vite warnings remain.
+- `PYTHONPATH=backend pytest -q backend/tests`: passed.
+- Backend `py_compile` smoke check: passed.
+
+## v1.8.25
+
+- Frontend UI cleanup for Start Help positioning, Report floating Next panel, upload fallback, and user-facing report-ready messaging.
+- Validation run:
+  - `npm --prefix frontend test -- --run` passed: 14 files / 111 tests.
+  - `npm --prefix frontend run build` passed with existing Vite warnings.
+  - `PYTHONPATH=backend pytest -q backend/tests` passed.
+  - Backend `py_compile` passed for changed/critical modules.
+
+## v1.8.24
+
+- Emergency UI hotfix after screenshot review: Synthetic IV trace is rendered through a document-level modal portal.
+- Removed math rendering from the Model preview summary header to prevent KaTeX fragments from overflowing into the canvas toolbar.
+- Fixed escaped LaTeX strings in user-facing formula cards.
+- Recentered Vext, main-path component cards, and Vi along one horizontal main-path center line.
+- Subdued branch junction dots so they do not read as black corner artifacts around branch models.
+- Frontend Vitest, frontend build, backend pytest, and selected backend py_compile passed.
+
+## v1.8.21
+
+Model Builder layout polish on top of v1.8.20:
+
+- `+ Main` and `+ Branch` are semantic local action nodes placed over their corresponding circuit segments.
+- Toolbar is reduced to global model/preset actions plus an Advanced menu for debug-only tools.
+- Preset dirty state is visible and reset/save wording now reflects model-preset semantics.
+- Equivalent-circuit report SVG gains junction dots matching the canvas semantics.
+- Validation run: frontend Vitest, frontend production build, backend pytest, and selected backend py_compile passed in this package handoff.
+
+## v1.8.20
+
+| Area | Result | Notes |
+|---|---|---|
+| Model Builder visual fix | Passed | Neutral wires, hidden handles, toolbar add controls, readable node cards, and matching HTML export SVG implemented |
+| Frontend Vitest | Passed | `npm --prefix frontend test -- --run`: 14 files / 110 tests |
+| Frontend build | Passed | `npm --prefix frontend run build`; existing Vite module-directive and chunk-size warnings only |
+| Backend pytest | Passed | `PYTHONPATH=backend pytest -q backend/tests` |
+
+## v1.8.19
 
 | Area | Result | Notes |
 |---|---|---|
 | Backend pytest | Passed | `PYTHONPATH=backend pytest -q backend/tests` |
 | Backend compile | Passed | API, custom expression, fitting engine, and importer modules compiled |
-| Frontend Vitest | Passed | `npm --prefix frontend test -- --run`: 14 files / 107 tests |
+| Frontend Vitest | Passed | `npm --prefix frontend test -- --run`: 14 files / 108 tests |
 | Frontend build | Passed | `npm --prefix frontend run build`; existing Vite chunk-size warning only |
 | Audit closure | Passed | SEC-1/2, ARCH-1/2/3/4, PERF-1/2, QUAL-1..7 addressed or already fixed |
+| Model Builder UI hotfix | Passed | Debug algorithm control moved into canvas toolbar; no normal-flow row above canvas |
+
+## v1.8.18
+- Audit-hardening and stabilization release on top of Branch20260528 / v1.8.17.
+- Frontend Vitest passed 14 files / 107 tests; frontend build passed; backend pytest passed.
 
 ## v1.8.17
 - Backend pytest and compileall were run in the delivery environment.
 - Frontend build/test should be run locally after npm ci because this container does not have a reliable frontend node_modules installation.
 - Focus: full-canvas Model Builder workspace, selected component editor panel, stable edge-add selection, and preview drawer scrolling.
-
-# Validation history
 
 ## v1.8.17
 - Refactored Model Builder into modular React Flow components and helpers.
@@ -58,6 +106,15 @@
 - Improved terminal labels, canvas width, internal row overflow, component markers, and inspector proportions.
 
 # Validation history
+
+## v1.8.23
+
+- Global formula rendering now uses KaTeX through react-katex instead of the previous lightweight string renderer.
+- Model Builder bottom preview summary formulas are rendered as math, not plain text.
+- Equation preview now begins with a user-facing global I–V model structure card before component-level formulas.
+- Chinese/English formula explanations are localized and long formulas get horizontal overflow handling.
+- Frontend Vitest, frontend build, backend pytest, and selected backend py_compile passed.
+
 
 ## v1.7.22
 

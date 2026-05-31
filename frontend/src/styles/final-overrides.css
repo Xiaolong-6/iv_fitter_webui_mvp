@@ -1241,3 +1241,1775 @@
 .xy-component-node:hover {
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1) !important;
 }
+
+
+/* v1.8.19 UI hotfix: keep Model Builder canvas full-height when the synthetic trace/debug tool is present.
+   The debug tool now lives inside the preset panel instead of consuming the first grid row and pushing the canvas down. */
+.workspace.workflow-shell.workflow-view-model .model-webpage-stack {
+  position: relative !important;
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.workspace.workflow-shell.workflow-view-model .model-builder-section {
+  grid-row: 1 / -1 !important;
+  min-height: 0 !important;
+}
+.xy-canvas-preset-panel .compact-canvas-presets {
+  max-width: calc(100vw - 132px) !important;
+}
+.xy-canvas-preset-panel .xy-canvas-action-slot {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-left: 8px !important;
+  padding-left: 8px !important;
+  border-left: 1px solid #e2e8f0 !important;
+  vertical-align: middle !important;
+}
+.xy-canvas-preset-panel .model-page-tool-row {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  margin: 0 !important;
+}
+.xy-canvas-preset-panel .debug-algorithm-button {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 12px !important;
+  border-radius: 999px !important;
+  white-space: nowrap !important;
+}
+@media (max-width: 980px) {
+  .xy-canvas-preset-panel .xy-canvas-action-slot {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    border-left: 0 !important;
+  }
+}
+
+/* v1.8.20 Model Builder visual-semantic fix: neutral wires, non-intrusive controls, readable cards. */
+.workspace.workflow-shell.workflow-view-model .xy-model-flow-shell {
+  background: #ffffff !important;
+}
+
+.xy-model-flow-shell .react-flow__handle.xy-port,
+.xy-model-flow-shell .react-flow__handle.xy-branch-port {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.xy-model-edge .react-flow__edge-path,
+.xy-circuit-wire .react-flow__edge-path,
+.xy-circuit-wire-main .react-flow__edge-path,
+.xy-circuit-wire-branch .react-flow__edge-path,
+.xy-model-edge path,
+.xy-circuit-wire path,
+.xy-circuit-wire-main path,
+.xy-circuit-wire-branch path {
+  stroke: #111827 !important;
+  stroke-width: 2.15px !important;
+  filter: none !important;
+}
+
+.xy-model-edge.is-edge-linked-to-selected .react-flow__edge-path,
+.xy-model-edge.is-edge-linked-to-selected path {
+  stroke: #0f172a !important;
+  stroke-width: 2.75px !important;
+  filter: none !important;
+}
+
+.xy-circuit-wire-main.react-flow__edge.selected .react-flow__edge-path,
+.xy-circuit-wire-branch.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge.is-edge-highlighted .react-flow__edge-path,
+.react-flow__edge.is-edge-highlighted-branch .react-flow__edge-path {
+  stroke: #0f172a !important;
+  stroke-width: 2.75px !important;
+  filter: none !important;
+}
+
+.xy-component-node,
+.xy-component-node.is-compact,
+.compact-model-builder-shell .xy-component-node.is-compact {
+  width: 214px !important;
+  min-height: 86px !important;
+  padding: 13px 15px !important;
+  display: grid !important;
+  grid-template-columns: 34px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  border: 1.5px solid #d6dee9 !important;
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08) !important;
+}
+
+.xy-component-node:hover,
+.xy-component-node:focus-visible {
+  border-color: #94a3b8 !important;
+  background: #ffffff !important;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12) !important;
+}
+
+.xy-component-node.is-selected,
+.xy-component-node-branches.is-selected {
+  border-color: #2563eb !important;
+  background: #f8fbff !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14), 0 18px 42px rgba(15, 23, 42, 0.14) !important;
+  z-index: 10 !important;
+}
+
+.xy-component-node.is-selected::after,
+.xy-component-node-branches.is-selected::after {
+  inset: -6px !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(37, 99, 235, 0.26) !important;
+}
+
+.xy-node-symbol,
+.xy-component-node-branches .xy-node-symbol {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 999px !important;
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  font-size: 14px !important;
+}
+
+.xy-node-body {
+  display: grid !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+  align-items: center !important;
+  text-align: center !important;
+}
+
+.xy-node-body strong {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  max-width: 142px !important;
+  font-size: 18px !important;
+  line-height: 1.05 !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
+}
+
+.xy-node-body small {
+  display: block !important;
+  max-width: 142px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: 11px !important;
+  line-height: 1.15 !important;
+  color: #64748b !important;
+}
+
+.xy-node-badges {
+  justify-content: center !important;
+  gap: 4px !important;
+  margin-top: 4px !important;
+}
+
+.xy-node-badges span,
+.xy-component-node-branches .xy-node-badges span {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #475569 !important;
+  font-size: 10.5px !important;
+  padding: 1px 6px !important;
+}
+
+.xy-node-delete {
+  top: 7px !important;
+  right: 7px !important;
+  width: 22px !important;
+  height: 22px !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.96) !important;
+  color: #64748b !important;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12) !important;
+  opacity: 0 !important;
+  transform: scale(.9) !important;
+  pointer-events: none !important;
+}
+
+.xy-component-node:hover .xy-node-delete,
+.xy-component-node:focus .xy-node-delete,
+.xy-component-node.is-selected .xy-node-delete {
+  opacity: 1 !important;
+  transform: scale(1) !important;
+  pointer-events: all !important;
+}
+
+.xy-node-delete:hover {
+  border-color: #fecaca !important;
+  background: #fff5f5 !important;
+  color: #dc2626 !important;
+}
+
+.xy-edge-action,
+.xy-edge-add-button,
+.xy-edge-add-popover {
+  display: none !important;
+}
+
+.xy-canvas-preset-panel {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  max-width: calc(100vw - 112px) !important;
+}
+
+.xy-canvas-add-controls {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-left: 8px !important;
+  padding-left: 8px !important;
+  border-left: 1px solid #e2e8f0 !important;
+}
+
+.xy-canvas-add-controls button {
+  min-height: 32px !important;
+  height: 32px !important;
+  border-radius: 999px !important;
+  border: 1px solid #dbe4ef !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  padding: 0 11px !important;
+  box-shadow: none !important;
+}
+
+.xy-canvas-add-controls button:hover:not(:disabled) {
+  border-color: #94a3b8 !important;
+  background: #f8fafc !important;
+}
+
+.xy-canvas-add-primary {
+  border-color: #bfdbfe !important;
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+}
+
+.xy-canvas-add-options {
+  width: 32px !important;
+  padding: 0 !important;
+  font-size: 16px !important;
+}
+
+.xy-canvas-add-popover {
+  position: absolute !important;
+  z-index: 1500 !important;
+  top: calc(100% + 8px) !important;
+  left: 0 !important;
+  display: grid !important;
+  gap: 8px !important;
+  width: 360px !important;
+  max-width: min(360px, calc(100vw - 120px)) !important;
+  padding: 10px !important;
+  border: 1px solid #dbe4ef !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+  box-shadow: 0 22px 54px rgba(15, 23, 42, 0.18) !important;
+}
+
+.xy-canvas-add-popover label {
+  display: grid !important;
+  grid-template-columns: 76px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 8px !important;
+  color: #475569 !important;
+  font-size: 12px !important;
+}
+
+.xy-canvas-add-popover select {
+  min-width: 0 !important;
+  width: 100% !important;
+  min-height: 32px !important;
+  border-radius: 10px !important;
+}
+
+.xy-model-terminal {
+  min-width: 112px !important;
+  min-height: 54px !important;
+  padding: 7px 11px !important;
+  border: 1px dashed #cbd5e1 !important;
+  background: rgba(248, 250, 252, 0.94) !important;
+  box-shadow: none !important;
+  color: #475569 !important;
+}
+
+.xy-model-terminal strong {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: #334155 !important;
+}
+
+.xy-model-terminal small {
+  font-size: 10px !important;
+  color: #94a3b8 !important;
+}
+
+@media (max-width: 980px) {
+  .xy-canvas-preset-panel {
+    align-items: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+  .xy-canvas-add-controls {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    border-left: 0 !important;
+  }
+}
+
+/* v1.8.21 Model Builder layout polish: semantic local add points, cleaner toolbar, neutral circuit viewport. */
+.compact-model-builder-shell .xy-model-flow-shell {
+  height: calc(100vh - 78px) !important;
+  min-height: 640px !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+}
+.xy-canvas-preset-panel {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 6px 8px !important;
+  border-radius: 999px !important;
+  max-width: calc(100vw - 112px) !important;
+}
+.compact-canvas-presets {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 0 !important;
+  flex-wrap: nowrap !important;
+}
+.compact-canvas-presets .xy-preset-go-fit {
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 0 16px !important;
+  font-size: 13px !important;
+}
+.compact-canvas-presets .xy-preset-select-label {
+  min-width: 230px !important;
+  max-width: 300px !important;
+}
+.compact-canvas-presets select {
+  width: 100% !important;
+  min-width: 220px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding-inline: 13px 30px !important;
+  font-size: 13px !important;
+}
+.xy-preset-dirty-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 28px !important;
+  padding: 0 9px !important;
+  border-radius: 999px !important;
+  border: 1px solid #fed7aa !important;
+  background: #fff7ed !important;
+  color: #9a3412 !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+}
+.compact-canvas-presets .model-preset-actions button {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 10px !important;
+  font-size: 11px !important;
+}
+.xy-canvas-add-controls { display: none !important; }
+.xy-canvas-advanced-controls {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  padding-left: 8px !important;
+  margin-left: 2px !important;
+  border-left: 1px solid #e2e8f0 !important;
+  pointer-events: auto !important;
+}
+.xy-canvas-advanced-button {
+  height: 32px !important;
+  min-height: 32px !important;
+  border-radius: 999px !important;
+  padding: 0 12px !important;
+  border: 1px solid #dbe4ef !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  box-shadow: none !important;
+}
+.xy-canvas-advanced-button:hover {
+  border-color: #94a3b8 !important;
+  background: #f8fafc !important;
+}
+.xy-canvas-advanced-popover {
+  position: absolute !important;
+  z-index: 1500 !important;
+  top: calc(100% + 8px) !important;
+  left: 0 !important;
+  min-width: 220px !important;
+  padding: 10px !important;
+  border: 1px solid #dbe4ef !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+  box-shadow: 0 22px 54px rgba(15,23,42,.18) !important;
+}
+.xy-canvas-advanced-popover .model-page-tool-row,
+.xy-canvas-advanced-popover .model-page-tool-row > * {
+  margin: 0 !important;
+}
+.xy-circuit-wire-main .react-flow__edge-path,
+.xy-circuit-wire-main path,
+.xy-circuit-wire-main,
+.xy-circuit-wire-branch .react-flow__edge-path,
+.xy-circuit-wire-branch path,
+.xy-circuit-wire-branch {
+  stroke: #111827 !important;
+}
+.xy-model-edge.is-edge-linked-to-selected .react-flow__edge-path,
+.xy-model-edge.is-edge-linked-to-selected path {
+  stroke: #0f172a !important;
+  stroke-width: 2.8px !important;
+}
+.react-flow__node-modelAction,
+.react-flow__node-modelJunction {
+  pointer-events: none;
+  z-index: 6 !important;
+}
+.react-flow__node-modelAction { pointer-events: auto; }
+.xy-action-node {
+  position: relative !important;
+  transform: translateY(-2px);
+  pointer-events: auto !important;
+}
+.xy-action-node-button {
+  height: 28px !important;
+  min-height: 28px !important;
+  border-radius: 999px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: rgba(255,255,255,.96) !important;
+  color: #334155 !important;
+  padding: 0 10px !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  box-shadow: 0 7px 20px rgba(15,23,42,.10) !important;
+}
+.xy-action-node-main .xy-action-node-button {
+  border-color: #bfdbfe !important;
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+}
+.xy-action-node-branches .xy-action-node-button {
+  border-color: #ddd6fe !important;
+  background: #f5f3ff !important;
+  color: #6d28d9 !important;
+}
+.xy-action-node-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(15,23,42,.14) !important;
+}
+.xy-action-node-popover {
+  position: absolute !important;
+  z-index: 1600 !important;
+  top: calc(100% + 8px) !important;
+  left: 0 !important;
+  display: grid !important;
+  gap: 8px !important;
+  width: 360px !important;
+  max-width: min(360px, calc(100vw - 130px)) !important;
+  padding: 10px !important;
+  border: 1px solid #dbe4ef !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+  box-shadow: 0 24px 62px rgba(15,23,42,.20) !important;
+}
+.xy-action-node-branches .xy-action-node-popover {
+  left: -36px !important;
+}
+.xy-action-node-popover-head {
+  display: grid !important;
+  gap: 2px !important;
+}
+.xy-action-node-popover-head strong {
+  font-size: 13px !important;
+  color: #0f172a !important;
+}
+.xy-action-node-popover-head span {
+  font-size: 11px !important;
+  color: #64748b !important;
+}
+.xy-action-node-option-list {
+  display: grid !important;
+  gap: 4px !important;
+  max-height: 230px !important;
+  overflow-y: auto !important;
+}
+.xy-action-node-option-list button {
+  display: block !important;
+  width: 100% !important;
+  min-height: 30px !important;
+  padding: 5px 8px !important;
+  border-radius: 9px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: #334155 !important;
+  text-align: left !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: 12px !important;
+}
+.xy-action-node-option-list button:hover,
+.xy-action-node-option-list button.is-active {
+  border-color: #bfdbfe !important;
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+}
+.xy-junction-node {
+  position: relative !important;
+  width: 14px !important;
+  height: 100% !important;
+  min-height: 1px !important;
+  pointer-events: none !important;
+}
+.xy-junction-dot,
+.xy-junction-branch-dot {
+  position: absolute !important;
+  left: 50% !important;
+  width: 7px !important;
+  height: 7px !important;
+  border-radius: 999px !important;
+  background: #111827 !important;
+  transform: translate(-50%, -50%) !important;
+  box-shadow: 0 0 0 2px #ffffff !important;
+}
+.xy-junction-dot { top: 50% !important; }
+.xy-junction-node::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  bottom: 4px;
+  border-left: 2px solid #111827;
+  transform: translateX(-50%);
+}
+.xy-component-node { width: 178px !important; min-height: 72px !important; }
+.xy-node-delete {
+  width: 24px !important;
+  height: 24px !important;
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #64748b !important;
+  font-size: 0 !important;
+}
+.xy-node-delete::before {
+  content: "⋯";
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  line-height: 1;
+}
+.xy-node-delete:hover {
+  color: #b91c1c !important;
+  border-color: #fecaca !important;
+  background: #fff1f2 !important;
+}
+.xy-canvas-component-editor {
+  width: min(330px, calc(100vw - 96px)) !important;
+  padding: 11px !important;
+  border-radius: 16px !important;
+  box-shadow: 0 18px 48px rgba(15,23,42,.15) !important;
+}
+.xy-editor-header { margin-bottom: 8px !important; }
+.xy-editor-title-block strong { font-size: 15px !important; }
+.xy-editor-title-block small { font-size: 11px !important; }
+.xy-editor-fields { gap: 7px !important; }
+.xy-canvas-component-role {
+  margin-top: 8px !important;
+  font-size: 11px !important;
+  line-height: 1.3 !important;
+  max-height: 44px !important;
+  overflow: hidden !important;
+}
+.xy-canvas-component-equation {
+  margin-top: 9px !important;
+  padding: 9px !important;
+}
+.xy-canvas-component-units { margin-top: 8px !important; }
+.xy-canvas-preview-panel .canvas-model-preview summary {
+  min-height: 46px !important;
+  padding: 8px 14px !important;
+  grid-template-columns: auto minmax(130px, auto) minmax(120px, auto) auto 1fr !important;
+}
+.preview-summary-title { font-size: 13px !important; }
+.preview-summary-formula { min-height: 26px !important; font-size: 12px !important; padding: 4px 10px !important; }
+.preview-summary-cta { min-height: 26px !important; font-size: 11px !important; padding: 4px 10px !important; }
+@media (max-width: 980px) {
+  .xy-canvas-preset-panel { border-radius: 16px !important; align-items: flex-start !important; flex-wrap: wrap !important; }
+  .compact-canvas-presets { flex-wrap: wrap !important; }
+  .xy-action-node-popover { width: min(320px, calc(100vw - 100px)) !important; }
+}
+
+/* v1.8.22 UI hotfix: direct synthetic trace modal, cleaner Start page, draggable inspector, hidden handles, 200% zoom support. */
+.minimal-hero {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-areas: "kicker help" "title help" "copy help" !important;
+  align-items: center !important;
+  column-gap: calc(18px * var(--app-zoom)) !important;
+  max-width: 1120px !important;
+}
+.minimal-hero .hero-kicker { grid-area: kicker !important; }
+.minimal-hero h2 { grid-area: title !important; }
+.minimal-hero p { grid-area: copy !important; }
+.minimal-hero .hero-help-action {
+  grid-area: help !important;
+  align-self: center !important;
+  justify-self: end !important;
+  margin: 0 !important;
+  min-height: calc(42px * var(--app-zoom)) !important;
+  padding: 0 calc(16px * var(--app-zoom)) !important;
+  white-space: nowrap !important;
+}
+.minimal-start-page .minimal-workflow-head,
+.minimal-start-page .workflow-mini-path,
+.minimal-start-page .hero-primary { display: none !important; }
+.minimal-workflow-card.needs-data-attention {
+  border-color: #60a5fa !important;
+  background: linear-gradient(180deg, #eff6ff 0%, #ffffff 76%) !important;
+  animation: data-card-blue-pulse 1.9s ease-in-out infinite !important;
+}
+@keyframes data-card-blue-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(59,130,246,.10), 0 14px 34px rgba(37,99,235,.12); }
+  50% { box-shadow: 0 0 0 6px rgba(59,130,246,.20), 0 22px 50px rgba(37,99,235,.22); }
+}
+.xy-canvas-advanced-controls,
+.xy-canvas-advanced-popover { display: none !important; }
+.xy-canvas-synthetic-tool {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding-left: 8px !important;
+  margin-left: 2px !important;
+  border-left: 1px solid #e2e8f0 !important;
+}
+.synthetic-trace-launch-button,
+.xy-canvas-preset-panel .synthetic-trace-launch-button,
+.debug-algorithm-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  border-radius: 999px !important;
+  padding: 0 13px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+  white-space: nowrap !important;
+}
+.synthetic-trace-launch-button:hover { border-color: #93c5fd !important; background: #eff6ff !important; color: #1d4ed8 !important; }
+.synthetic-modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9000 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: calc(18px * var(--app-zoom)) !important;
+  background: rgba(15,23,42,.28) !important;
+  backdrop-filter: blur(5px) !important;
+}
+.synthetic-modal {
+  width: min(820px, calc(100vw - 44px)) !important;
+  max-height: min(88vh, 820px) !important;
+  overflow: auto !important;
+  border: 1px solid #dbe4ef !important;
+  border-radius: 22px !important;
+  background: #ffffff !important;
+  box-shadow: 0 34px 90px rgba(15,23,42,.34) !important;
+  padding: calc(18px * var(--app-zoom)) !important;
+}
+.xy-canvas-preset-panel,
+.compact-canvas-presets,
+.compact-canvas-presets .model-preset-actions { align-items: center !important; }
+.compact-canvas-presets .xy-preset-go-fit,
+.compact-canvas-presets .model-preset-actions button,
+.compact-canvas-presets select,
+.xy-canvas-synthetic-tool button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+}
+.compact-canvas-presets .xy-preset-go-fit {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(37,99,235,.22) !important;
+}
+.compact-canvas-presets .model-preset-actions button {
+  border-radius: 999px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  font-weight: 820 !important;
+}
+.compact-canvas-presets .model-preset-actions button:hover { border-color: #93c5fd !important; background: #eff6ff !important; color: #1d4ed8 !important; }
+.xy-port,
+.react-flow__handle,
+.xy-component-node .xy-port,
+.xy-model-terminal .xy-port {
+  opacity: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-width: 1px !important;
+  min-height: 1px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.xy-component-node::before,
+.xy-component-node::after { pointer-events: none !important; }
+.xy-draggable-editor-shell { transition: box-shadow .15s ease; }
+.xy-canvas-component-editor .xy-editor-header {
+  cursor: grab !important;
+  user-select: none !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding-bottom: 8px !important;
+}
+.xy-canvas-component-editor .xy-editor-header:active { cursor: grabbing !important; }
+.xy-editor-eyebrow::after {
+  content: " · drag";
+  color: #94a3b8;
+  font-weight: 750;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.xy-model-edge.xy-circuit-wire-main .react-flow__edge-path,
+.xy-model-edge.xy-circuit-wire-main path {
+  stroke-linejoin: round !important;
+}
+.fit-config-advanced-popover {
+  max-height: min(90vh, 860px) !important;
+  overflow-y: auto !important;
+}
+.fitting-control-column .fit-config-advanced-popover,
+.compact-fit-setup-panel .fit-config-advanced-popover {
+  max-height: min(92vh, 900px) !important;
+}
+.manual-toc {
+  top: 4px !important;
+  padding: 4px 0 5px !important;
+  margin: 0 0 4px !important;
+  gap: 6px !important;
+  align-items: center !important;
+}
+.manual-toc a { padding: 4px 8px !important; }
+@media (max-width: 720px) {
+  .minimal-hero { grid-template-columns: 1fr !important; grid-template-areas: "kicker" "title" "copy" "help" !important; }
+  .minimal-hero .hero-help-action { justify-self: start !important; margin-top: 12px !important; }
+}
+
+/* v1.8.23 equation rendering polish: use real KaTeX globally and make formulas user-facing. */
+.latex-card,
+.math-inline {
+  max-width: 100% !important;
+}
+.latex-card {
+  display: block !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: calc(9px * var(--app-zoom)) calc(10px * var(--app-zoom)) !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+.math-inline {
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+.latex-rendered,
+.katex-formula-rendered {
+  display: inline-block !important;
+  max-width: 100% !important;
+  white-space: nowrap !important;
+}
+.latex-card .katex-display {
+  margin: 0 !important;
+  text-align: left !important;
+  overflow: visible !important;
+}
+.math-inline .katex,
+.preview-summary-formula .katex {
+  font-size: 1em !important;
+}
+.preview-summary-formula .math-inline {
+  color: inherit !important;
+}
+.latex-copy {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+.latex-fallback {
+  color: #7f1d1d !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;
+}
+.user-facing-global-formula {
+  grid-column: 1 / -1 !important;
+  border-color: #bfdbfe !important;
+  background: linear-gradient(180deg, #eff6ff 0%, #ffffff 76%) !important;
+}
+.global-formula-stack {
+  display: grid !important;
+  gap: calc(8px * var(--app-zoom)) !important;
+}
+.global-formula-stack .latex-card {
+  background: rgba(255,255,255,.96) !important;
+}
+.preview-formula-head span {
+  max-width: 100% !important;
+}
+
+/* v1.8.24 emergency UI hotfix: real synthetic modal, safe formula header, aligned main path. */
+.synthetic-modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 2147483000 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: calc(20px * var(--app-zoom)) !important;
+  background: rgba(15, 23, 42, 0.38) !important;
+  backdrop-filter: blur(6px) !important;
+}
+.synthetic-modal {
+  position: relative !important;
+  width: min(860px, calc(100vw - 48px)) !important;
+  max-height: min(88vh, 820px) !important;
+  overflow: auto !important;
+  transform: none !important;
+}
+.xy-canvas-preview-panel .canvas-model-preview summary {
+  grid-template-columns: auto minmax(180px, auto) auto 1fr !important;
+  overflow: hidden !important;
+}
+.preview-summary-formula { display: none !important; }
+.preview-summary-plain {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 26px !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  border: 1px solid #dbeafe !important;
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+.xy-model-terminal {
+  height: 54px !important;
+  min-height: 54px !important;
+  display: grid !important;
+  align-content: center !important;
+  justify-items: center !important;
+}
+.xy-component-node {
+  height: 72px !important;
+  min-height: 72px !important;
+  align-items: center !important;
+}
+.xy-circuit-wire-main .react-flow__edge-path,
+.xy-circuit-wire-main path {
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+.xy-junction-branch-dot {
+  display: none !important;
+}
+.xy-junction-dot {
+  width: 6px !important;
+  height: 6px !important;
+  background: #334155 !important;
+  opacity: .65 !important;
+  box-shadow: 0 0 0 2px #ffffff !important;
+}
+
+/* v1.8.25 UI cleanup: tighter report next panel, title-aligned help, user-facing report messages. */
+.hero-title-row {
+  display: inline-flex !important;
+  align-items: flex-start !important;
+  gap: calc(14px * var(--app-zoom)) !important;
+  max-width: min(100%, 960px) !important;
+}
+.hero-title-row h2 {
+  margin: 0 !important;
+}
+.hero-title-row .hero-help-action {
+  margin-top: calc(4px * var(--app-zoom)) !important;
+  min-height: calc(38px * var(--app-zoom)) !important;
+  padding: calc(8px * var(--app-zoom)) calc(14px * var(--app-zoom)) !important;
+  border: 1px solid #2563eb !important;
+  border-radius: calc(12px * var(--app-zoom)) !important;
+  background: linear-gradient(180deg, #3b82f6, #2563eb) !important;
+  color: #fff !important;
+  box-shadow: 0 14px 32px rgba(37, 99, 235, .22) !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+}
+.hero-title-row .hero-help-action:hover {
+  background: linear-gradient(180deg, #2563eb, #1d4ed8) !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 16px 38px rgba(37, 99, 235, .30) !important;
+}
+.hero-title-row .hero-help-icon {
+  background: rgba(255, 255, 255, .18) !important;
+  border: 1px solid rgba(255, 255, 255, .32) !important;
+  color: #fff !important;
+}
+.floating-report-exports {
+  width: min(calc(270px * var(--app-zoom)), calc(100vw - 24px)) !important;
+  padding: calc(10px * var(--app-zoom)) !important;
+}
+.floating-report-exports-head {
+  margin-bottom: calc(6px * var(--app-zoom)) !important;
+}
+.floating-report-exports-head h2 {
+  font-size: calc(14px * var(--app-zoom)) !important;
+  letter-spacing: -0.01em !important;
+}
+.floating-report-exports-head .floating-drag-icon {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: calc(25px * var(--app-zoom)) !important;
+  height: calc(25px * var(--app-zoom)) !important;
+  border-radius: 999px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #f8fafc !important;
+  color: #475569 !important;
+  font-size: calc(10px * var(--app-zoom)) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.12em !important;
+  text-transform: none !important;
+  font-weight: 900 !important;
+}
+.report-workflow-shortcuts {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: calc(6px * var(--app-zoom)) !important;
+}
+.report-workflow-shortcuts button {
+  min-height: calc(30px * var(--app-zoom)) !important;
+  padding: calc(5px * var(--app-zoom)) calc(6px * var(--app-zoom)) !important;
+  border-radius: 999px !important;
+  font-size: calc(11px * var(--app-zoom)) !important;
+  font-weight: 850 !important;
+  justify-content: center !important;
+}
+.export-diagnostics-actions {
+  margin-bottom: calc(8px * var(--app-zoom)) !important;
+}
+.floating-report-exports .report-export-actions-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: calc(7px * var(--app-zoom)) !important;
+}
+.floating-report-exports .report-export-actions-grid button {
+  min-height: calc(34px * var(--app-zoom)) !important;
+}
+
+
+/* v1.8.26 start header hotfix: keep the hero title group left-aligned and use a compact ? help button only. */
+.minimal-start-page .minimal-hero {
+  display: block !important;
+  max-width: 980px !important;
+  justify-self: start !important;
+  text-align: left !important;
+}
+.minimal-start-page .hero-kicker,
+.minimal-start-page .minimal-hero p {
+  text-align: left !important;
+}
+.minimal-start-page .hero-title-row {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: calc(12px * var(--app-zoom)) !important;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  vertical-align: middle !important;
+}
+.minimal-start-page .hero-title-row h2 {
+  margin: 0 !important;
+  line-height: .98 !important;
+}
+.minimal-start-page .hero-title-row .hero-help-action {
+  flex: 0 0 auto !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  width: calc(44px * var(--app-zoom)) !important;
+  height: calc(44px * var(--app-zoom)) !important;
+  min-width: calc(44px * var(--app-zoom)) !important;
+  min-height: calc(44px * var(--app-zoom)) !important;
+  margin: calc(2px * var(--app-zoom)) 0 0 !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  border: 1px solid #2563eb !important;
+  background: linear-gradient(180deg, #3b82f6, #2563eb) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 32px rgba(37, 99, 235, .22) !important;
+  line-height: 1 !important;
+}
+.minimal-start-page .hero-title-row .hero-help-action:hover {
+  background: linear-gradient(180deg, #2563eb, #1d4ed8) !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 16px 38px rgba(37, 99, 235, .30) !important;
+}
+.minimal-start-page .hero-title-row .hero-help-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: calc(24px * var(--app-zoom)) !important;
+  height: calc(24px * var(--app-zoom)) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, .18) !important;
+  border: 1px solid rgba(255, 255, 255, .36) !important;
+  color: #ffffff !important;
+  font-size: calc(18px * var(--app-zoom)) !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+@media (max-width: 720px) {
+  .minimal-start-page .hero-title-row {
+    display: flex !important;
+  }
+  .minimal-start-page .hero-title-row .hero-help-action {
+    width: calc(40px * var(--app-zoom)) !important;
+    height: calc(40px * var(--app-zoom)) !important;
+    min-width: calc(40px * var(--app-zoom)) !important;
+    min-height: calc(40px * var(--app-zoom)) !important;
+  }
+}
+
+/* v1.8.27: productized Model preview drawer and custom-law semantics. */
+.xy-canvas-preview-panel {
+  width: min(1280px, calc(100vw - 130px)) !important;
+  max-width: calc(100vw - 130px) !important;
+  pointer-events: none !important;
+}
+.xy-canvas-preview-panel .canvas-model-preview {
+  pointer-events: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  max-height: 42vh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+}
+.xy-canvas-preview-panel .canvas-model-preview.is-closed {
+  max-height: 72px !important;
+}
+.canvas-model-preview-header {
+  display: grid !important;
+  grid-template-columns: minmax(160px, auto) minmax(260px, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-height: 56px !important;
+  padding: 10px 14px !important;
+  border-bottom: 1px solid #e5edf7 !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+}
+.preview-heading-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+}
+.preview-heading-group::before {
+  content: "ƒ";
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+.preview-summary-title {
+  white-space: nowrap !important;
+}
+.preview-compact-equations {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+.preview-compact-equations span {
+  display: inline-flex !important;
+  align-items: center !important;
+  max-width: 260px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  min-height: 28px !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #f8fafc !important;
+  color: #334155 !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+}
+.canvas-model-preview.is-open .preview-compact-equations {
+  opacity: .42 !important;
+}
+.canvas-model-preview-body {
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 12px !important;
+  overscroll-behavior: contain !important;
+}
+.canvas-model-preview-body .equation-preview {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+.canvas-model-preview-body .equation-preview > h2 {
+  display: none !important;
+}
+.canvas-model-preview-body .equation-layout,
+.modern-model-preview .equation-layout {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(280px, 1fr)) !important;
+  gap: 10px !important;
+  align-items: start !important;
+}
+.canvas-model-preview-body .equation-card,
+.modern-model-preview .equation-card {
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 12px !important;
+  border-radius: 14px !important;
+}
+.canvas-model-preview-body .equation-card h3 {
+  margin: 0 0 6px !important;
+  font-size: 14px !important;
+  line-height: 1.2 !important;
+}
+.canvas-model-preview-body .equation-explain {
+  margin: 0 0 8px !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  color: #64748b !important;
+}
+.canvas-model-preview-body .latex-card {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: thin !important;
+}
+.canvas-model-preview-body .katex-display {
+  margin: 0 !important;
+}
+.canvas-model-preview-body .wide-equation,
+.canvas-model-preview-body .user-facing-global-formula,
+.canvas-model-preview-body .component-card {
+  grid-column: 1 / -1 !important;
+}
+.canvas-model-preview-body .branch-formula-list {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+}
+.preview-summary-cta {
+  background: #ffffff !important;
+  color: #1d4ed8 !important;
+  border-color: #bfdbfe !important;
+  box-shadow: none !important;
+}
+.canvas-model-preview.is-open .preview-summary-cta {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border-color: #93c5fd !important;
+}
+.xy-editor-eyebrow::after { content: "" !important; }
+.xy-custom-expression-source,
+.xy-custom-polarity-note {
+  color: #64748b !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+  margin: 4px 0 !important;
+}
+.xy-custom-expression-source {
+  padding: 6px 8px !important;
+  border-radius: 10px !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  font-weight: 750 !important;
+}
+.xy-custom-variable-legend {
+  display: grid !important;
+  gap: 6px !important;
+  margin-top: 8px !important;
+}
+.xy-custom-legend-title,
+.xy-custom-syntax-help strong {
+  color: #334155 !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+}
+.xy-custom-legend-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+  gap: 6px !important;
+}
+.xy-custom-legend-item {
+  display: grid !important;
+  gap: 2px !important;
+  padding: 6px 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+}
+.xy-custom-legend-item strong { font-size: 12px !important; }
+.xy-custom-legend-item small { color: #64748b !important; font-size: 10px !important; line-height: 1.25 !important; }
+.xy-custom-legend-toggle.compact {
+  justify-self: start !important;
+  min-height: 26px !important;
+  padding: 4px 8px !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+}
+.xy-custom-syntax-help {
+  display: grid !important;
+  gap: 3px !important;
+  margin-top: 8px !important;
+  padding: 8px !important;
+  border-radius: 12px !important;
+  background: #f8fbff !important;
+  border: 1px solid #dbeafe !important;
+}
+.xy-custom-syntax-help span {
+  color: #475569 !important;
+  font-size: 11px !important;
+  line-height: 1.3 !important;
+}
+.physics-unit-badge {
+  border-radius: 12px !important;
+  align-items: start !important;
+  display: grid !important;
+  gap: 1px !important;
+  max-width: 180px !important;
+}
+.physics-unit-badge em {
+  color: #64748b !important;
+  font-style: normal !important;
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+  white-space: normal !important;
+}
+@media (max-width: 980px), (min-resolution: 1.5dppx) {
+  .canvas-model-preview-body .equation-layout,
+  .modern-model-preview .equation-layout {
+    grid-template-columns: 1fr !important;
+  }
+  .canvas-model-preview-header {
+    grid-template-columns: 1fr auto !important;
+  }
+  .preview-compact-equations {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+
+/* v1.8.30: remove bottom model preview drawer; use inline equation overlays and terminal nodes. */
+.xy-canvas-preview-panel { display: none !important; }
+.xy-model-terminal {
+  min-width: 76px !important;
+  min-height: 44px !important;
+  padding: 8px 14px !important;
+  border-radius: 14px !important;
+  background: #0f172a !important;
+  border: 1px solid #0f172a !important;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+.xy-model-terminal strong {
+  color: #ffffff !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.01em !important;
+}
+.xy-model-terminal small { display: none !important; }
+.xy-model-terminal-vext,
+.xy-model-terminal-vi,
+.xy-model-terminal-ground { background: #111827 !important; }
+.xy-model-terminal-ground { min-width: 72px !important; }
+.xy-junction-node {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.xy-junction-dot,
+.xy-junction-branch-dot {
+  background: #111827 !important;
+}
+.xy-model-annotation {
+  pointer-events: none !important;
+  color: #111827 !important;
+  opacity: 0.9 !important;
+  max-width: 240px !important;
+}
+.xy-model-annotation .math-inline,
+.xy-model-annotation .katex {
+  color: #111827 !important;
+}
+.xy-model-annotation-formula {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.xy-model-annotation .katex { font-size: 0.98em !important; }
+.xy-model-annotation-global .katex { font-size: 1.03em !important; font-weight: 500 !important; }
+.xy-model-annotation-component { max-width: 280px !important; }
+.xy-model-annotation-component .xy-model-annotation-formula {
+  padding: 4px 8px !important;
+  border-radius: 10px !important;
+  background: rgba(255,255,255,0.78) !important;
+}
+.xy-model-flow-shell .react-flow__panel.top-left.xy-canvas-preset-panel { top: 10px !important; }
+.xy-model-flow-shell .react-flow__panel.top-right.xy-canvas-editor-panel { top: 10px !important; }
+
+
+/* v1.8.31: compact custom-law inspector parameter badges and semantics. */
+.xy-canvas-component-units {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 5px !important;
+  margin-top: 8px !important;
+}
+.physics-unit-badge {
+  min-height: 0 !important;
+  border-radius: 10px !important;
+  padding: 5px 7px !important;
+  display: grid !important;
+  grid-template-columns: auto 1fr !important;
+  align-items: baseline !important;
+  column-gap: 6px !important;
+  row-gap: 1px !important;
+  font-size: 10.5px !important;
+}
+.physics-unit-badge strong { font-size: 11px !important; }
+.physics-unit-badge small { font-size: 10px !important; }
+.physics-unit-badge em {
+  grid-column: 1 / -1 !important;
+  font-size: 9.5px !important;
+  line-height: 1.18 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.xy-custom-syntax-help { font-size: 10.5px !important; line-height: 1.28 !important; }
+.xy-custom-polarity-note { margin: 6px 0 0 !important; font-size: 11px !important; line-height: 1.3 !important; }
+
+
+/* v1.8.31: Model Builder visual hierarchy polish and compact custom-law inspector. */
+.xy-model-terminal {
+  min-width: 58px !important;
+  min-height: 32px !important;
+  padding: 5px 10px !important;
+  border-radius: 999px !important;
+  background: rgba(248, 250, 252, 0.96) !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 3px 9px rgba(15, 23, 42, 0.08) !important;
+}
+.xy-model-terminal-vext,
+.xy-model-terminal-vi,
+.xy-model-terminal-ground { background: rgba(248, 250, 252, 0.96) !important; }
+.xy-model-terminal strong {
+  color: #111827 !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+}
+.xy-model-terminal-ground { background: rgba(241, 245, 249, 0.96) !important; }
+.xy-model-annotation {
+  display: grid !important;
+  gap: 2px !important;
+  max-width: 260px !important;
+  opacity: 0.78 !important;
+}
+.xy-model-annotation-title {
+  color: #475569 !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+}
+.xy-model-annotation-global .katex {
+  font-size: 0.94em !important;
+  font-weight: 500 !important;
+}
+.xy-model-annotation-component { opacity: 0.9 !important; }
+.xy-model-annotation-component .xy-model-annotation-formula {
+  padding: 3px 7px !important;
+  border: 1px solid rgba(203, 213, 225, 0.75) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(3px) !important;
+}
+.xy-action-node-button {
+  min-height: 24px !important;
+  padding: 2px 9px !important;
+  border-radius: 999px !important;
+  border-color: #cbd5e1 !important;
+  background: rgba(255,255,255,0.9) !important;
+  color: #334155 !important;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.07) !important;
+  font-size: 11px !important;
+}
+.xy-action-node::before { display: none !important; }
+.xy-component-node {
+  border-left: 4px solid #2563eb !important;
+}
+.xy-component-node-branches {
+  border-left-color: #7c3aed !important;
+}
+.xy-component-node.is-selected {
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.16), 0 12px 30px rgba(15,23,42,.13) !important;
+}
+.xy-component-node-branches.is-selected {
+  box-shadow: 0 0 0 3px rgba(124,58,237,.16), 0 12px 30px rgba(15,23,42,.13) !important;
+}
+.xy-node-body strong {
+  font-size: 14px !important;
+  line-height: 1.1 !important;
+}
+.xy-node-body small {
+  font-size: 11px !important;
+  line-height: 1.15 !important;
+}
+.xy-canvas-component-units {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 5px !important;
+  margin-top: 8px !important;
+}
+.physics-unit-badge {
+  justify-content: space-between !important;
+  min-height: 22px !important;
+  padding: 2px 7px !important;
+  font-size: 10px !important;
+}
+.physics-unit-badge strong { max-width: 60px !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+.xy-custom-law-builder { gap: 6px !important; }
+.xy-custom-syntax-help {
+  padding: 7px 8px !important;
+  gap: 3px !important;
+}
+.xy-custom-legend-grid { gap: 4px !important; }
+.xy-custom-legend-item { padding: 5px 6px !important; }
+
+
+/* v1.8.32: stop inline formula overlaps and make canvas annotations low-key. */
+.xy-model-annotation {
+  max-width: 220px !important;
+  opacity: 0.58 !important;
+  gap: 1px !important;
+  line-height: 1.15 !important;
+  z-index: 1 !important;
+}
+.xy-model-annotation-title {
+  color: #334155 !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  white-space: nowrap !important;
+}
+.xy-model-annotation-global .katex {
+  font-size: 0.78em !important;
+  font-weight: 400 !important;
+}
+.xy-model-annotation-formula {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+.xy-model-annotation-component { display: none !important; }
+.xy-model-terminal {
+  min-width: 54px !important;
+  min-height: 30px !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  background: rgba(248,250,252,0.82) !important;
+  border-color: #d6dee8 !important;
+  box-shadow: none !important;
+}
+.xy-model-terminal strong {
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  color: #0f172a !important;
+}
+.xy-model-terminal-ground { background: rgba(241,245,249,0.82) !important; }
+.xy-action-node-button {
+  min-height: 22px !important;
+  padding: 1px 8px !important;
+  font-size: 10.5px !important;
+  opacity: 0.86 !important;
+}
+.xy-action-node-button:hover,
+.xy-action-node-button:focus-visible { opacity: 1 !important; }
+.xy-custom-syntax-help {
+  max-height: 112px !important;
+  overflow: auto !important;
+}
+.xy-canvas-component-equation .katex { font-size: 1.03em !important; }
+
+
+/* v1.8.33: Model Builder toolbar alignment and unified control system. */
+.xy-canvas-preset-panel {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 56px !important;
+  padding: 8px 10px !important;
+  border-radius: 30px !important;
+  border: 1px solid rgba(203, 213, 225, 0.78) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08) !important;
+}
+.compact-canvas-presets {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  flex-wrap: nowrap !important;
+}
+.compact-canvas-presets .xy-preset-select-label {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  min-width: 292px !important;
+  max-width: 340px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.compact-canvas-presets .xy-preset-select-label > span {
+  display: none !important;
+}
+.compact-canvas-presets .model-preset-actions {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.compact-canvas-presets .xy-preset-go-fit,
+.compact-canvas-presets select,
+.compact-canvas-presets .model-preset-actions button,
+.xy-canvas-preset-panel .synthetic-trace-launch-button,
+.xy-canvas-synthetic-tool button,
+.xy-preset-dirty-pill {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  margin: 0 !important;
+  border-radius: 999px !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+  vertical-align: middle !important;
+}
+.compact-canvas-presets .xy-preset-go-fit {
+  min-width: 104px !important;
+  padding: 0 22px !important;
+  border: 1px solid #2563eb !important;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.20) !important;
+}
+.xy-preset-dirty-pill {
+  padding: 0 15px !important;
+  border: 1px solid #fdba74 !important;
+  background: #fff7ed !important;
+  color: #9a3412 !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+}
+.compact-canvas-presets select {
+  width: 100% !important;
+  min-width: 292px !important;
+  padding: 0 42px 0 22px !important;
+  border: 1px solid #cbd5e1 !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+  appearance: auto !important;
+}
+.compact-canvas-presets .model-preset-actions button,
+.xy-canvas-preset-panel .synthetic-trace-launch-button,
+.xy-canvas-synthetic-tool button {
+  padding: 0 20px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  box-shadow: none !important;
+}
+.compact-canvas-presets .model-preset-actions button:hover,
+.xy-canvas-preset-panel .synthetic-trace-launch-button:hover,
+.xy-canvas-synthetic-tool button:hover,
+.compact-canvas-presets select:hover {
+  border-color: #93c5fd !important;
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+}
+.xy-canvas-synthetic-tool {
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  margin: 0 !important;
+  padding-left: 12px !important;
+  border-left: 1px solid rgba(226, 232, 240, 0.9) !important;
+}
+.xy-canvas-preset-panel .model-page-tool-row {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.preset-inline-dialog {
+  top: calc(100% + 8px) !important;
+}
+
+/* v1.8.34: dense main-path layout and explicit delete affordance. */
+.xy-component-node.is-compact,
+.compact-model-builder-shell .xy-component-node.is-compact {
+  width: 154px !important;
+  min-height: 66px !important;
+  padding: 9px 10px !important;
+  grid-template-columns: 24px minmax(0, 1fr) !important;
+  gap: 8px !important;
+}
+.xy-component-node.is-compact .xy-node-symbol {
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 12px !important;
+}
+.xy-component-node.is-compact .xy-node-body strong {
+  max-width: 96px !important;
+  font-size: 13px !important;
+  line-height: 1.08 !important;
+  -webkit-line-clamp: 2 !important;
+}
+.xy-component-node.is-compact .xy-node-body small,
+.xy-component-node.is-compact .xy-node-badges {
+  display: none !important;
+}
+.xy-node-delete {
+  width: 22px !important;
+  height: 22px !important;
+  top: 6px !important;
+  right: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 15px !important;
+  line-height: 1 !important;
+  font-weight: 900 !important;
+  color: #64748b !important;
+  border: 1px solid #e2e8f0 !important;
+  background: rgba(255,255,255,.97) !important;
+  border-radius: 999px !important;
+  opacity: 0 !important;
+  transform: scale(.92) !important;
+  pointer-events: none !important;
+  box-shadow: 0 8px 18px rgba(15,23,42,.10) !important;
+}
+.xy-node-delete::before {
+  content: none !important;
+}
+.xy-component-node:hover .xy-node-delete,
+.xy-component-node:focus .xy-node-delete,
+.xy-component-node.is-selected .xy-node-delete {
+  opacity: 1 !important;
+  transform: scale(1) !important;
+  pointer-events: all !important;
+}
+.xy-node-delete:hover {
+  color: #dc2626 !important;
+  border-color: #fecaca !important;
+  background: #fff1f2 !important;
+}

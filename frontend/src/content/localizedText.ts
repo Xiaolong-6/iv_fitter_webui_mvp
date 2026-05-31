@@ -15,7 +15,7 @@ const functionLabels: Record<string, LocalizedText> = {
   bias_dependent_current: { en: "Bias-dependent current branch", zh: "偏压相关电流支路" },
   photocurrent_voltage_dependent: { en: "Bias-dependent current branch", zh: "偏压相关电流支路" },
   voltage_dependent_photocurrent: { en: "Bias-dependent current branch", zh: "偏压相关电流支路" },
-  custom: { en: "Custom expression law", zh: "自定义表达式定律" },
+  custom: { en: "User-defined law", zh: "用户自定义定律" },
 };
 
 export function localizedFunctionLabel(functionType: string, fallback: string, language: Language) {

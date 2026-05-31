@@ -13,10 +13,11 @@ export interface ModelBuilderProps {
   onGoToFitting?: () => void;
   readOnly?: boolean;
   previewContent?: ReactNode;
+  canvasActions?: ReactNode;
 }
 
 export type ComponentRef = { location: ModelLocation; comp: ComponentSpec };
-export type FlowNodeKind = "terminal" | "component";
+export type FlowNodeKind = "terminal" | "component" | "action" | "junction" | "annotation";
 export type TerminalRole = "vext" | "vi" | "ground";
 
 export type ModelFlowNodeData = {
@@ -30,6 +31,10 @@ export type ModelFlowNodeData = {
   branchPortCount?: number;
   branchYPositions?: number[];
   compact?: boolean;
+  actionBucket?: BuilderBucket;
+  latex?: string;
+  annotationTone?: "global" | "component";
+  annotationTitle?: string;
 };
 
 export type CircuitEdgeData = {

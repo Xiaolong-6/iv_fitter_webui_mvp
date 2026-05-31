@@ -69,7 +69,10 @@ def _raise_internal_error(exc: Exception, context: str) -> NoReturn:
 
 def _is_loopback_request(request: Request) -> bool:
     host = (request.client.host if request.client else "").strip().lower()
-    return host in {"127.0.0.1", "::1", "localhost", "testclient"}
+    headers = getattr(request, "headers", {})
+    host_header = headers.get("host", "").split(":", 1)[0].strip().lower()
+    loopback_hosts = {"127.0.0.1", "::1", "::ffff:127.0.0.1", "localhost", "testclient"}
+    return host in loopback_hosts or host_header in loopback_hosts
 
 
 def _require_loopback_for_local_file_dialog(request: Request) -> None:
@@ -81,7 +84,7 @@ def _require_loopback_for_local_file_dialog(request: Request) -> None:
     server file access.
     """
     if not _is_loopback_request(request):
-        raise HTTPException(status_code=403, detail="Local file dialog is only available from localhost.")
+        raise HTTPException(status_code=403, detail="Local file dialog is only available from localhost. Use browser file upload, drag-and-drop, or paste import instead.")
 
 def _public_selected_name(path: str) -> str:
     # ntpath handles both POSIX and Windows separators on every platform.

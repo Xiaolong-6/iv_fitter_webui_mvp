@@ -74,7 +74,6 @@ export function ModelWorkflowPage({
   return (
     <section className="workflow-page model-page webpage-model-page">
       <div className="model-webpage-stack">
-        {syntheticTool ? <div className="model-page-tool-row">{syntheticTool}</div> : null}
         <PageSection title={t(language, "modelBuilder")} hideHeader className="model-builder-section">
           <ErrorBoundary label="Model builder">
             <ModelBuilder
@@ -84,6 +83,7 @@ export function ModelWorkflowPage({
               language={language}
               disabled={isFitting}
               onGoToFitting={onGoToFitting}
+              canvasActions={syntheticTool ? <div className="model-page-tool-row">{syntheticTool}</div> : null}
               previewContent={
                 <ErrorBoundary label="Equation preview">
                   <EquationPreview

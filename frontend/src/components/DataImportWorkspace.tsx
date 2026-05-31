@@ -326,7 +326,7 @@ export function DataImportWorkspace({
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
       if (
-        /Local file dialog is not available|Failed to fetch|NetworkError|Load failed/i.test(
+        /Local file dialog is not available|only available from localhost|Failed to fetch|NetworkError|Load failed/i.test(
           detail,
         )
       ) {

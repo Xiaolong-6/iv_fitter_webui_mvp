@@ -31,7 +31,7 @@ export function cloneModelForPreset(model: ModelSpec): ModelSpec {
 }
 
 export function makeSingleDiodePreset(model: ModelSpec): ModelSpec {
-  return createInitialModel(String(model.version ?? "1.8.18"));
+  return createInitialModel(String(model.version ?? "1.8.20"));
 }
 
 export function makeDoubleDiodePreset(model: ModelSpec): ModelSpec {
@@ -86,6 +86,11 @@ export function componentLawLabel(comp: ComponentSpec, language: Language) {
 }
 
 export function componentDisplayName(comp: ComponentSpec, language: Language) {
+  if (comp.function_type === "custom" || comp.law_id === "custom_expression") {
+    const main = zoneForComponent(comp) === "main";
+    if (language === "zh") return main ? "自定义主路压降" : "自定义支路电流定律";
+    return main ? "Custom main-path voltage drop" : "Custom branch current law";
+  }
   return componentLawLabel(comp, language);
 }
 
@@ -113,7 +118,8 @@ export function functionOptionLabel(definition: FunctionDefinition, language: La
     : (language === "zh" ? "基础 · " : "Basic · ");
   if (definition.function_type === "series_diode_barrier") return prefix + (language === "zh" ? "类二极管串联势垒压降" : "Diode-like series barrier drop");
   if (definition.function_type === "softplus_rs_modifier") return prefix + (language === "zh" ? "偏压相关串联电导调制" : "Bias-dependent series conductance modifier");
-  if (definition.function_type === "custom" && bucket === "main") return prefix + (language === "zh" ? "自定义传输调制" : "Custom transport modifier");
+  if (definition.function_type === "custom" && bucket === "main") return language === "zh" ? "自定义主路压降" : "Custom main-path voltage drop";
+  if (definition.function_type === "custom" && bucket !== "main") return language === "zh" ? "自定义支路电流" : "Custom branch current";
   if (definition.law_id === "ohmic") return prefix + (language === "zh" ? "有效欧姆电阻" : "Effective Ohmic resistance");
   return prefix + localizedFunctionLabel(definition.function_type, definition.display_name, language);
 }

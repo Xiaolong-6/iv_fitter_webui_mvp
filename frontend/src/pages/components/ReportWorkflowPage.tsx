@@ -57,7 +57,7 @@ const REPORT_TEXT = {
     voltageRelation: "External voltage balance",
     currentSum: "Total current",
     backendEquations: "Show technical equation details",
-    exports: "Exports",
+    exports: "Next",
     downloadHtml: "Download HTML report",
     downloadCsv: "Download report CSV",
     downloadDiagnosticHtml: "Download diagnostic HTML",
@@ -74,6 +74,9 @@ const REPORT_TEXT = {
     reviewDiagnostics: "Review diagnostics",
     openBounds: "Open bounds/parameters",
     saferModel: "Try safer model",
+    workflowData: "Data",
+    workflowModel: "Model",
+    workflowFitting: "Fitting",
     generatedReportText: "Generated report text",
     noWarnings: "No warnings or errors reported by the fitting backend.",
     parameter: "Parameter",
@@ -120,7 +123,7 @@ const REPORT_TEXT = {
     voltageRelation: "外部电压平衡",
     currentSum: "总电流",
     backendEquations: "查看技术公式细节",
-    exports: "导出",
+    exports: "下一步",
     downloadHtml: "下载 HTML 报告",
     downloadCsv: "下载 CSV 报告",
     downloadDiagnosticHtml: "下载诊断 HTML",
@@ -137,6 +140,9 @@ const REPORT_TEXT = {
     reviewDiagnostics: "查看 diagnostics",
     openBounds: "打开边界/参数",
     saferModel: "尝试更安全模型",
+    workflowData: "数据",
+    workflowModel: "模型",
+    workflowFitting: "拟合",
     generatedReportText: "生成的报告文本",
     noWarnings: "后端未报告 warnings 或 errors。",
     parameter: "参数",
@@ -481,7 +487,7 @@ function QuickSummary({ result, semantics, setActiveView, language }: { result: 
     <span><strong>{rt(language, "measuredScale")}</strong>{result ? formatValueWithUnit(semantics.measuredScale, "A", 3) : "—"}</span>
     <span><strong>{rt(language, "nearBoundParameters")}</strong>{semantics.nearBoundParameters.length ? semantics.nearBoundParameters.join(", ") : "—"}</span>
     <span><strong>{rt(language, "usableAsReport")}</strong>{semantics.usable}</span>
-  </div><div className="report-side-action-links"><button type="button" onClick={() => document.getElementById("report-diagnostics")?.scrollIntoView({ behavior: "smooth", block: "start" })}>{rt(language, "reviewDiagnostics")}</button><button type="button" onClick={() => setActiveView("fitting")}>{rt(language, "openBounds")}</button><button type="button" onClick={() => setActiveView("model")}>{rt(language, "saferModel")}</button></div></div>;
+  </div><div className="report-side-action-links report-workflow-shortcuts"><button type="button" onClick={() => setActiveView("data")}>{rt(language, "workflowData")}</button><button type="button" onClick={() => setActiveView("model")}>{rt(language, "workflowModel")}</button><button type="button" onClick={() => setActiveView("fitting")}>{rt(language, "workflowFitting")}</button></div></div>;
 }
 
 
@@ -495,7 +501,7 @@ function FloatingExports({ result, report, invalid, reportMessage, onExportRepor
   function clampPosition(x: number, y: number) {
     const sidebarRight = document.querySelector(".sidebar")?.getBoundingClientRect().right ?? 84;
     const minX = Math.max(84, sidebarRight + 10);
-    const maxX = Math.max(minX, window.innerWidth - 340);
+    const maxX = Math.max(minX, window.innerWidth - 292);
     const minY = 8;
     const maxY = Math.max(minY, window.innerHeight - 220);
     return { x: Math.min(Math.max(x, minX), maxX), y: Math.min(Math.max(y, minY), maxY) };
@@ -513,10 +519,10 @@ function FloatingExports({ result, report, invalid, reportMessage, onExportRepor
   const diagnostic = Boolean(invalid);
   return <aside className={`card floating-report-exports ${diagnostic ? "diagnostic-export" : ""}`} style={{ left: pos.x, top: pos.y }}>
     <div className="floating-report-exports-head" onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end}>
-      <h2>{rt(language, "exports")}</h2><span>{language === "zh" ? "拖动" : "Drag"}</span>
+      <h2>{rt(language, "exports")}</h2><span className="floating-drag-icon" aria-label={language === "zh" ? "拖动" : "Drag"} title={language === "zh" ? "拖动" : "Drag"}>↕↔</span>
     </div>
     {diagnostic ? <p className="diagnostic-export-help">{rt(language, "diagnosticExportHelp")}</p> : null}
-    <div className="report-side-action-links export-diagnostics-actions"><button type="button" onClick={() => document.getElementById("report-diagnostics")?.scrollIntoView({ behavior: "smooth", block: "start" })}>{rt(language, "reviewDiagnostics")}</button><button type="button" onClick={() => setActiveView("fitting")}>{rt(language, "openBounds")}</button><button type="button" onClick={() => setActiveView("model")}>{rt(language, "saferModel")}</button></div>
+    <div className="report-side-action-links export-diagnostics-actions report-workflow-shortcuts"><button type="button" onClick={() => setActiveView("data")}>{rt(language, "workflowData")}</button><button type="button" onClick={() => setActiveView("model")}>{rt(language, "workflowModel")}</button><button type="button" onClick={() => setActiveView("fitting")}>{rt(language, "workflowFitting")}</button></div>
     <div className="report-actions report-export-actions-grid"><button type="button" className="primary" disabled={!result} onClick={onExportReportHtml}>{diagnostic ? rt(language, "downloadDiagnosticHtml") : rt(language, "downloadHtml")}</button><button type="button" disabled={!report} onClick={onExportReportCsv}>{diagnostic ? rt(language, "downloadDiagnosticCsv") : rt(language, "downloadCsv")}</button></div>
     {reportMessage ? <p className="muted">{reportMessage}</p> : null}
   </aside>;

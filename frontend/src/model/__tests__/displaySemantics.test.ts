@@ -344,9 +344,9 @@ describe("Negative: branch components are NOT voltage-drop", () => {
 // ---------------------------------------------------------------------------
 
 describe("Aggregate equations", () => {
-  it("voltage equation uses V_j = V_ext - Σ ΔV", () => {
+  it("voltage equation uses V_i = V_ext - Σ ΔV", () => {
     const eq = aggregateVoltageEquation();
-    expect(eq).toContain("V_j = V_{ext}");
+    expect(eq).toContain("V_i = V_{ext}");
     expect(eq).toContain("\\sum_k");
     expect(eq).toContain("\\Delta V_k");
   });
@@ -448,7 +448,7 @@ describe("Custom law builder", () => {
     it("equation shows custom expression, not generic fallback", () => {
       const eq = componentEquation(customMain);
       expect(eq).toContain("\\Delta V_{Xm}");
-      expect(eq).toContain("A * I");
+      expect(eq).toContain("A\\,I");
       expect(eq).not.toContain("f_{");
     });
 
@@ -478,7 +478,7 @@ describe("Custom law builder", () => {
     it("equation shows custom expression, not generic fallback", () => {
       const eq = componentEquation(customBranch);
       expect(eq).toContain("I_{Xb}");
-      expect(eq).toContain("A * Vi");
+      expect(eq).toContain("A\\,V_i");
       expect(eq).not.toContain("f_{");
     });
 
