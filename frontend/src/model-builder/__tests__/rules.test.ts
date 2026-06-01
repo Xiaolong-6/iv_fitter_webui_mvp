@@ -72,7 +72,7 @@ describe("model-builder rules", () => {
     expect(definitionsForBucket(defs, "branches").map((d) => d.function_type)).toEqual(["reverse_leak"]);
   });
 
-  it("chooses default locations and blocks duplicate non-role components", () => {
+  it("chooses default locations and allows repeated behaviors in branch graph editing", () => {
     const diodeDef = definition({ function_type: "diode", available_forms: ["current_branch"] });
     const branchDef = definition({ function_type: "reverse_leak", available_forms: ["current_branch"] });
     expect(defaultLocationForBucket("main", diodeDef, model({}))).toBe("series");
@@ -81,7 +81,7 @@ describe("model-builder rules", () => {
 
     const existing = component({ id: "D1", law_id: "shockley", polarity: "forward" });
     const duplicate = component({ id: "D2", law_id: "shockley", polarity: "forward" });
-    expect(canAddComponent(model({ core: [existing] }), duplicate)).toEqual({ ok: false, reason: "duplicate" });
+    expect(canAddComponent(model({ core: [existing] }), duplicate)).toEqual({ ok: true, reason: null });
   });
 
   it("uses diode role metadata when building duplicate keys", () => {

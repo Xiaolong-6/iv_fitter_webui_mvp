@@ -123,6 +123,33 @@ Normal Model Builder UI must expose the user-facing buckets:
 
 Do not expose internal implementation buckets such as `core`, `series`, or `parallel` in the normal workflow. Internal keys may appear only in advanced/developer details.
 
+
+## 5a. Direct branch-graph Model Builder rule
+
+The Model Builder canvas must be treated as a directly editable branch graph, not as floating component cards and not as visible module/container boxes.
+
+User-facing graph rules:
+
+- The canvas starts conceptually from `V -- (+) -- GND`.
+- A `+` on a path inserts a component in series into that exact path.
+- A lower/global `+` between junctions creates another parallel path between the same two junctions.
+- A path may contain any number of ordered series components.
+- The same two junctions may have any number of parallel paths.
+- Components must be visibly connected by wires and junction dots; no component may appear as a floating card.
+- Do not reintroduce visible grey module/container boxes as the primary editing concept.
+
+User-facing component behavior rules:
+
+- A component is an editable relation using local variables `V` and `I`.
+- The normal modes are `R(V)`, `I(V)`, `ΔV(I)`, and custom residual `F(I,V)=0`.
+- Ohmic resistance and Shockley diode are presets/special cases, not separate UI architectures.
+- Users must be able to define custom parameter symbols and mark each parameter as fitted/fixed with initial value and bounds.
+- The displayed user law must remain stable. Placement may map variables and the backend may compile residuals, but the UI must not rewrite the user’s formula into a different physical story.
+
+Implementation rule:
+
+- Until the backend is fully graph-native, frontend graph editing may use `metadata.pathId` and `metadata.pathOrder` to represent path membership and serial order. Future solver work should consume a real graph-native schema and assemble KCL/residuals automatically.
+
 ## 6. Formula and equation presentation
 
 User-facing formulas must be rendered as formatted equation blocks/cards, not raw backend/debug strings.
@@ -393,3 +420,57 @@ Before any release, audit all user-facing model explanation surfaces for:
 - Correct physical role (voltage drop vs current)
 - No generic fallback equations where specific equations exist
 - No raw LaTeX in visible UI
+
+## 21. Model Builder graph-layout rules
+
+The Model Builder must be treated as a direct branch graph, not a floating-card canvas and not a visible module/container editor.
+
+- The user-facing topology is `nodes + paths + ordered components`.
+- Components are inserted directly on paths using `+` affordances.
+- Parallel paths are multiple paths between the same two junction nodes.
+- Each path may contain ordered series components.
+- `R(V)`, `I(V)`, `ΔV(I)`, and custom residual components are behavior presets over local variables `V` and `I`; resistor and diode are special cases, not separate UI architectures.
+- Layout must be generated through the graph layout pipeline, currently ELK layered layout plus React Flow rendering. Do not hand-place branch nodes with hard-coded diagonal/triangular coordinates.
+- React Flow node positions are visual metadata only; model truth remains the branch graph and component behavior/parameter data.
+- Any future Model Builder patch must verify visible wires, junctions, serial insertion buttons, parallel-path buttons, selected-component inspector behavior modes, and custom parameter editing.
+
+
+## 2026-05-31 — Model Builder ELK routing alignment hotfix
+
+- Replaced smooth-step circuit-wire fallback rendering with straight/custom routed paths.
+- Preserved ELK edge section points and passed them into React Flow edge data.
+- Stopped giving ELK tall fake junction obstacles; junctions are small layout nodes while the rendered rail spans path handles.
+- Stopped overriding ELK component y positions with hand-coded `rowY(pathIndex)` values except as fallback.
+- Verified frontend tests and production build after the hotfix.
+
+
+## Model Builder Graph-Native Rule — v1.8.35
+
+The Model Builder canvas must be treated as a direct editable circuit graph. Do not render components as floating cards or visible gray modules. Rs-style series components belong before the split junction; branch components such as D1/Rsh belong as parallel paths between split/merge junction rails. Edges must be straight circuit-wire segments unless a future full routing engine is used consistently end-to-end. Do not mix ELK coordinates with hand-written y coordinates or discard route constraints halfway. Component behavior is user-facing R(V), I(V), dV(I), or F(I,V)=0. User expressions must be preserved; solvers may only map local V/I variables and compile residuals. Custom parameter symbols, value, lower, upper, and fit flag are first-class fitting controls.
+
+
+## Model Builder CSS ownership rule — v1.8.36
+
+The Model Builder must not rely on a late-loaded global override pile. `final-overrides.css` was removed after it accumulated conflicting `!important` rules and repeated selector definitions. Future UI work must edit the canonical owner file instead:
+
+- Model Builder canvas/editor styles belong in `frontend/src/styles/model-builder.css`.
+- Do not reintroduce `final-overrides.css` or an equivalent catch-all override file.
+- Each core Model Builder selector should have one base definition. Responsive changes should use CSS variables or scoped media rules instead of redefining the same selector repeatedly.
+- `!important` is allowed only for narrowly scoped third-party library overrides such as React Flow internals, not for normal layout control.
+- Inspector/editor panels must have explicit height and overflow rules; content must scroll rather than be clipped.
+
+## Model Builder direct graph interaction polish rule
+
+For the graph-native Model Builder, do not reintroduce visible module containers, arrow-ended terminal wires, or dashed V-shaped helper edges that look like physical branches. The intended user interaction is direct circuit growth:
+
+- empty state: `V — (+) — GND`;
+- path-edge `+`: serial component insertion in that exact path;
+- lower floating `+`: add a new parallel path between the same junction pair;
+- all physical model wires should remain horizontal/vertical circuit wires wherever possible;
+- helper affordances must not be visually confused with physical circuit branches.
+
+Any future layout change must preserve these visual semantics and update the browser manual-test checklist.
+
+### Model Builder visual-control rule
+
+Direct branch graph controls must not visually dominate the circuit. Serial insertion controls should be quiet by default and become prominent on hover/focus/selection. Parallel insertion should be a semantic UI control (`+ Add parallel path`) and must not look like a physical branch or dashed circuit wire. Terminal wires, especially merge-to-GND, must remain horizontal unless a future explicit topology requires otherwise.

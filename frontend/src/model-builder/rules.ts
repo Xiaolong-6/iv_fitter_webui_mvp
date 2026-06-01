@@ -97,8 +97,10 @@ export function isDuplicateBlocked(model: ModelSpec, comp: ComponentSpec) {
   return allComponents(model).some((existing) => duplicateBaseKey(existing) === key);
 }
 
-export function canAddComponent(model: ModelSpec, comp: ComponentSpec) {
-  if (isDuplicateBlocked(model, comp)) return { ok: false, reason: "duplicate" as const };
+export function canAddComponent(_model: ModelSpec, _comp: ComponentSpec) {
+  // Branch-graph builder permits repeated physical behaviors on different paths
+  // and multiple series components inside the same path. Duplicates are now a
+  // modeling choice, not a UI-level blocker.
   return { ok: true, reason: null };
 }
 

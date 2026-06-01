@@ -1,28 +1,11 @@
 import { useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
-import type { FunctionDefinition } from "../../model/types";
+import type { FunctionDefinition, ParameterSpec } from "../../model/types";
 import { nickname } from "../../model-builder/rules";
-import {
-  componentDisplayName,
-  componentRoleLabel,
-  definitionsForBucket,
-  findComponentRef,
-  functionOptionLabel,
-  componentEquation,
-  zoneForComponent,
-} from "./modelHelpers";
+import { componentDisplayName, componentRoleLabel, findComponentRef, functionOptionLabel, zoneForComponent } from "./modelHelpers";
 import { BlockMath } from "./math";
 import { useModelFlowContext } from "./flowContext";
-import { isPolarityMeaningful } from "../../model/modelDisplaySemantics";
-import {
-  validateCustomExpression,
-  variableLegend,
-  advancedVariableLegend,
-  defaultCustomExpression,
-  physicalFormLabel,
-  inferredCustomScaleUnit,
-  inferredCustomScaleDescription,
-} from "../../model/customLawValidation";
-import type { Language } from "../../model/i18n";
+import { validateCustomExpression } from "../../model/customLawValidation";
+import type { ComponentBehaviorMode } from "./types";
 
 const POLARITY_OPTIONS = [
   { value: "forward", en: "Forward", zh: "正向" },
@@ -30,192 +13,184 @@ const POLARITY_OPTIONS = [
   { value: "symmetric", en: "Symmetric", zh: "对称" },
 ];
 
-function VariableLegend({ zone, language, showAdvanced, setShowAdvanced }: { zone: "main" | "branches"; language: Language; showAdvanced: boolean; setShowAdvanced: (value: boolean) => void }) {
-  const vars = variableLegend(zone, language);
-  const advancedVars = advancedVariableLegend(zone, language);
-  return <div className="xy-custom-variable-legend">
-    <span className="xy-custom-legend-title">{language === "zh" ? "变量" : "Variables"}</span>
-    <div className="xy-custom-legend-grid xy-custom-legend-grid-primary">
-      {vars.map((v: { symbol: string; description: string }) => <span className="xy-custom-legend-item" key={v.symbol} title={v.description}>
-        <strong>{v.symbol}</strong><small>{v.description}</small>
-      </span>)}
-    </div>
-    <button type="button" className="xy-custom-legend-toggle compact" aria-expanded={showAdvanced} onClick={() => setShowAdvanced(!showAdvanced)}>
-      {showAdvanced
-        ? (language === "zh" ? "▾ 高级变量" : "▾ Advanced variables")
-        : (language === "zh" ? "▸ 高级变量" : "▸ Advanced variables")}
-    </button>
-    {showAdvanced ? <div className="xy-custom-legend-grid xy-custom-legend-grid-advanced">
-      {advancedVars.map((v: { symbol: string; description: string }) => <span className="xy-custom-legend-item" key={v.symbol} title={v.description}>
-        <strong>{v.symbol}</strong><small>{v.description}</small>
-      </span>)}
-    </div> : null}
-  </div>;
+const BEHAVIOR_OPTIONS: Array<{ value: ComponentBehaviorMode; en: string; zh: string; equation: string }> = [
+  { value: "R_of_V", en: "R(V): voltage-dependent resistance", zh: "R(V)：电压相关电阻", equation: "I = V / R(V)" },
+  { value: "I_of_V", en: "I(V): direct current expression", zh: "I(V)：直接电流表达式", equation: "I = f(V)" },
+  { value: "dV_of_I", en: "ΔV(I): voltage drop expression", zh: "ΔV(I)：压降表达式", equation: "ΔV = f(I)" },
+  { value: "custom_residual", en: "Custom residual F(I,V)=0", zh: "自定义残差 F(I,V)=0", equation: "F(I,V,θ)=0" },
+];
+
+function inferBehavior(comp: NonNullable<ReturnType<typeof findComponentRef>>["comp"]): ComponentBehaviorMode {
+  const raw = comp.metadata?.behavior;
+  if (raw === "R_of_V" || raw === "I_of_V" || raw === "dV_of_I" || raw === "custom_residual") return raw;
+  if (comp.law_id === "ohmic") return "R_of_V";
+  if (comp.function_type === "diode") return "I_of_V";
+  if (comp.evaluation_form === "voltage_drop") return "dV_of_I";
+  return "I_of_V";
 }
 
-function ValidationErrors({ errors, language }: { errors: Array<{ en: string; zh: string }>; language: Language }) {
-  if (!errors.length) return null;
-  return <div className="xy-custom-validation-errors" role="alert">
-    {errors.map((err, i) => <span key={i} className="xy-custom-validation-error">{err[language === "zh" ? "zh" : "en"]}</span>)}
-  </div>;
+function expressionFor(comp: NonNullable<ReturnType<typeof findComponentRef>>["comp"], behavior: ComponentBehaviorMode) {
+  const raw = typeof comp.metadata?.expression === "string" ? comp.metadata.expression.trim() : "";
+  if (raw) return raw;
+  if (behavior === "R_of_V") {
+    const first = Object.values(comp.params)[0];
+    return first?.label ? String(first.label) : "R0";
+  }
+  if (behavior === "I_of_V" && comp.function_type === "diode") return "I0 * (exp(V / (n * Vt)) - 1)";
+  if (behavior === "I_of_V") return "V / R0";
+  if (behavior === "dV_of_I") return "I * R0";
+  return "I - V / R0";
 }
 
-function displayParameterName(key: string, label?: string | null) {
-  const raw = (label || key).trim();
-  const aliases: Record<string, string> = {
-    Vt_V: "Vt",
-    Vs_V: "Vs",
-    Vt_ph_V: "Vt",
-    Vs_ph_V: "Vs",
-    Iph0_A: "I0",
-  };
-  return aliases[raw] ?? aliases[key] ?? raw.replace(/_V$/, "").replace(/_A$/, "").replace(/_ohm$/, "");
+function expressionLatex(behavior: ComponentBehaviorMode, expression: string) {
+  const safe = expression.replace(/_/g, "\\_").replace(/\*/g, " ");
+  if (behavior === "R_of_V") return `I = \\frac{V}{${safe || "R(V)"}}`;
+  if (behavior === "I_of_V") return `I = ${safe || "f(V)"}`;
+  if (behavior === "dV_of_I") return `\\Delta V = ${safe || "f(I)"}`;
+  return `${safe || "F(I,V,\\theta)"} = 0`;
 }
 
+function numericInputValue(value: number | null | undefined) {
+  return value === null || value === undefined || Number.isNaN(value) ? "" : String(value);
+}
+
+function toNumberOrNull(value: string) {
+  const clean = value.trim();
+  if (!clean) return null;
+  const parsed = Number(clean);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function defaultParamUnit(param: ParameterSpec) {
+  return param.unit ?? "";
+}
 
 export function ComponentCanvasEditor({ selectedId, onHeaderPointerDown }: { selectedId: string | null; onHeaderPointerDown?: (event: ReactPointerEvent) => void }) {
-  const { model, registry, language, disabled, readOnly, renameById, replaceDefinitionById, updateExpressionById, updatePolarityById } = useModelFlowContext();
+  const {
+    model,
+    registry,
+    language,
+    disabled,
+    readOnly,
+    renameById,
+    replaceDefinitionById,
+    updateExpressionById,
+    updateBehaviorById,
+    updatePolarityById,
+    addCustomParameterById,
+    updateCustomParameterById,
+    removeCustomParameterById,
+  } = useModelFlowContext();
   const ref = selectedId ? findComponentRef(model, selectedId) : null;
-  const definitions = useMemo<FunctionDefinition[]>(() => {
-    if (!ref) return [];
-    return definitionsForBucket(registry, zoneForComponent(ref.comp));
-  }, [ref, registry]);
-  const [showAdvancedVariables, setShowAdvancedVariables] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
+  const definitions = useMemo<FunctionDefinition[]>(() => registry, [registry]);
   if (!ref || readOnly) return null;
+
   const comp = ref.comp;
   const zone = zoneForComponent(comp);
+  const behavior = inferBehavior(comp);
+  const expression = expressionFor(comp, behavior);
+  const behaviorLabel = BEHAVIOR_OPTIONS.find((item) => item.value === behavior) ?? BEHAVIOR_OPTIONS[0];
+  const validation = validateCustomExpression(expression, zone, language, Object.entries(comp.params).flatMap(([name, param]) => [name, String(param.label ?? name)]));
   const title = nickname(comp);
-  const currentDefinition = definitions.find((item) => item.function_type === comp.function_type) ?? definitions[0];
-  const isCustom = comp.function_type === "custom" || comp.law_id === "custom_expression";
-  const rawExpression = typeof comp.metadata?.expression === "string" ? comp.metadata.expression : "";
-  const expression = rawExpression.trim() ? rawExpression : defaultCustomExpression(zone);
-  const isBuiltInPresetExpression = isCustom && comp.metadata?.expressionSource !== "user" && /softplus\s*\(/i.test(rawExpression || "");
-  const unitBadges = Object.entries(comp.params).map(([paramName, spec]) => {
-    const inferredUnit = isCustom && paramName === "A" ? inferredCustomScaleUnit(zone, expression) : null;
-    const inferredDescription = isCustom && paramName === "A" ? inferredCustomScaleDescription(zone, expression, language) : null;
-    return {
-      key: paramName,
-      name: displayParameterName(paramName, spec.label),
-      unit: inferredUnit ?? spec.unit ?? "dimensionless",
-      description: inferredDescription ?? spec.description ?? paramName,
-    };
-  });
-  const typeLabel = zone === "main" ? (language === "zh" ? "主路" : "Main path") : (language === "zh" ? "分支" : "Branch");
-  const customLawDisplayLabel = zone === "main"
-    ? (language === "zh" ? "自定义主路压降" : "Custom main-path voltage drop")
-    : (language === "zh" ? "自定义支路电流定律" : "Custom branch current law");
-  const showPolarity = isPolarityMeaningful(comp) || (isCustom && zone === "branches");
-
-  const validation = isCustom ? validateCustomExpression(expression, zone, language) : { valid: true, errors: [] };
-
-  const polarityTooltip = language === "zh"
-    ? "正向：电流定律使用正支路电压约定。\n反向：电流定律使用相反的极性/符号约定。\n对称：极性无关（如欧姆电阻）。"
-    : zone === "branches"
-      ? "Forward: positive branch current follows V_i → component → V=0. Reverse flips the sign convention."
-      : "Polarity is handled by signed current I.";
+  const zoneText = zone === "main" ? (language === "zh" ? "路径元件" : "Path component") : (language === "zh" ? "分支元件" : "Branch component");
+  const pathId = typeof comp.metadata?.pathId === "string" ? comp.metadata.pathId : (zone === "main" ? "path:main" : `path:${comp.id}`);
 
   return <aside className={`xy-canvas-component-editor xy-canvas-component-editor-${zone}`} aria-label={language === "zh" ? "元件详情" : "Component details"} onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
     <header className="xy-editor-header" onPointerDown={onHeaderPointerDown} title={language === "zh" ? "拖拽移动详情面板" : "Drag to move the inspector"}>
       <div className="xy-editor-title-block">
         <span className="xy-editor-eyebrow">{language === "zh" ? "当前元件" : "Selected component"}</span>
         <strong>{title}</strong>
-        <small>{isCustom ? customLawDisplayLabel : componentDisplayName(comp, language)}</small>
+        <small>{behaviorLabel[language === "zh" ? "zh" : "en"]}</small>
       </div>
-      <span className="physics-badge physics-badge-zone">{typeLabel}</span>
+      <span className="physics-badge physics-badge-zone">{zoneText}</span>
     </header>
 
     <section className="xy-editor-fields" aria-label={language === "zh" ? "基本设置" : "Basic settings"}>
       <label>
         <span>{language === "zh" ? "名称" : "Name"}</span>
-        <input
-          disabled={disabled}
-          value={title}
-          onChange={(event) => renameById(comp.id, event.target.value)}
-        />
+        <input disabled={disabled} value={title} onChange={(event) => renameById(comp.id, event.target.value)} />
       </label>
       <label>
-        <span>{language === "zh" ? "模型" : "Model"}</span>
-        <select
-          disabled={disabled || definitions.length === 0}
-          value={currentDefinition?.function_type ?? comp.function_type}
-          onChange={(event) => replaceDefinitionById(comp.id, event.target.value)}
-        >
-          {definitions.map((definition) => {
-            const label = functionOptionLabel(definition, language, zone);
-            return <option key={definition.function_type} value={definition.function_type} title={label}>{label}</option>;
-          })}
+        <span>{language === "zh" ? "行为" : "Behavior"}</span>
+        <select disabled={disabled} value={behavior} onChange={(event) => updateBehaviorById(comp.id, event.target.value as ComponentBehaviorMode)}>
+          {BEHAVIOR_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item[language === "zh" ? "zh" : "en"]}</option>)}
         </select>
       </label>
-      {showPolarity ? <label>
-        <span title={polarityTooltip}>{language === "zh" ? "极性" : "Polarity"}<span className="xy-field-help">ⓘ</span></span>
-        <select
-          disabled={disabled}
-          value={comp.polarity ?? "forward"}
-          onChange={(event) => updatePolarityById(comp.id, event.target.value)}
-        >
+      <label>
+        <span>{language === "zh" ? "预设" : "Preset"}</span>
+        <select disabled={disabled || definitions.length === 0} value={comp.function_type} onChange={(event) => replaceDefinitionById(comp.id, event.target.value)}>
+          {definitions.map((definition) => <option key={definition.function_type} value={definition.function_type} title={functionOptionLabel(definition, language, zone)}>{functionOptionLabel(definition, language, zone)}</option>)}
+        </select>
+      </label>
+      <label>
+        <span>{language === "zh" ? "符号/极性" : "Sign / polarity"}</span>
+        <select disabled={disabled} value={comp.polarity ?? "forward"} onChange={(event) => updatePolarityById(comp.id, event.target.value)}>
           {POLARITY_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{language === "zh" ? opt.zh : opt.en}</option>)}
         </select>
-      </label> : null}
+      </label>
     </section>
 
-    <div className="xy-canvas-component-role">{componentRoleLabel(comp, language)}</div>
+    <div className="xy-canvas-component-role">
+      <strong>{componentDisplayName(comp, language)}</strong>
+      <span>{componentRoleLabel(comp, language)}</span>
+      <span>{language === "zh" ? "路径" : "Path"}: {pathId}</span>
+    </div>
 
-    {isCustom ? <div className="xy-custom-law-builder">
+    <section className="xy-custom-law-builder xy-custom-law-builder-always">
       <div className="xy-custom-law-form">
-        <span className="xy-custom-form-label">{language === "zh" ? "物理形式" : "Physical form"}</span>
-        <span className="xy-custom-form-value">{physicalFormLabel(zone, language)}</span>
+        <span className="xy-custom-form-label">{language === "zh" ? "统一变量" : "Unified variables"}</span>
+        <span className="xy-custom-form-value">V = {language === "zh" ? "该元件/路径两端电压差" : "local voltage drop"}; I = {language === "zh" ? "路径电流" : "path current"}</span>
       </div>
-      <div className="xy-custom-expression-source">
-        {isBuiltInPresetExpression
-          ? (language === "zh" ? "内置/预设表达式；编辑后会变为用户自定义。" : "Built-in/preset expression. Editing converts it to a user-defined law.")
-          : customLawDisplayLabel}
-      </div>
-
       <label className="xy-custom-expression-field">
-        <span>{language === "zh" ? "表达式" : "Expression"}</span>
-        <textarea
-          disabled={disabled}
-          rows={3}
-          value={expression}
-          onChange={(event) => updateExpressionById(comp.id, event.target.value)}
-          placeholder={zone === "main" ? "A * I" : "A * Vi"}
-          className={validation.valid ? "" : "xy-custom-expression-error"}
-        />
+        <span>{behaviorLabel.equation}</span>
+        <textarea disabled={disabled} rows={3} value={expression} onChange={(event) => updateExpressionById(comp.id, event.target.value)} placeholder={behavior === "R_of_V" ? "R0 * (1 + A * V)" : behavior === "I_of_V" ? "V / R0" : "I * R0"} className={validation.valid ? "" : "xy-custom-expression-error"} />
       </label>
-
-      <ValidationErrors errors={validation.errors} language={language} />
-
-      <VariableLegend zone={zone} language={language} showAdvanced={showAdvancedVariables} setShowAdvanced={setShowAdvancedVariables} />
-
+      {!validation.valid ? <div className="xy-custom-validation-errors" role="alert">
+        {validation.errors.map((err, index) => <span key={index} className="xy-custom-validation-error">{err[language === "zh" ? "zh" : "en"]}</span>)}
+      </div> : null}
       <div className="xy-custom-syntax-help">
-        <strong>{language === "zh" ? "表达式语法" : "Expression syntax"}</strong>
-        <span>{zone === "main"
-          ? (language === "zh" ? "乘法：A * I" : "Multiplication: A * I")
-          : (language === "zh" ? "乘法：A * Vi" : "Multiplication: A * Vi")}</span>
-        <span>{zone === "main"
-          ? (language === "zh" ? "幂：I**2" : "Powers: I**2")
-          : (language === "zh" ? "幂：Vi**2" : "Powers: Vi**2")}</span>
-        <span>{language === "zh" ? "函数：softplus(x), sigmoid(x), exp(x), log(x), log10(x), log1p(x), sqrt(x), abs(x), sign(x), minimum(x,y), maximum(x,y), clip(x,a,b), sin/cos/tan/tanh" : "Functions: softplus(x), sigmoid(x), exp(x), log(x), log10(x), log1p(x), sqrt(x), abs(x), sign(x), min/max via minimum(x,y), maximum(x,y), clip(x,a,b), sin/cos/tan/tanh"}</span>
-        <span>{zone === "main"
-          ? (language === "zh" ? "主路默认变量：I" : "Default main-path variable: I")
-          : (language === "zh" ? "分支默认变量：Vi（显示为 V_i）" : "Default branch variable: Vi (shown as V_i)")}</span>
+        <strong>{language === "zh" ? "表达式规则" : "Expression rules"}</strong>
+        <span>{language === "zh" ? "可直接使用变量 V 和 I；V 是本元件/路径两端电压，I 是该路径电流。" : "Use V and I directly; V is local voltage, I is path current."}</span>
+        <span>{language === "zh" ? "可使用 exp/log/sqrt/abs/softplus/sigmoid/tanh/minimum/maximum/clip 等安全函数。" : "Safe functions include exp/log/sqrt/abs/softplus/sigmoid/tanh/minimum/maximum/clip."}</span>
+        <span>{language === "zh" ? "用户写的公式保持不变；solver 只做变量映射和 residual 编译。" : "The user formula is preserved; solver only maps variables and compiles residuals."}</span>
       </div>
-
-      {!showPolarity ? <p className="xy-custom-polarity-note">{language === "zh"
-        ? "此主路自定义压降直接使用带符号电流 I，因此不显示额外极性选择。"
-        : "Polarity is handled by signed current I."}</p> : null}
-    </div> : null}
+    </section>
 
     <section className="xy-canvas-component-equation" aria-label={language === "zh" ? "控制方程" : "Governing equation"}>
-      <span>{language === "zh" ? "控制方程" : "Governing equation"}</span>
-      <BlockMath math={componentEquation(comp)} />
+      <span>{language === "zh" ? "用户公式" : "User law"}</span>
+      <BlockMath math={expressionLatex(behavior, expression)} />
     </section>
 
-    {unitBadges.length ? <div className="xy-canvas-component-units" aria-label={language === "zh" ? "参数单位" : "Parameter units"}>
-      {unitBadges.map((badge) => <span className="physics-badge physics-unit-badge" key={`${badge.key}-${badge.unit}`} title={`${badge.key}: ${badge.description} · unit: ${badge.unit}`}>
-        <strong>{badge.name}</strong><small>{language === "zh" ? `单位 ${badge.unit}` : `unit ${badge.unit}`}</small>
-      </span>)}
-    </div> : null}
+    <section className="xy-param-editor-card" aria-label={language === "zh" ? "自定义参数表" : "Custom parameter table"}>
+      <div className="xy-param-editor-headline">
+        <strong>{language === "zh" ? "拟合参数" : "Fitting parameters"}</strong>
+        <button type="button" disabled={disabled} onClick={() => addCustomParameterById(comp.id)}>+ {language === "zh" ? "添加参数" : "Add parameter"}</button>
+      </div>
+      <div className="xy-param-editor-table">
+        <div className="xy-param-editor-row xy-param-editor-row-head">
+          <span>{language === "zh" ? "符号" : "Symbol"}</span>
+          <span>{language === "zh" ? "初值" : "Value"}</span>
+          <span>{language === "zh" ? "下界" : "Lower"}</span>
+          <span>{language === "zh" ? "上界" : "Upper"}</span>
+          <span>{language === "zh" ? "拟合" : "Fit"}</span>
+          <span />
+        </div>
+        {Object.entries(comp.params).map(([paramName, param]) => <div className="xy-param-editor-row" key={paramName}>
+          <input disabled={disabled} value={param.label ?? paramName} title={paramName} onChange={(event) => updateCustomParameterById(comp.id, paramName, { nextName: event.target.value })} />
+          <input disabled={disabled} value={numericInputValue(param.value)} onChange={(event) => updateCustomParameterById(comp.id, paramName, { value: toNumberOrNull(event.target.value) ?? param.value })} />
+          <input disabled={disabled} value={numericInputValue(param.lower)} placeholder="-∞" onChange={(event) => updateCustomParameterById(comp.id, paramName, { lower: toNumberOrNull(event.target.value) })} />
+          <input disabled={disabled} value={numericInputValue(param.upper)} placeholder="∞" onChange={(event) => updateCustomParameterById(comp.id, paramName, { upper: toNumberOrNull(event.target.value) })} />
+          <label className="xy-param-fit-toggle"><input disabled={disabled} type="checkbox" checked={param.fit ?? false} onChange={(event) => updateCustomParameterById(comp.id, paramName, { fit: event.target.checked })} /></label>
+          <button type="button" disabled={disabled} title={language === "zh" ? "删除参数" : "Remove parameter"} onClick={() => removeCustomParameterById(comp.id, paramName)}>×</button>
+        </div>)}
+      </div>
+      {showAdvanced ? <div className="xy-custom-syntax-help xy-advanced-param-note">
+        <span>{language === "zh" ? "参数名应与公式中的符号一致，例如 R0、A、I0、n。单位字段暂随原参数保留。" : "Parameter symbols should match the expression, e.g. R0, A, I0, n. Existing units are preserved where available."}</span>
+        <span>{language === "zh" ? "当前单位提示" : "Current unit hints"}: {Object.values(comp.params).map((p) => defaultParamUnit(p) || "dimensionless").join(", ")}</span>
+      </div> : null}
+      <button type="button" className="xy-custom-legend-toggle compact" onClick={() => setShowAdvanced(!showAdvanced)}>{showAdvanced ? (language === "zh" ? "收起参数说明" : "Hide parameter notes") : (language === "zh" ? "参数说明" : "Parameter notes")}</button>
+    </section>
   </aside>;
 }

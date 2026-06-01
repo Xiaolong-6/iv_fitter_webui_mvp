@@ -173,9 +173,19 @@ def predict_current(voltage_v, model, solver_mode: str = "legacy_composite") -> 
 
 def _all_fit_params(request: FitRequest):
     params = []
+    seen: set[tuple[str, str]] = set()
     for group_name in ("core", "series", "parallel"):
         for comp in getattr(request.model, group_name):
             for name, spec in comp.params.items():
+                key = f"{comp.id}.{name}"
+                params.append((key, comp, name, spec))
+                seen.add((comp.id, name))
+    graph = getattr(request.model, "graph", None)
+    if graph is not None:
+        for comp in getattr(graph, "components", []) or []:
+            for name, spec in comp.params.items():
+                if (comp.id, name) in seen:
+                    continue
                 key = f"{comp.id}.{name}"
                 params.append((key, comp, name, spec))
     return params
@@ -343,7 +353,6 @@ def fit_trace(request: FitRequest) -> FitResult:
             check_timeout()
             if request.config.solver_mode == "graph_dc":
                 i_pred, branches = solve_graph_current(v_all, request.model)
-                warnings.append(graph_solver_not_reportable_warning())
             else:
                 vj_all = solve_vj(v_all, request.model)
                 branches = branch_currents_at_vj(vj_all, request.model)

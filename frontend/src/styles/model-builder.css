@@ -1,4 +1,4 @@
-﻿/* Extracted from style.css lines 126-130 for Model Builder stabilization refactor. */
+/* Extracted from style.css lines 126-130 for Model Builder stabilization refactor. */
 .add-row { display: grid; grid-template-columns: minmax(120px, 1fr) auto; gap: 6px; }
 .model-builder {
   container-type: inline-size;
@@ -2720,215 +2720,559 @@
 .xy-component-node-branches .xy-port {
   border-color: #7c3aed !important;
 }
-.xy-canvas-component-editor {
-  width: min(360px, calc(100vw - 96px)) !important;
-  padding: 14px !important;
-  border: 1px solid #dbe4ef !important;
-  border-radius: 18px !important;
-  background: rgba(255,255,255,0.98) !important;
-  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18) !important;
+
+/* v1.8.36 Model Builder CSS cleanup: canonical editor and preview rules.
+   Keep each selector in this section single-source; do not re-add one-off overrides. */
+.model-builder {
+  --xy-canvas-editor-width: min(420px, 34vw);
 }
-.xy-editor-header {
-  display: flex !important;
-  align-items: flex-start !important;
-  justify-content: space-between !important;
-  gap: 12px !important;
-  margin-bottom: 10px !important;
-}
-.xy-editor-title-block {
-  display: grid !important;
-  gap: 2px !important;
-  min-width: 0 !important;
-}
-.xy-editor-eyebrow {
-  color: #64748b !important;
-  font-size: 10px !important;
-  font-weight: 900 !important;
-  letter-spacing: .08em !important;
-  text-transform: uppercase !important;
-}
-.xy-editor-title-block strong {
-  font-size: 22px !important;
-  line-height: 1.05 !important;
-  letter-spacing: -0.03em !important;
-}
-.xy-editor-title-block small {
-  color: #64748b !important;
-  font-size: 12px !important;
-}
-.xy-editor-fields {
-  display: grid !important;
-  gap: 9px !important;
-  margin: 10px 0 !important;
-}
-.xy-editor-fields label,
-.xy-custom-expression-field {
-  display: grid !important;
-  gap: 4px !important;
-}
-.xy-editor-fields label > span,
-.xy-custom-expression-field > span {
-  color: #475569 !important;
-  font-size: 10px !important;
-  font-weight: 900 !important;
-  letter-spacing: .08em !important;
-  text-transform: uppercase !important;
-}
-.xy-editor-fields input,
-.xy-editor-fields select,
-.xy-custom-expression-field textarea {
-  width: 100% !important;
-  border-radius: 10px !important;
-  border: 1px solid #cbd5e1 !important;
-  background: #fff !important;
-}
-.xy-custom-expression-field textarea {
-  min-height: 54px !important;
-  padding: 8px 10px !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
-  font-size: 12px !important;
-  resize: vertical !important;
-}
-.xy-custom-expression-field small {
-  color: #64748b !important;
-  font-size: 11px !important;
-  line-height: 1.3 !important;
-}
-.xy-canvas-component-role {
-  margin: 8px 0 !important;
-  padding: 7px 10px !important;
-  border-radius: 999px !important;
-  color: #334155 !important;
-  background: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
-  font-size: 12px !important;
-  font-weight: 800 !important;
-}
-.xy-canvas-component-equation {
-  display: grid !important;
-  gap: 6px !important;
-  margin-top: 10px !important;
-  padding: 12px !important;
-  border-radius: 16px !important;
-  border: 1px solid #bfdbfe !important;
-  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%) !important;
-}
-.xy-canvas-component-editor-branches .xy-canvas-component-equation {
-  border-color: #ddd6fe !important;
-  background: linear-gradient(180deg, #f5f3ff 0%, #ede9fe 100%) !important;
-}
-.xy-canvas-component-equation > span {
-  color: #1d4ed8 !important;
-  font-size: 10px !important;
-  font-weight: 950 !important;
-  letter-spacing: .1em !important;
-  text-transform: uppercase !important;
-}
-.xy-canvas-component-editor-branches .xy-canvas-component-equation > span {
-  color: #6d28d9 !important;
-}
-.xy-canvas-component-equation .katex-display {
-  margin: 0 !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-}
-.xy-canvas-component-equation .katex {
-  font-size: 1.14em !important;
-}
-.xy-canvas-component-units {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 6px !important;
-  margin-top: 10px !important;
-}
-.physics-badge,
-.physics-unit-badge {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 5px !important;
-  min-height: 24px !important;
-  border-radius: 999px !important;
-  border: 1px solid #dbe4ef !important;
-  background: #ffffff !important;
-  color: #334155 !important;
-  padding: 3px 8px !important;
-  font-size: 11px !important;
-  font-weight: 850 !important;
-}
-.physics-badge-zone {
-  border-color: #bfdbfe !important;
-  background: #eff6ff !important;
-  color: #1d4ed8 !important;
-}
-.xy-canvas-component-editor-branches .physics-badge-zone {
-  border-color: #ddd6fe !important;
-  background: #f5f3ff !important;
-  color: #6d28d9 !important;
-}
-.physics-unit-badge small,
-.physics-unit-badge em {
-  color: #64748b !important;
-  font-style: normal !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
-}
-.xy-canvas-preview-panel .canvas-model-preview {
-  border: 1px solid #dbe4ef !important;
-  background: rgba(255, 255, 255, 0.97) !important;
-  box-shadow: 0 14px 42px rgba(15, 23, 42, 0.12) !important;
-}
-.xy-canvas-preview-panel .canvas-model-preview summary {
-  display: grid !important;
-  grid-template-columns: auto minmax(150px, auto) minmax(130px, auto) auto 1fr !important;
-  align-items: center !important;
-  gap: 12px !important;
-  min-height: 56px !important;
-  padding: 10px 16px !important;
-  cursor: pointer !important;
-}
-.preview-summary-title {
-  font-size: 15px !important;
-  font-weight: 950 !important;
-  color: #0f172a !important;
-}
-.preview-summary-formula {
-  min-height: 30px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  border-radius: 999px !important;
-  padding: 5px 12px !important;
-  background: #f8fafc !important;
-  color: #334155 !important;
-  font-weight: 850 !important;
-  font-size: 13px !important;
-}
-.preview-summary-formula-primary {
-  background: #eff6ff !important;
-  color: #1d4ed8 !important;
-}
-.preview-summary-cta {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-height: 30px !important;
-  border-radius: 999px !important;
-  padding: 5px 12px !important;
-  border: 1px solid #bfdbfe !important;
-  background: #ffffff !important;
-  color: #1d4ed8 !important;
-  font-size: 12px !important;
-  font-weight: 900 !important;
-}
-.xy-canvas-preview-panel .canvas-model-preview[open] .preview-summary-cta {
-  background: #2563eb !important;
-  color: #fff !important;
-  border-color: #2563eb !important;
+@media (max-width: 1180px) {
+  .model-builder { --xy-canvas-editor-width: min(390px, 48vw); }
 }
 @media (max-width: 860px) {
-  .xy-canvas-preview-panel .canvas-model-preview summary {
-    grid-template-columns: 1fr !important;
-    align-items: stretch !important;
-  }
-  .xy-canvas-component-editor {
-    width: min(340px, calc(100vw - 86px)) !important;
-  }
+  .model-builder { --xy-canvas-editor-width: min(340px, calc(100vw - 86px)); }
+}
+.xy-canvas-component-editor {
+  width: var(--xy-canvas-editor-width);
+  max-height: min(760px, calc(100vh - 110px));
+  overflow: auto;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #dbe4ef;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.98);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
+  color: #0f172a;
+}
+.xy-editor-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  cursor: grab;
+  user-select: none;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+.xy-editor-header:active { cursor: grabbing; }
+.xy-editor-title-block { display: grid; gap: 2px; min-width: 0; }
+.xy-editor-eyebrow { color: #64748b; font-size: 10px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.xy-editor-eyebrow::after { content: " · drag"; color: #94a3b8; font-weight: 750; text-transform: none; letter-spacing: 0; }
+.xy-editor-title-block strong { color: #0f172a; font-size: 18px; line-height: 1.1; letter-spacing: -0.02em; }
+.xy-editor-title-block small { color: #64748b; font-size: 12px; }
+.xy-editor-fields { display: grid; gap: 9px; margin: 10px 0; }
+.xy-editor-fields label,
+.xy-custom-expression-field { display: grid; gap: 4px; }
+.xy-editor-fields label > span,
+.xy-custom-expression-field > span { color: #475569; font-size: 10px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.xy-editor-fields input,
+.xy-editor-fields select,
+.xy-custom-expression-field textarea { width: 100%; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; }
+.xy-custom-expression-field textarea { min-height: 72px; padding: 8px 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; resize: vertical; }
+.xy-custom-expression-field small { color: #64748b; font-size: 11px; line-height: 1.35; }
+.xy-canvas-component-role { display: grid; gap: 5px; margin: 8px 0; padding: 8px 10px; border-radius: 14px; color: #334155; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 12px; font-weight: 800; overflow: visible; }
+.xy-canvas-component-role strong { color: #0f172a; }
+.xy-canvas-component-role span { color: #64748b; font-size: 12px; font-weight: 750; line-height: 1.35; }
+.xy-canvas-component-equation { display: grid; gap: 6px; margin-top: 10px; padding: 12px; border-radius: 16px; border: 1px solid #bfdbfe; background: linear-gradient(180deg, #f8fbff 0%, #eff6ff 100%); }
+.xy-canvas-component-editor-branches .xy-canvas-component-equation { border-color: #ddd6fe; background: linear-gradient(180deg, #f5f3ff 0%, #ede9fe 100%); }
+.xy-canvas-component-equation > span { color: #1d4ed8; font-size: 10px; font-weight: 950; letter-spacing: .1em; text-transform: uppercase; }
+.xy-canvas-component-editor-branches .xy-canvas-component-equation > span { color: #6d28d9; }
+.xy-canvas-component-equation .katex-display { margin: 0; overflow-x: auto; overflow-y: hidden; }
+.xy-canvas-component-equation .katex { font-size: 1.14em; }
+.xy-canvas-component-units { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.physics-badge,
+.physics-unit-badge { display: inline-flex; align-items: center; gap: 5px; min-height: 24px; border-radius: 999px; border: 1px solid #dbe4ef; background: #ffffff; color: #334155; padding: 3px 8px; font-size: 11px; font-weight: 850; }
+.physics-badge-zone { border-color: #bfdbfe; background: #eff6ff; color: #1d4ed8; }
+.xy-canvas-component-editor-branches .physics-badge-zone { border-color: #ddd6fe; background: #f5f3ff; color: #6d28d9; }
+.physics-unit-badge small,
+.physics-unit-badge em { color: #64748b; font-style: normal; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.xy-canvas-preview-panel .canvas-model-preview { border: 1px solid #dbe4ef; background: rgba(255, 255, 255, 0.97); box-shadow: 0 14px 42px rgba(15, 23, 42, 0.12); }
+.xy-canvas-preview-panel .canvas-model-preview summary { display: grid; grid-template-columns: auto minmax(150px, auto) minmax(130px, auto) auto 1fr; align-items: center; gap: 12px; min-height: 56px; padding: 10px 16px; cursor: pointer; }
+@media (max-width: 860px) { .xy-canvas-preview-panel .canvas-model-preview summary { grid-template-columns: 1fr; align-items: stretch; } }
+.preview-summary-title { font-size: 15px; font-weight: 950; color: #0f172a; }
+.preview-summary-formula { min-height: 30px; display: inline-flex; align-items: center; border-radius: 999px; padding: 5px 12px; background: #f8fafc; color: #334155; font-weight: 850; font-size: 13px; }
+.preview-summary-formula-primary { background: #eff6ff; color: #1d4ed8; }
+.preview-summary-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 30px; border-radius: 999px; padding: 5px 12px; border: 1px solid #bfdbfe; background: #ffffff; color: #1d4ed8; font-size: 12px; font-weight: 900; }
+.xy-canvas-preview-panel .canvas-model-preview[open] .preview-summary-cta { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+/* v1.9.0 direct branch-graph Model Builder rewrite */
+.xy-model-flow-shell {
+  height: clamp(620px, 72vh, 860px);
+  min-height: 620px;
+}
+.xy-model-terminal {
+  width: auto;
+  min-width: 86px;
+  min-height: 50px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  align-items: center;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0;
+}
+.xy-terminal-dot {
+  grid-row: 1 / 3;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #020617;
+  box-shadow: 0 0 0 3px #fff;
+}
+.xy-model-terminal strong {
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: .02em;
+  color: #020617;
+}
+.xy-model-terminal small {
+  font-size: 11px;
+  font-weight: 800;
+  color: #94a3b8;
+}
+.xy-junction-node {
+  position: relative;
+  width: 14px;
+  min-height: 14px;
+  overflow: visible;
+}
+.xy-junction-branch-dot {
+  position: absolute;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: #020617;
+  box-shadow: 0 0 0 3px #fff;
+  z-index: 3;
+}
+.xy-junction-port,
+.xy-hidden-handle {
+  opacity: 0;
+  pointer-events: none;
+}
+.xy-component-node {
+  width: 176px;
+  min-height: 76px;
+  grid-template-columns: auto minmax(0, 1fr);
+  border: 2px solid #cfd8e3;
+  border-radius: 18px;
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 9px 22px rgba(15,23,42,.07);
+}
+.xy-component-node.is-selected {
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(37,99,235,.18), 0 14px 30px rgba(15,23,42,.12);
+}
+.xy-component-node-branches {
+  border-left-color: #7c3aed;
+}
+.xy-component-node-branches.is-selected {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 4px rgba(124,58,237,.16), 0 14px 30px rgba(15,23,42,.12);
+}
+.xy-node-symbol {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 13px;
+}
+.xy-component-node-branches .xy-node-symbol {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+  color: #6d28d9;
+}
+.xy-node-delete {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 13px;
+  line-height: 1;
+}
+.xy-node-delete:hover { color: #b91c1c; border-color: #fecaca; background: #fff1f2; }
+.xy-edge-add-button,
+.xy-action-node-plus-only {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 2px solid #2563eb;
+  background: #fff;
+  color: #2563eb;
+  font-size: 22px;
+  font-weight: 900;
+  box-shadow: 0 7px 20px rgba(37,99,235,.16);
+}
+.xy-edge-add-button:hover,
+.xy-action-node-plus-only:hover {
+  transform: translateY(-1px);
+  background: #eff6ff;
+}
+.xy-edge-action-parallel .xy-edge-add-button,
+.xy-action-node-floating .xy-action-node-plus-only {
+  border-style: dashed;
+  background: #f8fbff;
+}
+.xy-edge-add-popover,
+.xy-action-node-popover {
+  position: absolute;
+  z-index: 50;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 260px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid #dbe4f0;
+  border-radius: 16px;
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 18px 46px rgba(15,23,42,.18);
+}
+.xy-edge-option-list,
+.xy-action-node-option-list {
+  display: grid;
+  gap: 6px;
+}
+.xy-edge-option-list button,
+.xy-action-node-option-list button {
+  text-align: left;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  padding: 7px 9px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #334155;
+}
+.xy-edge-option-list button.is-active,
+.xy-action-node-option-list button.is-active {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.xy-edge-add-confirm {
+  width: 100%;
+  margin-top: 8px;
+  border-radius: 10px;
+  border: 0;
+  background: #2563eb;
+  color: #fff;
+  min-height: 34px;
+  font-weight: 900;
+}
+.xy-action-node-floating {
+  position: relative;
+}
+.xy-action-node-popover-head {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+.xy-action-node-popover-head span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+.xy-circuit-wire-parallel-add .react-flow__edge-path,
+.xy-circuit-wire-parallel-add path {
+  stroke: #2563eb !important;
+  stroke-dasharray: 7 7;
+}
+/* Component editor sizing/role rules are centralized in the canonical editor block above. */
+.xy-custom-law-builder-always {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  background: #f8fbff;
+  padding: 12px;
+}
+.xy-param-editor-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: #fff;
+  padding: 12px;
+}
+.xy-param-editor-headline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.xy-param-editor-headline button {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+.xy-param-editor-table {
+  display: grid;
+  gap: 6px;
+  overflow-x: auto;
+}
+.xy-param-editor-row {
+  display: grid;
+  grid-template-columns: minmax(64px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(70px, 1fr) 42px 28px;
+  gap: 5px;
+  min-width: 520px;
+  align-items: center;
+}
+.xy-param-editor-row-head {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.xy-param-editor-row input[type="text"],
+.xy-param-editor-row input:not([type]) {
+  width: 100%;
+}
+.xy-param-editor-row input {
+  min-width: 0;
+  border: 1px solid #dbe4f0;
+  border-radius: 9px;
+  padding: 6px 7px;
+  font-size: 12px;
+  font-weight: 750;
+}
+.xy-param-fit-toggle {
+  display: grid;
+  place-items: center;
+}
+.xy-param-editor-row button {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid #fecaca;
+  background: #fff7f7;
+  color: #b91c1c;
+  font-weight: 900;
+}
+.xy-advanced-param-note {
+  margin-top: 0;
+}
+/* v1.8.35 direct graph completion: true circuit graph rails and straight wires. */
+.xy-junction-node::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2.4px;
+  transform: translateX(-50%);
+  background: #111827;
+  border-radius: 999px;
+  z-index: 1;
+}
+.xy-circuit-wire path,
+.react-flow__edge.xy-circuit-wire path {
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+.xy-circuit-wire-parallel-add path,
+.react-flow__edge.xy-circuit-wire-parallel-add path {
+  stroke-dasharray: 7 7;
+}
+.xy-model-terminal-vext,
+.xy-model-terminal-ground {
+  filter: none;
+}
+
+/* v1.9.1 interaction polish: quieter controls, horizontal terminals, circuit-weight rails. */
+.compact-model-builder-shell .xy-model-flow-shell {
+  --xy-circuit-wire: #111827;
+  --xy-circuit-blue: #2563eb;
+}
+.xy-model-terminal {
+  min-height: 50px;
+  height: 50px;
+}
+.xy-terminal-dot {
+  width: 11px;
+  height: 11px;
+  box-shadow: 0 0 0 2px #fff;
+}
+.xy-junction-node {
+  width: 12px;
+}
+.xy-junction-node::before {
+  width: 1.55px;
+  background: #111827;
+}
+.xy-junction-branch-dot {
+  width: 7px;
+  height: 7px;
+  box-shadow: 0 0 0 2px #fff;
+}
+.xy-circuit-wire path,
+.react-flow__edge.xy-circuit-wire path,
+.xy-model-edge path,
+.xy-model-edge .react-flow__edge-path {
+  stroke: var(--xy-circuit-wire);
+  stroke-width: 1.75;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+.xy-component-node {
+  width: 160px;
+  min-height: 68px;
+  height: 68px;
+  padding: 8px 12px;
+  gap: 8px;
+  border-width: 1.4px;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(15,23,42,.055);
+}
+.xy-component-node:hover,
+.xy-component-node:focus-visible {
+  box-shadow: 0 8px 20px rgba(37,99,235,.11);
+}
+.xy-component-node.is-local-parallel-target .xy-component-local-parallel-guide {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.xy-component-node.is-selected {
+  box-shadow: 0 0 0 3px rgba(37,99,235,.14), 0 9px 22px rgba(15,23,42,.09);
+}
+.xy-component-node-branches.is-selected {
+  box-shadow: 0 0 0 3px rgba(124,58,237,.13), 0 9px 22px rgba(15,23,42,.09);
+}
+.xy-node-symbol {
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+}
+.xy-node-body strong {
+  font-size: calc(15px * var(--app-zoom));
+}
+.xy-node-body small {
+  margin-top: 2px;
+  font-size: calc(10.5px * var(--app-zoom));
+}
+.xy-node-badges {
+  margin-top: 4px;
+  gap: 4px;
+}
+.xy-node-badges span {
+  padding: 1px 6px;
+  font-size: calc(10px * var(--app-zoom));
+}
+.xy-component-local-parallel-guide {
+  position: absolute;
+  left: 50%;
+  top: -10px;
+  width: calc(100% + 26px);
+  height: calc(100% + 20px);
+  border: 1.6px dashed #2563eb;
+  border-radius: 22px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 3px);
+  transition: opacity 140ms ease, transform 140ms ease;
+  background: rgba(239, 246, 255, 0.1);
+}
+.xy-component-node-branches .xy-component-local-parallel-guide {
+  border-color: #2563eb;
+}
+.xy-component-local-parallel-button {
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1.5px solid #2563eb;
+  background: #ffffff;
+  color: #1d4ed8;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+  transform: translateY(-50%);
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 10px rgba(37,99,235,.18);
+}
+.xy-component-local-parallel-button:hover {
+  background: #eff6ff;
+}
+.xy-edge-action-serial {
+  opacity: .28;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.xy-edge-action-serial:hover,
+.xy-edge-action-serial:focus-within,
+.xy-edge-action-serial.is-primary-edge-action {
+  opacity: 1;
+}
+.xy-edge-action-serial .xy-edge-add-button {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  font-size: 17px;
+  border-width: 1.6px;
+  box-shadow: 0 4px 12px rgba(37,99,235,.12), 0 0 0 2px rgba(255,255,255,.86);
+}
+.xy-edge-action-parallel .xy-edge-add-button {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  font-size: 18px;
+  border-style: dashed;
+  background: #ffffff;
+  box-shadow: 0 5px 14px rgba(37,99,235,.10), 0 0 0 2px rgba(255,255,255,.9);
+}
+.xy-action-node-parallel {
+  width: max-content;
+}
+.xy-action-node-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 156px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px dashed #2563eb;
+  background: rgba(255,255,255,.96);
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 0 6px 16px rgba(37,99,235,.12);
+}
+.xy-action-node-pill:hover,
+.xy-action-node-pill:focus-visible {
+  background: #eff6ff;
+  outline: none;
+}
+.xy-action-node-parallel .xy-action-node-popover {
+  top: 40px;
 }

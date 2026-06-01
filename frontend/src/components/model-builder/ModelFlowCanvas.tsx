@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { Background, Controls, Panel, ReactFlow, useReactFlow } from "@xyflow/react";
-import type { FunctionDefinition, ModelSpec } from "../../model/types";
+import type { FunctionDefinition, ModelSpec, ParameterSpec } from "../../model/types";
 import type { Language } from "../../model/i18n";
 import type { BuilderBucket } from "../../model-builder/rules";
-import { addDefinitionToModel, applyNicknameToParams } from "../../model-builder/mutations";
+import { applyNicknameToParams, buildPendingComponent } from "../../model-builder/mutations";
 import { applyCustomExpressionParameterUnits, createComponentInLocation, removeComponent, updateComponent } from "../../model/utils";
 import {
   addPolarityFor,
@@ -12,12 +12,57 @@ import {
   findComponentRef,
   firstComponentId,
 } from "./modelHelpers";
-import { ModelFlowContextProvider, type ModelFlowContextValue } from "./flowContext";
+import { ModelFlowContextProvider, parameterFromPatch, type AddPlacement, type ModelFlowContextValue } from "./flowContext";
 import { nodeTypes } from "./flowNodes";
 import { edgeTypes } from "./ButtonEdge";
-import { buildFlowGraph } from "./modelFlowGraph";
+import { buildFlowGraph, buildFlowGraphWithElk } from "./modelFlowGraph";
 import { ModelPresetControls } from "./PresetControls";
 import { ComponentCanvasEditor } from "./ComponentCanvasEditor";
+import type { ComponentBehaviorMode, CustomParameterPatch } from "./types";
+
+function getComponentOrder(comp: { metadata?: Record<string, unknown> }, fallback: number) {
+  const raw = comp.metadata?.pathOrder;
+  return typeof raw === "number" && Number.isFinite(raw) ? raw : fallback;
+}
+
+function withPathMetadata(component: ReturnType<typeof buildPendingComponent>, pathId: string, order: number) {
+  return {
+    ...component,
+    metadata: {
+      ...(component.metadata ?? {}),
+      pathId,
+      pathOrder: order,
+    },
+  };
+}
+
+function normalizePathOrders(model: ModelSpec, pathId: string, insertIndex: number) {
+  const patch = <T extends keyof Pick<ModelSpec, "core" | "series" | "parallel">>(location: T) => model[location].map((comp, index) => {
+    const compPath = typeof comp.metadata?.pathId === "string" ? comp.metadata.pathId : (comp.location === "series" ? "path:main" : `path:${comp.id}`);
+    if (compPath !== pathId) return comp;
+    const order = getComponentOrder(comp, index);
+    return {
+      ...comp,
+      metadata: {
+        ...(comp.metadata ?? {}),
+        pathId,
+        pathOrder: order >= insertIndex ? order + 1 : order,
+      },
+    };
+  });
+  return { ...model, core: patch("core"), series: patch("series"), parallel: patch("parallel") };
+}
+
+function defaultExpressionForBehavior(behavior: ComponentBehaviorMode) {
+  if (behavior === "R_of_V") return "R0";
+  if (behavior === "I_of_V") return "V / R0";
+  if (behavior === "dV_of_I") return "I * R0";
+  return "I - V / R0";
+}
+
+function defaultParameterFor(name: string): ParameterSpec {
+  return { value: name.toLowerCase().startsWith("r") ? 1 : 1, lower: null, upper: null, fit: true, unit: null, label: name, description: "User-defined fitting parameter." };
+}
 
 
 export function ModelFlowCanvas({ model, registry, selectedId, setSelectedId, selectedDefinitions, setSelectedDefinitions, onChange, language, disabled, onGoToFitting, readOnly = false, previewContent, canvasActions }: {
@@ -78,18 +123,39 @@ export function ModelFlowCanvas({ model, registry, selectedId, setSelectedId, se
     setSelectedDefinitions((current) => ({ ...current, [bucket]: functionType }));
   }, [setSelectedDefinitions]);
 
-  const addFrom = useCallback((bucket: BuilderBucket, functionType?: string) => {
+  const addAt = useCallback((placement: AddPlacement) => {
     if (readOnly || disabled) return;
+    const bucket = placement.bucket;
     const definitions = definitionsForBucket(registry, bucket);
-    const definition = functionType
-      ? definitions.find((item) => item.function_type === functionType)
+    const definition = placement.functionType
+      ? definitions.find((item) => item.function_type === placement.functionType)
       : addableDefinitionForBucket(model, definitions, bucket, selectedDefinitions[bucket]);
     if (!definition) return;
-    const result = addDefinitionToModel(model, bucket, definition, addPolarityFor(model, bucket, definition));
-    if (!result.added) return;
-    onChange(result.model);
-    setSelectedId(result.component.id);
+    const pending = buildPendingComponent(model, bucket, definition, addPolarityFor(model, bucket, definition));
+    const pathId = placement.mode === "parallel"
+      ? `path:${pending.id}`
+      : (placement.pathId ?? (bucket === "main" ? "path:main" : `path:${pending.id}`));
+    const insertIndex = placement.mode === "parallel" ? 0 : (placement.insertIndex ?? 0);
+    const prepared = withPathMetadata(pending, pathId, insertIndex);
+    const shifted = normalizePathOrders(model, pathId, insertIndex);
+    const next = {
+      ...shifted,
+      [prepared.location]: [...shifted[prepared.location], prepared],
+    } as ModelSpec;
+    onChange(next);
+    setSelectedId(prepared.id);
   }, [disabled, model, onChange, readOnly, registry, selectedDefinitions, setSelectedId]);
+
+  const addFrom = useCallback((bucket: BuilderBucket, functionType?: string) => {
+    addAt({ bucket, functionType, mode: bucket === "main" ? "serial" : "parallel", pathId: bucket === "main" ? "path:main" : undefined });
+  }, [addAt]);
+
+  const addLocalParallelById = useCallback((componentId: string) => {
+    if (readOnly || disabled) return;
+    const ref = findComponentRef(model, componentId);
+    if (!ref) return;
+    addAt({ bucket: "branches", mode: "parallel" });
+  }, [addAt, disabled, model, readOnly]);
 
   const removeById = useCallback((componentId: string) => {
     if (disabled || readOnly) return;
@@ -126,7 +192,7 @@ export function ModelFlowCanvas({ model, registry, selectedId, setSelectedId, se
       ...replacement,
       id: ref.comp.id,
       location: ref.location,
-      metadata: { ...(replacement.metadata ?? {}), nickname: nick },
+      metadata: { ...(replacement.metadata ?? {}), pathId: ref.comp.metadata?.pathId, pathOrder: ref.comp.metadata?.pathOrder, nickname: nick },
     }, nick));
     onChange(updateComponent(model, ref.location, ref.comp.id, renamed));
   }, [disabled, model, onChange, readOnly, registry]);
@@ -142,6 +208,69 @@ export function ModelFlowCanvas({ model, registry, selectedId, setSelectedId, se
     onChange(updateComponent(model, ref.location, ref.comp.id, nextComponent));
   }, [disabled, model, onChange, readOnly]);
 
+  const updateBehaviorById = useCallback((componentId: string, behavior: ComponentBehaviorMode) => {
+    if (disabled || readOnly) return;
+    const ref = findComponentRef(model, componentId);
+    if (!ref) return;
+    const expression = typeof ref.comp.metadata?.expression === "string" && ref.comp.metadata.expression.trim()
+      ? ref.comp.metadata.expression
+      : defaultExpressionForBehavior(behavior);
+    const params = Object.keys(ref.comp.params).length ? ref.comp.params : { R0: defaultParameterFor("R0") };
+    const nextComponent = applyCustomExpressionParameterUnits({
+      ...ref.comp,
+      function_type: "custom",
+      law_id: "custom_expression",
+      evaluation_form: behavior === "dV_of_I" ? "voltage_drop" : "current_branch",
+      placement: ref.location === "series" ? "series_voltage_drop" : "parallel_current_branch",
+      metadata: { ...(ref.comp.metadata ?? {}), behavior, expression, expressionSource: "user" },
+      params,
+    }, expression);
+    onChange(updateComponent(model, ref.location, ref.comp.id, nextComponent));
+  }, [disabled, model, onChange, readOnly]);
+
+  const addCustomParameterById = useCallback((componentId: string) => {
+    if (disabled || readOnly) return;
+    const ref = findComponentRef(model, componentId);
+    if (!ref) return;
+    let index = Object.keys(ref.comp.params).length + 1;
+    let name = `P${index}`;
+    while (ref.comp.params[name]) {
+      index += 1;
+      name = `P${index}`;
+    }
+    const nextComponent = {
+      ...ref.comp,
+      params: { ...ref.comp.params, [name]: defaultParameterFor(name) },
+    };
+    onChange(updateComponent(model, ref.location, ref.comp.id, nextComponent));
+  }, [disabled, model, onChange, readOnly]);
+
+  const updateCustomParameterById = useCallback((componentId: string, paramName: string, patch: CustomParameterPatch) => {
+    if (disabled || readOnly) return;
+    const ref = findComponentRef(model, componentId);
+    if (!ref || !ref.comp.params[paramName]) return;
+    const nextName = patch.nextName?.trim();
+    const paramPatch = parameterFromPatch(patch);
+    const nextParams = { ...ref.comp.params };
+    const updated = { ...nextParams[paramName], ...paramPatch };
+    if (nextName && nextName !== paramName && !nextParams[nextName]) {
+      delete nextParams[paramName];
+      nextParams[nextName] = { ...updated, label: nextName };
+    } else {
+      nextParams[paramName] = updated;
+    }
+    onChange(updateComponent(model, ref.location, ref.comp.id, { ...ref.comp, params: nextParams }));
+  }, [disabled, model, onChange, readOnly]);
+
+  const removeCustomParameterById = useCallback((componentId: string, paramName: string) => {
+    if (disabled || readOnly) return;
+    const ref = findComponentRef(model, componentId);
+    if (!ref || !ref.comp.params[paramName]) return;
+    const nextParams = { ...ref.comp.params };
+    delete nextParams[paramName];
+    onChange(updateComponent(model, ref.location, ref.comp.id, { ...ref.comp, params: nextParams }));
+  }, [disabled, model, onChange, readOnly]);
+
   const updatePolarityById = useCallback((componentId: string, polarity: string) => {
     if (disabled || readOnly) return;
     const ref = findComponentRef(model, componentId);
@@ -153,16 +282,28 @@ export function ModelFlowCanvas({ model, registry, selectedId, setSelectedId, se
     onChange(updateComponent(model, ref.location, ref.comp.id, nextComponent));
   }, [disabled, model, onChange, readOnly]);
 
-  const graph = useMemo(() => buildFlowGraph(model, selectedId, language, {
+  const fallbackGraph = useMemo(() => buildFlowGraph(model, selectedId, language, {
     readOnly,
     disabled,
     registry,
   }), [model, selectedId, language, readOnly, disabled, registry]);
+  const [graph, setGraph] = useState(fallbackGraph);
+
+  useEffect(() => {
+    let cancelled = false;
+    setGraph(fallbackGraph);
+    buildFlowGraphWithElk(model, selectedId, language, { readOnly, disabled, registry }).then((nextGraph) => {
+      if (!cancelled) setGraph(nextGraph);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [fallbackGraph, model, selectedId, language, readOnly, disabled, registry]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       fitView({ padding: readOnly ? 0.22 : 0.22, duration: 180, maxZoom: readOnly ? 1.0 : 1.08 });
-    }, readOnly ? 60 : 80);
+    }, readOnly ? 90 : 120);
     return () => window.clearTimeout(timer);
   }, [fitView, graph.nodes.length, graph.edges.length, readOnly]);
 
@@ -175,12 +316,18 @@ export function ModelFlowCanvas({ model, registry, selectedId, setSelectedId, se
     selectedDefinitions,
     removeById,
     addFrom,
+    addAt,
+    addLocalParallelById,
     setAddDefinition,
     renameById,
     replaceDefinitionById,
     updateExpressionById,
+    updateBehaviorById,
     updatePolarityById,
-  }), [addFrom, disabled, language, model, readOnly, registry, removeById, renameById, replaceDefinitionById, updateExpressionById, updatePolarityById, selectedDefinitions, setAddDefinition]);
+    addCustomParameterById,
+    updateCustomParameterById,
+    removeCustomParameterById,
+  }), [addFrom, addAt, addLocalParallelById, disabled, language, model, readOnly, registry, removeById, renameById, replaceDefinitionById, updateExpressionById, updateBehaviorById, updatePolarityById, addCustomParameterById, updateCustomParameterById, removeCustomParameterById, selectedDefinitions, setAddDefinition]);
 
   return <ModelFlowContextProvider value={contextValue}>
     <div className={`xy-model-workspace ${readOnly ? "xy-model-readonly" : ""}`} data-testid="equivalent-circuit-canvas">
@@ -190,7 +337,7 @@ export function ModelFlowCanvas({ model, registry, selectedId, setSelectedId, se
           edges={graph.edges}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
-          defaultEdgeOptions={{ type: "smoothstep", style: { strokeWidth: 2.4, stroke: "#111827" } }}
+          defaultEdgeOptions={{ type: "circuitButton", style: { strokeWidth: 2.4, stroke: "#111827" } }}
           fitView={readOnly}
           fitViewOptions={{ padding: 0.22, maxZoom: 1.0 }}
           defaultViewport={readOnly ? undefined : { x: 140, y: 80, zoom: 1 }}

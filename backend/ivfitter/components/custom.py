@@ -21,6 +21,8 @@ _ALLOWED_FUNCS = {
     "sign": np.sign,
     "minimum": np.minimum,
     "maximum": np.maximum,
+    "min": np.minimum,
+    "max": np.maximum,
     "clip": np.clip,
     "sin": np.sin,
     "cos": np.cos,
@@ -76,4 +78,20 @@ def evaluate_custom_expression(vj, expression: str, params: dict[str, float], po
         "s": polarity_sign(arr, polarity),
     })
     env.update(params)
+    return eval(code, {"__builtins__": {}}, env)
+
+
+def evaluate_custom_variable_expression(expression: str, params: dict[str, float], variables: dict[str, object]):
+    """Evaluate a safe user expression with explicit V/I variables.
+
+    This is the graph-native evaluator used by R(V), I(V), dV(I), and
+    residual-form custom components. The expression text is preserved in the
+    model; this function only maps solver variables into a safe numeric env.
+    """
+    tree = _parse_and_validate_expression(expression)
+    code = compile(tree, "<custom_graph_expr>", "eval")
+    env = dict(_ALLOWED_FUNCS)
+    env.update({"min": np.minimum, "max": np.maximum})
+    env.update(params)
+    env.update(variables)
     return eval(code, {"__builtins__": {}}, env)

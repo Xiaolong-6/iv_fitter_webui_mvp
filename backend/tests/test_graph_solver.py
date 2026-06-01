@@ -28,10 +28,10 @@ from ivfitter.core.fitting_engine import fit_trace
 from ivfitter.core.model_spec import FitConfig, FitRequest, TraceData
 
 
-def test_graph_dc_not_reportable_warning_is_error():
+def test_graph_dc_solver_is_reportable_after_graph_solver_promotion():
     model = ModelSpec(
         parallel=[ComponentSpec(id="Rsh", location="parallel", function_type="shunt", placement="parallel_current_branch", params={"Rsh_ohm": ParameterSpec(value=1e6)})],
     )
     trace = TraceData(voltage_V=[-1.0, 0.0, 1.0], current_A=[-1e-6, 0.0, 1e-6])
     result = fit_trace(FitRequest(trace=trace, model=model, config=FitConfig(solver_mode="graph_dc", exclude_compliance=False)))
-    assert any(w.code == "graph_solver" and w.severity == "error" for w in result.warnings)
+    assert not any(w.code == "graph_solver" and w.severity == "error" for w in result.warnings)

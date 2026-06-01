@@ -82,5 +82,5 @@ export const initialConfig: FitConfig = {
   multistart_enabled: false,
   multistart_n_seeds: 12,
   run_timeout_s: 60,
-  solver_mode: "legacy_composite",
+  solver_mode: "graph_dc",
 };

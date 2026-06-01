@@ -99,6 +99,7 @@ export function validateCustomExpression(
   expression: string,
   zone: "main" | "branches",
   language: Language,
+  allowedParameters: string[] = [],
 ): ValidationResult {
   void language;
   const errors: ValidationError[] = [];
@@ -136,7 +137,7 @@ export function validateCustomExpression(
   const uniqueVars = [...new Set(varMatches)];
 
   // Check for unknown variables
-  const knownVars = new Set([...Object.keys(CUSTOM_VARIABLES), "Vj", "absVj", "A", "Vt_V", "Vs_V", "m", "I0", "Rs", "Rsh"]);
+  const knownVars = new Set([...Object.keys(CUSTOM_VARIABLES), ...allowedParameters, "Vj", "absVj", "A", "B", "C", "R0", "G0", "V0", "Iscale", "Vscale", "Vt", "Vt_V", "Vs_V", "m", "n", "I0", "Rs", "Rsh"]);
   for (const v of uniqueVars) {
     if (!knownVars.has(v) && !SAFE_FUNCTIONS.has(v.toLowerCase()) && !/^\d/.test(v)) {
       errors.push({
@@ -146,23 +147,7 @@ export function validateCustomExpression(
     }
   }
 
-  // Physical form mismatch warnings
-  const usesI = /\bI\b/.test(trimmed) && !/\bI0\b/.test(trimmed) && !/\bVi\b/.test(trimmed);
-  const usesVi = /\bVi\b/.test(trimmed) || /\babsVi\b/.test(trimmed) || /\bsignVi\b/.test(trimmed);
-
-  if (zone === "branches" && usesI && !usesVi) {
-    errors.push({
-      en: "Branch laws normally use Vi (junction voltage) as the primary variable, not I. Did you mean to use Vi?",
-      zh: "分支定律通常使用 Vi（结点电压）作为主变量，而不是 I。你是否想使用 Vi？",
-    });
-  }
-
-  if (zone === "main" && usesVi && !usesI) {
-    errors.push({
-      en: "Main-path voltage drops normally depend on I (current), not Vi. Did you mean to use I?",
-      zh: "主路压降通常依赖于 I（电流），而不是 Vi。你是否想使用 I？",
-    });
-  }
+  void zone;
 
   return { valid: errors.length === 0, errors };
 }
@@ -181,7 +166,8 @@ export function variableLegend(
   zone: "main" | "branches",
   language: Language,
 ): VariableLegendItem[] {
-  return legendItems(zone === "main" ? ["I"] : ["Vi"], language);
+  void zone;
+  return legendItems(["V", "I"], language);
 }
 
 /**

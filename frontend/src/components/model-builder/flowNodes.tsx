@@ -1,4 +1,4 @@
-import { useMemo, useState, type MouseEvent, type KeyboardEvent } from "react";
+import { useMemo, useState, type KeyboardEvent, type MouseEvent } from "react";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { MathFormula } from "../MathFormula";
 import { nickname, type BuilderBucket } from "../../model-builder/rules";
@@ -13,94 +13,47 @@ import { isPolarityMeaningful } from "../../model/modelDisplaySemantics";
 import type { ModelFlowNodeData } from "./types";
 import { useModelFlowContext } from "./flowContext";
 
-function distributedPortTop(index: number, count: number) {
-  if (count <= 1) return 50;
-  const span = Math.min(46, 18 + count * 9);
-  const start = 50 - span / 2;
-  return start + (span * index) / Math.max(1, count - 1);
-}
-
 const centerHandleStyle = { top: "50%", transform: "translateY(-50%)" };
 
 export function ModelTerminalNode({ data }: NodeProps<Node<ModelFlowNodeData>>) {
   const role = data.role ?? "vi";
-  const branchPortCount = Math.max(1, data.branchPortCount ?? 1);
-  const branchYPositions = data.branchYPositions;
-  const terminalY = 0;
-
   return <div className={`xy-model-terminal xy-model-terminal-${role}`}>
     {role === "vext" ? <Handle type="source" position={Position.Right} id="out" className="xy-port xy-port-out" style={centerHandleStyle} /> : null}
-    {role === "vi" ? <>
-      <Handle type="target" position={Position.Left} id="in" className="xy-port xy-port-in" style={centerHandleStyle} />
-      <Handle type="source" position={Position.Right} id="out" className="xy-port xy-port-out xy-port-main-out" style={centerHandleStyle} />
-      {Array.from({ length: branchPortCount }, (_, index) => {
-        const yPos = branchYPositions?.[index];
-        const style = yPos !== undefined
-          ? { top: `${yPos - terminalY}px`, transform: "translateY(-50%)" }
-          : { top: `${distributedPortTop(index, branchPortCount)}%`, transform: "translateY(-50%)" };
-        return (
-          <Handle
-            key={`branch-out-${index}`}
-            type="source"
-            position={Position.Right}
-            id={`branch-out-${index}`}
-            className="xy-port xy-port-out xy-port-branch-out xy-branch-port"
-            style={style}
-          />
-        );
-      })}
-    </> : null}
-    {role === "ground" ? Array.from({ length: branchPortCount }, (_, index) => {
-      const yPos = branchYPositions?.[index];
-      const style = yPos !== undefined
-        ? { top: `${yPos - terminalY}px`, transform: "translateY(-50%)" }
-        : { top: `${distributedPortTop(index, branchPortCount)}%`, transform: "translateY(-50%)" };
-      return (
-        <Handle
-          key={`branch-in-${index}`}
-          type="target"
-          position={Position.Left}
-          id={`branch-in-${index}`}
-          className="xy-port xy-port-in xy-port-ground-in xy-branch-port"
-          style={style}
-        />
-      );
-    }) : null}
+    {role === "ground" ? <Handle type="target" position={Position.Left} id="in" className="xy-port xy-port-in" style={centerHandleStyle} /> : null}
+    <span className="xy-terminal-dot" aria-hidden="true" />
     <strong>{data.label}</strong>
     {data.subtitle ? <small>{data.subtitle}</small> : null}
   </div>;
 }
 
 export function ModelJunctionNode({ data }: NodeProps<Node<ModelFlowNodeData>>) {
-  const branchPortCount = Math.max(1, data.branchPortCount ?? 1);
-  const branchYPositions = data.branchYPositions ?? [];
-  const firstY = branchYPositions[0] ?? 0;
-  const lastY = branchYPositions[branchYPositions.length - 1] ?? firstY;
-  const height = Math.max(16, lastY - firstY + 1);
-  const dotTops = branchYPositions.length
-    ? branchYPositions.map((y) => y - firstY)
-    : Array.from({ length: branchPortCount }, (_, index) => `${distributedPortTop(index, branchPortCount)}%`);
+  const pathYs = data.pathYPositions ?? [0];
+  const top = data.nodeTopY ?? Math.min(...pathYs);
+  const height = Math.max(14, Math.max(...pathYs) - top + 14);
   return <div className="xy-junction-node" aria-label={data.label} style={{ height }}>
-    <span className="xy-junction-dot" aria-hidden="true" />
-    {dotTops.map((top, index) => (
-      <span key={index} className="xy-junction-branch-dot" aria-hidden="true" style={{ top }} />
-    ))}
+    {pathYs.map((y) => {
+      const rel = y - top;
+      return <span key={`dot-${y}`} className="xy-junction-branch-dot" aria-hidden="true" style={{ top: rel }} />;
+    })}
+    {pathYs.map((y) => {
+      const rel = y - top;
+      return <Handle key={`in-${y}`} type="target" position={Position.Left} id={`in-${y}`} className="xy-port xy-port-in xy-junction-port" style={{ top: rel, transform: "translateY(-50%)" }} />;
+    })}
+    {pathYs.map((y) => {
+      const rel = y - top;
+      return <Handle key={`out-${y}`} type="source" position={Position.Right} id={`out-${y}`} className="xy-port xy-port-out xy-junction-port" style={{ top: rel, transform: "translateY(-50%)" }} />;
+    })}
   </div>;
 }
 
 function bucketLabel(bucket: BuilderBucket, language: "en" | "zh") {
-  if (bucket === "main") return language === "zh" ? "+ 主路项" : "+ Main term";
-  return language === "zh" ? "+ 支路" : "+ Branch";
-}
-
-function bucketTitle(bucket: BuilderBucket, language: "en" | "zh") {
-  if (bucket === "main") return language === "zh" ? "在 Vext 后的主路径中插入串联/压降元件" : "Insert a main-path component after Vext";
-  return language === "zh" ? "在 Vi 后的并联结点添加支路" : "Add a parallel branch after Vi";
+  if (bucket === "main") return language === "zh" ? "+ Series component" : "+ Series component";
+  return language === "zh" ? "+ Add parallel path" : "+ Add parallel path";
 }
 
 export function ModelActionNode({ data }: NodeProps<Node<ModelFlowNodeData>>) {
   const bucket = data.actionBucket ?? "branches";
-  const { registry, language, disabled, readOnly, selectedDefinitions, setAddDefinition, addFrom } = useModelFlowContext();
+  const { registry, language, disabled, readOnly, selectedDefinitions, setAddDefinition, addAt } = useModelFlowContext();
   const [expanded, setExpanded] = useState(false);
   const definitions = useMemo(() => definitionsForBucket(registry, bucket), [bucket, registry]);
   const selectedValue = selectedDefinitions[bucket] ?? definitions[0]?.function_type ?? "";
@@ -112,106 +65,98 @@ export function ModelActionNode({ data }: NodeProps<Node<ModelFlowNodeData>>) {
 
   function choose(functionType: string) {
     setAddDefinition(bucket, functionType);
-    addFrom(bucket, functionType);
+    addAt({ bucket, functionType, mode: data.actionMode ?? "parallel", pathId: data.actionPathId, insertIndex: data.actionInsertIndex });
     setExpanded(false);
   }
 
-  return <div
-    className={`xy-action-node xy-action-node-${bucket}`}
-    aria-label={bucketTitle(bucket, language)}
-    title={bucketTitle(bucket, language)}
-    onClick={stop}
-    onPointerDown={stop}
-    onKeyDown={stop}
-  >
+  const isParallelAction = (data.actionMode ?? "parallel") === "parallel";
+  const actionLabel = bucketLabel(bucket, language);
+
+  return <div className={`xy-action-node xy-action-node-floating ${isParallelAction ? "xy-action-node-parallel" : "xy-action-node-serial"}`} onClick={stop} onPointerDown={stop} onKeyDown={stop}>
+    <Handle type="target" position={Position.Left} id="in" className="xy-hidden-handle" />
     <button
       type="button"
-      className="xy-action-node-button"
+      className={`xy-action-node-button ${isParallelAction ? "xy-action-node-pill" : "xy-action-node-plus-only"}`}
       disabled={disabledAction}
       aria-haspopup="dialog"
       aria-expanded={expanded}
-      onClick={(event) => {
-        event.stopPropagation();
-        setExpanded((value) => !value);
-      }}
-    >
-      {bucketLabel(bucket, language)}
-    </button>
-    {expanded ? <div className="xy-action-node-popover" role="dialog" aria-label={bucketTitle(bucket, language)}>
+      title={actionLabel}
+      onClick={(event) => { event.stopPropagation(); setExpanded((value) => !value); }}
+    >{isParallelAction ? actionLabel : "+"}</button>
+    <Handle type="source" position={Position.Right} id="out" className="xy-hidden-handle" />
+    {expanded ? <div className="xy-action-node-popover" role="dialog" aria-label={actionLabel}>
       <div className="xy-action-node-popover-head">
-        <strong>{bucketLabel(bucket, language)}</strong>
-        <span>{bucket === "main"
-          ? (language === "zh" ? "只显示主路径兼容模型" : "Main-path compatible models")
-          : (language === "zh" ? "只显示并联支路兼容模型" : "Branch-current compatible models")}</span>
+        <strong>{actionLabel}</strong>
+        <span>{language === "zh" ? "Choose component behavior" : "Choose component behavior"}</span>
       </div>
       <div className="xy-action-node-option-list">
         {definitions.map((definition) => {
           const label = functionOptionLabel(definition, language, bucket);
           const active = definition.function_type === selectedValue;
-          return <button
-            key={definition.function_type}
-            type="button"
-            className={active ? "is-active" : ""}
-            title={label}
-            onClick={(event) => {
-              event.stopPropagation();
-              choose(definition.function_type);
-            }}
-          >{label}</button>;
+          return <button key={definition.function_type} type="button" className={active ? "is-active" : ""} title={label} onClick={(event) => { event.stopPropagation(); choose(definition.function_type); }}>{label}</button>;
         })}
       </div>
     </div> : null}
   </div>;
 }
 
+function behaviorBadge(comp: NonNullable<ModelFlowNodeData["refItem"]>["comp"], zone: BuilderBucket) {
+  const behavior = String(comp.metadata?.behavior ?? "");
+  if (behavior === "R_of_V") return "R(V)";
+  if (behavior === "I_of_V") return "I(V)";
+  if (behavior === "dV_of_I") return "dV(I)";
+  if (behavior === "custom_residual") return "F=0";
+  if (comp.law_id === "ohmic") return "R(V)";
+  if (comp.function_type === "diode") return "I(V)";
+  return zone === "main" ? "dV(I)" : "I(V)";
+}
+
 export function ModelComponentNode({ data }: NodeProps<Node<ModelFlowNodeData>>) {
   const refItem = data.refItem;
-  const { language, readOnly, removeById } = useModelFlowContext();
+  const { language, readOnly, removeById, addLocalParallelById } = useModelFlowContext();
+  const [hovered, setHovered] = useState(false);
   if (!refItem) return null;
   const { comp } = refItem;
   const zone = zoneForComponent(comp);
   const showPolarity = comp.polarity && isPolarityMeaningful(comp);
   const polarity = showPolarity ? polarityLabel(language, comp.polarity!) : null;
-  const polarityTip = comp.polarity === "reverse"
-    ? (language === "zh" ? "反向：符号约定与 Vi → 元件 → V=0 相反。" : "Reverse: sign convention is reversed from Vi → component → V=0.")
-    : comp.polarity === "forward"
-      ? (language === "zh" ? "正向：正支路电流沿 Vi → 元件 → V=0。" : "Forward: positive branch current follows Vi → component → V=0.")
-      : (language === "zh" ? "对称：极性不改变符号约定。" : "Symmetric: polarity does not change the sign convention.");
-  const roleBadge = zone === "main" ? "ΔV" : "I(Vi)";
   const displayName = componentDisplayName(comp, language);
   return <div
     role="button"
     tabIndex={0}
-    className={`xy-component-node xy-component-node-${zone} ${data.compact ? "is-compact" : ""} ${data.selected ? "is-selected" : ""}`}
+    className={`xy-component-node xy-component-node-${zone} ${data.compact ? "is-compact" : ""} ${data.selected ? "is-selected" : ""} ${(hovered || data.selected) ? "is-local-parallel-target" : ""}`}
     data-component-id={comp.id}
-    title={`${nickname(comp)} · ${displayName}`}
-    onKeyDown={(event) => {
-      if (event.key === "Enter" || event.key === " ") event.currentTarget.click();
-    }}
+    title={`${nickname(comp)} - ${displayName}`}
+    onMouseEnter={() => setHovered(true)}
+    onMouseLeave={() => setHovered(false)}
+    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") event.currentTarget.click(); }}
   >
     <Handle type="target" position={Position.Left} id="in" className="xy-port xy-port-in" style={centerHandleStyle} />
-    {!readOnly ? <span
-      role="button"
-      tabIndex={0}
-      className="xy-node-delete"
-      title={language === "zh" ? `删除 ${nickname(comp)}` : `Remove ${nickname(comp)}`}
-      onClick={(event) => { event.stopPropagation(); removeById(comp.id); }}
-      onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); removeById(comp.id); } }}
-    >×</span> : null}
-    <span className="xy-node-symbol" aria-hidden="true">{zone === "main" ? "◆" : "●"}</span>
+    {!readOnly ? <span role="button" tabIndex={0} className="xy-node-delete" title={language === "zh" ? `Remove ${nickname(comp)}` : `Remove ${nickname(comp)}`} onClick={(event) => { event.stopPropagation(); removeById(comp.id); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); removeById(comp.id); } }}>x</span> : null}
+    <span className="xy-node-symbol" aria-hidden="true">{behaviorBadge(comp, zone).slice(0, 1)}</span>
     <span className="xy-node-body">
       <strong>{nickname(comp)}</strong>
       <small title={displayName}>{displayName}</small>
       <span className="xy-node-badges" aria-hidden="true">
-        {polarity ? <span title={polarityTip}>{polarity}</span> : null}
-        <span>{roleBadge}</span>
+        {polarity ? <span>{polarity}</span> : null}
+        <span>{behaviorBadge(comp, zone)}</span>
       </span>
     </span>
+    {!readOnly ? <div className="xy-component-local-parallel-guide" aria-hidden="true">
+      <button
+        type="button"
+        className="xy-component-local-parallel-button"
+        title={language === "zh" ? "Add local parallel subcircuit around this component" : "Add local parallel subcircuit around this component"}
+        aria-label={language === "zh" ? "Add local parallel subcircuit" : "Add local parallel subcircuit"}
+        onClick={(event) => {
+          event.stopPropagation();
+          addLocalParallelById(comp.id);
+        }}
+      >+</button>
+    </div> : null}
     <Handle type="source" position={Position.Right} id="out" className="xy-port xy-port-out" style={centerHandleStyle} />
   </div>;
 }
-
-
 
 export function ModelAnnotationNode({ data }: NodeProps<Node<ModelFlowNodeData>>) {
   const latex = data.latex ?? data.label;

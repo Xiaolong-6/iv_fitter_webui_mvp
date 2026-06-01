@@ -131,12 +131,13 @@ describe("ModelBuilder circuit canvas", () => {
     const single = createInitialModel("test");
     const singleGraph = buildFlowGraph(single, null, "en");
     expect(singleGraph.edges.map((item) => item.id)).toEqual(expect.arrayContaining([
-      "edge:vext-main0",
-      "edge:main-ohmic_1-vi",
-      "edge:vi-D1",
-      "edge:D1-ground",
-      "edge:vi-ohmic_2",
-      "edge:ohmic_2-ground",
+      "edge:path:main:terminal:vext-component:ohmic_1",
+      "edge:path:main:component:ohmic_1-junction:left",
+      "edge:path:D1:junction:left-component:D1",
+      "edge:path:D1:component:D1-junction:right",
+      "edge:path:ohmic_2:junction:left-component:ohmic_2",
+      "edge:path:ohmic_2:component:ohmic_2-junction:right",
+      "edge:right-ground",
     ]));
 
     const double = {
@@ -148,21 +149,20 @@ describe("ModelBuilder circuit canvas", () => {
     };
     const doubleGraph = buildFlowGraph(double, "D2", "en");
     expect(doubleGraph.nodes.some((item) => item.id === "component:D2")).toBe(true);
-    expect(doubleGraph.edges.map((item) => item.id)).toEqual(expect.arrayContaining(["edge:vi-D2", "edge:D2-ground"]));
+    expect(doubleGraph.edges.map((item) => item.id)).toEqual(expect.arrayContaining(["edge:path:D2:junction:left-component:D2", "edge:path:D2:component:D2-junction:right"]));
 
     const removedMain = { ...single, series: [] };
     const removedGraph = buildFlowGraph(removedMain, null, "en");
-    expect(removedGraph.edges.map((item) => item.id)).toContain("edge:vext-vi");
-    expect(removedGraph.edges.map((item) => item.id)).not.toContain("edge:vext-main0");
+    expect(removedGraph.edges.map((item) => item.id)).toContain("edge:path:main:terminal:vext-junction:left");
+    expect(removedGraph.edges.map((item) => item.id)).not.toContain("edge:path:main:terminal:vext-component:ohmic_1");
   });
-  it("renders semantic add entry nodes at circuit locations rather than toolbar add buttons", () => {
-    const { getByText, container } = renderBuilder();
-    expect(getByText("+ Branch")).toBeInTheDocument();
-    expect(getByText("+ Main term")).toBeInTheDocument();
+  it("renders plus-driven insertion affordances on paths instead of toolbar add buttons", () => {
+    const { container } = renderBuilder();
     expect(container.querySelector(".xy-canvas-add-controls")).toBeNull();
     const graph = buildFlowGraph(createInitialModel("test"), null, "en");
-    expect(graph.nodes.map((item) => item.id)).toEqual(expect.arrayContaining(["action:add-main", "action:add-branch"]));
-    expect(graph.edges.some((item) => item.data?.addBucket)).toBe(false);
+    expect(graph.nodes.map((item) => item.id)).toContain("action:add-parallel-path");
+    expect(graph.edges.some((item) => item.data?.addMode === "serial")).toBe(true);
+    expect(graph.edges.some((item) => item.data?.addMode === "parallel")).toBe(true);
   });
 
   it("shows the synthetic trace action directly instead of nesting it in Advanced", () => {
@@ -172,11 +172,11 @@ describe("ModelBuilder circuit canvas", () => {
   });
 
 
-  it("removes the bottom model preview drawer and uses inline equation annotation nodes", () => {
+  it("removes the bottom model preview drawer and keeps equations in the selected inspector", () => {
     const { queryByText } = renderBuilder();
     expect(queryByText("Model preview")).toBeNull();
     const graph = buildFlowGraph(createInitialModel("test"), null, "en");
-    expect(graph.nodes.map((item) => item.id)).toEqual(expect.arrayContaining(["annotation:voltage", "annotation:current"]));
+    expect(graph.nodes.map((item) => item.id)).not.toEqual(expect.arrayContaining(["annotation:voltage", "annotation:current"]));
   });
 
   it("keeps selected component equations in the inspector instead of adding cramped canvas overlays", () => {
@@ -187,7 +187,7 @@ describe("ModelBuilder circuit canvas", () => {
   it("uses neutral circuit wires and only lightweight linked-edge selected state", () => {
     const model = createInitialModel("test");
     const selectedGraph = buildFlowGraph(model, "D1", "en");
-    expect(selectedGraph.edges.every((item) => item.style?.stroke === "#111827" || item.style?.stroke === "#0f172a")).toBe(true);
+    expect(selectedGraph.edges.every((item) => item.style?.stroke === "#111827" || item.style?.stroke === "#0f172a" || item.style?.stroke === "#2563eb")).toBe(true);
     expect(selectedGraph.edges.some((item) => item.className?.includes("is-edge-highlighted-branch"))).toBe(false);
     expect(selectedGraph.edges.some((item) => item.className?.includes("is-edge-linked-to-selected"))).toBe(true);
   });
@@ -201,7 +201,8 @@ describe("ModelBuilder circuit canvas", () => {
     fireEvent.click(componentNode!);
     const editor = document.querySelector('[aria-label="Component details"]') as HTMLElement | null;
     expect(editor).toBeTruthy();
-    const modelSelect = editor!.querySelector("select") as HTMLSelectElement | null;
+    const selects = editor!.querySelectorAll("select");
+    const modelSelect = selects[1] as HTMLSelectElement | null;
     expect(modelSelect).toBeTruthy();
     fireEvent.change(modelSelect!, { target: { value: "custom" } });
 
@@ -212,15 +213,13 @@ describe("ModelBuilder circuit canvas", () => {
     expect(next.core[0].params.A.unit).toBe("A/V");
 
     const updatedEditor = document.querySelector('[aria-label="Component details"]') as HTMLElement | null;
-    expect(updatedEditor?.textContent).toContain("Custom branch current law");
+    expect(updatedEditor?.textContent).toContain("Unified variables");
     expect(updatedEditor?.textContent).not.toContain("Advanced · Custom expression law");
-    expect(updatedEditor?.textContent).toContain("Multiplication: A * Vi");
-    expect(updatedEditor?.textContent).toContain("Powers: Vi**2");
-    expect(updatedEditor?.textContent).not.toContain("I^2");
-    expect(updatedEditor?.textContent).toContain("unit A/V");
+    expect(updatedEditor?.textContent).toContain("Use V and I directly");
+    expect(updatedEditor?.textContent).toContain("Parameter notes");
     const equation = updatedEditor!.querySelector(".xy-canvas-component-equation");
     const compactText = equation?.textContent?.replace(/\s/g, "") ?? "";
-    expect(compactText).toContain("Icustom=AVi");
+    expect(compactText).toContain("I=AVi");
     expect(compactText).not.toContain("Rbase");
   });
 
@@ -251,7 +250,7 @@ describe("ModelBuilder circuit canvas", () => {
     expect(editor!.textContent).not.toContain("Expression cannot be empty");
     const equation = editor!.querySelector(".xy-canvas-component-equation");
     const compactText = equation?.textContent?.replace(/\s/g, "") ?? "";
-    expect(compactText).toContain("ΔVcustom=AI");
+    expect(compactText).toContain("ΔV=AI");
     expect(compactText).not.toContain("Rbase");
     expect(compactText).not.toContain("softplus(u)");
   });

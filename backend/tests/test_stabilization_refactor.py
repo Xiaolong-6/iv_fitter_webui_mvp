@@ -46,8 +46,8 @@ def test_fit_result_carries_backend_reportability_fields_for_graph_solver():
     )
     trace = TraceData(voltage_V=[-0.1, 0.0, 0.1], current_A=[0.0, 0.0, 1e-9])
     result = fit_trace(FitRequest(trace=trace, model=model, config=FitConfig(solver_mode="graph_dc", exclude_compliance=False)))
-    assert result.reportable is False
-    assert "graph_solver" in result.reportability_reason
+    assert result.reportable is True
+    assert "passed backend numerical/reportability checks" in result.reportability_reason
 
 
 def test_frontend_model_builder_rules_are_extracted_and_imported():

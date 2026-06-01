@@ -1,3 +1,29 @@
+## v1.8.37 — Direct graph interaction polish
+
+- Added a true empty-state Model Builder graph: `V — (+) — GND` when no components are present.
+- Removed terminal arrowheads so the Model Builder reads as a circuit schematic rather than a flowchart.
+- Removed the dashed V-shaped parallel-add guide edges; the add-parallel affordance is now a floating lower `+` instead of misleading branch wires.
+- Kept path-edge `+` controls for serial insertion and lower `+` controls for adding parallel paths.
+- Added `MODEL_BUILDER_INTERACTION_POLISH_AUDIT.md` documenting the browser-facing fixes and remaining verification status.
+
+## v1.8.36 — ELK-driven direct branch graph layout
+
+- Added `elkjs` and moved the Model Builder branch-graph layout pipeline toward `CircuitGraph -> ELK layered layout -> React Flow render`.
+- Replaced straight edge rendering with smooth-step/orthogonal-style circuit wires so branch paths no longer form large triangular diagonal spaghetti.
+- Kept plus-button insertion metadata on edges while letting ELK compute stable component/junction spacing for serial and parallel paths.
+- Preserved the direct graph interaction model: no visible module containers, serial insertion on paths, and parallel-path insertion between the same junctions.
+- Frontend build and Vitest pass after the ELK integration.
+
+## v1.8.35 — Direct branch-graph Model Builder rewrite
+
+- Replaced the Model Builder visual model with a direct branch graph: `V` and `GND` terminals, black junction dots, ordered paths, and connected component nodes.
+- Removed the visible module/container interaction concept from the canvas; components are inserted directly on paths.
+- Added `+` insertion affordances for serial insertion into a selected path and for adding new parallel paths between the same junctions.
+- Added path metadata (`pathId`, `pathOrder`) so each path can hold ordered series components and repeated physical behaviors are allowed.
+- Reworked the selected-component inspector around user-facing behavior modes: `R(V)`, `I(V)`, `ΔV(I)`, and custom residual `F(I,V)=0`.
+- Added expression editing with local variables `V` and `I`, sign/polarity control, and a user-editable fitting-parameter table with value/bounds/fit controls.
+- Updated frontend tests for the direct branch-graph behavior. Frontend tests and build pass.
+
 ## v1.8.34 — Main-path layout and delete affordance hotfix
 
 - Increased and regularized main-path component spacing for models with multiple main-path terms so cards no longer overlap.
@@ -1291,3 +1317,31 @@ Tests: `cd backend && pytest tests/test_bounds_suggestion.py`
 ## Earlier alpha history
 
 Earlier v1.0-v1.3 alpha changes are summarized in `docs/VALIDATION_HISTORY.md`. The old per-version tested/handoff files were removed in v1.4.9 to keep the repository readable.
+
+
+## 2026-05-31 — Model Builder ELK routing alignment hotfix
+
+- Replaced smooth-step circuit-wire fallback rendering with straight/custom routed paths.
+- Preserved ELK edge section points and passed them into React Flow edge data.
+- Stopped giving ELK tall fake junction obstacles; junctions are small layout nodes while the rendered rail spans path handles.
+- Stopped overriding ELK component y positions with hand-coded `rowY(pathIndex)` values except as fallback.
+- Verified frontend tests and production build after the hotfix.
+
+
+## 2026-06-01 — Model Builder CSS cleanup
+
+- Removed the late-loaded `frontend/src/styles/final-overrides.css` override pile from the source package.
+- Removed the `final-overrides.css` import from `frontend/src/style.css`.
+- Consolidated Model Builder component-inspector sizing, overflow, role, equation, preview, and custom-law field styles into one canonical section in `model-builder.css`.
+- Replaced conflicting repeated editor widths with a single `--xy-canvas-editor-width` CSS variable.
+- Removed the `xy-canvas-component-role` `max-height: 44px` clipping rule so long component-role descriptions and custom-law text are not silently cut off.
+- Added `MODEL_BUILDER_CSS_CLEANUP_AUDIT.md` with static verification and future maintenance rules.
+
+## Model Builder visual polish hotfix
+
+- Reduced direct graph visual noise by making serial insertion `+` controls smaller and quieter by default.
+- Replaced the floating lower parallel add control with a semantic `+ Add parallel path` / `+ 添加并联路径` pill.
+- Forced merge-junction to GND terminal wire to use explicit horizontal route points.
+- Matched layout constants to rendered component and terminal sizes to reduce small alignment drift.
+- Lightened junction rails, branch tap dots, wire weight, component cards, and selected glows.
+- Added `MODEL_BUILDER_VISUAL_POLISH_AUDIT.md`.
