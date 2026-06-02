@@ -1,107 +1,72 @@
-Continue from **v1.8.21**. This version is a Model Builder layout polish on top of v1.8.20. The important design decision is that add actions are now semantic local canvas controls: `+ Main` sits over the Vext main-path insertion segment and `+ Branch` sits over the Vi-to-parallel-junction segment. Debug/synthetic tools are hidden behind Advanced. Preset dirty state, reset wording, canvas centering, compact inspector sizing, and HTML report junction dots were also updated.
-
 # IV-fitter Web UI agent handoff
-
-Continue from **v1.8.21**. This version is a Model Builder visual-semantic fix on top of v1.8.19 audit hardening. It preserves the security/availability fixes and makes the React Flow circuit canvas read like a circuit editor: neutral wires, hidden connection handles, toolbar add controls instead of plus buttons on wires, subtler selected state, wider readable component cards, and matching neutral HTML export SVG.
-
-Critical next-agent context:
-
-- Do not remove the legacy `/api/...` routes yet; the current frontend calls `/api/v2/...`, but old local workflows may still rely on `/api/...`.
-- Fit timeout is API-level and truthful: SciPy is not force-killed mid-call. The concurrency semaphore is required to prevent stale optimizer work from saturating the backend.
-- The local server-side file picker now runs in a bounded subprocess. Remote/LAN users should use drag/drop, file input, or paste import.
-- `FittingPage` should not be allowed to grow back into many independent top-level state hooks; add reducer fields or extract dedicated hooks/components.
-
-- Model Builder visual rules: default wires must remain neutral black/gray; blue/purple must not imply a physical path. Do not put persistent add buttons on circuit wires. React Flow handles should remain visually hidden; use explicit toolbar actions and the right-side component editor for interactions.
-- Equivalent-circuit export should follow the same visual semantics as the canvas. Do not fix one without checking the other.
-- Standard validation for this handoff: backend pytest, backend py_compile on edited modules, frontend Vitest, and frontend build.
-
-# Web UI agent handoff — v1.7.12
 
 ## Current baseline
 
-Continue from **v1.7.12**. This version is a version-consistency self-check on top of v1.7.11: package metadata and README current-version text now agree, a duplicate embedded changelog section was removed, and the current frontend/backend validation suite has been rerun.
-
-Do not base new work on old v1.5 audit notes. Historical v1.5 audit files are intentionally excluded from this active release package; use version-control history if an old snapshot is needed.
+Continue from the Model Builder V3 interaction branch. The default Model Builder path is now **Model Builder V3**, an isolated graph-native schematic editor under `frontend/src/model-builder-v3/`. V2 and legacy artifacts remain useful references, but current UI work should target V3 unless the user explicitly asks otherwise.
 
 ## Non-negotiable project rules
 
 - If the architecture or implementation intent is unclear, stop and confirm before changing code.
 - Keep fitting physics, backend APIs, saved-model compatibility, and report numerical semantics unchanged unless the user explicitly asks for a model/physics change.
-- Every versioned change must update version files, changelog, tested-current notes, and relevant docs.
 - Do not claim tests passed unless they were actually run in the current working tree.
 - Do not put human local paths, private names, API tokens, or personal data in commits, changelogs, release notes, screenshots, or generated docs.
-- Keep simulator/debug paths independently testable and separated from normal user workflow.
+- Do not create `final-overrides.css` or global CSS patch piles. Model Builder V3 CSS must stay isolated.
+
+## Model Builder V3 summary
+
+V3 source of truth:
+
+```text
+Mb3Graph
+  nodes: fixed terminals and generated junctions
+  components: two-terminal R(V), I(V), dV(I), constant-current, or custom elements
+  wires: port-to-port connections
+```
+
+React Flow is only the renderer and interaction surface. The V3 domain/state layer owns mutations, validation, templates, presets, and the current canvas interaction model.
+
+Important V3 files:
+
+- `frontend/src/model-builder-v3/SchematicBuilderV3.tsx`
+- `frontend/src/model-builder-v3/canvas/CanvasAdapterV3.tsx`
+- `frontend/src/model-builder-v3/domain/templates.ts`
+- `frontend/src/model-builder-v3/domain/presets.ts`
+- `frontend/src/model-builder-v3/domain/validation.ts`
+- `frontend/src/model-builder-v3/panels/ComponentListPanel.tsx`
+- `frontend/src/model-builder-v3/panels/ComponentPalettePanel.tsx`
+- `frontend/src/model-builder-v3/panels/InspectorPanel.tsx`
+- `frontend/src/model-builder-v3/styles/model-builder-v3.css`
+
+## Known V3 caveats
+
+- V3 uses an internal component template list; runtime registry extension is not yet wired into the V3 palette.
+- Synthetic IV trace and Go to fitting are V3 canvas toolbar actions; equation preview/report synchronization still needs deeper V3 integration.
+- Backend graph-native fitting must be treated as experimental unless the current release notes explicitly say otherwise.
+- If the browser shows a blank Model Builder page with no console error, first inspect container sizing and React Flow named imports; V3 requires an explicit canvas height and named `ReactFlow` import from `@xyflow/react`.
 
 ## Current page architecture
 
-### Welcome / Start
-
-- Welcome is a centered, limited-width webpage-style page.
-- No embedded External tester mode in the user-facing Start page.
-
 ### Import / Data
 
-- Single-column webpage flow:
-  1. Import data
-  2. Trace selection
-  3. Plot review
-  4. Spreadsheet preview
-- Trace selection, Plot review, and Spreadsheet preview are hidden until data is loaded.
-- After import/parse, Import data collapses into a compact summary but must remain re-expandable.
-- Do not reintroduce a separate user-facing Import quality card.
-- Spreadsheet preview shows all loaded traces and highlights the selected trace.
-- Current runtime-crash guard: `DatasetNameInput` is defined locally in `DataImportWorkspace.tsx` and must remain available because it renders only after data is loaded.
+- Import file, paste data, and HappyMeasure CSV v2 compatibility are still legacy-stable areas.
+- Do not weaken all-trace spreadsheet preview or selected-trace highlighting.
 
 ### Model
 
-- Single-column webpage flow: Model Builder first, Model preview underneath.
-- Model Builder shows Main path and Junction branches in two columns on wide screens.
-- Equivalent circuit includes a preset selector.
-- Selecting Single diode model or Double diode model replaces the current model. It must not incrementally add components.
-- Do not reintroduce the standalone `Add secondary diode D2` button; D2 is available through the Double diode preset.
-- Model preview has a Go to Fitting action.
+- Default: Model Builder V3 schematic editor.
+- Legacy builder is available elsewhere for compatibility.
+- V3 should keep parent workflow actions inside the canvas toolbar when available; Synthetic IV trace and Go to fitting are already wired.
 
 ### Fit
 
-- Single-column webpage flow.
 - Fit setup stays compact and sticky at the top.
-- Objective / run options / solver live in an Advanced popover. The popover must float above content, not push plots/parameters down, and must close on outside click.
-- Fit and Manual pages must scroll normally.
+- Advanced solver/objective/run controls should not push plots/parameters down.
 
 ### Report
 
-- Report is a single-column reader layout.
-- Exports is a draggable floating panel that must not overlap the dock/sidebar.
-- The in-app report body should match exported HTML ordering:
-  1. IV-fitter report
-  2. Warnings and diagnostics
-  3. Critical issue
-  4. Fit process and quality metrics
-  5. Parameters
-  6. Plots
-  7. Equivalent circuit
-  8. Model evaluation summary
-  9. Generated report text
-- Report plots must have explicit bounded height so they do not collapse to title-only or grow indefinitely.
-- Fit process and quality metrics must use human-readable labels and formatted values.
-
-### User Manual
-
-- One-column reader layout.
-- Version check is at the top.
-- Sections are a floating locator/navigation aid, not a fixed side panel.
-
-## Key files
-
-- `frontend/src/components/DataImportWorkspace.tsx` — Import page, collapsed import card, trace selection, all-trace spreadsheet preview.
-- `frontend/src/components/ModelBuilder.tsx` — model builder, model presets, component layout.
-- `frontend/src/components/FitConfigPanel.tsx` — compact Fit setup and Advanced popover.
-- `frontend/src/pages/components/WorkflowSections.tsx` — page-level Import/Model/Fit composition.
-- `frontend/src/pages/components/ReportWorkflowPage.tsx` — in-app Report layout, floating Exports, report sections.
-- `frontend/src/model/htmlReport.ts` — exported HTML report layout/order.
-- `frontend/src/components/UserDocumentationPage.tsx` — one-column manual and floating section locator.
-- `frontend/src/model/parameterGrouping.ts` — grouped parameters and component Fit/Fix helper.
-- `frontend/src/styles/*.css` — page layout, report/manual responsiveness, chart containment.
+- Report remains a single-column reader layout.
+- Exports must not overlap dock/sidebar.
+- Equivalent circuit/report rendering must not claim unsupported V3 graph semantics.
 
 ## Validation commands
 
@@ -109,7 +74,7 @@ From the project root:
 
 ```bash
 cd frontend
-npm install --include=dev
+npm ci --registry=https://registry.npmjs.org/
 npm run test -- --run --reporter=dot
 npm run build
 
@@ -118,15 +83,13 @@ python -m pytest -q
 python -m compileall -q ivfitter
 ```
 
-v1.7.12 status: frontend Vitest passed (11 files / 45 tests), frontend production build passed, backend pytest passed (122 tests), backend compileall passed.
-
 ## Manual smoke checks before release
 
-1. Import CSV/paste/sample data; the Import page must not go blank after data loads.
-2. Reopen collapsed Import data and import again.
-3. Rename the selected trace; blur/Enter commits, Escape restores.
-4. Confirm Spreadsheet preview shows all traces and highlights the selected trace.
-5. Confirm Fit page scrolls, Advanced floats, and outside click closes it.
-6. Confirm Manual page scrolls and Sections locator works.
-7. Confirm Report plots render visibly in-app and exported HTML remains ordered and readable.
-8. Confirm model presets replace the current model and D2 appears only via Double diode preset.
+1. Launch the frontend; the app must not open to a blank page.
+2. Open Model Builder V3; the floating title, component list, canvas, validation status/Go to fitting action, Synthetic IV trace action, and inspector must all be visible.
+3. Drag a component from the palette to the canvas.
+4. Connect V → component → GND.
+5. Confirm disconnected components are dimmed/ignored and the active V-to-GND subgraph is highlighted/validated.
+6. Edit a component behavior/expression/parameter table and confirm validation messages update.
+7. Open Synthetic IV trace from the V3 canvas toolbar and confirm the dialog appears.
+8. Run frontend build/tests and backend tests before claiming release readiness.

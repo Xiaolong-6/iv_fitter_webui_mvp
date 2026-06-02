@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.8.34**
+Current version: **1.8.38**
 
 IV-fitter Web UI is a local-first browser app for fitting I-V traces with compact circuit models. It helps a user import voltage/current data, build a model from mathematical circuit terms, run a fit, inspect diagnostics, and export a result only after the residuals, warnings, parameters, and model structure make sense.
 
@@ -42,12 +42,15 @@ The app is a working prototype for the IV-fitter workflow. It is not yet a full 
 
 ## Model Builder
 
-The user-facing model is organized as:
+The default Model Builder is V3, a graph-native free schematic editor:
 
-- **Main path:** terms that consume voltage or modify the main current path before junction branches see the remaining voltage.
-- **Junction branches:** current-producing terms evaluated at the internal junction voltage and summed into terminal current.
+- **Fixed terminals:** `V` and `GND` define the two-terminal model.
+- **Component palette:** users drag R(V), I(V), dV(I), residual, or saved custom components onto the canvas. Resistor, diode, current-source, and saved-model entries are presets/templates, not separate architecture classes.
+- **Wires:** users connect component ports and terminals. Only the active V-to-GND connected subgraph is compiled; disconnected draft components stay visible but are ignored.
+- **Inspector:** selected components expose expression editing, sign/polarity, and a parameter table with symbol/value/bounds/fit controls.
+- **Canvas toolbar:** clear canvas, presets, save preset, Synthetic IV trace, and Go to fitting actions are available as floating canvas controls.
 
-Model Builder rows are intentionally compact: each component shows an editable nickname, the component name, per-component polarity when relevant, and a Remove button. Detailed law/form/placement information is available through hover text and in the User manual rather than repeated inline.
+The legacy Law / Form / Placement builder remains available elsewhere in the app for compatibility and comparison while graph-native fitting matures.
 
 The app treats components as mathematical circuit terms. It should not require a user to frame the problem as a specific device family. Domain-specific interpretations belong in the user's modeling judgment, diagnostics, and report narrative.
 
@@ -59,11 +62,11 @@ The Parameters table is grouped first by placement, then by component instance. 
 
 - Plain CSV/TXT import compatibility for single traces, wide publication/demo files with one voltage column and multiple current/current-density traces, and long trace-grouped files.
 - HappyMeasure CSV v2 import compatibility for single, wide, and long files, including current-source conversion.
-- Synthetic IV trace generation from the current Model Builder model, with voltage sweep controls, optional noise, seed, current compliance, and ground-truth metadata.
+- Synthetic IV trace generation from the current Model Builder model, available directly from the V3 canvas toolbar, with voltage sweep controls, optional noise, seed, current compliance, and ground-truth metadata.
 - Grouped parameter editing with next-fit initials, bounds, fit/fixed state, fitted values, uncertainty, and interpretation hints.
-- Main-path terms such as Ohmic resistance, diode-like series barrier drop, bias-dependent series conductance modifier, custom transport modifier, and softplus voltage drop.
-- Branch terms such as Shockley diode, Ohmic leakage/shunt behavior, soft-threshold power-law current branch, reverse leakage / soft-breakdown current, and custom expressions.
-- Model preview with beginner-friendly equation steps and softplus definition.
+- Model Builder V3 schematic graph editing with fixed V/GND terminals, drag-in two-terminal components, orthogonal wires, presets, save/load, and V-to-GND validation.
+- Component behavior forms such as R(V), I(V), dV(I), and F(I,V)=0, with resistor/diode/source entries handled as presets.
+- Legacy Model Builder remains available for comparison while graph-native fitting is matured.
 - Mobile portrait layout with compact controls and sticky mobile Run fit action.
 - LAN phone/tablet testing helper for local network testing.
 - User-facing Function Guide with internal schema details hidden in Advanced details.

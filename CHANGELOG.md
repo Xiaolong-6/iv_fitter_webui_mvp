@@ -1,3 +1,37 @@
+## 1.8.38 - Model Builder V3 synthetic toolbar integration
+
+- Restored the existing Synthetic IV trace workflow as a direct Model Builder V3 canvas toolbar action between Save and Go to fitting.
+- Kept the Synthetic IV trace modal behavior unchanged while styling its launch control as a compact floating canvas button.
+- Passed parent workflow canvas actions through the V3 ModelBuilder wrapper instead of discarding them.
+- Updated current user/developer docs to describe Model Builder V3 as the active schematic editor and document the canvas Synthetic IV trace action.
+- Synchronized root, frontend, backend, and lockfile version metadata to v1.8.38.
+
+## 1.8.35 — Model Builder V2 audit and blank-screen follow-up
+
+- Fixed V2 `ReactFlow` import to use the named export from `@xyflow/react` and removed an unused `addEdge` import.
+- Stopped silently discarding parent workflow props in V2; the toolbar now exposes scope notes, optional Go to Fit action, and external canvas actions when available.
+- Added `graphCompile` tests for `schematic_v2` GraphSpec output, expression preservation, empty drafts, and model round-trip behavior.
+- Moved active V2 design/audit docs into `docs/model-builder-v2/`, moved old reports into `docs/history/` or `docs/archive/`, and updated documentation index links.
+- Updated architecture, roadmap, and agent handoff docs so V2 is described as the current default Model Builder path.
+
+
+## Model Builder V2 blank-screen hotfix
+
+- Fixed V2 startup so it no longer publishes graph state back to the parent model during initial mount.
+- Added explicit React Flow canvas height rules to prevent zero-height/blank canvas rendering in nested grid layouts.
+- Added `MODEL_BUILDER_V2_BLANK_SCREEN_HOTFIX.md` documenting the fix.
+
+
+## 1.8.35 - Model Builder V2 schematic editor baseline
+
+- Added isolated Model Builder V2 under `frontend/src/model-builder-v2/`.
+- Added graph-native `SchematicGraph` domain types, mutations, validation, expression validation, and GraphSpec compilation.
+- Added a free schematic canvas with fixed V/GND terminals, drag-in component palette, component port wiring, orthogonal wire rendering, and validation panel.
+- Added a component inspector for R(V), I(V), ΔV(I), and F(I,V)=0 behavior forms, including expression editing and custom parameter table.
+- Added V2 architecture, acceptance, migration, and self-audit documents.
+- Rewrote the user manual around the current graph-native two-terminal modeling workflow.
+- Removed the stale `final-overrides.css` file from the source tree; V2 owns a dedicated stylesheet with no `!important` declarations.
+
 ## v1.8.37 — Direct graph interaction polish
 
 - Added a true empty-state Model Builder graph: `V — (+) — GND` when no components are present.
@@ -1345,3 +1379,11 @@ Earlier v1.0-v1.3 alpha changes are summarized in `docs/VALIDATION_HISTORY.md`. 
 - Matched layout constants to rendered component and terminal sizes to reduce small alignment drift.
 - Lightened junction rails, branch tap dots, wire weight, component cards, and selected glows.
 - Added `MODEL_BUILDER_VISUAL_POLISH_AUDIT.md`.
+
+
+## 2026-06-01 — Model Builder V2 zoom/layout hotfix
+
+- Contained V2 in the model workflow viewport at high app zoom.
+- Added responsive V2 layout rules and internal preview scrolling.
+- Added React Flow ResizeObserver refit for app zoom/container resize.
+- See `MODEL_BUILDER_V2_ZOOM_LAYOUT_HOTFIX.md`.

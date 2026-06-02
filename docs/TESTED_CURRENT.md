@@ -1,46 +1,41 @@
+# Tested current package
 
-## v1.8.29 validation
+## Package
 
-- `npm --prefix frontend test -- --run`: passed, 14 files / 113 tests.
-- `npm --prefix frontend run build`: passed; existing non-blocking Vite warnings remain.
-- `PYTHONPATH=backend pytest -q backend/tests`: passed.
-- Backend `py_compile` smoke check: passed.
+Model Builder V3 toolbar integration package prepared as v1.8.38.
 
-# Tested current status
+## What changed in this package
 
-Version: v1.8.25
+- The existing Synthetic IV trace workflow is exposed directly in the Model Builder V3 canvas toolbar between Save and Go to fitting.
+- `ModelBuilder` now passes `canvasActions` into `SchematicBuilderV3`, so parent workflow tools are not discarded by the V3 wrapper.
+- The Synthetic IV trace launch control is styled as a compact floating canvas button while preserving the existing modal, generate-and-import, and CSV-only behavior.
+- Current README/manual/roadmap/handoff docs describe V3 as the active Model Builder path and document the canvas Synthetic IV trace action.
+- Root, frontend, backend, and lockfile version metadata are synchronized to v1.8.38.
 
-Scope: UI/frontend iteration on top of Branch20260528 audit-fixed line.
+## Validation run in this workspace
 
-## Passed in this handoff
-
-```bash
-npm --prefix frontend test -- --run
-```
-
-Result: passed, 14 test files / 111 tests.
-
-```bash
-npm --prefix frontend run build
-```
-
-Result: passed. Non-blocking warnings remain: `@xyflow/react` module-level `use client` directive ignored by Vite, and the JS bundle exceeds Vite's default 500 kB warning threshold.
-
-```bash
-PYTHONPATH=backend pytest -q backend/tests
+```powershell
+npm --prefix frontend exec tsc -- --noEmit --skipLibCheck --jsx react-jsx --moduleResolution bundler --module esnext --target es2020 frontend/src/vite-env.d.ts frontend/src/model-builder-v3/SchematicBuilderV3.tsx frontend/src/model-builder-v3/panels/ComponentPalettePanel.tsx frontend/src/components/ModelBuilder.tsx frontend/src/pages/FittingPage.tsx frontend/src/pages/components/WorkflowSections.tsx frontend/src/components/SyntheticTraceTool.tsx
 ```
 
 Result: passed.
 
-```bash
-python -m py_compile backend/ivfitter/api/main.py backend/ivfitter/components/custom.py backend/ivfitter/core/fitting_engine.py backend/ivfitter/io/import_trace.py backend/ivfitter/io/_column_detection.py backend/ivfitter/io/_happymeasure_sections.py
+```powershell
+npm run build
 ```
 
-Result: passed.
+Result: passed. Vite still reports the existing React Flow `"use client"` directive warning and a large chunk-size warning.
 
-## Manual checks still recommended
+```powershell
+npm --prefix frontend run test -- --run src/pages/__tests__/FittingPage.test.tsx src/components/__tests__/ModelBuilder.test.tsx
+```
 
-1. Launch with `04_run_dev.bat` and confirm sidebar version is `v1.8.25`.
-2. Check Model Builder canvas layout at 100%, 150%, and 200% app zoom.
-3. Run one synthetic or pasted trace through Model → Fitting → Report.
-4. Export HTML and confirm equations/circuit remain readable.
+Result: failed against legacy Model Builder DOM expectations. The V3 render path no longer crashes, but the old tests still query V2-era selectors such as `equivalent-circuit-canvas`, `model-preset-select`, plus-driven insertion controls, and `.model-webpage-stack`.
+
+Additional backend validation should still be run before public release:
+
+```bash
+cd backend
+python -m pytest -q
+python -m compileall -q ivfitter
+```
