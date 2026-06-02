@@ -1,6 +1,8 @@
-import { useMemo, useReducer, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import type { Connection } from "@xyflow/react";
 import { CanvasAdapterV3 } from "./canvas/CanvasAdapterV3";
+import type { ModelSpec } from "../model/types";
+import { compileMb3Graph } from "./domain/compile";
 import { createComponentFromTemplate } from "./domain/componentFactory";
 import {
   createMb3Preset,
@@ -32,9 +34,13 @@ import "./styles/model-builder-v3.css";
 type Mb3ListPanel = "presets" | null;
 
 export function SchematicBuilderV3({
+  model,
+  onChange,
   canvasActions,
   onGoToFitting,
 }: {
+  model: ModelSpec;
+  onChange: (model: ModelSpec) => void;
   canvasActions?: ReactNode;
   onGoToFitting?: () => void;
 }) {
@@ -48,6 +54,9 @@ export function SchematicBuilderV3({
     loadMb3CustomTemplates,
   );
   const [inspectorPosition, setInspectorPosition] = useState({ x: 14, y: 330 });
+  const [inspectorAnchor, setInspectorAnchor] = useState<{ x: number; y: number } | null>(null);
+  const baseModelRef = useRef(model);
+  const onChangeRef = useRef(onChange);
   const inspectorDragRef = useRef<{
     pointerId: number;
     startX: number;
@@ -93,10 +102,20 @@ export function SchematicBuilderV3({
     [state.graph],
   );
 
-  const selectExistingComponentByTemplate = (template: Mb3ComponentTemplate) => {
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    const compiled = compileMb3Graph(state.graph, baseModelRef.current);
+    onChangeRef.current(compiled.model);
+  }, [state.graph]);
+
+  const selectExistingComponentByTemplate = (template: Mb3ComponentTemplate, anchor: DOMRect) => {
     setPreviewTemplateKey(template.key);
     setStickySelectedComponentId(null);
     dispatch({ type: "selectComponent", componentId: null });
+    setInspectorAnchor({ x: anchor.right, y: anchor.top });
     setInspectorOpen(true);
   };
 
@@ -191,6 +210,13 @@ export function SchematicBuilderV3({
       y: Math.max(margin, Math.min(y, window.innerHeight - panelHeight - margin)),
     };
   };
+
+  useEffect(() => {
+    if (!inspectorAnchor) return;
+    const gap = 12;
+    const pos = clampInspectorPosition(inspectorAnchor.x + gap, inspectorAnchor.y);
+    setInspectorPosition(pos);
+  }, [inspectorAnchor]);
 
   const startInspectorDrag = (event: PointerEvent<HTMLElement>) => {
     event.preventDefault();
@@ -301,10 +327,13 @@ export function SchematicBuilderV3({
         selectedComponentId={state.selectedComponentId}
         inspectedComponentId={inspectorOpen && inspectorComponent ? inspectorComponent.id : null}
         selectedWireId={state.selectedWireId}
-        onSelectComponent={(componentId) => {
+        onSelectComponent={(componentId, screenPos) => {
           setPreviewTemplateKey(null);
           setStickySelectedComponentId(componentId);
           dispatch({ type: "selectComponent", componentId });
+          if (screenPos) {
+            setInspectorAnchor(screenPos);
+          }
           setInspectorOpen(Boolean(componentId));
         }}
         onSelectWire={(wireId) => {

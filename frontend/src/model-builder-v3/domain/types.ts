@@ -71,4 +71,8 @@ export interface Mb3CompileResult {
   graphSchemaVersion: "schematic_v3";
   componentIds: string[];
   wireIds: string[];
+  activeComponentIds: string[];
+  model: ModelSpec;
+  warnings: string[];
 }
+import type { ModelSpec } from "../../model/types";

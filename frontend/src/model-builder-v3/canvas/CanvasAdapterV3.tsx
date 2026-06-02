@@ -106,7 +106,7 @@ function CanvasInner({
   selectedComponentId: string | null;
   inspectedComponentId: string | null;
   selectedWireId: string | null;
-  onSelectComponent: (componentId: string | null) => void;
+  onSelectComponent: (componentId: string | null, screenPos?: { x: number; y: number }) => void;
   onSelectWire: (wireId: string | null) => void;
   onDeleteWire: (wireId: string) => void;
   onDeleteComponent: (componentId: string) => void;
@@ -114,7 +114,7 @@ function CanvasInner({
   onConnectPorts: (connection: Connection) => void;
   onDropTemplate: (templateKey: string, position: { x: number; y: number }) => void;
 }) {
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, flowToScreenPosition } = useReactFlow();
   const flowGraph = useMemo(() => mb3ToReactFlow(graph), [graph]);
   const [nodes, setNodes, onNodesChange] = useNodesState(flowGraph.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(flowGraph.edges);
@@ -180,7 +180,12 @@ function CanvasInner({
         onEdgeClick={(_, edge) => onSelectWire(edge.id)}
         onNodeClick={(_, node) => {
           const isComponent = node.type === "mbv3Component";
-          onSelectComponent(isComponent ? node.id : null);
+          if (isComponent) {
+            const screenPos = flowToScreenPosition({ x: node.position.x + 130, y: node.position.y });
+            onSelectComponent(node.id, screenPos);
+          } else {
+            onSelectComponent(null);
+          }
           onSelectWire(null);
         }}
         onSelectionChange={({ nodes: selectedNodes }) => {

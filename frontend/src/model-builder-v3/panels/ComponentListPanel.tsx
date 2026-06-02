@@ -9,7 +9,7 @@ export function ComponentListPanel({
 }: {
   templates: Mb3ComponentTemplate[];
   usageByTemplateKey: Map<string, number>;
-  onSelectTemplate: (template: Mb3ComponentTemplate) => void;
+  onSelectTemplate: (template: Mb3ComponentTemplate, anchor: DOMRect) => void;
   onDeleteTemplate?: (template: Mb3ComponentTemplate) => void;
   embedded?: boolean;
 }) {
@@ -47,7 +47,7 @@ export function ComponentListPanel({
                 }}
                 onClick={(event) => {
                   event.stopPropagation();
-                  onSelectTemplate(template);
+                  onSelectTemplate(template, event.currentTarget.getBoundingClientRect());
                 }}
               >
                 <span>{template.label}</span>

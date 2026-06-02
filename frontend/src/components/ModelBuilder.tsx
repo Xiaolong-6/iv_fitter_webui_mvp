@@ -10,7 +10,14 @@ import { ModelFlowCanvas } from "./model-builder/ModelFlowCanvas";
 export { buildFlowGraph } from "./model-builder/modelFlowGraph";
 
 export function ModelBuilder(props: ModelBuilderProps) {
-  return <SchematicBuilderV3 canvasActions={props.canvasActions} onGoToFitting={props.onGoToFitting} />;
+  return (
+    <SchematicBuilderV3
+      model={props.model}
+      onChange={props.onChange}
+      canvasActions={props.canvasActions}
+      onGoToFitting={props.onGoToFitting}
+    />
+  );
 }
 
 export function EquivalentCircuitView({ model, language }: { model: ModelSpec; language: ModelBuilderProps["language"] }) {
