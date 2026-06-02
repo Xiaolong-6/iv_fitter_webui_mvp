@@ -33,6 +33,9 @@ class FitTimeoutError(RuntimeError):
     """Raised when a fit exceeds the user-configured runtime budget."""
 
 
+_SCIPY_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="ivfit-scipy")
+
+
 def _timeout_message(timeout_s: float) -> str:
     return f"Fit exceeded run timeout of {timeout_s:g} s."
 
@@ -57,19 +60,15 @@ def _least_squares_with_timeout(timeout_s: float, deadline: float | None, *args,
     remaining = _remaining_timeout_s(deadline, timeout_s)
     if remaining is None:
         return least_squares(*args, **kwargs)
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="ivfit-scipy")
-    future = executor.submit(least_squares, *args, **kwargs)
+    future = _SCIPY_EXECUTOR.submit(least_squares, *args, **kwargs)
     try:
         result = future.result(timeout=remaining)
     except concurrent.futures.TimeoutError as exc:
         future.cancel()
-        executor.shutdown(wait=False, cancel_futures=True)
         raise FitTimeoutError(_timeout_message(timeout_s)) from exc
     except BaseException:
-        executor.shutdown(wait=True, cancel_futures=False)
         raise
     else:
-        executor.shutdown(wait=True, cancel_futures=False)
         return result
 
 
@@ -245,6 +244,7 @@ def fit_trace(request: FitRequest) -> FitResult:
         _remaining_timeout_s(deadline, timeout_s)
 
     x0, lower, upper, records = _pack(request)
+    initial_values = {key: float(spec.value) for key, _comp, _name, spec in records}
     model_before_fit = copy.deepcopy(request.model)
     result_model = request.model
     output_records = records
@@ -284,10 +284,11 @@ def fit_trace(request: FitRequest) -> FitResult:
             check_timeout()
             _apply_x(records, x)
             pred = predict_current(v_fit[use], request.model, request.config.solver_mode)
+            sentinel = np.finfo(float).max / 2
             if not np.all(np.isfinite(pred)):
-                return np.full_like(i_meas[use], 1e30, dtype=float)
+                return np.full_like(i_meas[use], sentinel, dtype=float)
             res_vec = weighted_residual(pred, i_meas[use], request.config.weighting, request.config.residual_floor_A)
-            return np.nan_to_num(res_vec, nan=1e30, posinf=1e30, neginf=-1e30)
+            return np.nan_to_num(res_vec, nan=sentinel, posinf=sentinel, neginf=-sentinel)
         try:
             starts = [x0]
             if request.config.multistart_enabled:
@@ -315,7 +316,8 @@ def fit_trace(request: FitRequest) -> FitResult:
                 cost = float(np.sum(res.fun**2))
                 if best is None or cost < best[0]:
                     best = (cost, res)
-            assert best is not None
+            if best is None:
+                raise RuntimeError("All multistart seeds failed to produce a result.")
             res = best[1]
             fitted_x = _decode_internal_x(res.x, transforms)
             _apply_x(records, fitted_x)
@@ -449,6 +451,7 @@ def fit_trace(request: FitRequest) -> FitResult:
         model=result_model,
         config=request.config,
         parameters=params,
+        initial_values=initial_values if initial_values else None,
         metrics=metrics,
         warnings=warnings,
         fit_diagnostics=diagnostics,

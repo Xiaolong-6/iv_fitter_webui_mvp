@@ -57,9 +57,19 @@ export function renderLatexLite(src: string) {
   return s;
 }
 
+function sanitizeHtml(raw: string): string {
+  return raw
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function FormulaError({ latex, inline }: { latex: string; inline: boolean }) {
+  const safe = renderLatexLite(latex);
   const Tag = inline ? "span" : "code";
-  return <Tag className="latex-fallback" dangerouslySetInnerHTML={{ __html: renderLatexLite(latex) }} />;
+  return <Tag className="latex-fallback" dangerouslySetInnerHTML={{ __html: safe }} />;
 }
 
 export function MathFormula({

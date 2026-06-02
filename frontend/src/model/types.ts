@@ -56,7 +56,7 @@ export interface FitSessionStats {
   totalElapsedS: number;
   totalRootSolverFailures: number;
 }
-export interface FitResult { success: boolean; reportable: boolean; reportability_reason?: string; message: string; model: ModelSpec; config: FitConfig; parameters: Record<string, ParameterResult>; metrics: Record<string, number>; warnings: FitWarning[]; fit_diagnostics?: FitDiagnosticsSummary | null; curves: FitCurves; equations: EquationSummary; software_version: string; }
+export interface FitResult { success: boolean; reportable: boolean; reportability_reason?: string; message: string; model: ModelSpec; config: FitConfig; parameters: Record<string, ParameterResult>; initial_values?: Record<string, number> | null; metrics: Record<string, number>; warnings: FitWarning[]; fit_diagnostics?: FitDiagnosticsSummary | null; curves: FitCurves; equations: EquationSummary; software_version: string; }
 export type SyntheticNoiseMode = "none" | "gaussian_absolute" | "gaussian_relative";
 export interface SyntheticNoiseConfig { mode: SyntheticNoiseMode; noise_level_A?: number; relative_noise_fraction?: number; }
 export interface SyntheticArtifactConfig { compliance_enabled: boolean; compliance_current_A?: number | null; }

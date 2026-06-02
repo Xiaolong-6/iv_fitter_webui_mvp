@@ -200,6 +200,13 @@ def _solve_one(v_ext: float, model: ModelSpec, guess: np.ndarray | None = None) 
     x0 = guess if guess is not None and len(guess) == len(internal) else np.full(len(internal), v_ext / 2.0)
     sol = root(residual, x0, method="hybr")
     if not (sol.success and np.all(np.isfinite(sol.x)) and np.all(np.isfinite(residual(sol.x)))):
+        try:
+            sol_lm = root(residual, x0, method="lm")
+            if sol_lm.success and np.all(np.isfinite(sol_lm.x)) and np.all(np.isfinite(residual(sol_lm.x))):
+                sol = sol_lm
+        except Exception:
+            pass
+    if not (sol.success and np.all(np.isfinite(sol.x)) and np.all(np.isfinite(residual(sol.x)))):
         branches = {comp.id: float("nan") for comp in graph.components}
         return float("nan"), branches, x0
     vals = voltages(sol.x)

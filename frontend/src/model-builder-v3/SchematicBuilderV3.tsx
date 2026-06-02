@@ -128,7 +128,7 @@ export function SchematicBuilderV3({
       return;
     }
     const suggestedName = component.label || `Custom ${customTemplates.length + 1}`;
-    const label = window.prompt("Component template name", suggestedName)?.trim();
+    const label = (typeof window !== "undefined" && window.prompt ? window.prompt("Component template name", suggestedName) : suggestedName)?.trim();
     if (!label) return;
     const template = createMb3CustomTemplate({
       label,
@@ -150,7 +150,7 @@ export function SchematicBuilderV3({
 
   const saveCurrentPreset = () => {
     const suggestedName = `Preset ${presets.length + 1}`;
-    const name = window.prompt("Preset name", suggestedName)?.trim();
+    const name = (typeof window !== "undefined" && window.prompt ? window.prompt("Preset name", suggestedName) : suggestedName)?.trim();
     if (!name) return;
     const preset = createMb3Preset(name, state.graph);
     const nextPresets = [preset, ...presets];

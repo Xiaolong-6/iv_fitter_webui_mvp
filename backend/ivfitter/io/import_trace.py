@@ -335,6 +335,7 @@ def import_csv_text_multi(payload: ImportCsvTextRequest) -> list[tuple[TraceData
 
 def import_csv(path: str, voltage_col: str = "V", current_col: str = "I") -> TraceData:
     """Import a CSV file path using explicit column names."""
-    text = open(path, "r", encoding="utf-8").read()
+    with open(path, "r", encoding="utf-8") as f:
+        text = f.read()
     trace, _quality = import_csv_text(ImportCsvTextRequest(text=text, trace_id=path, voltage_col=voltage_col, current_col=current_col))
     return trace

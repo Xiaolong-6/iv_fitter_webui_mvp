@@ -40,7 +40,17 @@ LOGGER = logging.getLogger(__name__)
 
 def _cors_origins() -> list[str]:
     raw = os.getenv("IVFITTER_CORS_ORIGINS", "http://127.0.0.1:5173,http://localhost:5173")
-    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+    origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
+    validated: list[str] = []
+    for origin in origins:
+        if origin == "*":
+            LOGGER.warning("CORS wildcard '*' is not allowed; ignoring unsafe origin.")
+            continue
+        if not origin.startswith(("http://", "https://")):
+            LOGGER.warning("CORS origin %r does not start with http:// or https://; ignoring.", origin)
+            continue
+        validated.append(origin)
+    return validated or ["http://127.0.0.1:5173", "http://localhost:5173"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -114,6 +124,8 @@ FILE_DIALOG_TIMEOUT_S = float(os.getenv("IVFITTER_FILE_DIALOG_TIMEOUT_S", "30"))
 _CPU_SEMAPHORE = threading.BoundedSemaphore(MAX_CONCURRENT_CPU_REQUESTS)
 _RATE_LIMIT_LOCK = threading.Lock()
 _RATE_LIMIT_BUCKETS: dict[str, tuple[float, float]] = {}
+_RATE_LIMIT_CLEANUP_INTERVAL = 300.0
+_RATE_LIMIT_LAST_CLEANUP: float = 0.0
 
 
 @contextmanager
@@ -155,6 +167,14 @@ async def local_rate_limit_guard(request: Request, call_next):
     now = time.monotonic()
     capacity = float(limit)
     refill_per_s = capacity / 60.0
+    global _RATE_LIMIT_LAST_CLEANUP
+    with _RATE_LIMIT_LOCK:
+        if now - _RATE_LIMIT_LAST_CLEANUP > _RATE_LIMIT_CLEANUP_INTERVAL:
+            _RATE_LIMIT_LAST_CLEANUP = now
+            stale_threshold = now - 600.0
+            expired = [k for k, (_, ts) in _RATE_LIMIT_BUCKETS.items() if ts < stale_threshold]
+            for k in expired:
+                del _RATE_LIMIT_BUCKETS[k]
     with _RATE_LIMIT_LOCK:
         tokens, last_seen = _RATE_LIMIT_BUCKETS.get(key, (capacity, now))
         tokens = min(capacity, tokens + max(0.0, now - last_seen) * refill_per_s)
@@ -223,12 +243,8 @@ def suggest_bounds_endpoint(request: BoundsSuggestionRequest) -> BoundsSuggestio
         with _cpu_endpoint_slot("Bounds suggestion"):
             _check_fit_size(FitRequest(trace=request.trace, model=request.model, config=request.config))
             return suggest_bounds(request)
-    except HTTPException:
-        raise
-    except (ValueError, ValidationError) as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        _raise_internal_error(exc, "Unhandled API error")
+        _handle_endpoint_error(exc, "Bounds suggestion")
 
 @app.post("/api/v2/generate-synthetic-trace", response_model=SyntheticTraceResult)
 @app.post("/api/generate-synthetic-trace", response_model=SyntheticTraceResult)
@@ -246,12 +262,8 @@ def generate_synthetic_trace_endpoint(request: SyntheticTraceRequest) -> Synthet
                 trace_name=request.trace_name,
                 seed=request.seed,
             )
-    except HTTPException:
-        raise
-    except (ValueError, ValidationError) as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        _raise_internal_error(exc, "Unhandled API error")
+        _handle_endpoint_error(exc, "Synthetic trace generation")
 
 @app.post("/api/v2/fit")
 @app.post("/api/fit")
@@ -261,12 +273,8 @@ def fit(request: FitRequest):
         with _cpu_endpoint_slot("Fit"):
             _check_fit_size(request)
             return fit_trace(request)
-    except HTTPException:
-        raise
-    except (ValueError, ValidationError) as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        _raise_internal_error(exc, "Unhandled API error")
+        _handle_endpoint_error(exc, "Fit")
 
 @app.post("/api/v2/export-report", response_model=ReportResponse)
 @app.post("/api/export-report", response_model=ReportResponse)
@@ -302,6 +310,15 @@ def _multi_import_response(items) -> dict:
             summary = f"Imported {len(items)} traces."
     return {"traces": traces, "summary": summary, "warnings": warnings}
 
+
+def _handle_endpoint_error(exc: Exception, context: str) -> NoReturn:
+    """Standard error handler for CPU-bound or validation endpoints."""
+    if isinstance(exc, HTTPException):
+        raise exc
+    if isinstance(exc, (ValueError, ValidationError)):
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    _raise_internal_error(exc, context)
+
 @app.post("/api/v2/import-csv-text")
 @app.post("/api/import-csv-text")
 def import_csv_text_endpoint(payload: ImportCsvTextRequest):
@@ -310,12 +327,8 @@ def import_csv_text_endpoint(payload: ImportCsvTextRequest):
         _check_import_size(payload.text)
         trace, quality = import_csv_text(payload)
         return {"trace": trace, "quality": quality}
-    except HTTPException:
-        raise
-    except (ValueError, ValidationError) as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        _raise_internal_error(exc, "Unhandled API error")
+        _handle_endpoint_error(exc, "Import CSV text")
 
 @app.post("/api/v2/import-csv-text-multi")
 @app.post("/api/import-csv-text-multi")
@@ -324,12 +337,8 @@ def import_csv_text_multi_endpoint(payload: ImportCsvTextRequest):
     try:
         _check_import_size(payload.text)
         return _multi_import_response(import_csv_text_multi(payload))
-    except HTTPException:
-        raise
-    except (ValueError, ValidationError) as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        _raise_internal_error(exc, "Unhandled API error")
+        _handle_endpoint_error(exc, "Import CSV text multi")
 
 def _open_file_dialog_subprocess(default_dir) -> str:
     """Open tkinter in a child process so the API worker is bounded by a timeout."""
@@ -382,12 +391,8 @@ async def open_import_file_dialog(request: Request) -> OpenImportFileDialogRespo
             summary=imported.get("summary"),
             warnings=imported.get("warnings", []),
         )
-    except HTTPException:
-        raise
-    except (ValueError, ValidationError) as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        _raise_internal_error(exc, "Unhandled API error")
+        _handle_endpoint_error(exc, "Open import file dialog")
 
 
 @app.post("/api/v2/export-report-csv", response_model=TextResponse)

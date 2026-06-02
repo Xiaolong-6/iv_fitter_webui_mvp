@@ -22,6 +22,9 @@ logs/
 tmp/
 .DS_Store
 Thumbs.db
+# Environment files
+.env
+.env.*
 
 # Local release-manager scratch files
 .release-local/

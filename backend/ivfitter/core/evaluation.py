@@ -188,7 +188,8 @@ def solve_single_vj(v_ext: float, model, rs_eff_fn=series_resistance_effective) 
 
 
 def solve_vj(voltage_v, model, rs_eff_fn=series_resistance_effective) -> np.ndarray:
-    return np.array([solve_single_vj(float(v), model, rs_eff_fn=rs_eff_fn) for v in np.asarray(voltage_v, dtype=float)], dtype=float)
+    arr = np.asarray(voltage_v, dtype=float)
+    return np.array([solve_single_vj(float(v), model, rs_eff_fn=rs_eff_fn) for v in arr.flat], dtype=float).reshape(arr.shape)
 
 
 def predict_current(voltage_v, model, solver_mode: str = "legacy_composite", rs_eff_fn=series_resistance_effective) -> np.ndarray:

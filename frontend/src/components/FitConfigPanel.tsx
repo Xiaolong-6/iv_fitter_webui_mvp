@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import type { FitConfig } from "../model/types";
+import type { FitConfig, SolverMode } from "../model/types";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { HelpTip } from "./HelpTip";
@@ -179,7 +179,7 @@ function AdvancedRunOptions({
             disabled={disabled}
             label={t(language, "residualFloor")}
             help={t(language, "residualFloorHelp")}
-            value={(config as any).residual_floor_A ?? 1e-15}
+            value={config.residual_floor_A ?? 1e-15}
             onCommit={(v) =>
               onChange({ ...config, residual_floor_A: v ?? 1e-15 })
             }
@@ -250,7 +250,7 @@ function AdvancedRunOptions({
             disabled={disabled}
             title={t(language, "multistartHelp")}
             type="checkbox"
-            checked={(config as any).multistart_enabled ?? false}
+            checked={config.multistart_enabled ?? false}
             onChange={(e) =>
               onChange({ ...config, multistart_enabled: e.target.checked })
             }
@@ -268,7 +268,7 @@ function AdvancedRunOptions({
             title={t(language, "solverModeHelp")}
             value={config.solver_mode ?? "legacy_composite"}
             onChange={(e) =>
-              onChange({ ...config, solver_mode: e.target.value as any })
+              onChange({ ...config, solver_mode: e.target.value as SolverMode })
             }
           >
             <option value="legacy_composite">
