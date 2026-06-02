@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export function useAppZoom(initialZoom = 0.92) {
+export function useAppZoom(initialZoom = 1) {
   const [zoom, setZoom] = useState(initialZoom);
   useEffect(() => {
     function onWheel(event: WheelEvent) {

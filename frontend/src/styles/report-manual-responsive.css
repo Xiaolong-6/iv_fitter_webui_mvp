@@ -111,7 +111,7 @@
   background: #ffffff;
 }
 .manual-reader-nav-title {
-  font-size: 0.74rem;
+  font-size: calc(12px * var(--app-zoom));
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #64748b;
@@ -134,7 +134,7 @@
 }
 .manual-reader-nav button small {
   color: #64748b;
-  font-size: 0.72rem;
+  font-size: calc(12px * var(--app-zoom));
   line-height: 1.15;
 }
 .manual-reader-nav button.active {
@@ -207,11 +207,11 @@
 }
 .fitting-page .parameter-placement-group h3 {
   margin: 3px 0 2px;
-  font-size: 0.82rem;
+  font-size: calc(13px * var(--app-zoom));
   letter-spacing: 0.02em;
 }.interactive-parameter-table {
   min-width: 680px;
-  font-size: clamp(10px, calc(11px * var(--app-zoom)), 12px);
+  font-size: calc(11px * var(--app-zoom));
 }
 .interactive-parameter-table th,
 .interactive-parameter-table td {
@@ -246,7 +246,7 @@
 }
 .chart-toolbar-hint {
   color: #64748b;
-  font-size: 0.72rem;
+  font-size: calc(12px * var(--app-zoom));
   white-space: nowrap;
 }
 .chart-button-group {
@@ -280,7 +280,7 @@
   color: #1d4ed8;
 }
 .chart-icon-button small {
-  font-size: 0.64rem;
+  font-size: calc(11px * var(--app-zoom));
   font-weight: 850;
 }
 .chart-reset-button {
@@ -439,7 +439,7 @@
   border-radius: 999px;
   border: 1px solid #e2e8f0;
   padding: 1px 7px;
-  font-size: 0.76rem;
+  font-size: calc(12px * var(--app-zoom));
   font-weight: 800;
   white-space: nowrap;
 }
@@ -475,6 +475,7 @@
   color: #1e3a8a;
   text-decoration: none;
   cursor: pointer;
+  font-size: calc(13px * var(--app-zoom));
 }
 .diagnostic-export {
   border-color: #fde68a;
@@ -542,7 +543,7 @@
   background: #ecfdf5;
   border-radius: 999px;
   padding: 2px 7px;
-  font-size: 0.72rem;
+  font-size: calc(12px * var(--app-zoom));
   font-weight: 850;
 }
 .release-status-badge.warning {
@@ -558,7 +559,7 @@
 .release-status-grid {
   display: grid;
   gap: 4px;
-  font-size: 0.82rem;
+  font-size: calc(13px * var(--app-zoom));
 }
 .release-status-grid span {
   display: flex;
@@ -569,7 +570,7 @@
   color: #b91c1c;
   margin: 0;
 }
-.small-note { font-size: 0.78rem; }
+.small-note { font-size: calc(12px * var(--app-zoom)); }
 /* v1.5.38 manual/update cleanup: keep the manual sidebar focused on navigation. */
 .manual-reader-shell {
   grid-template-columns: minmax(170px, 230px) minmax(0, 1fr);
@@ -581,7 +582,7 @@
   padding: 8px 10px;
 }
 .manual-title-block h2 {
-  font-size: 0.98rem;
+  font-size: calc(16px * var(--app-zoom));
 }
 .manual-reader-nav {
   max-height: none;
@@ -592,10 +593,10 @@
   border-radius: 12px;
 }
 .release-status-panel.compact .release-status-header h3 {
-  font-size: 0.82rem;
+  font-size: calc(13px * var(--app-zoom));
 }
 .release-status-panel.compact .release-status-badge {
-  font-size: 0.66rem;
+  font-size: calc(11px * var(--app-zoom));
   padding: 1px 6px;
   max-width: 120px;
   text-align: right;
@@ -606,12 +607,12 @@
   border-color: #cbd5e1;
 }
 .release-status-panel.compact .release-status-grid {
-  font-size: 0.74rem;
+  font-size: calc(11.5px * var(--app-zoom));
   gap: 2px;
 }
 .release-status-panel.compact .small-note {
   margin: 0;
-  font-size: 0.7rem;
+  font-size: calc(11px * var(--app-zoom));
   line-height: 1.25;
 }
 .release-status-panel.compact .release-status-actions {
@@ -621,12 +622,12 @@
 .release-status-panel.compact .release-status-actions .button-link {
   min-height: 24px;
   padding: 3px 7px;
-  font-size: 0.72rem;
+  font-size: calc(11px * var(--app-zoom));
 }
 .release-status-details {
   border-top: 1px solid #e2e8f0;
   padding-top: 4px;
-  font-size: 0.72rem;
+  font-size: calc(11px * var(--app-zoom));
 }
 .release-status-details summary {
   cursor: pointer;
@@ -663,7 +664,7 @@
 }
 .manual-equation-explainer strong {
   color: #1e3a8a;
-  font-size: 0.88rem;
+  font-size: calc(13px * var(--app-zoom));
 }
 .manual-equation-explainer .manual-equations {
   margin: 0;
@@ -689,7 +690,7 @@
   stroke-linejoin: round;
 }
 .chart-icon-button small {
-  font-size: 0.68rem;
+  font-size: calc(10.5px * var(--app-zoom));
 }
 .chart-reset-button {
   min-width: 56px;
@@ -747,7 +748,7 @@
   stroke-linejoin: round;
 }
 .simple-chart .chart-icon-button small {
-  font-size: 0.62rem;
+  font-size: calc(10px * var(--app-zoom));
   line-height: 1;
 }
 .chart-toolbar-hint {

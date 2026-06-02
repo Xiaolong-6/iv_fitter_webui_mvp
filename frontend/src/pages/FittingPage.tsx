@@ -28,6 +28,7 @@ import { APP_VERSION } from "../utils/version";
 import { checkLatestRelease, type ReleaseCheckResult } from "../services/releaseCheck";
 
 type ZoomStyle = CSSProperties & { "--app-zoom": number };
+const VISUAL_ZOOM_BASELINE = 1.7;
 
 type FitStatusState = {
   isFitting: boolean;
@@ -189,7 +190,7 @@ export function FittingPage() {
   const cancelledFitRunIdsRef = useRef(new Set<number>());
   const report = reportArtifacts.report;
   const reportMessage = reportArtifacts.message;
-  const { zoom, setZoom } = useAppZoom(0.92);
+  const { zoom, setZoom } = useAppZoom(1);
   const {
     activeView,
     setActiveView,
@@ -655,7 +656,7 @@ export function FittingPage() {
   return (
     <div
       className={sidebarCollapsed ? "app sidebar-collapsed" : "app"}
-      style={{ "--app-zoom": zoom } as ZoomStyle}
+      style={{ "--app-zoom": zoom * VISUAL_ZOOM_BASELINE } as ZoomStyle}
     >
       <WorkflowSidebar
         activeView={activeView}

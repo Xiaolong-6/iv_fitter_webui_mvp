@@ -15,7 +15,7 @@
   background: #0f172a;
   color: #fff;
   box-shadow: 0 12px 34px rgba(15, 23, 42, 0.24);
-  font-size: 12px;
+  font-size: calc(13px * var(--app-zoom));
   font-weight: 550;
   line-height: 1.42;
   white-space: normal;
@@ -693,7 +693,7 @@ button.running { cursor: progress; opacity: 0.85; }
   width: fit-content;
   margin-top: 2px;
   color: #64748b;
-  font-size: 12px;
+  font-size: calc(13px * var(--app-zoom));
   line-height: 1.25;
   font-weight: 500;
   text-decoration: underline;
@@ -773,7 +773,7 @@ button.running { cursor: progress; opacity: 0.85; }
   width: 100%;
   min-width: 640px;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: calc(14px * var(--app-zoom));
   table-layout: fixed;
 }
 .unified-parameter-table thead {
@@ -785,7 +785,7 @@ button.running { cursor: progress; opacity: 0.85; }
   background: #f1f5f9;
   border-bottom: 2px solid #cbd5e1;
   padding: 6px 8px;
-  font-size: 11px;
+  font-size: calc(12px * var(--app-zoom));
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -834,12 +834,12 @@ button.running { cursor: progress; opacity: 0.85; }
   gap: 10px;
 }
 .param-section-title-row strong {
-  font-size: 13px;
+  font-size: calc(14px * var(--app-zoom));
   font-weight: 800;
   color: #0f172a;
 }
 .param-section-count {
-  font-size: 11px;
+  font-size: calc(12px * var(--app-zoom));
   color: #64748b;
   padding: 2px 7px;
   border-radius: 999px;
@@ -849,7 +849,7 @@ button.running { cursor: progress; opacity: 0.85; }
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: calc(12px * var(--app-zoom));
   font-weight: 700;
   color: #2563eb;
   cursor: pointer;
@@ -871,12 +871,12 @@ button.running { cursor: progress; opacity: 0.85; }
   gap: 8px;
 }
 .param-component-title strong {
-  font-size: 13px;
+  font-size: calc(14px * var(--app-zoom));
   font-weight: 800;
   color: #1e293b;
 }
 .param-component-role {
-  font-size: 11px;
+  font-size: calc(12px * var(--app-zoom));
   color: #64748b;
   max-width: 200px;
   overflow: hidden;
@@ -885,7 +885,7 @@ button.running { cursor: progress; opacity: 0.85; }
   cursor: help;
 }
 .param-component-fit-count {
-  font-size: 10px;
+  font-size: calc(11px * var(--app-zoom));
   color: #94a3b8;
   padding: 1px 6px;
   border-radius: 999px;
@@ -913,7 +913,7 @@ button.running { cursor: progress; opacity: 0.85; }
   font-variant-numeric: tabular-nums;
   text-align: right;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px;
+  font-size: calc(13px * var(--app-zoom));
 }
 .param-empty {
   color: #cbd5e1;
@@ -928,7 +928,7 @@ button.running { cursor: progress; opacity: 0.85; }
   padding: 2px 6px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: calc(13px * var(--app-zoom));
   font-variant-numeric: tabular-nums;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   text-align: right;

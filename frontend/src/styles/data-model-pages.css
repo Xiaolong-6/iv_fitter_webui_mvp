@@ -658,7 +658,7 @@ button.fit-action-unavailable:disabled {
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 0.1rem 0.45rem;
-  font-size: 0.72rem;
+  font-size: calc(12px * var(--app-zoom));
   font-weight: 650;
   color: var(--muted-text);
   background: var(--surface-muted);
@@ -829,7 +829,7 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
 .sidebar-version { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
 .sidebar-version strong { white-space: nowrap; font-size: calc(12px * var(--app-zoom)); }
 .sidebar.collapsed .sidebar-footer { display: grid; justify-items: center; gap: 7px; padding-bottom: calc(4px * var(--app-zoom)); }
-.sidebar.collapsed .sidebar-version strong { writing-mode: horizontal-tb; font-size: 11px; max-width: 52px; overflow: hidden; text-overflow: ellipsis; }
+.sidebar.collapsed .sidebar-version strong { writing-mode: horizontal-tb; font-size: calc(12px * var(--app-zoom)); max-width: 52px; overflow: hidden; text-overflow: ellipsis; }
 .sidebar.collapsed .sidebar-release-link { display: none; }
 .sidebar.collapsed .sidebar-zoom-slot { max-width: 48px; overflow: hidden; }
 .sidebar.collapsed .sidebar-zoom-control { width: 42px; border-radius: 12px; }
@@ -1350,6 +1350,33 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
   align-content: start;
 }
 
+/* Model Builder V3 fullscreen host: remove historical centered/max-width layout constraints. */
+.mbv3-fullscreen-page.webpage-model-page.model-page.workflow-page {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.mbv3-fullscreen-page .mbv3-fullscreen-stack {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  height: 100%;
+}
+
+.mbv3-fullscreen-page .model-builder-section,
+.mbv3-fullscreen-page .model-builder-section .workspace-section-body {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden !important;
+}
+
 .model-page-tool-row {
   display: flex;
   justify-content: flex-end;
@@ -1815,13 +1842,13 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11px;
+  font-size: calc(12px * var(--app-zoom));
 }
 .sidebar.collapsed .sidebar-new-button {
   width: 42px;
   min-width: 0;
   padding-inline: 0;
-  font-size: 9px;
+  font-size: calc(10px * var(--app-zoom));
 }
 
 /* v1.7.21: align import trace controls and arrange preview traces horizontally. */
@@ -2033,3 +2060,23 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
   padding-inline: clamp(8px, 1vw, 18px) !important;
 }
 .model-webpage-stack { gap: 14px !important; }
+
+/* v1.8.6: enforce readable baseline across Start/Data/Model/Fitting/Report. */
+.workflow-shell :is(.start-workflow-page,
+  .webpage-data-layout.data-import-layout,
+  .model-webpage-stack,
+  .fitting-page.workflow-page,
+  .report-workflow-stack) {
+  font-size: calc(16px * var(--app-zoom));
+}
+.workflow-shell :is(.muted,
+  .subtle,
+  small,
+  .table-note,
+  .small-note,
+  .fit-process-summary,
+  .report-equation-label,
+  .minimal-step-status,
+  .minimal-step-detail) {
+  font-size: max(calc(11.5px * var(--app-zoom)), 0.82em);
+}

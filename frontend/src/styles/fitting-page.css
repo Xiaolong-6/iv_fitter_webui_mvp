@@ -835,7 +835,7 @@
 .interactive-parameter-table {
   table-layout: fixed;
   min-width: 760px;
-  font-size: clamp(11px, calc(12px * var(--app-zoom)), 13px);
+  font-size: calc(12px * var(--app-zoom));
 }
 .interactive-parameter-table th,
 .interactive-parameter-table td {
@@ -1128,7 +1128,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--muted-color, #596779);
-  font-size: 0.75rem;
+  font-size: calc(13px * var(--app-zoom));
 }
 .parameter-component-divider td:first-child {
   border-left: 4px solid #8aa4c7;
@@ -1149,7 +1149,7 @@
   flex-wrap: wrap;
 }
 .parameter-fit-batch-toggles button {
-  font-size: 0.72rem;
+  font-size: calc(12px * var(--app-zoom));
   padding: 0.22rem 0.45rem;
 }
 

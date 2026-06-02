@@ -72,32 +72,28 @@ export function ModelWorkflowPage({
   void leftPct;
   void onResizeStart;
   return (
-    <section className="workflow-page model-page webpage-model-page">
-      <div className="model-webpage-stack">
-        <PageSection title={t(language, "modelBuilder")} hideHeader className="model-builder-section">
-          <ErrorBoundary label="Model builder">
-            <ModelBuilder
-              model={model}
-              registry={registry}
-              onChange={setModel}
-              language={language}
-              disabled={isFitting}
-              onGoToFitting={onGoToFitting}
-              canvasActions={syntheticTool ? <div className="model-page-tool-row">{syntheticTool}</div> : null}
-              previewContent={
-                <ErrorBoundary label="Equation preview">
-                  <EquationPreview
-                    equations={equationSummary}
-                    model={model}
-                    result={result}
-                    language={language}
-                  />
-                </ErrorBoundary>
-              }
-            />
-          </ErrorBoundary>
-        </PageSection>
-      </div>
+    <section className="workflow-page model-page webpage-model-page mbv3-direct-page">
+      <ErrorBoundary label="Model builder">
+        <ModelBuilder
+          model={model}
+          registry={registry}
+          onChange={setModel}
+          language={language}
+          disabled={isFitting}
+          onGoToFitting={onGoToFitting}
+          canvasActions={syntheticTool ? <div className="model-page-tool-row">{syntheticTool}</div> : null}
+          previewContent={
+            <ErrorBoundary label="Equation preview">
+              <EquationPreview
+                equations={equationSummary}
+                model={model}
+                result={result}
+                language={language}
+              />
+            </ErrorBoundary>
+          }
+        />
+      </ErrorBoundary>
     </section>
   );
 }
