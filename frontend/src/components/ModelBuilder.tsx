@@ -1,8 +1,7 @@
-// Refactor note: implementation modules still consume ../model-builder/rules and ../model-builder/mutations; preset support includes makeDoubleDiodePreset / Double diode model.
 import "@xyflow/react/dist/style.css";
 import "katex/dist/katex.min.css";
 import type { ModelSpec } from "../model/types";
-import type { ModelBuilderProps } from "./model-builder/types";
+import type { ModelBuilderProps } from "../model-builder-v3/types";
 import { SchematicBuilderV3 } from "../model-builder-v3";
 import { renderModelBuilderV3EquivalentCircuitSvg } from "../model-builder-v3/export/equivalentCircuitSvg";
 
