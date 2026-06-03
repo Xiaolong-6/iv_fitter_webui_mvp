@@ -13,10 +13,10 @@ The import order is part of the cascade contract:
 1. `styles/base-shell.css` — root variables, body/app shell, basic card/control primitives, and base imports.
 2. `styles/charts-and-components.css` — chart toolbar, chart primitives, fit-config primitives, small shared controls.
 3. `styles/workflow-layout.css` — workflow shell, sidebar, generic page grid/scroll containment.
-4. `styles/data-model-pages.css` — Data and Model page containment plus legacy related page rules.
+4. `styles/data-model-pages.css` � Data and Model page containment plus shared related page rules.
 5. `styles/fitting-page.css` — Fitting page layout, Fit setup containment, Parameters density, plot controls.
 6. `styles/report-manual-responsive.css` — Report page, Manual reader integration, and late responsive release-candidate overrides.
-7. Existing component-specific files: `styles/model-builder.css` and `styles/user-documentation.css`.
+7. Component-specific files: `model-builder-v3/styles/model-builder-v3.css` and `styles/user-documentation.css`.
 
 ## Rules for future CSS changes
 
@@ -29,3 +29,5 @@ The import order is part of the cascade contract:
 ## Current debt status
 
 The previous single `style.css` file was about 4,690 lines with 255 `!important` declarations. The current structure keeps `style.css` as a small import manifest and removes all normal `!important` overrides. CSS is still visually large because the app has many workflow pages, but ownership boundaries are now explicit.
+
+The old global `styles/model-builder.css` file has been removed with the legacy V1/V2 Model Builder source. Model Builder V3 owns its CSS under `frontend/src/model-builder-v3/styles/model-builder-v3.css`.

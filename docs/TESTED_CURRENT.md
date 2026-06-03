@@ -11,6 +11,7 @@ Model Builder V3 cleanup package prepared as v1.8.38.
 - The Synthetic IV trace launch control is styled as a compact floating canvas button while preserving the existing modal, generate-and-import, and CSV-only behavior.
 - Current README/manual/roadmap/handoff docs describe V3 as the active Model Builder path and document the canvas Synthetic IV trace action.
 - Legacy V1/V2 frontend Model Builder source has been removed; `ModelBuilder` now depends on V3 types and V3 rendering only.
+- The old global `styles/model-builder.css` shell has been removed; Model Builder styling is owned by V3 CSS.
 - Root, frontend, backend, and lockfile version metadata are synchronized to v1.8.38.
 
 ## Validation run in this workspace
@@ -40,6 +41,12 @@ npm --prefix frontend run test -- --run src/components/__tests__/ModelBuilder.te
 ```
 
 Result: passed, 5 test files / 26 tests.
+
+```powershell
+npm --prefix frontend run test -- --run src/components/__tests__/ModelBuilder.test.tsx src/model-builder-v3/__tests__/adapter.test.ts src/model-builder-v3/__tests__/compile.test.ts src/model-builder-v3/__tests__/reducer.test.ts src/model-builder-v3/__tests__/componentFactory.test.ts src/model/__tests__/htmlReport.test.ts src/model/__tests__/reportArtifacts.test.ts
+```
+
+Result: passed, 7 test files / 32 tests.
 
 Additional backend validation should still be run before public release:
 

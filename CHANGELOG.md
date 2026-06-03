@@ -3,6 +3,7 @@
 - Removed legacy V1/V2 frontend Model Builder source directories so the active UI has a single V3 builder path.
 - Moved `ModelBuilderProps` into the V3 module boundary and removed the remaining active dependency on legacy builder types.
 - Removed active V2 documentation and updated current README, architecture, roadmap, handoff, and tested notes to describe V3 as the only current frontend Model Builder.
+- Removed the old global `styles/model-builder.css` shell; Model Builder styling now lives in the V3 stylesheet.
 - Kept historical changelog entries as release history rather than current implementation guidance.
 
 ## 1.8.38 - Model Builder V3 synthetic toolbar integration
