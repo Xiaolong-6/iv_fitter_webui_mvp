@@ -62,7 +62,7 @@ function boxes(graph: Mb3Graph): Mb3Rect[] {
   ];
 }
 
-function componentPortSide(graph: Mb3Graph, componentId: string, port: "p" | "n"): Mb3PortSide {
+function rawComponentPortSide(graph: Mb3Graph, componentId: string, port: "p" | "n"): Mb3PortSide {
   const fallback = port === "p" ? "top" : "bottom";
   const selfPort: Mb3PortRef = { kind: "component", id: componentId, port };
   const component = graph.components.find((candidate) => candidate.id === componentId);
@@ -90,6 +90,19 @@ function sideFromVector(dx: number, dy: number, fallback: Mb3PortSide): Mb3PortS
   return dy > 0 ? "bottom" : "top";
 }
 
+function oppositeSide(side: Mb3PortSide): Mb3PortSide {
+  if (side === "top") return "bottom";
+  if (side === "bottom") return "top";
+  if (side === "left") return "right";
+  return "left";
+}
+
+function componentPortSides(graph: Mb3Graph, componentId: string): Record<"p" | "n", Mb3PortSide> {
+  const p = rawComponentPortSide(graph, componentId, "p");
+  const n = rawComponentPortSide(graph, componentId, "n");
+  return { p, n: p === n ? oppositeSide(p) : n };
+}
+
 function portCenter(graph: Mb3Graph, port: Mb3PortRef): Mb3Point | null {
   if (port.kind === "component") {
     const component = graph.components.find((candidate) => candidate.id === port.id);
@@ -115,7 +128,7 @@ function portPoint(
   if (port.kind === "component") {
     const component = graph.components.find((candidate) => candidate.id === port.id);
     if (!component) return null;
-    const side = componentPortSide(graph, component.id, port.port ?? "p");
+    const side = componentPortSides(graph, component.id)[port.port ?? "p"];
     const center = {
       x: component.position.x + COMPONENT_WIDTH / 2,
       y: component.position.y + COMPONENT_HEIGHT / 2,

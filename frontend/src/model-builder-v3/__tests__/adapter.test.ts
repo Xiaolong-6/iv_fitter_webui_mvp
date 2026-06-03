@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createMb3StarterGraph } from "../state/factory";
 import { mb3ToReactFlow } from "../canvas/adapter";
+import { routeMb3Wire } from "../canvas/routing";
 import type { Mb3Graph } from "../domain/types";
 
 type RoutedEdgeData = {
@@ -145,5 +146,42 @@ describe("model-builder-v3 canvas adapter", () => {
     expect(route.length).toBeGreaterThan(2);
     expect(route[1].x).toBeGreaterThan(route[0].x);
     expect(Math.abs(route[1].y - route[0].y)).toBe(0);
+  });
+
+  it("keeps component entry and exit ports visually separate when both neighbors are on one side", () => {
+    const graph: Mb3Graph = {
+      version: 3,
+      terminals: { positive: "V", ground: "GND" },
+      nodes: [
+        { id: "V", kind: "terminal", label: "V", role: "positive", position: { x: 120, y: 20 } },
+        { id: "GND", kind: "terminal", label: "GND", role: "ground", position: { x: 120, y: 420 } },
+        { id: "J1", kind: "junction", label: "V1", position: { x: 120, y: 170 } },
+        { id: "J0", kind: "junction", label: "0", position: { x: 130, y: 230 } },
+      ],
+      components: [
+        {
+          id: "D1",
+          label: "D1",
+          templateKey: "shockley_diode",
+          behavior: "I_of_V",
+          expression: "I0*(exp(V/(n*8.617333262e-5*T))-1)",
+          sign: 1,
+          position: { x: 320, y: 180 },
+          parameters: [{ symbol: "I0", value: 1e-12, lower: 1e-30, upper: 1, fit: true, unit: "A" }],
+        },
+      ],
+      wires: [
+        { id: "w-in", from: { kind: "node", id: "J1" }, to: { kind: "component", id: "D1", port: "p" } },
+        { id: "w-out", from: { kind: "component", id: "D1", port: "n" }, to: { kind: "node", id: "J0" } },
+      ],
+    };
+
+    const inRoute = routeMb3Wire(graph, { kind: "node", id: "J1" }, { kind: "component", id: "D1", port: "p" });
+    const outRoute = routeMb3Wire(graph, { kind: "component", id: "D1", port: "n" }, { kind: "node", id: "J0" });
+    const entryPoint = inRoute[inRoute.length - 1];
+    const exitPoint = outRoute[0];
+
+    expect(entryPoint).toEqual({ x: 320, y: 207 });
+    expect(exitPoint).toEqual({ x: 510, y: 207 });
   });
 });
