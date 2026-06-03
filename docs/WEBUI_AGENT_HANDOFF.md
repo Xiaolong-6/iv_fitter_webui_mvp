@@ -2,7 +2,7 @@
 
 ## Current baseline
 
-Continue from the Model Builder V3 interaction branch. The default Model Builder path is now **Model Builder V3**, an isolated graph-native schematic editor under `frontend/src/model-builder-v3/`. V2 and legacy artifacts remain useful references, but current UI work should target V3 unless the user explicitly asks otherwise.
+Continue from the Model Builder V3 interaction branch. The only active frontend Model Builder path is now **Model Builder V3**, an isolated graph-native schematic editor under `frontend/src/model-builder-v3/`. V1/V2 frontend source and V2 active docs have been removed; current UI work should target V3.
 
 ## Non-negotiable project rules
 
@@ -40,7 +40,7 @@ Important V3 files:
 ## Known V3 caveats
 
 - V3 uses an internal component template list; runtime registry extension is not yet wired into the V3 palette.
-- Synthetic IV trace and Go to fitting are V3 canvas toolbar actions; equation preview/report synchronization still needs deeper V3 integration.
+- Synthetic IV trace and Go to fitting are V3 canvas toolbar actions; equation preview/report synchronization should stay driven by V3 graph metadata.
 - Backend graph-native fitting must be treated as experimental unless the current release notes explicitly say otherwise.
 - If the browser shows a blank Model Builder page with no console error, first inspect container sizing and React Flow named imports; V3 requires an explicit canvas height and named `ReactFlow` import from `@xyflow/react`.
 
@@ -54,7 +54,6 @@ Important V3 files:
 ### Model
 
 - Default: Model Builder V3 schematic editor.
-- Legacy builder is available elsewhere for compatibility.
 - V3 should keep parent workflow actions inside the canvas toolbar when available; Synthetic IV trace and Go to fitting are already wired.
 
 ### Fit

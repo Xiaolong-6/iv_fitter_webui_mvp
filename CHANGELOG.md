@@ -1,3 +1,10 @@
+## 1.8.38 - Model Builder V3 source and docs cleanup
+
+- Removed legacy V1/V2 frontend Model Builder source directories so the active UI has a single V3 builder path.
+- Moved `ModelBuilderProps` into the V3 module boundary and removed the remaining active dependency on legacy builder types.
+- Removed active V2 documentation and updated current README, architecture, roadmap, handoff, and tested notes to describe V3 as the only current frontend Model Builder.
+- Kept historical changelog entries as release history rather than current implementation guidance.
+
 ## 1.8.38 - Model Builder V3 synthetic toolbar integration
 
 - Restored the existing Synthetic IV trace workflow as a direct Model Builder V3 canvas toolbar action between Save and Go to fitting.

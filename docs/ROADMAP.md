@@ -10,8 +10,7 @@ Current capabilities:
 
 - Data import and pasted-data import.
 - HappyMeasure CSV v2 compatibility.
-- Model Builder V3: graph-native free two-terminal schematic editor with fixed V/GND terminals, drag-in components, React Flow canvas, presets/save, canvas Synthetic IV trace action, Go to fitting action, and V-to-GND validation.
-- Legacy Model Builder remains available elsewhere in the app for compatibility and comparison.
+- Model Builder V3: the single active frontend builder path, with a graph-native free two-terminal schematic editor, fixed V/GND terminals, drag-in components, React Flow canvas, presets/save, canvas Synthetic IV trace action, Go to fitting action, and V-to-GND validation.
 - Fit diagnostics, warnings, residual plots, and formula/report preview on the main workflow.
 - User-facing manual and external testing guide.
 
@@ -27,7 +26,7 @@ Current capabilities:
 ## Release-candidate priorities
 
 - Confirm parity against the mature desktop/Tkinter workflow on representative IV datasets.
-- Stabilize JSON export/import schema, including `schematic_v2` round-trip behavior.
+- Stabilize JSON export/import schema around `schematic_v3` and older-model compatibility loading.
 - Decide packaging strategy: browser-local scripts, desktop wrapper, or other local launcher.
 - Add benchmark traces with expected-fit tolerances.
 - Add browser smoke/screenshot coverage for Model Builder V3: empty graph, single component, V-to-GND connected graph, disconnected component, and custom law editing.

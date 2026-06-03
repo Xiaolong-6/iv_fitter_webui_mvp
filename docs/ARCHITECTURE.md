@@ -34,15 +34,15 @@ V3 fixes two terminal nodes, `V` and `GND`, and lets the user drag two-terminal 
 The V3 canvas toolbar owns clear canvas, presets, save preset, Synthetic IV trace, and Go to fitting actions. Parent workflow actions such as Synthetic IV trace should be passed into V3 as canvas actions instead of being rendered as external document-flow rows that can disturb canvas sizing.
 
 Backend graph-native fitting support remains experimental unless the current release notes explicitly mark it production-ready. The frontend must not claim unsupported graph topologies are fit-ready.
-## Legacy model architecture
+## Compatibility model schema
 
-The legacy model architecture is **Law / Form / Placement**.
+Older saved models and backend compatibility paths may still use the **Law / Form / Placement** schema.
 
 - **Law**: the mathematical relation, such as Shockley diode, Ohmic resistance, soft-threshold power-law current, reverse leakage / soft-breakdown current, or a custom expression.
 - **Form**: how the relation participates numerically, such as `current_branch` or `voltage_drop`.
 - **Placement**: where the relation appears in the user model, primarily **Main path** or **Branches**.
 
-Legacy UI should say **Main path** and **Branches**. Internal schema terms belong in developer docs or collapsed Advanced details. V3 should not rebuild this placement model in the UI; it should compile or translate the free schematic graph instead.
+This schema is no longer an active frontend builder architecture. Model Builder V3 should not rebuild placement buckets in the UI; it compiles the free schematic graph and keeps compatibility details out of the normal user workflow.
 
 ## Data flow
 
@@ -56,13 +56,13 @@ Import parsing happens in the backend so column decisions, dropped rows, unit ha
 
 1. The frontend sends the selected trace, fit range, model spec, and fit config.
 2. The backend validates the model and data.
-3. The fitting engine evaluates the selected model path. Legacy models use Law/Form/Placement assembly; V3 graph models use graph-native data where supported.
+3. The fitting engine evaluates the selected model path. Compatibility models may use Law/Form/Placement assembly; V3 graph models use graph-native data where supported.
 4. The API returns parameters, warnings, metrics, curves, and equation summaries.
 5. The frontend renders plots, diagnostics, equation preview, and report/export panels.
 
 ## Solver boundary
 
-The legacy implicit solver is the report-grade default path for normal composite fitting. The graph DC solver remains experimental unless the current release notes explicitly mark graph-native fitting as production-ready. The frontend must not claim unsupported graph topologies are fit-ready.
+The implicit compatibility solver remains available for older model specs. The graph DC solver remains experimental unless the current release notes explicitly mark graph-native fitting as production-ready. The frontend must not claim unsupported graph topologies are fit-ready.
 
 ## Frontend boundary
 

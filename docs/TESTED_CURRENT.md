@@ -2,7 +2,7 @@
 
 ## Package
 
-Model Builder V3 toolbar integration package prepared as v1.8.38.
+Model Builder V3 cleanup package prepared as v1.8.38.
 
 ## What changed in this package
 
@@ -10,6 +10,7 @@ Model Builder V3 toolbar integration package prepared as v1.8.38.
 - `ModelBuilder` now passes `canvasActions` into `SchematicBuilderV3`, so parent workflow tools are not discarded by the V3 wrapper.
 - The Synthetic IV trace launch control is styled as a compact floating canvas button while preserving the existing modal, generate-and-import, and CSV-only behavior.
 - Current README/manual/roadmap/handoff docs describe V3 as the active Model Builder path and document the canvas Synthetic IV trace action.
+- Legacy V1/V2 frontend Model Builder source has been removed; `ModelBuilder` now depends on V3 types and V3 rendering only.
 - Root, frontend, backend, and lockfile version metadata are synchronized to v1.8.38.
 
 ## Validation run in this workspace
@@ -30,7 +31,15 @@ Result: passed. Vite still reports the existing React Flow `"use client"` direct
 npm --prefix frontend run test -- --run src/pages/__tests__/FittingPage.test.tsx src/components/__tests__/ModelBuilder.test.tsx
 ```
 
-Result: failed against legacy Model Builder DOM expectations. The V3 render path no longer crashes, but the old tests still query V2-era selectors such as `equivalent-circuit-canvas`, `model-preset-select`, plus-driven insertion controls, and `.model-webpage-stack`.
+Earlier result: failed against legacy Model Builder DOM expectations.
+
+Current focused V3 cleanup validation:
+
+```powershell
+npm --prefix frontend run test -- --run src/components/__tests__/ModelBuilder.test.tsx src/model-builder-v3/__tests__/adapter.test.ts src/model-builder-v3/__tests__/compile.test.ts src/model-builder-v3/__tests__/reducer.test.ts src/model-builder-v3/__tests__/componentFactory.test.ts
+```
+
+Result: passed, 5 test files / 26 tests.
 
 Additional backend validation should still be run before public release:
 
