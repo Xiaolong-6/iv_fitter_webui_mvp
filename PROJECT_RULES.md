@@ -453,7 +453,7 @@ The Model Builder canvas must be treated as a direct editable circuit graph. Do 
 
 The Model Builder must not rely on a late-loaded global override pile. `final-overrides.css` was removed after it accumulated conflicting `!important` rules and repeated selector definitions. Future UI work must edit the canonical owner file instead:
 
-- Model Builder canvas/editor styles belong in `frontend/src/styles/model-builder.css`.
+- Model Builder V3 canvas/editor styles belong in `frontend/src/model-builder-v3/styles/model-builder-v3.css`.
 - Do not reintroduce `final-overrides.css` or an equivalent catch-all override file.
 - Each core Model Builder selector should have one base definition. Responsive changes should use CSS variables or scoped media rules instead of redefining the same selector repeatedly.
 - `!important` is allowed only for narrowly scoped third-party library overrides such as React Flow internals, not for normal layout control.
@@ -475,24 +475,25 @@ Any future layout change must preserve these visual semantics and update the bro
 
 Direct branch graph controls must not visually dominate the circuit. Serial insertion controls should be quiet by default and become prominent on hover/focus/selection. Parallel insertion should be a semantic UI control (`+ Add parallel path`) and must not look like a physical branch or dashed circuit wire. Terminal wires, especially merge-to-GND, must remain horizontal unless a future explicit topology requires otherwise.
 
-## Model Builder V2 isolation rule
+## Model Builder V3 source ownership rule
 
-Model Builder V2 is an isolated graph-native schematic editor. Future work must preserve these boundaries:
+Model Builder V3 is the only active frontend Model Builder implementation. Future work must preserve these boundaries:
 
-- Keep V2 source under `frontend/src/model-builder-v2/` until legacy is intentionally removed.
-- Do not mix V2 domain graph data with React Flow render state.
+- Keep active Model Builder source under `frontend/src/model-builder-v3/`.
+- Do not reintroduce V1/V2 builder source directories, legacy builder toggles, or copied V2 docs unless the user explicitly asks for a separate historical restoration.
+- Do not mix V3 domain graph data with React Flow render state.
 - Do not make React Flow nodes/edges the physics source of truth.
-- Do not import legacy `model-builder.css` into V2.
+- Do not import or recreate legacy `frontend/src/styles/model-builder.css`.
 - Do not recreate `final-overrides.css` or any late-loaded catch-all override file.
-- V2 components are two-terminal functions with behavior `R(V)`, `I(V)`, `ΔV(I)`, or `F(I,V)=0`; resistor and diode are presets only.
-- The compiler must include only the active V-to-GND connected subgraph and ignore disconnected draft components.
-- Graph validation and graph compilation must remain pure domain-layer functions that can be tested without a browser.
+- V3 components are two-terminal functions with behavior `R(V)`, `I(V)`, `dV(I)`, or `F(I,V)=0`; resistor and diode are presets only.
+- The compiler must include only the active V-to-GND connected subgraph and ignore disconnected draft components while keeping them visibly dashed on the canvas.
+- Graph validation, graph compilation, routing, and preset conversion should remain domain/testable modules rather than browser-only behavior.
 
 
-## Model Builder V2 maintenance rules
+## Model Builder V3 maintenance rules
 
-- V2 must import `ReactFlow` as a named export from `@xyflow/react`; do not use the default-export compatibility shim.
-- Do not silently discard parent workflow props in V2. If a feature is not native to V2 yet, expose it externally or show a user-visible scope note.
-- `graphCompile.ts` must have direct tests before changing `schematic_v2` output or model round-trip behavior.
-- Active V2 docs belong under `docs/model-builder-v2/`; old one-off reports belong under `docs/history/` or `docs/archive/`, not the repository root.
+- V3 must import `ReactFlow` as a named export from `@xyflow/react`; do not use the default-export compatibility shim.
+- Do not silently discard parent workflow props. If a parent workflow feature is not native to V3 yet, wire it into the canvas toolbar or expose an explicit user-visible limitation.
+- `compile.ts` must have direct tests before changing `schematic_v3` output, formula sections, active-subgraph detection, or model round-trip behavior.
+- Active V3 docs belong in current docs such as `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/WEBUI_AGENT_HANDOFF.md`, and `docs/USER_MANUAL.md`; do not leave one-off hotfix docs in the repository root.
 - A no-console blank screen must be debugged by checking DOM mount and container height before changing solver/model logic.

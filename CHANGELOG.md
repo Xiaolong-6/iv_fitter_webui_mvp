@@ -1394,4 +1394,4 @@ Earlier v1.0-v1.3 alpha changes are summarized in `docs/VALIDATION_HISTORY.md`. 
 - Contained V2 in the model workflow viewport at high app zoom.
 - Added responsive V2 layout rules and internal preview scrolling.
 - Added React Flow ResizeObserver refit for app zoom/container resize.
-- See `MODEL_BUILDER_V2_ZOOM_LAYOUT_HOTFIX.md`.
+- Historical one-off V2 hotfix notes were later removed when V3 became the only active frontend Model Builder.
