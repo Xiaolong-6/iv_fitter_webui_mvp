@@ -16,6 +16,7 @@ function resolveApiBase(): string {
 
 const API_BASE = resolveApiBase();
 const API_TOKEN = (import.meta.env.VITE_IVFITTER_API_TOKEN || "").trim();
+const API_PREFIX = "/api/v2";
 
 function jsonHeaders(): Record<string, string> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -34,16 +35,16 @@ async function postJson<T>(path: string, payload: unknown, init?: { signal?: Abo
 }
 
 export async function getRegistry(): Promise<FunctionDefinition[]> {
-  const response = await fetch(`${API_BASE}/api/component-registry`, { headers: getHeaders() });
+  const response = await fetch(`${API_BASE}${API_PREFIX}/component-registry`, { headers: getHeaders() });
   if (!response.ok) throw new Error(await response.text());
   return response.json();
 }
-export async function validateModel(model: ModelSpec): Promise<FitWarning[]> { return postJson("/api/validate-model", model); }
-export async function equations(model: ModelSpec, signal?: AbortSignal): Promise<EquationSummary> { return postJson("/api/equations", model, { signal }); }
-export async function fitTrace(trace: TraceData, model: ModelSpec, config: FitConfig, signal?: AbortSignal): Promise<FitResult> { return postJson("/api/fit", { trace, model, config }, { signal }); }
-export async function suggestBounds(trace: TraceData, model: ModelSpec, config: FitConfig, signal?: AbortSignal): Promise<BoundsSuggestionResponse> { return postJson("/api/suggest-bounds", { trace, model, config }, { signal }); }
-export async function exportReport(result: FitResult): Promise<{ markdown: string }> { return postJson("/api/export-report", result); }
-export async function exportReportCsv(result: FitResult): Promise<{ text: string }> { return postJson("/api/export-report-csv", result); }
+export async function validateModel(model: ModelSpec): Promise<FitWarning[]> { return postJson(`${API_PREFIX}/validate-model`, model); }
+export async function equations(model: ModelSpec, signal?: AbortSignal): Promise<EquationSummary> { return postJson(`${API_PREFIX}/equations`, model, { signal }); }
+export async function fitTrace(trace: TraceData, model: ModelSpec, config: FitConfig, signal?: AbortSignal): Promise<FitResult> { return postJson(`${API_PREFIX}/fit`, { trace, model, config }, { signal }); }
+export async function suggestBounds(trace: TraceData, model: ModelSpec, config: FitConfig, signal?: AbortSignal): Promise<BoundsSuggestionResponse> { return postJson(`${API_PREFIX}/suggest-bounds`, { trace, model, config }, { signal }); }
+export async function exportReport(result: FitResult): Promise<{ markdown: string }> { return postJson(`${API_PREFIX}/export-report`, result); }
+export async function exportReportCsv(result: FitResult): Promise<{ text: string }> { return postJson(`${API_PREFIX}/export-report-csv`, result); }
 
 export interface ImportQualitySummary {
   rows_in_file: number;
@@ -72,13 +73,13 @@ export interface OpenImportFileDialogResponse extends ImportCsvTextMultiResponse
 }
 
 export async function importCsvTextMulti(text: string, traceId = "imported_trace"): Promise<ImportCsvTextMultiResponse> {
-  return postJson("/api/import-csv-text-multi", { text, trace_id: traceId });
+  return postJson(`${API_PREFIX}/import-csv-text-multi`, { text, trace_id: traceId });
 }
 
 export async function openImportFileDialog(): Promise<OpenImportFileDialogResponse> {
-  return postJson("/api/open-import-file-dialog", {});
+  return postJson(`${API_PREFIX}/open-import-file-dialog`, {});
 }
 
 export async function generateSyntheticTrace(payload: SyntheticTraceRequest): Promise<SyntheticTraceResponse> {
-  return postJson("/api/generate-synthetic-trace", payload);
+  return postJson(`${API_PREFIX}/generate-synthetic-trace`, payload);
 }

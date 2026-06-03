@@ -111,7 +111,7 @@
   background: #ffffff;
 }
 .manual-reader-nav-title {
-  font-size: 0.74rem;
+  font-size: calc(12px * var(--app-zoom));
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #64748b;
@@ -134,7 +134,7 @@
 }
 .manual-reader-nav button small {
   color: #64748b;
-  font-size: 0.72rem;
+  font-size: calc(12px * var(--app-zoom));
   line-height: 1.15;
 }
 .manual-reader-nav button.active {
@@ -207,15 +207,11 @@
 }
 .fitting-page .parameter-placement-group h3 {
   margin: 3px 0 2px;
-  font-size: 0.82rem;
+  font-size: calc(13px * var(--app-zoom));
   letter-spacing: 0.02em;
-}
-.fitting-page .parameter-filter-bar {
-  margin-bottom: 4px;
-}
-.interactive-parameter-table {
+}.interactive-parameter-table {
   min-width: 680px;
-  font-size: clamp(10px, calc(11px * var(--app-zoom)), 12px);
+  font-size: calc(11px * var(--app-zoom));
 }
 .interactive-parameter-table th,
 .interactive-parameter-table td {
@@ -250,7 +246,7 @@
 }
 .chart-toolbar-hint {
   color: #64748b;
-  font-size: 0.72rem;
+  font-size: calc(12px * var(--app-zoom));
   white-space: nowrap;
 }
 .chart-button-group {
@@ -284,7 +280,7 @@
   color: #1d4ed8;
 }
 .chart-icon-button small {
-  font-size: 0.64rem;
+  font-size: calc(11px * var(--app-zoom));
   font-weight: 850;
 }
 .chart-reset-button {
@@ -443,7 +439,7 @@
   border-radius: 999px;
   border: 1px solid #e2e8f0;
   padding: 1px 7px;
-  font-size: 0.76rem;
+  font-size: calc(12px * var(--app-zoom));
   font-weight: 800;
   white-space: nowrap;
 }
@@ -479,6 +475,7 @@
   color: #1e3a8a;
   text-decoration: none;
   cursor: pointer;
+  font-size: calc(13px * var(--app-zoom));
 }
 .diagnostic-export {
   border-color: #fde68a;
@@ -546,7 +543,7 @@
   background: #ecfdf5;
   border-radius: 999px;
   padding: 2px 7px;
-  font-size: 0.72rem;
+  font-size: calc(12px * var(--app-zoom));
   font-weight: 850;
 }
 .release-status-badge.warning {
@@ -562,7 +559,7 @@
 .release-status-grid {
   display: grid;
   gap: 4px;
-  font-size: 0.82rem;
+  font-size: calc(13px * var(--app-zoom));
 }
 .release-status-grid span {
   display: flex;
@@ -573,7 +570,7 @@
   color: #b91c1c;
   margin: 0;
 }
-.small-note { font-size: 0.78rem; }
+.small-note { font-size: calc(12px * var(--app-zoom)); }
 /* v1.5.38 manual/update cleanup: keep the manual sidebar focused on navigation. */
 .manual-reader-shell {
   grid-template-columns: minmax(170px, 230px) minmax(0, 1fr);
@@ -585,7 +582,7 @@
   padding: 8px 10px;
 }
 .manual-title-block h2 {
-  font-size: 0.98rem;
+  font-size: calc(16px * var(--app-zoom));
 }
 .manual-reader-nav {
   max-height: none;
@@ -596,10 +593,10 @@
   border-radius: 12px;
 }
 .release-status-panel.compact .release-status-header h3 {
-  font-size: 0.82rem;
+  font-size: calc(13px * var(--app-zoom));
 }
 .release-status-panel.compact .release-status-badge {
-  font-size: 0.66rem;
+  font-size: calc(11px * var(--app-zoom));
   padding: 1px 6px;
   max-width: 120px;
   text-align: right;
@@ -610,12 +607,12 @@
   border-color: #cbd5e1;
 }
 .release-status-panel.compact .release-status-grid {
-  font-size: 0.74rem;
+  font-size: calc(11.5px * var(--app-zoom));
   gap: 2px;
 }
 .release-status-panel.compact .small-note {
   margin: 0;
-  font-size: 0.7rem;
+  font-size: calc(11px * var(--app-zoom));
   line-height: 1.25;
 }
 .release-status-panel.compact .release-status-actions {
@@ -625,12 +622,12 @@
 .release-status-panel.compact .release-status-actions .button-link {
   min-height: 24px;
   padding: 3px 7px;
-  font-size: 0.72rem;
+  font-size: calc(11px * var(--app-zoom));
 }
 .release-status-details {
   border-top: 1px solid #e2e8f0;
   padding-top: 4px;
-  font-size: 0.72rem;
+  font-size: calc(11px * var(--app-zoom));
 }
 .release-status-details summary {
   cursor: pointer;
@@ -667,7 +664,7 @@
 }
 .manual-equation-explainer strong {
   color: #1e3a8a;
-  font-size: 0.88rem;
+  font-size: calc(13px * var(--app-zoom));
 }
 .manual-equation-explainer .manual-equations {
   margin: 0;
@@ -693,7 +690,7 @@
   stroke-linejoin: round;
 }
 .chart-icon-button small {
-  font-size: 0.68rem;
+  font-size: calc(10.5px * var(--app-zoom));
 }
 .chart-reset-button {
   min-width: 56px;
@@ -751,9 +748,485 @@
   stroke-linejoin: round;
 }
 .simple-chart .chart-icon-button small {
-  font-size: 0.62rem;
+  font-size: calc(10px * var(--app-zoom));
   line-height: 1;
 }
 .chart-toolbar-hint {
   display: none;
+}
+
+/* v1.7.13: keep Manual Sections vertical in portrait/narrow readers. */
+@media (orientation: portrait) {
+  .manual-reader-one-column .manual-reader-nav {
+    position: sticky;
+    top: calc(8px * var(--app-zoom));
+    right: auto;
+    width: 100%;
+    max-height: min(46vh, calc(420px * var(--app-zoom)));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .manual-reader-one-column .manual-reader-nav button {
+    width: 100%;
+    min-width: 0;
+    justify-content: start;
+  }
+}
+
+@media (max-width: 900px) and (orientation: portrait) {
+  .manual-reader-one-column .manual-reader-nav {
+    max-height: min(38vh, calc(320px * var(--app-zoom)));
+  }
+}
+
+/* v1.7.15: stabilize Manual reader layout.
+   Keep one Sections-list navigation model across all breakpoints and let the
+   page/body scroll reliably instead of swapping into a horizontal tab bar. */
+.doc-page {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  align-content: start;
+}
+
+.manual-reader-one-column {
+  width: min(100%, calc(1180px * var(--app-zoom)));
+  max-width: calc(1180px * var(--app-zoom));
+  min-height: min-content;
+  margin: 0 auto;
+  padding: calc(16px * var(--app-zoom)) calc(16px * var(--app-zoom)) calc(80px * var(--app-zoom));
+  display: grid;
+  grid-template-columns: clamp(176px, 20vw, 240px) minmax(0, 1fr);
+  grid-template-areas:
+    "release release"
+    "title title"
+    "nav content";
+  gap: calc(14px * var(--app-zoom));
+  align-items: start;
+}
+
+.manual-reader-one-column > .release-status-panel,
+.manual-reader-one-column > .card {
+  grid-area: release;
+  width: 100%;
+}
+
+.manual-reader-one-column .manual-title-top {
+  grid-area: title;
+  margin: 0;
+}
+
+.manual-reader-one-column .manual-reader-nav {
+  grid-area: nav;
+  position: sticky !important;
+  top: calc(10px * var(--app-zoom));
+  right: auto !important;
+  z-index: 2;
+  width: 100% !important;
+  max-height: calc(100vh - 120px);
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: calc(6px * var(--app-zoom));
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  box-shadow: none;
+}
+
+.manual-reader-one-column .manual-reader-nav-title {
+  display: block !important;
+}
+
+.manual-reader-one-column .manual-reader-nav button {
+  width: 100%;
+  min-width: 0 !important;
+  justify-content: start;
+}
+
+.manual-reader-one-column .manual-reader-content {
+  grid-area: content;
+  min-width: 0;
+  min-height: 0;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.manual-reader-one-column .manual-reader-content-scroll {
+  min-height: 0;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.manual-reader-one-column .manual-reader-content-scroll.continuous {
+  display: grid;
+  gap: calc(12px * var(--app-zoom));
+  scroll-behavior: smooth;
+}
+
+.manual-reader-one-column .manual-continuous-section,
+.manual-reader-one-column .manual-continuous-section .manual-section {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .manual-reader-one-column {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "release"
+      "title"
+      "nav"
+      "content";
+    padding-left: calc(10px * var(--app-zoom));
+    padding-right: calc(10px * var(--app-zoom));
+  }
+
+  .manual-reader-one-column .manual-reader-nav {
+    position: sticky !important;
+    top: calc(6px * var(--app-zoom));
+    max-height: min(36vh, calc(320px * var(--app-zoom)));
+  }
+}
+
+/* v1.7.16: Manual title/content alignment and scroll containment fix. */
+.workflow-shell > .doc-page {
+  grid-row: 1 / -1;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0;
+}
+.manual-reader-one-column {
+  width: min(100%, calc(1180px * var(--app-zoom))) !important;
+  max-width: calc(1180px * var(--app-zoom)) !important;
+  margin: 0 auto !important;
+  padding-top: calc(10px * var(--app-zoom));
+}
+.manual-reader-one-column .manual-title-top {
+  grid-area: title;
+  width: 100%;
+  border: 1px solid #dbe4f0;
+  border-radius: calc(12px * var(--app-zoom));
+  background: #ffffff;
+  padding: calc(10px * var(--app-zoom)) calc(12px * var(--app-zoom));
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+.manual-reader-one-column .manual-title-top h2 {
+  margin: 0 0 calc(2px * var(--app-zoom));
+  font-size: calc(18px * var(--app-zoom));
+}
+.manual-reader-one-column .manual-title-top p {
+  margin: 0;
+}
+@media (max-width: 1280px) {
+  .manual-reader-one-column .manual-reader-nav {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  .manual-reader-one-column .manual-reader-nav button {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+}
+.manual-reader-one-column {
+  grid-template-areas:
+    "title title"
+    "release release"
+    "nav content" !important;
+}
+@media (max-width: 760px) {
+  .manual-reader-one-column {
+    grid-template-areas:
+      "title"
+      "release"
+      "nav"
+      "content" !important;
+  }
+}
+
+/* v1.7.18: Manual must read like a normal webpage.
+   One scroll root only (.manual-doc-page). No two-column app reader, no
+   independent nav/body scrollbars, and no horizontal tab mode. */
+.workflow-shell > .manual-doc-page {
+  grid-row: 1 / -1;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0 !important;
+  display: block !important;
+  align-content: initial !important;
+  -webkit-overflow-scrolling: touch;
+}
+.manual-doc-page .manual-reader-webpage {
+  width: min(100%, calc(1120px * var(--app-zoom))) !important;
+  max-width: calc(1120px * var(--app-zoom)) !important;
+  min-height: min-content !important;
+  height: auto !important;
+  margin: 0 auto !important;
+  padding: calc(16px * var(--app-zoom)) calc(16px * var(--app-zoom)) calc(90px * var(--app-zoom)) !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-areas:
+    "title"
+    "release"
+    "nav"
+    "content" !important;
+  grid-template-rows: auto auto auto auto !important;
+  gap: calc(12px * var(--app-zoom)) !important;
+  align-items: start !important;
+  overflow: visible !important;
+}
+.manual-doc-page .manual-reader-webpage .manual-title-top {
+  grid-area: title !important;
+  width: 100% !important;
+  margin: 0 !important;
+  border: 1px solid #dbe4f0;
+  border-radius: calc(12px * var(--app-zoom));
+  background: #ffffff;
+  padding: calc(10px * var(--app-zoom)) calc(12px * var(--app-zoom));
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+.manual-doc-page .manual-reader-webpage > .release-status-panel,
+.manual-doc-page .manual-reader-webpage > .card {
+  grid-area: release !important;
+  width: 100% !important;
+}
+.manual-doc-page .manual-reader-webpage .manual-reader-nav {
+  grid-area: nav !important;
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: auto !important;
+  width: 100% !important;
+  max-height: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(calc(150px * var(--app-zoom)), 1fr)) !important;
+  gap: calc(6px * var(--app-zoom)) !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+}
+.manual-doc-page .manual-reader-webpage .manual-reader-nav-title {
+  display: block !important;
+  grid-column: 1 / -1;
+}
+.manual-doc-page .manual-reader-webpage .manual-reader-nav button {
+  width: 100% !important;
+  min-width: 0 !important;
+  text-align: left !important;
+}
+.manual-doc-page .manual-reader-webpage .manual-reader-content {
+  grid-area: content !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  display: block !important;
+  overflow: visible !important;
+}
+.manual-doc-page .manual-reader-webpage .manual-reader-content-scroll {
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: calc(12px * var(--app-zoom)) !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  scroll-behavior: smooth;
+}
+.manual-doc-page .manual-reader-webpage .manual-continuous-section,
+.manual-doc-page .manual-reader-webpage .manual-section {
+  min-width: 0 !important;
+}
+@media (max-width: 760px), (orientation: portrait) {
+  .manual-doc-page .manual-reader-webpage {
+    padding-left: calc(10px * var(--app-zoom)) !important;
+    padding-right: calc(10px * var(--app-zoom)) !important;
+  }
+  .manual-doc-page .manual-reader-webpage .manual-reader-nav {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* v1.7.19: Manual keeps normal webpage scrolling, with a slim floating vertical section rail. */
+.manual-doc-page .manual-reader-webpage {
+  padding-right: max(calc(16px * var(--app-zoom)), calc(52px * var(--app-zoom))) !important;
+  grid-template-areas:
+    "title"
+    "release"
+    "content" !important;
+  grid-template-rows: auto auto auto !important;
+}
+.manual-section-rail {
+  position: fixed;
+  right: calc(12px * var(--app-zoom));
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 80;
+  width: calc(32px * var(--app-zoom));
+  max-height: min(76vh, calc(620px * var(--app-zoom)));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(9px * var(--app-zoom));
+  padding: calc(10px * var(--app-zoom)) calc(4px * var(--app-zoom));
+  border: 1px solid rgba(148, 163, 184, 0.50);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.14);
+  backdrop-filter: blur(10px);
+}
+.manual-section-rail-spine {
+  position: absolute;
+  top: calc(18px * var(--app-zoom));
+  bottom: calc(18px * var(--app-zoom));
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: #cbd5e1;
+  pointer-events: none;
+}
+.manual-rail-node {
+  position: relative;
+  z-index: 1;
+  width: calc(22px * var(--app-zoom));
+  height: calc(22px * var(--app-zoom));
+  min-width: calc(22px * var(--app-zoom));
+  min-height: calc(22px * var(--app-zoom));
+  border: 0;
+  padding: 0;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.manual-rail-shape {
+  width: calc(9px * var(--app-zoom));
+  height: calc(9px * var(--app-zoom));
+  display: block;
+  background: #94a3b8;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px #cbd5e1;
+  transition: transform 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+.manual-rail-node-0 .manual-rail-shape { border-radius: 999px; }
+.manual-rail-node-1 .manual-rail-shape { border-radius: 2px; transform: rotate(45deg); }
+.manual-rail-node-2 .manual-rail-shape { border-radius: 3px; }
+.manual-rail-node-3 .manual-rail-shape { border-radius: 999px 999px 2px 999px; }
+.manual-rail-node:hover .manual-rail-shape,
+.manual-rail-node:focus-visible .manual-rail-shape,
+.manual-rail-node.active .manual-rail-shape {
+  background: #2563eb;
+  box-shadow: 0 0 0 2px #bfdbfe, 0 8px 18px rgba(37, 99, 235, 0.25);
+  transform: scale(1.25);
+}
+.manual-rail-node-1:hover .manual-rail-shape,
+.manual-rail-node-1:focus-visible .manual-rail-shape,
+.manual-rail-node-1.active .manual-rail-shape {
+  transform: rotate(45deg) scale(1.25);
+}
+.manual-rail-tooltip {
+  position: absolute;
+  right: calc(31px * var(--app-zoom));
+  top: 50%;
+  transform: translateY(-50%) translateX(6px);
+  opacity: 0;
+  pointer-events: none;
+  max-width: min(calc(280px * var(--app-zoom)), 70vw);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: calc(6px * var(--app-zoom)) calc(9px * var(--app-zoom));
+  border-radius: calc(9px * var(--app-zoom));
+  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: calc(12px * var(--app-zoom));
+  font-weight: 850;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.16);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+.manual-rail-node:hover .manual-rail-tooltip,
+.manual-rail-node:focus-visible .manual-rail-tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+@media (max-width: 760px), (orientation: portrait) {
+  .manual-doc-page .manual-reader-webpage {
+    padding-right: calc(44px * var(--app-zoom)) !important;
+  }
+  .manual-section-rail {
+    right: calc(6px * var(--app-zoom));
+    width: calc(28px * var(--app-zoom));
+    gap: calc(7px * var(--app-zoom));
+    padding-inline: calc(3px * var(--app-zoom));
+  }
+  .manual-rail-tooltip {
+    right: calc(27px * var(--app-zoom));
+  }
+}
+
+/* v1.8.4 final cross-page width/zoom and chart-control overrides. */
+.workflow-shell > .workflow-page,
+.workflow-shell > .doc-page,
+.workflow-page,
+.doc-page {
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box;
+}
+.webpage-data-layout.data-import-layout,
+.webpage-data-layout.data-import-layout.no-data,
+.webpage-data-layout.data-import-layout.has-data,
+.model-webpage-stack,
+.report-workflow-stack,
+.manual-doc-page .manual-reader-webpage,
+.start-workflow-page,
+.workflow-page > .workflow-page-inner {
+  width: min(100%, 1600px) !important;
+  max-width: 1600px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+.simple-chart {
+  position: relative;
+  overflow: hidden !important;
+}
+.simple-chart .compact-chart-toolbar {
+  position: absolute !important;
+  z-index: 8;
+  top: 8px;
+  right: 8px;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.simple-chart .chart-control-cluster {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+/* v1.8.5: neutralize older report/manual width overrides so scaling matches other pages. */
+.workflow-shell > .manual-doc-page,
+.workflow-shell > .doc-page,
+.workflow-shell > .workflow-page {
+  width: 100% !important;
+  max-width: none !important;
+}
+.manual-doc-page .manual-reader-webpage,
+.report-workflow-stack {
+  width: min(100%, var(--workflow-content-max, 1600px)) !important;
+  max-width: var(--workflow-content-max, 1600px) !important;
+  margin-inline: auto !important;
 }

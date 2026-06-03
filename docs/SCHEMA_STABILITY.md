@@ -18,6 +18,8 @@ The following schemas are compatibility-sensitive:
 
 Future versions may add optional fields, but should not rename or remove existing fields without a migration adapter.
 
+API routes follow the same compatibility principle. New breaking endpoint contracts should be introduced under a versioned prefix such as `/api/v2/...`; legacy `/api/...` routes should remain available until the frontend and documented workflows have migrated.
+
 ## Reproducibility rule
 
 A JSON fit result should be sufficient to reproduce:

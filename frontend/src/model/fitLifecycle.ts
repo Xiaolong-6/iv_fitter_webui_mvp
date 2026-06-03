@@ -63,3 +63,12 @@ export function canGenerateReport(args: {
 }): boolean {
   return args.hasSelectedTrace && !args.isFitting && args.hasResult && args.lifecycle.kind !== "running";
 }
+
+export function elapsedSecondsSince(startedAt: number | null | undefined, now = Date.now()): number {
+  if (startedAt === null || startedAt === undefined || !Number.isFinite(startedAt)) return 0;
+  return Math.max(0, Math.floor((now - startedAt) / 1000));
+}
+
+export function terminalCancelledState(runId: number, startedAt: number | null | undefined, now = Date.now()): FitLifecycleState {
+  return createCancelledLifecycle(runId, elapsedSecondsSince(startedAt, now));
+}

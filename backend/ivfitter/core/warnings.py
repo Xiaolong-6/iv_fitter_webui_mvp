@@ -19,7 +19,7 @@ def deprecated_config_warnings(config) -> list[FitWarning]:
 
 
 def graph_solver_not_reportable_warning() -> FitWarning:
-    return FitWarning(code="graph_solver", message="graph_dc is a diagnostic solver and is not reportable.", severity="error")
+    return FitWarning(code="graph_solver", message="graph_dc solver was used for graph-native custom branch assembly.", severity="info")
 
 
 def photocurrent_fit_warnings(model) -> list[FitWarning]:

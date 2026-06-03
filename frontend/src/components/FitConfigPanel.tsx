@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import type { FitConfig } from "../model/types";
+import type { FitConfig, SolverMode } from "../model/types";
 import type { Language } from "../model/i18n";
 import { t } from "../model/i18n";
 import { HelpTip } from "./HelpTip";
@@ -179,7 +179,7 @@ function AdvancedRunOptions({
             disabled={disabled}
             label={t(language, "residualFloor")}
             help={t(language, "residualFloorHelp")}
-            value={(config as any).residual_floor_A ?? 1e-15}
+            value={config.residual_floor_A ?? 1e-15}
             onCommit={(v) =>
               onChange({ ...config, residual_floor_A: v ?? 1e-15 })
             }
@@ -250,7 +250,7 @@ function AdvancedRunOptions({
             disabled={disabled}
             title={t(language, "multistartHelp")}
             type="checkbox"
-            checked={(config as any).multistart_enabled ?? false}
+            checked={config.multistart_enabled ?? false}
             onChange={(e) =>
               onChange({ ...config, multistart_enabled: e.target.checked })
             }
@@ -268,7 +268,7 @@ function AdvancedRunOptions({
             title={t(language, "solverModeHelp")}
             value={config.solver_mode ?? "legacy_composite"}
             onChange={(e) =>
-              onChange({ ...config, solver_mode: e.target.value as any })
+              onChange({ ...config, solver_mode: e.target.value as SolverMode })
             }
           >
             <option value="legacy_composite">
@@ -305,18 +305,27 @@ export function FitConfigPanel({
   onDrawerModeChange: (mode: FitDrawerMode) => void;
   autoVoltageRange?: { vMin: number | null; vMax: number | null };
 }) {
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const advancedRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!advancedOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (target && advancedRef.current?.contains(target)) return;
+      setAdvancedOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [advancedOpen]);
   return (
     <section
-      className="fit-config-panel streamlined-fit-config"
+      className="fit-config-panel streamlined-fit-config compact-fit-setup-panel"
       aria-label={t(language, "fitSetup")}
     >
       <div className="fit-config-row compact-fit-config-row">
         <div className="fit-config-title">
           <h2>{t(language, "fitSetup")}</h2>
         </div>
-        {actionDock ? (
-          <div className="fit-config-actions">{actionDock}</div>
-        ) : null}
         <FitVoltageRangeControls
           config={config}
           onChange={onChange}
@@ -324,6 +333,17 @@ export function FitConfigPanel({
           disabled={disabled}
           autoVoltageRange={autoVoltageRange}
         />
+        <button
+          type="button"
+          className={advancedOpen ? "fit-advanced-popover-button active" : "fit-advanced-popover-button"}
+          aria-expanded={advancedOpen}
+          onClick={() => setAdvancedOpen((open) => !open)}
+        >
+          {language === "zh" ? "高级" : "Advanced"}
+        </button>
+        {actionDock ? (
+          <div className="fit-config-actions">{actionDock}</div>
+        ) : null}
         <div className="fit-config-status" aria-live="polite">
           {statusDock}
           {messageDock ? (
@@ -331,21 +351,20 @@ export function FitConfigPanel({
           ) : null}
         </div>
       </div>
-      <div
-        className="fit-config-inline-options"
-        aria-label={
-          language === "zh"
-            ? "高级目标函数和运行选项"
-            : "Advanced objective and run options"
-        }
-      >
-        <AdvancedRunOptions
-          config={config}
-          onChange={onChange}
-          language={language}
-          disabled={disabled}
-        />
-      </div>
+      {advancedOpen ? <div className="fit-config-advanced-popover" ref={advancedRef} role="dialog" aria-label={language === "zh" ? "高级目标函数、运行选项和求解器" : "Advanced objective, run options, and solver"}>
+        <div className="fit-config-advanced-popover-head">
+          <strong>{language === "zh" ? "目标函数 / 运行选项 / 求解器" : "Objective / run options / solver"}</strong>
+          <button type="button" onClick={() => setAdvancedOpen(false)}>{language === "zh" ? "关闭" : "Close"}</button>
+        </div>
+        <div className="fit-config-inline-options">
+          <AdvancedRunOptions
+            config={config}
+            onChange={onChange}
+            language={language}
+            disabled={disabled}
+          />
+        </div>
+      </div> : null}
     </section>
   );
 }

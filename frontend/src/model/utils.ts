@@ -1,5 +1,46 @@
 import type { ComponentSpec, EvaluationForm, FunctionDefinition, ModelSpec, ParameterSpec, Polarity, TraceData } from "./types";
 let nextId = 1;
+
+function zoneForCustomLocation(location: "core"|"series"|"parallel"): "main" | "branches" {
+  return location === "series" ? "main" : "branches";
+}
+
+function inferCustomScaleUnit(zone: "main" | "branches", expression: string): string {
+  const compact = expression.replace(/\s+/g, "");
+  const isJustA = /^A$/.test(compact);
+  const usesVoltage = /\b(Vi|Vj|V|Vext|absVi|absVj|absV)\b/.test(expression);
+  const usesCurrent = /\bI\b/.test(expression) && !/\bI0\b/.test(expression);
+  if (zone === "branches") return isJustA || !usesVoltage ? "A" : "A/V";
+  return isJustA || !usesCurrent ? "V" : "Ω";
+}
+
+function customScaleDescription(zone: "main" | "branches", expression: string): string {
+  const unit = inferCustomScaleUnit(zone, expression);
+  if (unit === "A/V") return "User-defined branch conductance/current scale.";
+  if (unit === "Ω") return "User-defined main-path resistance/voltage-drop scale.";
+  if (unit === "V") return "User-defined constant main-path voltage drop.";
+  return "User-defined branch current scale.";
+}
+
+export function applyCustomExpressionParameterUnits(comp: ComponentSpec, expression?: string): ComponentSpec {
+  if (comp.function_type !== "custom" && comp.law_id !== "custom_expression") return comp;
+  const zone = zoneForCustomLocation(comp.location);
+  const expr = expression ?? (typeof comp.metadata?.expression === "string" ? comp.metadata.expression : (zone === "main" ? "A * I" : "A * Vi"));
+  const a = comp.params.A;
+  if (!a) return comp;
+  return {
+    ...comp,
+    params: {
+      ...comp.params,
+      A: {
+        ...a,
+        unit: inferCustomScaleUnit(zone, expr),
+        description: customScaleDescription(zone, expr),
+      },
+    },
+  };
+}
+
 export function buildParams(def: FunctionDefinition, nickname?: string): Record<string, ParameterSpec> {
   const params: Record<string, ParameterSpec> = {};
   for (const p of def.parameters) {
@@ -42,7 +83,9 @@ export function createComponentInLocation(def: FunctionDefinition, location: "co
     : def.function_type === "bias_dependent_current" || def.function_type === "photocurrent_voltage_dependent" || def.function_type === "voltage_dependent_photocurrent" ? "Ibias(V)"
     : def.display_name.split(" ")[0];
   const componentPolarity = def.allowed_polarities.length ? (polarity ?? def.default_polarity ?? null) : null;
-  return { id: `${idBase}_${nextId++}`, location, function_type: def.function_type, law_id: def.law_id, evaluation_form, placement, polarity: componentPolarity, mode: def.mode ?? null, params: buildParams(def, nickname), metadata: def.function_type === "custom" ? { nickname, expression: evaluation_form === "conductance_modifier" ? "A*softplus(u)" : "s*A*softplus(u)**m" } : { nickname } };
+  const customExpression = location === "series" ? "A * I" : "A * Vi";
+  const component = { id: `${idBase}_${nextId++}`, location, function_type: def.function_type, law_id: def.law_id, evaluation_form, placement, polarity: componentPolarity, mode: def.mode ?? null, params: buildParams(def, nickname), metadata: def.function_type === "custom" ? { nickname, expression: customExpression, expressionSource: "user" } : { nickname } };
+  return applyCustomExpressionParameterUnits(component, customExpression);
 }
 export function createComponent(def: FunctionDefinition, polarity?: Polarity): ComponentSpec { return createComponentInLocation(def, def.location, polarity); }
 export function cloneModel(model: ModelSpec): ModelSpec { return JSON.parse(JSON.stringify(model)); }

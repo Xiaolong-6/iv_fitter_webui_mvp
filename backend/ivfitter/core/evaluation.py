@@ -103,7 +103,7 @@ def series_resistance_effective(vj: np.ndarray, model) -> np.ndarray:
         if comp.function_type == "softplus_rs_modifier":
             boost = softplus_conductance_boost(arr, param_value(comp, "A", 0.0), param_value(comp, "Vt_V", 0.0), param_value(comp, "Vs_V", 1.0), comp.polarity or "symmetric")
             rs = apply_conductance_boost(rs, boost)
-        elif comp.function_type == "custom":
+        elif comp.function_type == "custom" and (comp.placement == "series_conductance_modifier" or comp.evaluation_form == "conductance_modifier"):
             expr = comp.metadata.get("expression", "A*softplus(u)")
             params = {name: spec.value for name, spec in comp.params.items()}
             boost = evaluate_custom_expression(arr, expr, params, comp.polarity or "symmetric")
@@ -120,6 +120,10 @@ def series_voltage_drop(current: np.ndarray, vj: np.ndarray, model, rs_eff_fn=se
             drop = drop + series_diode_barrier_drop(arr_i, comp, model.temperature_K)
         elif comp.function_type == "series_power_law_drop":
             drop = drop + series_power_law_drop(arr_i, comp)
+        elif comp.function_type == "custom" and (comp.placement == "series_voltage_drop" or comp.evaluation_form == "voltage_drop"):
+            expr = comp.metadata.get("expression", "A * I")
+            params = {name: spec.value for name, spec in comp.params.items()}
+            drop = drop + evaluate_custom_expression(arr_i, expr, params, comp.polarity or "symmetric")
     return drop
 
 
@@ -168,14 +172,15 @@ def solve_single_vj(v_ext: float, model, rs_eff_fn=series_resistance_effective) 
     lo, hi = v_ext - span, v_ext + span
     flo, fhi = f(lo), f(hi)
     tries = 0
-    while flo * fhi > 0 and tries < 5:
+    max_expansions = 10
+    while np.isfinite(flo) and np.isfinite(fhi) and flo * fhi > 0 and tries < max_expansions:
         span *= 2
         lo, hi = v_ext - span, v_ext + span
         flo, fhi = f(lo), f(hi)
         tries += 1
-    if flo * fhi <= 0:
+    if np.isfinite(flo) and np.isfinite(fhi) and flo * fhi <= 0:
         try:
-            root = float(brentq(f, lo, hi, maxiter=80))
+            root = float(brentq(f, lo, hi, maxiter=120))
             return root if np.isfinite(root) else float("nan")
         except Exception:
             return float("nan")
@@ -183,7 +188,8 @@ def solve_single_vj(v_ext: float, model, rs_eff_fn=series_resistance_effective) 
 
 
 def solve_vj(voltage_v, model, rs_eff_fn=series_resistance_effective) -> np.ndarray:
-    return np.array([solve_single_vj(float(v), model, rs_eff_fn=rs_eff_fn) for v in np.asarray(voltage_v, dtype=float)], dtype=float)
+    arr = np.asarray(voltage_v, dtype=float)
+    return np.array([solve_single_vj(float(v), model, rs_eff_fn=rs_eff_fn) for v in arr.flat], dtype=float).reshape(arr.shape)
 
 
 def predict_current(voltage_v, model, solver_mode: str = "legacy_composite", rs_eff_fn=series_resistance_effective) -> np.ndarray:

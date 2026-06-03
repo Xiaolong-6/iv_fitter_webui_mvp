@@ -145,6 +145,8 @@ def structured_report(result: FitResult) -> dict[str, Any]:
 
 
 def _initial_value(result: FitResult, parameter_key: str) -> float | None:
+    if result.initial_values and parameter_key in result.initial_values:
+        return result.initial_values[parameter_key]
     component_id, _, param_name = parameter_key.partition(".")
     for comp in [*result.model.core, *result.model.series, *result.model.parallel]:
         if comp.id == component_id and param_name in comp.params:

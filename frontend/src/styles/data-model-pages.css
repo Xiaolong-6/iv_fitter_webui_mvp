@@ -658,7 +658,7 @@ button.fit-action-unavailable:disabled {
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 0.1rem 0.45rem;
-  font-size: 0.72rem;
+  font-size: calc(12px * var(--app-zoom));
   font-weight: 650;
   color: var(--muted-text);
   background: var(--surface-muted);
@@ -829,7 +829,7 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
 .sidebar-version { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
 .sidebar-version strong { white-space: nowrap; font-size: calc(12px * var(--app-zoom)); }
 .sidebar.collapsed .sidebar-footer { display: grid; justify-items: center; gap: 7px; padding-bottom: calc(4px * var(--app-zoom)); }
-.sidebar.collapsed .sidebar-version strong { writing-mode: horizontal-tb; font-size: 11px; max-width: 52px; overflow: hidden; text-overflow: ellipsis; }
+.sidebar.collapsed .sidebar-version strong { writing-mode: horizontal-tb; font-size: calc(12px * var(--app-zoom)); max-width: 52px; overflow: hidden; text-overflow: ellipsis; }
 .sidebar.collapsed .sidebar-release-link { display: none; }
 .sidebar.collapsed .sidebar-zoom-slot { max-width: 48px; overflow: hidden; }
 .sidebar.collapsed .sidebar-zoom-control { width: 42px; border-radius: 12px; }
@@ -841,18 +841,74 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
 .minimal-hero p { max-width: 720px; margin: calc(16px * var(--app-zoom)) 0 0; color: var(--theme-muted); font-size: calc(18px * var(--app-zoom)); line-height: 1.6; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: calc(10px * var(--app-zoom)); margin-top: calc(22px * var(--app-zoom)); }
 .hero-primary { background: #0f172a; border-color: #0f172a; }
+.hero-help-action {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(8px * var(--app-zoom));
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
+  box-shadow: 0 8px 22px rgba(37, 99, 235, .10);
+}
+.hero-help-action:hover {
+  border-color: #2563eb;
+  background: #dbeafe;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, .16);
+}
+.hero-help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(22px * var(--app-zoom));
+  height: calc(22px * var(--app-zoom));
+  border-radius: 999px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 950;
+  line-height: 1;
+}
 .minimal-workflow-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
 .minimal-workflow-head h3 { margin: 0; color: var(--theme-text); font-size: calc(25px * var(--app-zoom)); letter-spacing: -0.03em; }
 .minimal-workflow-head p, .workflow-mini-path { margin: 4px 0 0; color: var(--theme-muted); font-weight: 650; }
 .minimal-workflow-grid { display: grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: calc(14px * var(--app-zoom)); }
-.minimal-workflow-card { position: relative; min-height: calc(160px * var(--app-zoom)); padding: calc(22px * var(--app-zoom)); border: 1px solid var(--theme-border); border-radius: calc(28px * var(--app-zoom)); background: var(--theme-surface); box-shadow: var(--theme-shadow-card); cursor: pointer; transition: border-color .15s, transform .15s, box-shadow .15s; }
-.minimal-workflow-card:hover { transform: translateY(-2px); border-color: #cbd5e1; box-shadow: 0 14px 36px rgba(15,23,42,.08); }
+.minimal-workflow-card {
+  position: relative;
+  min-height: calc(172px * var(--app-zoom));
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: calc(8px * var(--app-zoom));
+  padding: calc(20px * var(--app-zoom));
+  border: 1px solid var(--theme-border);
+  border-radius: calc(28px * var(--app-zoom));
+  background: var(--theme-surface);
+  box-shadow: var(--theme-shadow-card);
+  cursor: pointer;
+  transition: border-color .15s, transform .15s, box-shadow .15s, opacity .15s, background .15s;
+}
+.minimal-workflow-card:hover, .minimal-workflow-card:focus-visible { transform: translateY(-2px); border-color: #93c5fd; box-shadow: 0 14px 36px rgba(37,99,235,.12); outline: none; }
+.minimal-workflow-card.step-active { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,.12), 0 16px 38px rgba(37,99,235,.14); }
+.minimal-workflow-card.step-running { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,.12), 0 16px 38px rgba(124,58,237,.14); }
+.minimal-workflow-card.step-done { border-color: #86efac; background: linear-gradient(180deg, #f7fff9 0%, #fff 75%); }
+.minimal-workflow-card.step-ready { border-color: #dbe4ee; }
+.minimal-workflow-card.is-locked { cursor: not-allowed; opacity: .66; background: #f8fafc; box-shadow: none; }
+.minimal-workflow-card.is-locked:hover { transform: none; border-color: var(--theme-border); box-shadow: none; }
+.minimal-step-topline { display: flex; align-items: center; justify-content: space-between; gap: calc(8px * var(--app-zoom)); }
 .minimal-step-index { display: inline-flex; width: 34px; height: 34px; align-items: center; justify-content: center; border-radius: 13px; background: #f1f5f9; color: #475569; font-weight: 900; }
-.minimal-step-status { position: absolute; top: calc(20px * var(--app-zoom)); right: calc(20px * var(--app-zoom)); padding: 4px 9px; border-radius: 999px; background: #f8fafc; color: #64748b; font-size: calc(11px * var(--app-zoom)); font-weight: 900; }
-.minimal-workflow-card h3 { margin: calc(22px * var(--app-zoom)) 0 0; font-size: calc(22px * var(--app-zoom)); color: var(--theme-text); }
-.minimal-workflow-card p { margin: calc(8px * var(--app-zoom)) 0 0; color: var(--theme-muted); line-height: 1.5; }
-.minimal-current-state { display: flex; flex-wrap: wrap; gap: calc(14px * var(--app-zoom)); align-items: center; padding: calc(12px * var(--app-zoom)) calc(16px * var(--app-zoom)); border: 1px solid var(--theme-border); border-radius: calc(18px * var(--app-zoom)); background: #fff; color: var(--theme-muted); }
-.minimal-current-state strong { color: var(--theme-text); }
+.minimal-step-check { display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 999px; color: #16a34a; background: #dcfce7; font-weight: 950; }
+.step-active .minimal-step-check { color: #2563eb; background: #dbeafe; }
+.step-active .minimal-step-check::before { content: ""; width: 9px; height: 9px; border-radius: 999px; background: currentColor; }
+.step-running .minimal-step-check { color: #7c3aed; background: #ede9fe; }
+.step-ready .minimal-step-check { color: #64748b; background: #f1f5f9; }
+.step-locked .minimal-step-check { color: #94a3b8; background: #e2e8f0; }
+.minimal-workflow-card h3 { margin: calc(10px * var(--app-zoom)) 0 0; font-size: calc(22px * var(--app-zoom)); color: var(--theme-text); }
+.minimal-workflow-card p { margin: 0; color: var(--theme-muted); line-height: 1.45; }
+.minimal-card-state { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: calc(8px * var(--app-zoom)); padding-top: calc(10px * var(--app-zoom)); border-top: 1px solid #e2e8f0; }
+.minimal-step-status { padding: 4px 9px; border-radius: 999px; background: #f8fafc; color: #64748b; font-size: calc(11px * var(--app-zoom)); font-weight: 900; white-space: nowrap; }
+.minimal-step-status.status-done { background: #dcfce7; color: #15803d; }
+.minimal-step-status.status-active { background: #dbeafe; color: #1d4ed8; }
+.minimal-step-status.status-running { background: #ede9fe; color: #6d28d9; }
+.minimal-step-status.status-locked { background: #e2e8f0; color: #64748b; }
+.minimal-step-detail { min-width: 0; color: #64748b; font-size: calc(12px * var(--app-zoom)); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .quick-actions-card { display: none; }
 
 .data-workspace { padding: calc(4px * var(--app-zoom)); }
@@ -1203,4 +1259,824 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
   .structured-units {
     grid-template-columns: 1fr;
   }
+}
+
+/* v1.7.5 webpage-style Data and Model pages.
+   Data Import now reads as a normal scrollable webpage: Import data first,
+   then Trace selection, Plot review, and Spreadsheet preview after data exists. */
+.web-page-flow.data-workspace.scroll-page {
+  height: auto;
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: calc(18px * var(--app-zoom)) calc(16px * var(--app-zoom)) calc(36px * var(--app-zoom));
+}
+.webpage-data-layout.data-import-layout,
+.webpage-data-layout.data-import-layout.no-data,
+.webpage-data-layout.data-import-layout.has-data {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: none;
+  grid-template-rows: none;
+  align-items: start;
+  gap: calc(16px * var(--app-zoom));
+  width: min(100%, 1120px);
+  max-width: 1120px;
+  height: auto;
+  min-height: 0;
+  margin: 0 auto;
+}
+.webpage-data-layout.no-data {
+  max-width: 760px;
+}
+.webpage-data-layout > .webpage-panel,
+.webpage-data-layout > .card {
+  grid-area: auto;
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  overflow: visible;
+  display: grid;
+  gap: calc(12px * var(--app-zoom));
+  grid-template-rows: auto;
+  align-content: start;
+}
+.webpage-data-layout .import-actions-card {
+  overflow: visible;
+}
+.webpage-data-layout .trace-selection-card {
+  display: grid;
+  gap: calc(12px * var(--app-zoom));
+}
+.webpage-data-layout .trace-plot-review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(12px * var(--app-zoom));
+  height: auto;
+  min-height: 0;
+}
+.webpage-data-layout .plot-review-card .simple-chart {
+  min-height: clamp(260px, 34vh, 420px);
+}
+.webpage-data-layout .plot-review-card .simple-chart > svg {
+  max-height: none;
+}
+.webpage-data-layout .spreadsheet-card .spreadsheet-wrap,
+.webpage-data-layout .spreadsheet-wrap {
+  max-height: min(54vh, 560px);
+  min-height: 240px;
+  overflow: auto;
+}
+.webpage-data-layout .compact-parsed-settings {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.webpage-data-layout .data-next-action {
+  width: fit-content;
+}
+
+.webpage-model-page.model-page.workflow-page {
+  height: auto;
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: calc(18px * var(--app-zoom)) calc(16px * var(--app-zoom)) calc(36px * var(--app-zoom));
+}
+.model-webpage-stack {
+  display: grid;
+  gap: calc(16px * var(--app-zoom));
+  width: min(100%, 1120px);
+  max-width: 1120px;
+  margin: 0 auto;
+  align-content: start;
+}
+
+/* Model Builder V3 fullscreen host: remove historical centered/max-width layout constraints. */
+.mbv3-fullscreen-page.webpage-model-page.model-page.workflow-page {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.mbv3-fullscreen-page .mbv3-fullscreen-stack {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  height: 100%;
+}
+
+.mbv3-fullscreen-page .model-builder-section,
+.mbv3-fullscreen-page .model-builder-section .workspace-section-body {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden !important;
+}
+
+.model-page-tool-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: calc(8px * var(--app-zoom));
+}
+.model-webpage-stack .workspace-section {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  display: block;
+  box-shadow: none;
+  border: 0;
+  background: transparent;
+}
+.model-webpage-stack .workspace-section-body {
+  overflow: visible;
+  padding: 0;
+}
+.model-webpage-stack .model-builder,
+.model-webpage-stack .equation-preview {
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+}
+.model-webpage-stack .model-preview-section {
+  margin-top: calc(2px * var(--app-zoom));
+}
+
+@media (max-width: 900px) {
+  .webpage-data-layout .trace-plot-review-grid,
+  .webpage-data-layout .compact-parsed-settings {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .webpage-data-layout .plot-review-card .simple-chart {
+    min-height: 300px;
+  }
+  .web-page-flow.data-workspace.scroll-page,
+  .webpage-model-page.model-page.workflow-page {
+    padding-inline: calc(10px * var(--app-zoom));
+  }
+}
+
+/* v1.7.7: webpage-like import/model flow refinements. */
+.model-builder-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(14px * var(--app-zoom));
+  align-items: start;
+}
+.model-preview-action-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: calc(10px * var(--app-zoom));
+}
+.collapsed-import-summary {
+  padding: calc(4px * var(--app-zoom)) 0 0;
+}
+.collapsed-import-summary .compact-import-row {
+  border: 1px solid var(--theme-border);
+  border-radius: calc(12px * var(--app-zoom));
+  background: #f8fafc;
+  padding: calc(8px * var(--app-zoom)) calc(10px * var(--app-zoom));
+}
+@media (max-width: 920px) {
+  .model-builder-two-column {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* v1.7.8: webpage width consistency and model preset controls. */
+.minimal-start-page {
+  width: min(100%, 1120px);
+  max-width: 1120px;
+  margin: 0 auto;
+}
+.compact-import-toggle {
+  width: 100%;
+  text-align: left;
+  display: grid;
+  gap: 2px;
+  cursor: pointer;
+}
+.model-preset-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: calc(10px * var(--app-zoom));
+  border: 1px solid var(--theme-border);
+  border-radius: calc(12px * var(--app-zoom));
+  background: #f8fafc;
+  padding: calc(10px * var(--app-zoom));
+  margin-bottom: calc(12px * var(--app-zoom));
+}
+.model-preset-controls label { display: grid; gap: 4px; min-width: min(320px, 100%); }
+.model-preset-actions { display: flex; flex-wrap: wrap; gap: calc(7px * var(--app-zoom)); }
+
+/* v1.7.9: compact import trace selector and all-trace spreadsheet preview. */
+.compact-trace-selection-card .card-head { margin-bottom: calc(6px * var(--app-zoom)); }
+.compact-trace-selection-row {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: calc(8px * var(--app-zoom));
+}
+.compact-trace-selection-row .structured-trace-select {
+  flex: 1 1 320px;
+  min-width: 220px;
+}
+.trace-count-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: calc(32px * var(--app-zoom));
+  padding: calc(6px * var(--app-zoom)) calc(9px * var(--app-zoom));
+  border: 1px solid var(--theme-border);
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.compact-next-action { min-height: calc(32px * var(--app-zoom)); }
+.compact-unit-row {
+  margin-top: calc(8px * var(--app-zoom));
+  grid-template-columns: minmax(220px, 2fr) minmax(90px, .7fr) minmax(90px, .7fr);
+}
+.all-traces-spreadsheet th:first-child,
+.all-traces-spreadsheet td:first-child { text-align: left; color: #334155; font-weight: 700; }
+.all-traces-spreadsheet .selected-trace-row td { background: #eff6ff; }
+.all-traces-spreadsheet .selected-trace-row td:first-child { box-shadow: inset 3px 0 0 #2563eb; }
+.collapsed-import-summary .compact-import-row { grid-template-columns: auto 1fr; }
+@media (max-width: 760px) {
+  .compact-unit-row { grid-template-columns: 1fr; }
+  .compact-trace-selection-row { align-items: stretch; }
+  .compact-trace-selection-row > * { width: 100%; }
+}
+
+/* v1.7.16: import-page information-density pass. */
+.workflow-shell > .web-page-flow.data-workspace.scroll-page,
+.workflow-shell > .doc-page,
+.workflow-shell > .workflow-page {
+  grid-row: 1 / -1;
+  min-height: 0;
+}
+.web-page-flow.data-workspace.scroll-page {
+  width: 100%;
+  max-width: none;
+}
+.webpage-data-layout.data-import-layout,
+.webpage-data-layout.data-import-layout.no-data,
+.webpage-data-layout.data-import-layout.has-data {
+  width: 100%;
+  max-width: 1600px;
+  gap: calc(10px * var(--app-zoom));
+}
+.webpage-data-layout.no-data {
+  max-width: 880px;
+}
+.import-toast {
+  position: sticky;
+  top: calc(8px * var(--app-zoom));
+  z-index: 24;
+  width: fit-content;
+  max-width: min(760px, 100%);
+  margin: 0 auto calc(8px * var(--app-zoom));
+  padding: calc(7px * var(--app-zoom)) calc(11px * var(--app-zoom));
+  border-radius: 999px;
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.10);
+  font-weight: 800;
+}
+.import-toast-error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+.import-loaded-bar {
+  min-height: calc(40px * var(--app-zoom));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(10px * var(--app-zoom));
+  padding: calc(6px * var(--app-zoom)) calc(10px * var(--app-zoom));
+  border: 1px solid #dbe4f0;
+  border-radius: calc(12px * var(--app-zoom));
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+.import-loaded-summary {
+  display: flex;
+  align-items: center;
+  gap: calc(8px * var(--app-zoom));
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.import-loaded-summary strong,
+.import-loaded-summary .muted {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.import-status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: calc(24px * var(--app-zoom));
+  padding: calc(3px * var(--app-zoom)) calc(8px * var(--app-zoom));
+  border: 1px solid #a7f3d0;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.import-loaded-actions,
+.spreadsheet-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: calc(7px * var(--app-zoom));
+}
+.trace-control-card {
+  padding-block: calc(8px * var(--app-zoom));
+}
+.trace-control-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(220px, 1.1fr) minmax(180px, auto) auto auto;
+  gap: calc(8px * var(--app-zoom));
+  align-items: end;
+}
+.trace-control-row label,
+.unit-inline-group {
+  display: grid;
+  gap: calc(3px * var(--app-zoom));
+  min-width: 0;
+}
+.trace-control-row label > span,
+.unit-inline-group > span {
+  font-size: calc(11px * var(--app-zoom));
+  color: #64748b;
+  font-weight: 850;
+  line-height: 1;
+}
+.unit-inline-group {
+  grid-template-columns: auto minmax(62px, .7fr) minmax(62px, .7fr);
+  align-items: end;
+}
+.unit-inline-group > span {
+  align-self: center;
+  padding-bottom: calc(8px * var(--app-zoom));
+}
+.compact-data-pill,
+.compact-next-action {
+  align-self: end;
+  min-height: calc(32px * var(--app-zoom));
+}
+.spreadsheet-head {
+  margin-bottom: calc(4px * var(--app-zoom));
+}
+.spreadsheet-toolbar {
+  justify-content: flex-start;
+  margin-bottom: calc(8px * var(--app-zoom));
+}
+.spreadsheet-toolbar select {
+  max-width: min(320px, 100%);
+}
+.spreadsheet-toolbar input {
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+.webpage-data-layout .spreadsheet-card .spreadsheet-wrap,
+.webpage-data-layout .spreadsheet-wrap {
+  max-height: min(58vh, 680px);
+  min-height: 260px;
+}
+.grouped-spreadsheet {
+  font-size: calc(12px * var(--app-zoom));
+}
+.grouped-spreadsheet th,
+.grouped-spreadsheet td {
+  padding: calc(4px * var(--app-zoom)) calc(8px * var(--app-zoom));
+  line-height: 1.25;
+}
+.grouped-spreadsheet .trace-group-row td {
+  position: sticky;
+  top: calc(28px * var(--app-zoom));
+  z-index: 1;
+  text-align: left;
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 900;
+  border-top: 1px solid #dbe4f0;
+  border-bottom: 1px solid #dbe4f0;
+  box-shadow: inset 3px 0 0 #cbd5e1;
+}
+.grouped-spreadsheet .selected-trace-group td {
+  background: #dbeafe;
+  color: #1d4ed8;
+  box-shadow: inset 4px 0 0 #2563eb;
+}
+.grouped-spreadsheet .selected-trace-row td {
+  background: #eff6ff;
+}
+.grouped-spreadsheet .selected-trace-row td:first-child {
+  box-shadow: inset 3px 0 0 #60a5fa;
+}
+.spreadsheet-note {
+  margin: calc(6px * var(--app-zoom)) 0 0;
+}
+@media (max-width: 1180px) {
+  .trace-control-row {
+    grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr);
+  }
+  .compact-data-pill,
+  .compact-next-action {
+    justify-self: start;
+  }
+}
+@media (max-width: 760px) {
+  .import-loaded-bar,
+  .import-loaded-summary,
+  .import-loaded-actions {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+  }
+  .import-loaded-actions > button {
+    width: 100%;
+  }
+  .trace-control-row,
+  .unit-inline-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .unit-inline-group > span {
+    padding-bottom: 0;
+  }
+  .compact-data-pill,
+  .compact-next-action,
+  .spreadsheet-toolbar > * {
+    width: 100%;
+  }
+}
+
+/* v1.7.19: Spreadsheet preview shows all traces simultaneously; the trace menu only jumps. */
+.spreadsheet-toolbar select[aria-label*="Jump"],
+.spreadsheet-toolbar select[aria-label*="定位"] {
+  min-width: calc(190px * var(--app-zoom));
+}
+.webpage-data-layout .spreadsheet-card .spreadsheet-wrap,
+.webpage-data-layout .spreadsheet-wrap {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.grouped-spreadsheet {
+  min-width: calc(760px * var(--app-zoom));
+  width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.grouped-spreadsheet th,
+.grouped-spreadsheet td {
+  white-space: nowrap;
+}
+.grouped-spreadsheet .trace-group-row td {
+  scroll-margin-top: calc(38px * var(--app-zoom));
+}
+.grouped-spreadsheet th:nth-child(1),
+.grouped-spreadsheet td:nth-child(1) { min-width: calc(72px * var(--app-zoom)); }
+.grouped-spreadsheet th:nth-child(2),
+.grouped-spreadsheet td:nth-child(2),
+.grouped-spreadsheet th:nth-child(3),
+.grouped-spreadsheet td:nth-child(3) { min-width: calc(180px * var(--app-zoom)); }
+
+/* v1.7.20: keep the loaded import summary as a true one-line bar. */
+.import-loaded-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: calc(36px * var(--app-zoom));
+  padding-block: calc(4px * var(--app-zoom));
+}
+.import-loaded-summary {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.import-loaded-actions {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .import-loaded-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .import-loaded-summary,
+  .import-loaded-actions {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+  .import-loaded-actions > button {
+    width: auto;
+    flex: 0 0 auto;
+  }
+}
+
+/* v1.7.20: update checking is automatic; the dock version doubles as a test shortcut. */
+.sidebar-version {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(6px * var(--app-zoom));
+}
+.sidebar-version.has-update {
+  grid-template-columns: auto auto auto;
+}
+.sidebar-version-button {
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  padding: 0;
+  font-weight: 900;
+  font-size: calc(12px * var(--app-zoom));
+  line-height: 1.1;
+  cursor: pointer;
+}
+.sidebar-version-button:hover,
+.sidebar-version-button:focus-visible {
+  color: #bfdbfe;
+  text-decoration: underline;
+  outline: none;
+}
+.sidebar-new-button {
+  min-height: calc(22px * var(--app-zoom));
+  padding: calc(2px * var(--app-zoom)) calc(7px * var(--app-zoom));
+  border-radius: 999px;
+  border: 1px solid #fde68a;
+  background: #facc15;
+  color: #422006;
+  font-size: calc(10px * var(--app-zoom));
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.18), 0 8px 18px rgba(250, 204, 21, 0.22);
+}
+.sidebar-new-button:hover,
+.sidebar-new-button:focus-visible {
+  background: #fde047;
+  border-color: #fef3c7;
+  outline: none;
+}
+.sidebar.collapsed .sidebar-version {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: calc(4px * var(--app-zoom));
+}
+.sidebar.collapsed .sidebar-version-button {
+  max-width: 52px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: calc(12px * var(--app-zoom));
+}
+.sidebar.collapsed .sidebar-new-button {
+  width: 42px;
+  min-width: 0;
+  padding-inline: 0;
+  font-size: calc(10px * var(--app-zoom));
+}
+
+/* v1.7.21: align import trace controls and arrange preview traces horizontally. */
+.trace-control-card {
+  padding-block: calc(10px * var(--app-zoom));
+}
+.trace-control-row {
+  grid-template-columns: minmax(260px, 1.25fr) minmax(260px, 1.15fr) minmax(150px, auto) auto auto;
+  align-items: end;
+}
+.trace-control-row label,
+.trace-control-row .unit-inline-group {
+  min-height: calc(48px * var(--app-zoom));
+  align-content: end;
+}
+.unit-inline-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: calc(3px * var(--app-zoom));
+}
+.unit-inline-group > span {
+  align-self: auto;
+  padding-bottom: 0;
+}
+.unit-control-fields {
+  display: grid;
+  grid-template-columns: minmax(64px, 1fr) minmax(64px, 1fr);
+  gap: calc(5px * var(--app-zoom));
+}
+.trace-control-row select,
+.trace-control-row input,
+.unit-control-fields select,
+.compact-next-action,
+.compact-data-pill {
+  min-height: calc(36px * var(--app-zoom));
+}
+.compact-data-pill,
+.compact-next-action {
+  align-self: end;
+  margin-bottom: 0;
+}
+
+.horizontal-trace-spreadsheet {
+  min-width: max(100%, calc(220px * var(--app-zoom)));
+  width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.horizontal-trace-spreadsheet th,
+.horizontal-trace-spreadsheet td {
+  white-space: nowrap;
+  min-width: calc(128px * var(--app-zoom));
+  padding: calc(4px * var(--app-zoom)) calc(8px * var(--app-zoom));
+}
+.horizontal-trace-spreadsheet .row-index-header,
+.horizontal-trace-spreadsheet .row-index-cell {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  min-width: calc(56px * var(--app-zoom));
+  width: calc(56px * var(--app-zoom));
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 900;
+  box-shadow: 1px 0 0 #dbe4f0;
+}
+.horizontal-trace-spreadsheet .row-index-header {
+  z-index: 5;
+}
+.horizontal-trace-spreadsheet .trace-column-group {
+  min-width: calc(256px * var(--app-zoom));
+  background: #f8fafc;
+  color: #334155;
+  border-left: 1px solid #dbe4f0;
+  border-right: 1px solid #dbe4f0;
+  scroll-margin-left: calc(72px * var(--app-zoom));
+}
+.horizontal-trace-spreadsheet .trace-column-group > span,
+.horizontal-trace-spreadsheet .trace-column-group > small {
+  display: block;
+  max-width: calc(240px * var(--app-zoom));
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.horizontal-trace-spreadsheet .trace-column-group > span {
+  font-weight: 950;
+}
+.horizontal-trace-spreadsheet .trace-column-group > small {
+  margin-top: 2px;
+  color: #64748b;
+  font-weight: 800;
+}
+.horizontal-trace-spreadsheet .selected-trace-group {
+  background: #dbeafe;
+  color: #1d4ed8;
+  box-shadow: inset 0 3px 0 #2563eb;
+}
+.horizontal-trace-spreadsheet .selected-trace-col {
+  background: #eff6ff;
+}
+.horizontal-trace-spreadsheet tbody tr:hover td {
+  background: #f8fafc;
+}
+.horizontal-trace-spreadsheet tbody tr:hover .selected-trace-col {
+  background: #dbeafe;
+}
+
+@media (max-width: 1180px) {
+  .trace-control-row {
+    grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(150px, auto);
+  }
+}
+@media (max-width: 760px) {
+  .trace-control-row,
+  .unit-inline-group,
+  .unit-control-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .trace-control-row label,
+  .trace-control-row .unit-inline-group {
+    min-height: 0;
+  }
+}
+
+/* v1.8.4 unified page width and stable zoom behavior across all workflow pages. */
+.workflow-shell > .workflow-page,
+.workflow-shell > .doc-page,
+.workflow-page,
+.doc-page {
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box;
+}
+.webpage-data-layout.data-import-layout,
+.webpage-data-layout.data-import-layout.no-data,
+.webpage-data-layout.data-import-layout.has-data,
+.model-webpage-stack,
+.report-workflow-stack,
+.manual-doc-page .manual-reader-webpage,
+.start-workflow-page,
+.workflow-page > .workflow-page-inner {
+  width: min(100%, 1600px) !important;
+  max-width: 1600px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+.model-webpage-stack,
+.webpage-data-layout.data-import-layout {
+  transition: none !important;
+}
+.webpage-data-layout .spreadsheet-note {
+  display: none !important;
+}
+/* Keep chart reset controls attached to their chart, not the page corner. */
+.simple-chart {
+  position: relative;
+  overflow: hidden !important;
+}
+.simple-chart .compact-chart-toolbar {
+  position: absolute;
+  z-index: 8;
+  top: 8px;
+  right: 8px;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+.simple-chart .chart-control-cluster {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+.simple-chart > svg {
+  display: block;
+}
+
+/* v1.8.5: one real workflow width rule across pages; no page-specific narrow document shell. */
+:root { --workflow-content-max: 1600px; }
+.workflow-shell > .workflow-page,
+.workflow-shell > .doc-page,
+.workflow-shell > .web-page-flow,
+.workflow-page,
+.doc-page,
+.web-page-flow {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+.workflow-shell :is(.model-webpage-stack,
+  .webpage-data-layout.data-import-layout,
+  .webpage-data-layout.data-import-layout.no-data,
+  .webpage-data-layout.data-import-layout.has-data,
+  .report-workflow-stack,
+  .manual-reader-webpage,
+  .start-workflow-page,
+  .workflow-page-inner,
+  .workflow-page > .workflow-page-inner) {
+  width: min(100%, var(--workflow-content-max)) !important;
+  max-width: var(--workflow-content-max) !important;
+  margin-inline: auto !important;
+  box-sizing: border-box !important;
+}
+.workflow-shell :is(.model-webpage-stack,
+  .webpage-data-layout.data-import-layout,
+  .report-workflow-stack,
+  .manual-reader-webpage,
+  .start-workflow-page) {
+  padding-inline: clamp(8px, 1vw, 18px) !important;
+}
+.model-webpage-stack { gap: 14px !important; }
+
+/* v1.8.6: enforce readable baseline across Start/Data/Model/Fitting/Report. */
+.workflow-shell :is(.start-workflow-page,
+  .webpage-data-layout.data-import-layout,
+  .model-webpage-stack,
+  .fitting-page.workflow-page,
+  .report-workflow-stack) {
+  font-size: calc(16px * var(--app-zoom));
+}
+.workflow-shell :is(.muted,
+  .subtle,
+  small,
+  .table-note,
+  .small-note,
+  .fit-process-summary,
+  .report-equation-label,
+  .minimal-step-status,
+  .minimal-step-detail) {
+  font-size: max(calc(11.5px * var(--app-zoom)), 0.82em);
 }

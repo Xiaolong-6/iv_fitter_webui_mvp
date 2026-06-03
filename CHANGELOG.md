@@ -1,4 +1,578 @@
+## 1.9.0 - Model Builder V3 consolidation
+
+- Promoted the cleaned Model Builder V3 path to the v1.9.0 baseline.
+- Removed legacy V1/V2 frontend Model Builder source, active V2 docs, orphan V2 hotfix notes, and the old global Model Builder stylesheet.
+- Updated project rules and active documentation so new Model Builder work targets `frontend/src/model-builder-v3/`.
+- Kept older Law/Form/Placement model paths as compatibility schema rather than active UI architecture.
+- Synchronized root, frontend, backend, and lockfile version metadata to v1.9.0.
+
+## 1.8.38 - Model Builder V3 source and docs cleanup
+
+- Removed legacy V1/V2 frontend Model Builder source directories so the active UI has a single V3 builder path.
+- Moved `ModelBuilderProps` into the V3 module boundary and removed the remaining active dependency on legacy builder types.
+- Removed active V2 documentation and updated current README, architecture, roadmap, handoff, and tested notes to describe V3 as the only current frontend Model Builder.
+- Removed the old global `styles/model-builder.css` shell; Model Builder styling now lives in the V3 stylesheet.
+- Kept historical changelog entries as release history rather than current implementation guidance.
+
+## 1.8.38 - Model Builder V3 synthetic toolbar integration
+
+- Restored the existing Synthetic IV trace workflow as a direct Model Builder V3 canvas toolbar action between Save and Go to fitting.
+- Kept the Synthetic IV trace modal behavior unchanged while styling its launch control as a compact floating canvas button.
+- Passed parent workflow canvas actions through the V3 ModelBuilder wrapper instead of discarding them.
+- Updated current user/developer docs to describe Model Builder V3 as the active schematic editor and document the canvas Synthetic IV trace action.
+- Synchronized root, frontend, backend, and lockfile version metadata to v1.8.38.
+
+## 1.8.35 — Model Builder V2 audit and blank-screen follow-up
+
+- Fixed V2 `ReactFlow` import to use the named export from `@xyflow/react` and removed an unused `addEdge` import.
+- Stopped silently discarding parent workflow props in V2; the toolbar now exposes scope notes, optional Go to Fit action, and external canvas actions when available.
+- Added `graphCompile` tests for `schematic_v2` GraphSpec output, expression preservation, empty drafts, and model round-trip behavior.
+- Moved active V2 design/audit docs into `docs/model-builder-v2/`, moved old reports into `docs/history/` or `docs/archive/`, and updated documentation index links.
+- Updated architecture, roadmap, and agent handoff docs so V2 is described as the current default Model Builder path.
+
+
+## Model Builder V2 blank-screen hotfix
+
+- Fixed V2 startup so it no longer publishes graph state back to the parent model during initial mount.
+- Added explicit React Flow canvas height rules to prevent zero-height/blank canvas rendering in nested grid layouts.
+- Added `MODEL_BUILDER_V2_BLANK_SCREEN_HOTFIX.md` documenting the fix.
+
+
+## 1.8.35 - Model Builder V2 schematic editor baseline
+
+- Added isolated Model Builder V2 under `frontend/src/model-builder-v2/`.
+- Added graph-native `SchematicGraph` domain types, mutations, validation, expression validation, and GraphSpec compilation.
+- Added a free schematic canvas with fixed V/GND terminals, drag-in component palette, component port wiring, orthogonal wire rendering, and validation panel.
+- Added a component inspector for R(V), I(V), ΔV(I), and F(I,V)=0 behavior forms, including expression editing and custom parameter table.
+- Added V2 architecture, acceptance, migration, and self-audit documents.
+- Rewrote the user manual around the current graph-native two-terminal modeling workflow.
+- Removed the stale `final-overrides.css` file from the source tree; V2 owns a dedicated stylesheet with no `!important` declarations.
+
+## v1.8.37 — Direct graph interaction polish
+
+- Added a true empty-state Model Builder graph: `V — (+) — GND` when no components are present.
+- Removed terminal arrowheads so the Model Builder reads as a circuit schematic rather than a flowchart.
+- Removed the dashed V-shaped parallel-add guide edges; the add-parallel affordance is now a floating lower `+` instead of misleading branch wires.
+- Kept path-edge `+` controls for serial insertion and lower `+` controls for adding parallel paths.
+- Added `MODEL_BUILDER_INTERACTION_POLISH_AUDIT.md` documenting the browser-facing fixes and remaining verification status.
+
+## v1.8.36 — ELK-driven direct branch graph layout
+
+- Added `elkjs` and moved the Model Builder branch-graph layout pipeline toward `CircuitGraph -> ELK layered layout -> React Flow render`.
+- Replaced straight edge rendering with smooth-step/orthogonal-style circuit wires so branch paths no longer form large triangular diagonal spaghetti.
+- Kept plus-button insertion metadata on edges while letting ELK compute stable component/junction spacing for serial and parallel paths.
+- Preserved the direct graph interaction model: no visible module containers, serial insertion on paths, and parallel-path insertion between the same junctions.
+- Frontend build and Vitest pass after the ELK integration.
+
+## v1.8.35 — Direct branch-graph Model Builder rewrite
+
+- Replaced the Model Builder visual model with a direct branch graph: `V` and `GND` terminals, black junction dots, ordered paths, and connected component nodes.
+- Removed the visible module/container interaction concept from the canvas; components are inserted directly on paths.
+- Added `+` insertion affordances for serial insertion into a selected path and for adding new parallel paths between the same junctions.
+- Added path metadata (`pathId`, `pathOrder`) so each path can hold ordered series components and repeated physical behaviors are allowed.
+- Reworked the selected-component inspector around user-facing behavior modes: `R(V)`, `I(V)`, `ΔV(I)`, and custom residual `F(I,V)=0`.
+- Added expression editing with local variables `V` and `I`, sign/polarity control, and a user-editable fitting-parameter table with value/bounds/fit controls.
+- Updated frontend tests for the direct branch-graph behavior. Frontend tests and build pass.
+
+## v1.8.34 — Main-path layout and delete affordance hotfix
+
+- Increased and regularized main-path component spacing for models with multiple main-path terms so cards no longer overlap.
+- Added a stronger compact main-path card style for dense main-path chains.
+- Replaced the misleading three-dot delete affordance with an explicit hover/selected delete `×` control.
+- Kept the delete control hidden until hover/selection to avoid clutter while preventing it from looking like a details menu.
+
+## v1.8.33 — Model Builder toolbar alignment hotfix
+
+- Unified the Model Builder canvas toolbar control system: shared height, radius, font metrics, and vertical centering across Go to Fit, preset select, Save as preset, Reset model, Modified state, and Synthetic IV trace.
+- Kept Go to Fit as the only primary blue action while making secondary controls visually consistent.
+- Moved the Modified state before the preset selector and aligned it to the same toolbar centerline.
+- Softened the Synthetic IV trace separator so the toolbar reads as one coherent control group.
+
+## v1.8.32 — Canvas annotation cleanup hotfix
+
+- Removed selected-component formula overlays from the canvas; selected governing equations stay in the inspector where there is enough space.
+- Moved and weakened the global voltage/current annotations so they no longer sit directly under selected components or branch wires.
+- Fixed the branch-current label styling so it reads normally and does not appear clipped.
+- Further downgraded Vext / Vi / V=0 terminal anchors so they remain visual references rather than dominant components.
+- Kept custom-law expression rendering and user-facing V_i wording consistent.
+
+## v1.8.31 — Custom Law semantic consistency hotfix
+
+- Fixed generic main-path custom laws so their governing equation is generated from the current expression, not from the old conductance-modifier preset formula.
+- Standardized user-facing custom branch variables to render `Vi` as `V_i`.
+- Replaced stale custom main-path wording with user-facing voltage-drop descriptions.
+- Shortened main-path polarity text and added explicit branch polarity tooltip semantics.
+- Made custom-law parameter badges more compact and changed UI labels such as `Vt_V` / `Vs_V` to `Vt` / `Vs` while keeping backend keys in tooltips.
+- Aligned expression syntax help with backend-supported operators and functions.
+
+
+## v1.8.30 — Inline equation overlay and terminal-node simplification
+
+- Removed the bottom Model preview drawer from the Model Builder canvas.
+- Restyled Vext / Vi / V=0 as compact black terminal nodes instead of large neutral cards.
+- Added low-key inline equation annotations near the circuit topology: aggregate voltage near Vi, aggregate current near the branch region, and the selected component equation near the selected component.
+- Kept the equations visually subordinate so the circuit remains the main subject.
+- Re-centered the circuit viewport now that the bottom drawer is gone.
+
+## v1.8.29 — Custom Law Builder polish
+
+- Replaced backend-oriented custom-law labels with user-facing branch/main-path labels.
+- Auto-renamed built-in component nicknames such as D1/Rs/Rsh when converting them to custom laws, unless the user supplied a custom name.
+- Defaulted custom branch laws to `A * Vi` and inferred the `A` parameter unit from expression/form.
+- Clarified polarity, advanced variables, syntax help, and custom equation subscripts.
+- Added backend aliases for user-facing custom variables such as `Vi` and `absVi`.
+- Validated with frontend tests/build and backend tests.
+
+## v1.8.25 — Start/report/upload UI cleanup
+
+- Start page Help is now a blue title-adjacent button aligned with the `Welcome to IV-fitter` heading.
+- Report floating panel is now a tighter `Next` panel with a drag icon and Data / Model / Fitting shortcuts instead of diagnostic action buttons.
+- Local file dialog localhost detection now accepts IPv4-mapped loopback and host-header localhost, and the data import UI falls back to browser upload when the server-side dialog is unavailable from non-localhost access.
+- Removed developer-facing report completion language from the UI; the report status now says the report is ready.
+## v1.8.24 — Emergency UI hotfix
+
+- Synthetic IV trace now opens through a document-level modal portal, not a React Flow panel/dropdown.
+- Model preview header no longer renders inline formulas that can overflow into the toolbar.
+- User-facing equation strings use escaped LaTeX commands for reliable KaTeX rendering.
+- Vext, main-path component cards, and Vi are vertically center-aligned on the main path.
+- Main-path arrows stay on straight line segments; branch junction dots are subdued to avoid black corner-dot artifacts.
+
+## 1.8.21 - Model Builder layout polish
+
+## v1.8.24 — User-facing formula rendering polish
+
+- Replaced the custom lightweight LaTeX renderer with real KaTeX rendering through `react-katex`, with the previous lite renderer retained only as a fallback for invalid formulas.
+- Rendered the Model Builder bottom summary formulas as KaTeX instead of plain text.
+- Added a user-facing global I–V model structure card that explains `V_j`, branch current summation, and the residual equation before component-specific formulas.
+- Localized previously English-only formula explanations in the equation preview.
+- Improved formula overflow behavior so long equations scroll horizontally instead of breaking or overflowing the panel.
+
+
+## v1.8.22 — Start and synthetic UI hotfix
+
+- Replaced the Model Builder Advanced popover with a direct Synthetic IV trace button and a centered modal.
+- Simplified the Start page hero/workflow copy and moved Help beside the main title.
+- Added a soft blue animated attention state to the Data card when no trace is loaded.
+- Raised the app zoom upper bound to 200%.
+- Hid React Flow handles/black corner artifacts and made the selected-component inspector draggable.
+- Kept main-path arrows straight by using straight main-path edges.
+- Unified Model Builder toolbar button alignment and styling.
+- Increased Fit setup Advanced dropdown height and tightened the manual page sticky navigation spacing.
+
+
+- Reworked Model Builder add actions so `+ Main` appears over the Vext main-path insertion segment and `+ Branch` appears over the Vi-to-parallel-junction segment instead of living as global toolbar buttons.
+- Moved Debug algorithm/synthetic-trace controls behind an Advanced toolbar menu so normal users see a cleaner production toolbar.
+- Added preset dirty-state labeling, `Save as preset`, and `Reset model` behavior tied to the selected built-in or custom preset.
+- Improved canvas viewport centering, neutral wire styling, junction-dot/bus visual cues, compact inspector sizing, and static HTML report SVG junction markers.
+- Added/updated frontend tests covering semantic add nodes and Advanced-menu debug placement.
+
+## 1.8.20 - Model Builder circuit visual semantics fix
+
+- Reworked Model Builder circuit visual semantics after screenshot review: default wires are neutral black/gray rather than blue/purple physical-looking paths.
+- Hid React Flow connection handles from the normal visual layer so they are not mistaken for circuit nodes or junctions.
+- Moved persistent add actions into the top canvas toolbar (`+ Branch`, `+ Main`, and a component-type options popover); plus buttons no longer sit on wires or branch paths.
+- Made selected state focus on the component card, with only subtle linked-edge emphasis instead of coloring whole main/branch paths.
+- Widened component cards and allowed long nicknames to use two lines, reducing ugly truncation such as `Soft-thre...`.
+- Updated the exported HTML equivalent-circuit SVG to use the same neutral visual semantics.
+- Added frontend tests for toolbar add controls and neutral/selected-edge graph semantics.
+
+## 1.8.19 - Model Builder canvas UI hotfix
+
+- Fixed a layout regression where the Model Builder synthetic/debug tool consumed the first grid row and pushed the React Flow canvas to the bottom of the viewport.
+- Moved the Debug algorithm control into the canvas preset toolbar so the canvas remains full-height and controls stay discoverable.
+- Added targeted CSS containment rules for `workflow-view-model` to keep the Model Builder section full-height with no large blank region.
+
+## 1.8.18 - Audit hardening, timeout control, and test restoration
+
+- Replaced API token equality checks with timing-safe `hmac.compare_digest`.
+- Hardened custom-expression evaluation by parsing and validating one AST, then compiling the same validated tree.
+- Added bounded CPU endpoint slots and lightweight per-client rate limiting for runaway local/LAN requests.
+- Wrapped SciPy fitting calls with a real API-level timeout path so the UI can receive a timeout result instead of waiting indefinitely.
+- Moved the server-side tkinter import picker into a bounded subprocess and kept LAN clients on upload/paste import paths.
+- Added `/api/v2/...` aliases for current API routes while preserving legacy `/api/...` compatibility; the frontend now calls the v2 prefix.
+- Split import-column and HappyMeasure section helpers out of `import_trace.py` to reduce mixed responsibility in the importer.
+- Refactored `FittingPage` state into a reducer-backed page state and added component tests for smoke rendering plus a mocked import/fit flow.
+- Restored backend and frontend test reliability, moved PyInstaller out of runtime requirements, and documented the golden-ratio multistart sequence.
+
+## 1.8.17 - Model Builder visual hierarchy and semantic polish
+- Unify terminal/component card styling so the canvas uses one visual language.
+- Strengthen selected-node feedback and align editor colors with main/branch semantics.
+- Reweight the in-canvas editor around the governing equation and add custom-expression editing for custom laws.
+- Add semantic main/branch edge colors and clearer parameter-unit tooltips.
+- Modernize the suspended Model preview strip with clearer equation hierarchy and expand affordance.
+
+## 1.8.16 - Hard Model Builder canvas height repair
+
+- Added an active workflow-view class to the main shell so the Model Builder layout no longer depends on CSS :has() support.
+- Forced the Model page, Model Builder section, React Flow shell, and React Flow internal containers to share a single full-height workspace chain.
+- Kept Model preview as a bottom canvas drawer with an internally scrollable expanded body.
+
+## 1.8.15 - Full-canvas Model Builder workspace fix
+- Made the Model Builder page use the React Flow canvas as the full workspace instead of a small card above empty page area.
+- Moved selected-component editing into an in-canvas panel so nodes no longer expand and distort topology.
+- Kept Go to Fit to the left of the preset selector and widened the preset toolbar so Save/Reset are not squeezed.
+- Changed edge-add menus to keep a local selection until Add is clicked, preventing option selection from closing the menu.
+- Tightened long main-path spacing and set React Flow zoom limits so longer series chains remain usable with pan/zoom instead of shrinking to thumbnails.
+- Made Model preview a suspended bottom drawer with an internally scrollable expanded body.
+
 # Changelog
+
+## 1.8.15 - Model Builder canvas workspace cleanup
+
+- Made the Model Builder behave as a full canvas workspace with the model preview suspended inside the canvas bottom area.
+- Moved Go to Fit to the left of the preset selector and tightened the preset control cluster so actions no longer squeeze the selector.
+- Replaced the edge-add native select with a stable option list so choosing another model definition does not close the popover prematurely.
+- Added inline expanded component editing inside selected React Flow nodes, including rename and model replacement controls.
+- Added compact-main rendering and tighter deterministic spacing for long main-path model chains.
+- Removed the Fitting page no-trace hero state; the Plots card remains the import entry point and its Import data action is more prominent.
+- Realigned parameter-table Fit all / Fix all controls.
+
+## v1.8.12 - Modular Model Builder and interaction cleanup
+- Split the large `ModelBuilder.tsx` into focused modules under `frontend/src/components/model-builder/` for flow graph generation, nodes, edges, context, presets, math, and physics inspection.
+- Moved React Flow node/edge actions out of node data and into a dedicated context to reduce callback churn and re-render coupling.
+- Stabilized edge `+` popovers with fixed width, ellipsis-safe selects, option titles, and outside-click/Escape dismissal.
+- Replaced native `window.prompt` / `window.confirm` preset actions with inline dialogs.
+- Hid custom-only preset rename/delete controls for built-in presets to reduce visual noise.
+- Added a model-summary empty inspector state and strengthened selected-node visual feedback.
+- Replaced JSON deep-copy preset cloning with `structuredClone` fallback, centralized function-type aliases, and expanded LaTeX escaping for `^` and `~`.
+
+## v1.8.11 - Model Builder branch port runtime fix
+- Fixed a React runtime crash in Model Builder caused by `branchPortCount` being referenced before definition in the xyflow graph builder.
+- Explicitly derives branch port count from the current branch component count before creating Vi and V=0 terminal nodes.
+- Kept v1.8.10 frontend dependency guard behavior unchanged.
+
+## v1.8.11 - Frontend dependency guard fix
+
+- Fixed Windows launch scripts so stale `frontend/node_modules` cannot bypass newly added frontend dependencies.
+- Added `scripts/ensure_frontend_dependencies.ps1` to verify Vite, `@xyflow/react`, `katex`, and `react-katex` before startup.
+- Updated dev, frontend-only, and LAN launchers to run the dependency guard before starting Vite.
+- Kept public npm registry installation path for frontend dependency repair.
+
+## v1.8.9 — React Flow routing and KaTeX hard fix
+- Use real `react-katex` / KaTeX rendering for selected-component equations instead of showing raw LaTeX source strings.
+- Increase deterministic main-path spacing so `Rs → Vi` and similar insertable main edges do not knot under smoothstep routing.
+- Add multi-handle branch ports on `Vi` and `V=0` so branch wires use independent ports instead of visually collapsing onto one ghost route.
+- Make edge-label `+` insert buttons opaque, high-contrast, and visually discoverable above grid/wire layers.
+
+## v1.8.9 — topology-first Model Builder cleanup
+- Reworked xyflow branch wiring so each branch has independent Vi → component → V=0 conductors; removed virtual merge/split behavior.
+- Standardized horizontal ports and branch/ground multi-port handles to avoid unnecessary bends and shared-air junctions.
+- Reduced Main path / Junction branches labels to small add anchors instead of large visual boxes.
+- Rebalanced component card hierarchy: larger centered component names, weaker secondary law/type tags, hover-only remove control.
+- Replaced the fake editable bottom name field with a read-only physics inspector.
+- Added selected-component physical role, governing equation, and consistent parameter/unit badges.
+
+## v1.8.6 — hard layout and Model Builder cleanup
+- Fixed the workflow width rule by adding the actual Start and Fitting page containers, plus Report/Manual inner document flows, to the same 1500 px content rail.
+- Made Model Builder controls genuinely compact inside the canvas instead of a large preset card overlay.
+- Moved selected-component details out of the graph overlay and into a compact inline inspector strip below the xyflow graph.
+- Reduced xyflow graph height and tightened deterministic node spacing so the canvas no longer has large unused blank regions.
+- Reworked Model preview into a collapsed modern formula strip with compact expandable equation cards.
+
+## v1.8.5 — model preview and layout discipline fix
+- Rebuilt Model preview as a collapsed modern summary strip with compact equation cards when expanded.
+- Added a final shared workflow width rule so Data, Model, Report, Manual, and Start pages use the same 1600 px content rail and zoom behavior.
+- Compressed the in-canvas preset controls and moved selected-component details to a bottom mini-inspector so it no longer covers branch nodes.
+- Tightened xyflow layout spacing and add-menu placement to reduce component overlap.
+
+## v1.8.4 — compact in-canvas Model Builder cleanup
+
+- Removed the Model Builder subtitle and external toolbar; controls now live inside the xyflow canvas.
+- Moved Add main/Add branch actions to the corresponding canvas zone titles with click-to-open options.
+- Added per-component remove buttons on component cards instead of a global delete control.
+- Simplified selected-component details to name editing plus parameter/unit list only.
+- Added the Go to Fit action inside the canvas upper-right corner.
+- Reused the same read-only equivalent-circuit view in Report without edit controls.
+- Modernized the Model preview block and removed duplicate navigation/actions from it.
+- Unified workflow page width and zoom behavior across pages.
+- Returned chart reset controls to the chart interior and removed redundant spreadsheet text.
+
+## v1.8.3 — readable xyflow Model Builder layout
+
+- Converted the crowded in-canvas controls into a compact Model Builder toolbar.
+- Moved selected-component details below the graph so the equivalent circuit is never covered.
+- Reworked xyflow branch layout: main path runs Vext → main components → Vi; branches run horizontally from Vi to each branch and then to V=0.
+- Removed minimap/large overlay panels from the normal builder view.
+- Kept fixed-topology ModelSpec wiring, no dragging, no free connections, and no backend fitting changes.
+- Bumped version metadata to v1.8.3.
+
+# Changelog
+
+## v1.8.2 — in-canvas xyflow Model Builder controls
+
+- Moved Model Builder preset selection, preset save/rename/delete, add-main/add-branch controls, reset view, reset model, remove selected, model summary, and selected-component details into the xyflow canvas.
+- Removed the external right-side inspector layout from the active Model Builder path.
+- Kept ModelSpec as the single source of truth and retained fixed-topology wiring.
+- Preserved parameter editing, fit toggles, bounds editing, polarity editing, custom expression editing, and advanced law/form/placement details inside the canvas inspector.
+- Bumped version metadata to v1.8.2.
+
+## v1.8.1 — npm public-registry lockfile and Windows install reliability
+
+- Rewrote frontend package-lock resolved tarball URLs from the sandbox-only internal package gateway to the public npm registry.
+- Updated Windows setup guidance and startup scripts to use deterministic frontend dependency installation through the frontend package.
+- Added npm install diagnostics for the xyflow dependency path so first-run setup does not silently retry unreachable internal URLs.
+
+
+## v1.8.1 - xyflow fixed-topology Model Builder
+
+- Replaced the failed hand-built Model Builder schematic with a minimal `@xyflow/react` implementation.
+- Kept the backend ModelSpec contract unchanged and did not add arbitrary SPICE-style wiring.
+- Disabled node dragging, free connections, edge deletion, and user-created topology edits.
+- Added deterministic adaptive layout: main-path components chain from Vext to Vi; all junction branches connect from Vi to V=0; add/remove operations rebuild the graph and wiring automatically.
+- Kept only required builder actions: preset replacement, add main/branch component, remove selected component, select component, reset view, and inspector parameter editing.
+- Updated Windows setup/start scripts so `02_setup_dev.bat`, `04_run_dev.bat`, `04b_run_frontend_only.bat`, and `04c_run_lan_dev.bat` install/check/run dependencies from `frontend/package.json`.
+- Added frontend regression coverage for xyflow wiring after adding/removing components.
+
+## v1.7.23 - Model Builder schematic readability polish
+- Improved the interactive Model Builder circuit canvas after screenshot review.
+- Kept the no-drag fixed-topology design but made the schematic more circuit-like and less cramped.
+- Fixed terminal-label drawing order so Vext, Vi, and V=0 remain readable.
+- Removed misleading drag-handle affordance by replacing grips with simple schematic node markers.
+- Reduced nested horizontal scrollbars inside component rows and widened the canvas/inspector balance.
+- Tightened preset toolbar, component cards, and inspector spacing for large-screen use.
+
+
+## v1.7.22 - Interactive equivalent-circuit Model Builder
+
+- Replaced the old Model Builder list layout with a fixed-topology equivalent-circuit canvas.
+- Kept the backend ModelSpec contract unchanged; the canvas is a visual/editor layer only.
+- Added main-path and junction-branch zones with Vext, Vi, and V=0 visual anchors.
+- Added clickable component cards, selected-state highlighting, delete controls, and a right-side inspector.
+- Added inspector editing for nickname, polarity, custom expression, parameter initial values, fit toggles, and bounds.
+- Kept preset selection as a replace-current-model action for single diode, double diode, and saved custom presets.
+- Added frontend regression tests for circuit rendering, component selection, preset replacement, and parameter roundtrip.
+
+## v1.7.21 - Import alignment and horizontal all-trace spreadsheet
+
+- Align the Import Trace/Name/Units/status/action controls to the same control baseline.
+- Change Spreadsheet preview from vertical trace groups to side-by-side trace columns.
+- Keep the trace dropdown as a jump-to-group control only; it no longer filters or hides traces.
+- Preserve horizontal scrolling for large multi-trace datasets.
+
+## v1.7.20 - Automatic update badge and one-line import loaded bar
+- Removed the compact Version and updates panel from the Manual page; update checking now runs automatically on app startup/refresh.
+- Added a highlighted NEW action beside/below the dock version when a newer public release is detected.
+- Made the dock version number clickable as a test shortcut that simulates the NEW update badge.
+- Changed the post-import loaded summary into a true one-line bar with actions on the same row.
+
+## v1.7.19 - Manual section rail and spreadsheet all-trace preview
+
+- Replaced the Manual inline section directory with a slim floating vertical section rail that preserves normal webpage scrolling.
+- Added shaped rail nodes with hover/focus tooltips for section headers while keeping the rail vertical across breakpoints.
+- Kept Spreadsheet preview in all-traces-visible mode; the trace selector now jumps to a group instead of filtering out other traces.
+- Strengthened Spreadsheet preview horizontal scrolling for large/multi-trace datasets.
+- Removed obsolete archived v1.5 audit/self-audit markdown files and stale delivery audit snapshots from the active release package.
+
+
+## v1.7.18 — Manual normal webpage scrolling fix
+
+- Reverted the failed two-pane Manual reader with independent nav/body scrollbars.
+- Restored Manual as one continuous webpage-style document rooted at `.manual-doc-page`.
+- Kept title, release status, Sections directory, and article content in one normal vertical flow.
+- Removed horizontal tab behavior and independent Manual nav/body scrollbar styling.
+- Updated Manual active-section tracking and section jumps to use the page scroll root.
+
+## v1.7.17 — Manual body-owned scrolling fix
+
+- Moved the User Manual title into the right-hand article scroll body so it aligns with the manual content width instead of spanning the navigation column.
+- Replaced page-level Manual scrolling with body-owned scrolling: the left Sections list and the right article body scroll independently inside a fixed-height Manual shell.
+- Removed the remaining dependency on `.doc-page` as the Manual scroll root; active-section tracking and section jumps use the actual content scroll container.
+- Added a hard `.manual-doc-page` containment override to prevent sidebar/header/dock overlap and responsive horizontal-tab regressions.
+
+## v1.7.16 — Import page density and Manual scroll/title fix
+
+- Replaced the post-import large Import data card with a compact loaded-summary bar showing trace count, point count, source, Reopen import, and Add more actions.
+- Collapsed Trace selection into a single compact control row for trace selection, rename, units, point count, and Model Builder navigation.
+- Reworked Spreadsheet preview into grouped trace sections with toolbar controls for trace filtering, row search, copy visible rows, and CSV export.
+- Changed successful import feedback from a page-wide yellow banner into a transient success toast while keeping errors visually distinct.
+- Expanded the Import page content width for data-analysis use on large screens instead of constraining it like a narrow document page.
+- Fixed the workflow-shell grid containment that could prevent Manual scrolling, and moved the User Manual title above the reader content with aligned width.
+- Routed root dev/build/preview scripts through the frontend package so root `npm run build` uses the installed frontend Vite binary reliably.
+
+## v1.7.15 — Manual reader navigation and scroll stabilization
+
+- Removed the responsive Manual layout branch that changed the Sections locator into a horizontal tab bar.
+- Kept one vertical Sections-list navigation model across wide, narrow, and portrait layouts.
+- Restored reliable Manual page scrolling through the `.doc-page` scroll container.
+- Updated Manual active-section tracking to listen to the actual scroll container instead of only `window`.
+- Added direct scroll-root positioning for section jumps so navigation buttons and content stay synchronized.
+
+
+## v1.7.14 — Start-page status cards and help affordance
+- Moved workflow status out of the bottom Current state strip and into each Start-page card.
+- Added active/done/running/locked visual states, green checkmarks for completed steps, and keyboard handling for clickable workflow cards.
+- Made locked future steps visually muted and non-interactive until prerequisites exist.
+- Replaced the low-contrast Open help outline action with a more visible Help button and question-mark icon.
+
+## v1.7.13 — Audit hardening and Manual portrait fix
+
+- Restricted the server-side local file dialog endpoint to localhost/loopback requests so LAN clients cannot remotely trigger backend-host file access.
+- Replaced wildcard CORS methods with explicit GET/POST/OPTIONS and explicit allowed headers for the current API surface.
+- Made the legacy junction-voltage bracketing path more tolerant of difficult high-resistance models by adding finite-value checks and a wider expansion budget.
+- Aligned the experimental graph solver bias-dependent current branch with the shared softplus formulation used by composite evaluation.
+- Fixed the User Manual portrait responsive rule so the Sections locator remains a vertical scrollable list instead of becoming horizontal tabs.
+- Removed the stale unused `ImportTraceResponse` class from the API module.
+- Added backend regression tests for localhost-only dialog access and explicit CORS method behavior.
+
+## v1.7.12 — Version consistency self-check
+
+- Bumped root, frontend, and backend package metadata from v1.7.11 to v1.7.12.
+- Fixed the stale README current-version label that still reported v1.6.0.
+- Removed a duplicate embedded changelog header and repeated historical release snippets before the v1.4.37 history.
+- Re-ran the current frontend and backend validation suite during the handoff self-check.
+- Kept fitting physics, backend APIs, saved-model compatibility, UI behavior, and report numerical logic unchanged.
+
+## v1.7.11 — Import-page crash fix and handoff cleanup
+
+- Fixed the Data Import blank-page regression after loading data by restoring the missing `DatasetNameInput` component used by Trace selection.
+- Added a defensive editable trace-name input that commits on blur/Enter and reverts on Escape.
+- Fixed frontend build regressions left from earlier UI cleanup: restored the `SyntheticTraceTool` language prop, restored component-level parameter fit-state update helper, and fixed the Report resize callback type.
+- Fixed the misplaced SimpleChart zero-line test that caused Vitest to fail.
+- Confirmed frontend dependency installation works with the sanitized npm registry/lockfile state.
+- Archived obsolete v1.5 self-audit/release-audit markdown files and rewrote current audit/handoff docs around the v1.7.11 workflow.
+- Updated Data Import documentation to the current webpage-style import flow and removed stale Import quality/two-row layout guidance.
+- Kept fitting physics, backend APIs, saved-model compatibility, and report numerical logic unchanged.
+
+## v1.7.10 — Import unit helper runtime hotfix
+
+- Restored the missing `withDefaultImportedUnits` helper used by Data Import after the spreadsheet-preview refactor.
+- Ensured imported traces always receive safe default voltage/current unit metadata before preview, unit conversion, plotting, and fitting.
+- Kept Import, Model, Fit, Report layout behavior from v1.7.9 unchanged.
+- Kept fitting physics, backend APIs, report numerical data, and saved-model compatibility unchanged.
+
+## v1.7.9 — Workflow polish and scrolling hotfix
+
+- Changed Model preset selection so Single diode and Double diode presets replace the current model rather than incrementally modifying it.
+- Removed the separate Add secondary diode D2 button; D2 is now available through the Double diode model preset.
+- Made Fit setup more compact and moved Advanced objective/run options/solver into an overlay popover that does not push plots or parameters down; clicking outside closes it.
+- Restored scrolling for the single-column Fitting and User Manual pages.
+- Kept the Report Exports floating panel constrained away from the left dock/sidebar.
+- Compactified Trace selection and removed Import quality from the user-facing import workflow.
+- Updated Spreadsheet preview to show rows from all loaded traces and highlight the selected trace.
+- Removed the duplicated Import data label inside the collapsed import summary while keeping the import card re-expandable.
+- Kept fitting physics, backend APIs, saved-model compatibility, report data, and exported HTML schemas unchanged.
+
+## v1.7.8 — Single-column workflow pages and report export controls
+
+- Changed Report to a single-column reader layout and moved exports into a draggable floating panel.
+- Removed the Report quick-summary / Fit result card from the user-facing page.
+- Moved Review diagnostics / Open bounds-parameters / Try safer model into the floating Exports panel above download buttons.
+- Added an in-app equivalent-circuit section directly above Model evaluation summary.
+- Fixed in-app Report plot visibility by giving report charts explicit bounded height.
+- Changed User Manual to a one-column reader with Version check at the top and a floating Sections locator.
+- Changed Fitting to a one-column webpage flow with sticky Fit setup and Advanced objective/run-options/solver dropdown.
+- Kept Import data collapsible after parsing while allowing users to reopen import controls.
+- Added Model preset controls below Equivalent circuit for single diode, double diode, and user-saved custom presets.
+- Kept fitting physics, backend APIs, report data, and saved-model compatibility unchanged.
+
+## v1.7.7 — Webpage flow cleanup and report plot hotfix
+
+- Removed the global top workflow context/status bar (`Trace / Model / Fit / Report / Next`) so Import, Model, Fit, and Report pages read like normal webpages.
+- Changed the loaded-data Import card to collapse into a compact read-only loaded summary immediately after import/parse; removed the Hide / Change data state from that page flow.
+- Placed Model Builder main-path and junction-branch groups side by side on wide screens, with automatic single-column stacking on narrow screens.
+- Added a `Go to Fitting` action above Model preview.
+- Fixed Report plots by giving the in-report chart grid bounded heights so plots do not grow indefinitely after fitting.
+- Reformatted Fit process and quality metrics with human-readable metric names and cleaner values, and aligned the exported HTML metric names with the in-app Report page.
+- Kept fitting physics, backend APIs, saved-model compatibility, and numerical report data unchanged.
+
+## v1.7.6 — Report page/export layout alignment
+
+- Moved the Report side/control panel from the right side to the left side while preserving the previous side-panel default width.
+- Reordered the in-app Report page to match the exported HTML report order exactly: IV-fitter report, Warnings and diagnostics, Critical issue, Fit process and quality metrics, Parameters, Plots, Model evaluation summary, Generated report text.
+- Updated exported HTML to use the same compact report section order and content structure as the in-app Report page.
+- Replaced the collapsible fit-process widget inside Report with a compact three-column metric table: parameter, value, and explanation. The table includes quality metrics, solver-process values, and this-session counters.
+- Changed Report parameter rows to use equation-aligned parameter names such as component.parameter so fitted values match the model evaluation summary more directly.
+- Added plots back into the in-app Report body in the same position as the exported HTML.
+- Kept fitting physics, backend APIs, saved-model compatibility, and numerical report data unchanged.
+
+## v1.7.5 — Webpage-style Import and Model pages
+
+- Changed the Import/Data page from a dashboard-style split layout to a normal scrollable webpage flow: Import data first, then Trace selection, Plot review, and Spreadsheet preview.
+- Hid Trace selection, Plot review, and Spreadsheet preview until data is actually loaded, so the blank state focuses only on importing data.
+- Added a fixed maximum content width for Import/Data panels so cards do not stretch across very wide screens.
+- Changed the Model page from a resizable two-column layout to a single webpage-style stack: Model Builder first, then Model preview directly underneath.
+- Removed duplicated section chrome around Model Builder and Model preview; the inner component titles are the only visible titles.
+- Kept the previous v1.7.4 page-restore fix and v1.7.3 user-facing UI declutter intact.
+- Kept fitting physics, backend APIs, saved-model compatibility, and report schemas unchanged.
+
+## v1.7.4 — Restore workflow pages after UI cleanup
+
+- Fixed a v1.7.3 regression where Data, Model, Fitting, and Report pages could render blank after UI decluttering.
+- Restored required `language` props for DataImportWorkspace, ModelWorkflowPage, ReportWorkflowPage, and UserDocumentationPage.
+- Hardened translation helpers to fall back to English if a future caller accidentally omits language.
+- Kept the requested user-facing declutter unchanged: no Check newest version dock action, no External tester mode, no Local release gate, no parameter diagnostic filter controls, and no bottom Fitting action/status bar.
+- Kept fitting physics, backend APIs, saved-model compatibility, and report schemas unchanged.
+
+## v1.7.3 — User-facing UI declutter and redundancy cleanup
+
+- Removed the dock/footer `Check newest version` link from the workflow sidebar so the main user shell stays focused on fitting tasks.
+- Removed the embedded External tester mode from the Start page and deleted its unused component and CSS. External testing guidance remains in documentation rather than the main user UI.
+- Removed the Local release gate summary/details from the user-facing Updates panel; it now only performs read-only public release lookup.
+- Removed internal/debug-style Parameter table controls from the user UI: Restore, Apply bounds, Seed synthetic, global parameter filters, near-bound/weak count strip, and review-diagnostics prompt.
+- Moved the Report action out of the Run/Stop action row and placed it under the fit check/status summary; its color now follows the current check state.
+- Removed the Fitting page mobile/bottom Run fit / Stop fit action bar so the page has one primary fitting-control location.
+- Removed unused release-readiness UI helpers/tests left over from v1.7.1, while retaining non-UI release privacy scanning tests.
+- Removed dead CSS plus obsolete global parameter-filter helpers/tests and synthetic-ground-truth seeding helpers left behind by the removed controls.
+- Updated version metadata, changelog, tested-current notes, validation history, handoff, and delivery audit.
+- Kept fitting physics, backend APIs, saved-model compatibility, report schemas, and dependency hotfixes unchanged.
+
+## v1.7.2 — Frontend dependency install hotfix
+
+- Sanitized `package-lock.json` and `frontend/package-lock.json` so resolved tarball URLs point to the public npm registry instead of an internal sandbox mirror.
+- Pinned the locked `electron-to-chromium` package entry to a known public npm tarball already present in the root lockfile, avoiding the stale `1.5.371` tarball URL that returned 404.
+- Added root and frontend `.npmrc` files to force `https://registry.npmjs.org/` and include devDependencies by default.
+- Added `scripts/frontend_dependency_repair.ps1` to clean frontend dependencies, reinstall with devDependencies, verify Vitest is present, then run frontend tests and build.
+- Kept fitting physics, backend APIs, saved-model compatibility, and report schemas unchanged.
+
+## v1.7.1 — Fulfilled usability and release-readiness consolidation
+
+- Completed the previously partial model/parameter usability work: parameter groups are now split into main path, junction core, parallel/leakage branches, and modifiers; each component header shows read-only Law / Form / Placement metadata.
+- Added per-component diagnostic counts for near-bound and weakly identified parameters, filter count chips, and a component-level "Seed from fit" action that copies fitted values back to that component only without changing topology.
+- Added an embedded External tester mode on the Start page with role-specific guidance for UI testers, research users, and synthetic-data testers plus live workflow step status.
+- Expanded the release update panel into a local release gate: version consistency, release-note privacy scan, backend test record, frontend build/test record, manual browser check record, and portable smoke-test recommendation.
+- Added frontend unit-test coverage for parameter grouping, single-component seed-from-fit, and release readiness gate helpers.
+- Kept fitting physics, backend APIs, saved-model compatibility, report schemas, and numerical fitting logic unchanged.
+
+## v1.7.0 — External tester readiness package
+
+- Added `docs/EXTERNAL_TESTING_GUIDE.md` with separate workflows for UI-only testers, research users with real IV data, and software testers using synthetic data.
+- Added `examples/demo_data/TESTER_WORKFLOWS.md` to define the expected demo-data categories and metadata required for external validation.
+- Linked the external testing guide from the README.
+- Carried forward v1.6.1 plot rendering polish, v1.6.2 lifecycle hardening, v1.6.3 parameter filtering, and v1.6.4 release privacy checks.
+- Kept fitting physics, backend APIs, saved-model compatibility, and report schemas unchanged.
+
+
+## v1.6.4 — Release privacy and reproducibility hardening
+
+- Added release-note privacy scanner helpers for Windows user paths, Unix home paths, and email-address leakage.
+- Added tests for release privacy scanning so public release text can be checked before publishing.
+- Added `docs/RELEASE_PRIVACY_CHECKLIST.md` with explicit release-blocking leakage categories and validation wording rules.
+- Preserved frontend UI behavior, fitting physics, backend APIs, saved-model compatibility, and report schemas from v1.6.3.
+
+
+## v1.6.3 — Parameter table filtering and model usability polish
+
+- Added parameter-table filtering for all/free/fixed/near-bound/weakly identified rows to make complex models easier to inspect.
+- Added pure parameter-row status helpers and tests so filtering logic is independent of UI rendering.
+- Preserved existing component grouping, batch fit/fix toggles, seed-from-fit behavior, fitting physics, backend APIs, and saved-model compatibility.
+
+
+## v1.6.2 — Fitting lifecycle cancellation hardening
+
+- Added fit-lifecycle helpers for deterministic elapsed-time calculation from the active run start timestamp.
+- Hardened manual Stop/Abort handling so the cancelled state records a fresh elapsed time instead of relying on possibly stale React state.
+- Kept run-id stale-result rejection, timeout handling, fitting physics, backend APIs, report schemas, saved-model compatibility, and chart behavior unchanged from v1.6.1.
+
+
+## v1.6.1 — Plot rendering and parameter table polish
+
+- Changed `SimpleChart` to use real measured container width/height as its SVG coordinate system instead of stretching a fixed viewBox, preventing distorted text, legends, axes, and traces.
+- Added optional robust X-domain scaling for ordinary I-V/log plots so isolated outlier voltages do not compress the main data region by default.
+- Changed residual plots to use full Y-range scaling and added an optional zero-reference line for signed residual diagnostics.
+- Moved the clipped-points badge and info popover away from the Reset button and made the label clearer.
+- Normalized scientific notation in parameter displays and stabilized numeric table alignment with tabular figures.
+- Kept fitting physics, backend APIs, report schemas, saved-model compatibility, Manual behavior, and release-manager behavior unchanged.
+
 
 ## v1.6.0 — Chart interaction overhaul and Data page layout refactor
 
@@ -426,27 +1000,6 @@ Tests: `PYTHONPATH=backend pytest -q backend/tests/test_fit_process_diagnostics.
 - Updated manual/reporting transparency text to explain that weighted reduced χ² is a residual-scale diagnostic unless weights represent calibrated measurement uncertainty.
 - Updated Markdown reports to include fit-process diagnostics.
 
-# Changelog
-
-## v1.5.43 — Fitting and Data responsive polish
-
-- Stabilized Fitting page density at high browser/app zoom by prioritizing plot height, compacting Fit setup actions, and reducing parameter-table overflow pressure.
-- Changed the paired plot default split to favor plots and kept Plots/Parameters manually resizable.
-- Moved chart controls into a compact chart-header row so they no longer overlay legends or data.
-- Simplified Parameters toolbar labels and truncated long component summaries while preserving hover details.
-- Reworked the Data page into a source-tab workflow with upload / paste / sample options, drag-and-drop upload, structured trace metadata, and a clearer Go to Fitting action after data load.
-- Kept fitting physics, backend APIs, report schemas, saved-model compatibility, Manual behavior, and release-manager behavior unchanged.
-
-# v1.5.37 - Report diagnostics and release-manager workflow
-
-- Improved Report tab invalid-fit UX: invalid fits now open as diagnostic reports with a dominant failure summary, grouped root-cause diagnostics, suggested recovery actions, diagnostic-only parameter messaging, and diagnostic export labels.
-- Clarified model evaluation wording and moved technical equations lower/collapsed for invalid-fit states.
-- Fixed Parameters table height/scroll containment regression after stylesheet modularization.
-- Further simplified the User Manual page into a compact left-navigation reader with independent content scrolling and an Updates panel.
-- Added a read-only in-app GitHub release checker; startup and fitting are never blocked by update checks.
-- Added developer release-page audit and optional maintainer release updater scripts with dry-run mode and privacy/security checks.
-- Documented release-manager usage and synchronized release-candidate notes.
-
 ## 1.4.37 - Data bounds detail visibility
 
 - Changed the Parameters information column label to `Information`.
@@ -814,3 +1367,39 @@ Tests: `cd backend && pytest tests/test_bounds_suggestion.py`
 ## Earlier alpha history
 
 Earlier v1.0-v1.3 alpha changes are summarized in `docs/VALIDATION_HISTORY.md`. The old per-version tested/handoff files were removed in v1.4.9 to keep the repository readable.
+
+
+## 2026-05-31 — Model Builder ELK routing alignment hotfix
+
+- Replaced smooth-step circuit-wire fallback rendering with straight/custom routed paths.
+- Preserved ELK edge section points and passed them into React Flow edge data.
+- Stopped giving ELK tall fake junction obstacles; junctions are small layout nodes while the rendered rail spans path handles.
+- Stopped overriding ELK component y positions with hand-coded `rowY(pathIndex)` values except as fallback.
+- Verified frontend tests and production build after the hotfix.
+
+
+## 2026-06-01 — Model Builder CSS cleanup
+
+- Removed the late-loaded `frontend/src/styles/final-overrides.css` override pile from the source package.
+- Removed the `final-overrides.css` import from `frontend/src/style.css`.
+- Consolidated Model Builder component-inspector sizing, overflow, role, equation, preview, and custom-law field styles into one canonical section in `model-builder.css`.
+- Replaced conflicting repeated editor widths with a single `--xy-canvas-editor-width` CSS variable.
+- Removed the `xy-canvas-component-role` `max-height: 44px` clipping rule so long component-role descriptions and custom-law text are not silently cut off.
+- Added `MODEL_BUILDER_CSS_CLEANUP_AUDIT.md` with static verification and future maintenance rules.
+
+## Model Builder visual polish hotfix
+
+- Reduced direct graph visual noise by making serial insertion `+` controls smaller and quieter by default.
+- Replaced the floating lower parallel add control with a semantic `+ Add parallel path` / `+ 添加并联路径` pill.
+- Forced merge-junction to GND terminal wire to use explicit horizontal route points.
+- Matched layout constants to rendered component and terminal sizes to reduce small alignment drift.
+- Lightened junction rails, branch tap dots, wire weight, component cards, and selected glows.
+- Added `MODEL_BUILDER_VISUAL_POLISH_AUDIT.md`.
+
+
+## 2026-06-01 — Model Builder V2 zoom/layout hotfix
+
+- Contained V2 in the model workflow viewport at high app zoom.
+- Added responsive V2 layout rules and internal preview scrolling.
+- Added React Flow ResizeObserver refit for app zoom/container resize.
+- Historical one-off V2 hotfix notes were later removed when V3 became the only active frontend Model Builder.

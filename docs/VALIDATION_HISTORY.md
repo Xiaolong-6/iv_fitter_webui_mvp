@@ -1,14 +1,191 @@
+
+## v1.8.29 validation
+
+- `npm --prefix frontend test -- --run`: passed, 14 files / 113 tests.
+- `npm --prefix frontend run build`: passed; existing non-blocking Vite warnings remain.
+- `PYTHONPATH=backend pytest -q backend/tests`: passed.
+- Backend `py_compile` smoke check: passed.
+
+## v1.8.25
+
+- Frontend UI cleanup for Start Help positioning, Report floating Next panel, upload fallback, and user-facing report-ready messaging.
+- Validation run:
+  - `npm --prefix frontend test -- --run` passed: 14 files / 111 tests.
+  - `npm --prefix frontend run build` passed with existing Vite warnings.
+  - `PYTHONPATH=backend pytest -q backend/tests` passed.
+  - Backend `py_compile` passed for changed/critical modules.
+
+## v1.8.24
+
+- Emergency UI hotfix after screenshot review: Synthetic IV trace is rendered through a document-level modal portal.
+- Removed math rendering from the Model preview summary header to prevent KaTeX fragments from overflowing into the canvas toolbar.
+- Fixed escaped LaTeX strings in user-facing formula cards.
+- Recentered Vext, main-path component cards, and Vi along one horizontal main-path center line.
+- Subdued branch junction dots so they do not read as black corner artifacts around branch models.
+- Frontend Vitest, frontend build, backend pytest, and selected backend py_compile passed.
+
+## v1.8.21
+
+Model Builder layout polish on top of v1.8.20:
+
+- `+ Main` and `+ Branch` are semantic local action nodes placed over their corresponding circuit segments.
+- Toolbar is reduced to global model/preset actions plus an Advanced menu for debug-only tools.
+- Preset dirty state is visible and reset/save wording now reflects model-preset semantics.
+- Equivalent-circuit report SVG gains junction dots matching the canvas semantics.
+- Validation run: frontend Vitest, frontend production build, backend pytest, and selected backend py_compile passed in this package handoff.
+
+## v1.8.20
+
+| Area | Result | Notes |
+|---|---|---|
+| Model Builder visual fix | Passed | Neutral wires, hidden handles, toolbar add controls, readable node cards, and matching HTML export SVG implemented |
+| Frontend Vitest | Passed | `npm --prefix frontend test -- --run`: 14 files / 110 tests |
+| Frontend build | Passed | `npm --prefix frontend run build`; existing Vite module-directive and chunk-size warnings only |
+| Backend pytest | Passed | `PYTHONPATH=backend pytest -q backend/tests` |
+
+## v1.8.19
+
+| Area | Result | Notes |
+|---|---|---|
+| Backend pytest | Passed | `PYTHONPATH=backend pytest -q backend/tests` |
+| Backend compile | Passed | API, custom expression, fitting engine, and importer modules compiled |
+| Frontend Vitest | Passed | `npm --prefix frontend test -- --run`: 14 files / 108 tests |
+| Frontend build | Passed | `npm --prefix frontend run build`; existing Vite chunk-size warning only |
+| Audit closure | Passed | SEC-1/2, ARCH-1/2/3/4, PERF-1/2, QUAL-1..7 addressed or already fixed |
+| Model Builder UI hotfix | Passed | Debug algorithm control moved into canvas toolbar; no normal-flow row above canvas |
+
+## v1.8.18
+- Audit-hardening and stabilization release on top of Branch20260528 / v1.8.17.
+- Frontend Vitest passed 14 files / 107 tests; frontend build passed; backend pytest passed.
+
+## v1.8.17
+- Backend pytest and compileall were run in the delivery environment.
+- Frontend build/test should be run locally after npm ci because this container does not have a reliable frontend node_modules installation.
+- Focus: full-canvas Model Builder workspace, selected component editor panel, stable edge-add selection, and preview drawer scrolling.
+
+## v1.8.17
+- Refactored Model Builder into modular React Flow components and helpers.
+- Removed callback functions from React Flow node data; actions now come from model-builder context.
+- Added popover dismissal and safer preset inline dialogs.
+- Backend regression suite passed: 125 tests.
+
+## v1.8.11
+- Modernized Model preview into collapsed summary + compact cards.
+- Unified cross-page width/zoom rules with final CSS overrides.
+- Moved selected component detail to bottom mini-inspector to avoid graph overlap.
+
+## v1.8.4
+
+- Compact in-canvas Model Builder cleanup.
+- Report reuses read-only equivalent-circuit view.
+- Unified workflow page width and chart reset placement.
+
+## v1.8.3
+
+- Reworked Model Builder controls/details layout to avoid covering xyflow nodes and edges.
+- Verified code-level wiring generation remains deterministic from ModelSpec: Vext to main path to Vi; Vi to each branch to V=0.
+
+## v1.8.2
+
+- Moved all Model Builder controls and selected-component details into the xyflow canvas.
+- Kept fixed-topology wiring and ModelSpec compatibility.
+- Preserved the existing preset, custom-preset, add/remove, parameter, fit/bounds, polarity, custom expression, and advanced detail functions.
+
+## v1.8.1
+
+- Replaced the custom Model Builder canvas with a minimal `@xyflow/react` fixed-topology graph.
+- Kept ModelSpec and backend fitting unchanged.
+- Disabled drag/drop and free edge editing.
+- Verified adaptive node/edge rebuilding for added/removed model components.
+- Updated Windows setup/start scripts to install/check/run frontend dependencies from `frontend/package.json`.
+- Frontend build passed; Vitest passed 12 files / 50 tests; backend pytest passed 125 tests; backend compileall passed.
+
+## v1.7.23
+- Polished the v1.7.22 interactive Model Builder schematic layout after screenshot review.
+- Kept fixed topology and no drag-and-drop.
+- Improved terminal labels, canvas width, internal row overflow, component markers, and inspector proportions.
+
 # Validation history
 
-## v1.5.36
+## v1.8.23
 
-Structural-debt cleanup release candidate. Full backend pytest, backend compileall, frontend Vitest, and frontend production build passed. See `docs/TESTED_CURRENT.md`.
+- Global formula rendering now uses KaTeX through react-katex instead of the previous lightweight string renderer.
+- Model Builder bottom preview summary formulas are rendered as math, not plain text.
+- Equation preview now begins with a user-facing global I–V model structure card before component-level formulas.
+- Chinese/English formula explanations are localized and long formulas get horizontal overflow handling.
+- Frontend Vitest, frontend build, backend pytest, and selected backend py_compile passed.
 
-This document replaces the old collection of many per-version `TESTED_*` files. It keeps the useful history without forcing future readers to open dozens of stale documents.
+
+## v1.7.22
+
+- Replaced Model Builder list editing with an interactive equivalent-circuit canvas and fixed topology zones.
+- Preserved the backend ModelSpec schema and fitting behavior.
+- Added component-card selection and right-side inspector editing for names, polarity, parameters, fit toggles, and bounds.
+- Added frontend tests for rendering, inspector selection, preset replacement, and parameter roundtrip.
+- Frontend build/Vitest passed; backend pytest/compileall passed.
+
+
+## v1.7.21
+
+- Fixed Import trace-control vertical alignment after compact-row conversion.
+- Reworked Spreadsheet preview to compare all traces horizontally rather than stacking trace groups vertically.
+
+## v1.7.20
+- Moved update checking out of the Manual page and into startup/refresh flow.
+- Added dock NEW release badge behavior plus a version-click simulation shortcut for testing.
+- Preserved one-line loaded import summary layout with inline source and actions.
+
+## v1.7.19
+
+- Replaced Manual section directory with a slim floating vertical section rail using shaped nodes and hover/focus labels.
+- Preserved single-page Manual scrolling; no horizontal tabs and no independent two-pane scroll containers.
+- Changed Spreadsheet preview trace selector from filtering to quick group location while keeping all traces visible.
+- Removed obsolete archived audit markdown files from the release package.
+
+
+This document summarizes release-level validation. Use `docs/TESTED_CURRENT.md` for the exact current commands and results.
 
 ## Current validation record
 
-Use `docs/TESTED_CURRENT.md` for the exact commands and result status of the current package.
+### v1.7.12 — Version consistency self-check
+
+- Frontend production build passed: `tsc -p frontend/tsconfig.json && vite build`.
+- Frontend Vitest passed: 11 files / 45 tests.
+- Backend pytest passed: 122 tests.
+- Backend compileall passed.
+- Fixed stale README current-version text, synchronized package metadata to v1.7.12, and removed a duplicate embedded changelog section.
+- No fitting physics, backend API, saved-model schema, UI behavior, or report numerical logic changed.
+
+### v1.7.11 — Import-page crash fix and cleanup audit
+
+- Frontend dependency install passed in sandbox: 153 packages installed, 0 vulnerabilities reported by npm audit.
+- Frontend production build passed: `tsc && vite build`.
+- Frontend Vitest passed: 11 files / 45 tests.
+- Backend pytest passed: 122 tests.
+- Backend compileall passed.
+- Fixed the Data Import blank-page regression after loading data.
+- Cleaned stale handoff/import docs and removed obsolete archived v1.5 audit markdown files from the active release package.
+
+## Recent validation summary
+
+| Version | Main validation focus | Result summary |
+|---|---|---|
+| v1.7.18 | Manual single continuous webpage scroll root | Frontend Vitest/build passed; backend pytest/compileall passed. |
+| v1.7.17 | Manual title/content containment and body-owned scroll root | Frontend Vitest/build passed; backend pytest/compileall passed. |
+| v1.7.16 | Import page density, grouped spreadsheet preview, success toast, Manual scroll/title fix | Frontend install/Vitest/build passed; backend pytest/compileall passed. |
+| v1.7.15 | Manual reader navigation and scroll stabilization | Backend pytest/compileall passed in this container; frontend build/test should be rerun locally before release if npm dependencies are unavailable. |
+| v1.7.14 | Start-page workflow-status cards and Help affordance polish | Backend pytest/compileall passed in this container; frontend build/test should be rerun locally before release if npm dependencies are unavailable. |
+| v1.7.13 | Audit hardening, CORS tightening, junction-solver robustness, Manual portrait Sections fix | Backend pytest/compileall passed in this container; frontend build/test should be rerun locally before release if npm dependencies are unavailable. |
+| v1.7.12 | Version consistency self-check | Frontend build/Vitest passed; backend pytest/compileall passed. |
+| v1.7.11 | Data Import crash fix, frontend build/test restoration, doc cleanup | Frontend install/build/Vitest passed; backend pytest/compileall passed. |
+| v1.7.10 | Import unit metadata helper hotfix | Backend pytest/compileall passed; frontend not yet fully validated before v1.7.11. |
+| v1.7.9 | Workflow polish, Fit/Manual scrolling, compact import controls | Backend pytest/compileall passed; later frontend build exposed additional issues fixed in v1.7.11. |
+| v1.7.8 | Single-column workflow pages and floating Report exports | Backend pytest/compileall passed. |
+| v1.7.6 | Report/export layout alignment | Backend pytest/compileall passed. |
+| v1.7.5 | Webpage-style Import and Model layout | Backend pytest/compileall passed. |
+| v1.7.4 | Blank-page regression hotfix for missing language props | Backend pytest/compileall passed. |
+| v1.7.3 | User-facing UI declutter | Backend pytest/compileall passed and static cleanup scan performed. |
+| v1.7.1 | Consolidated partial feature work | Backend pytest/compileall passed; later UI cleanup removed some user-facing internal controls. |
 
 ## Historical summary
 
@@ -16,24 +193,17 @@ Use `docs/TESTED_CURRENT.md` for the exact commands and result status of the cur
 |---|---|---|
 | 1.0.7–1.1.3 | Early app setup, backend smoke checks, Windows script validation | Historical scaffold. Details are superseded by current scripts and `HUMAN_DEVELOPER_SETUP.md`. |
 | 1.3.0–1.3.10 | Web UI workflow, plotting, model builder, equation preview, selected trace behavior | Historical alpha stabilization. |
-| 1.3.11 | Audit-readiness cleanup | README/rules/docs consistency and package hygiene were improved. |
-| 1.3.12 | Audit-fix regression pass | Solver failure handling, error boundaries, import warnings, and version injection were tested. |
-| 1.3.13 | Model Builder / hover transparency | Topology feedback moved into Model Builder; help/hover behavior was unified. |
-| 1.3.14 | Data-unit safety and backend import quality | Data preview units became display-only; import quality diagnostics reached the UI. |
-| 1.3.15 | Compact equivalent-circuit layout | Parallel branches were folded below the main path for narrow layouts. |
-| 1.3.16 | Rendered manual formulas | User manual and model preview shared a lightweight math renderer. |
-| 1.4.0 | Photocurrent / light-response model laws | Added constant photocurrent, voltage-dependent photocurrent, photoconductive branch, and photo-modulated main path. |
-| 1.4.1–1.4.2 | LAN phone/tablet testing and fetch diagnostics | Added LAN launch helper and backend-health troubleshooting for `Failed to fetch`. |
-| 1.4.3 | HappyMeasure CSV import compatibility | Added HappyMeasure single/wide/long CSV v2 handling, including current-source conversion. |
-| 1.4.4 | Mobile portrait layout | Improved narrow-screen flow, sticky mobile run action, compact voltage range controls, and backend connection banner. |
-| 1.4.5 | Run-state feedback, Stop action, zoom limit | Added visible fitting status, Stop behavior, and expanded UI zoom limit. |
-| 1.4.6–1.4.7 | User-facing Function Guide rewrite | Moved internal schema wording into Advanced details and added a regression check for default Function Guide wording. |
-| 1.4.8 | Documentation cleanup | Removed stale per-version handoff/tested files and consolidated documentation entry points. |
-| 1.5.18 | Bias-dependent current branch rename | Added canonical neutral naming and legacy alias coverage for the former voltage-dependent photocurrent component. |
-| 1.5.19 | Workflow-centered UI shell | Replaced the Workspace-centered shell with Start here, Data, Model, Fitting, Report, and Help pages while preserving fitting behavior. |
+| 1.3.11–1.3.16 | Audit readiness, import warnings, data-unit safety, mobile layout, manual formulas | Superseded by current webpage-style workflow. |
+| 1.4.x | Photocurrent laws, LAN testing, HappyMeasure CSV import, mobile run-state feedback, user-facing Function Guide | Historical feature expansion. |
+| 1.5.x | Workflow-centered shell, release-manager notes, fitting/data responsive polish | Old v1.5 audit markdown files are intentionally excluded from the active release package; use version-control history for historical snapshots. |
 
 ## Policy for future validation docs
 
 - Keep one current validation note: `docs/TESTED_CURRENT.md`.
-- Append short historical summaries here after release-level changes.
-- Do not add `TESTED_1_x_y.md` for every internal handoff package unless the user explicitly asks for a version-specific external audit artifact.
+- Append short release-level summaries here.
+- Do not add one-off `TESTED_1_x_y.md` files for every internal handoff package unless the user explicitly asks for an external audit artifact.
+
+
+## v1.8.11 topology-first Model Builder cleanup
+- Backend pytest/compileall should remain unchanged; frontend changes are xyflow topology/CSS/inspector updates.
+- Validate visually that Vi connects independently to each branch and each branch connects independently to V=0.

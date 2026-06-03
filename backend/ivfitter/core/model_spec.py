@@ -251,6 +251,7 @@ class FitResult(BaseModel):
     model: ModelSpec
     config: FitConfig
     parameters: dict[str, ParameterResult]
+    initial_values: dict[str, float] | None = None
     metrics: dict[str, float]
     warnings: list[FitWarning]
     fit_diagnostics: FitDiagnosticsSummary | None = None

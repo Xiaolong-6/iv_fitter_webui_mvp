@@ -22,13 +22,17 @@ type SimpleChartProps = {
   series: Series[];
   yLabel?: string;
   robustScale?: boolean;
+  robustXScale?: boolean;
+  showZeroLine?: boolean;
   annotation?: string | null;
   regions?: { x0: number; x1: number; label: string }[];
 };
 
 const VB_W = 520;
 const VB_H = 248;
-const MARGIN = { left: 58, right: 14, top: 30, bottom: 38 };
+const MARGIN = { left: 64, right: 20, top: 34, bottom: 42 };
+const MIN_CHART_W = 320;
+const MIN_CHART_H = 210;
 
 function finitePairs(series: Series[]) {
   const xs: number[] = [];
@@ -85,12 +89,12 @@ function ResetIcon() {
   </svg>;
 }
 
-export function SimpleChart({ title, series, yLabel, robustScale = true, annotation, regions = [] }: SimpleChartProps) {
+export function SimpleChart({ title, series, yLabel, robustScale = true, robustXScale = false, showZeroLine = false, annotation, regions = [] }: SimpleChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState<{ w: number; h: number }>({ w: VB_W, h: VB_H });
   const [hover, setHover] = useState<HoverPoint | null>(null);
   const [showClipInfo, setShowClipInfo] = useState(false);
-  const baseX = useMemo(() => span(finitePairs(series).xs, [-1, 1], false), [series]);
+  const baseX = useMemo(() => span(finitePairs(series).xs, [-1, 1], robustXScale), [series, robustXScale]);
   const baseY = useMemo(() => span(finitePairs(series).ys, [-1, 1], robustScale), [series, robustScale]);
   const [xView, setXView] = useState<[number, number] | null>(null);
   const [yView, setYView] = useState<[number, number] | null>(null);
@@ -113,12 +117,20 @@ export function SimpleChart({ title, series, yLabel, robustScale = true, annotat
   }, []);
 
   const { xs, ys } = useMemo(() => finitePairs(series), [series]);
-  const plotW = VB_W - MARGIN.left - MARGIN.right;
-  const plotH = VB_H - MARGIN.top - MARGIN.bottom;
+  const chartW = Math.max(MIN_CHART_W, Math.round(containerSize.w || VB_W));
+  const chartH = Math.max(MIN_CHART_H, Math.round(containerSize.h || VB_H));
+  const margin = {
+    ...MARGIN,
+    left: chartW < 420 ? 54 : MARGIN.left,
+    right: chartW < 420 ? 16 : MARGIN.right,
+    bottom: chartH < 230 ? 34 : MARGIN.bottom,
+  };
+  const plotW = Math.max(40, chartW - margin.left - margin.right);
+  const plotH = Math.max(40, chartH - margin.top - margin.bottom);
 
-  const sx = useCallback((x: number) => MARGIN.left + ((x - xmin) / (xmax - xmin)) * plotW, [xmin, xmax, plotW]);
-  const syRaw = useCallback((y: number) => MARGIN.top + plotH - ((y - ymin) / (ymax - ymin)) * plotH, [ymin, ymax, plotH]);
-  const sy = useCallback((y: number) => clip(syRaw(y), MARGIN.top, MARGIN.top + plotH), [syRaw, plotH]);
+  const sx = useCallback((x: number) => margin.left + ((x - xmin) / (xmax - xmin)) * plotW, [xmin, xmax, plotW]);
+  const syRaw = useCallback((y: number) => margin.top + plotH - ((y - ymin) / (ymax - ymin)) * plotH, [ymin, ymax, plotH]);
+  const sy = useCallback((y: number) => clip(syRaw(y), margin.top, margin.top + plotH), [syRaw, plotH]);
   const inYRange = useCallback((y: number) => y >= ymin && y <= ymax, [ymin, ymax]);
   const inXRange = useCallback((x: number) => x >= xmin && x <= xmax, [xmin, xmax]);
   const ticks = [0, 0.25, 0.5, 0.75, 1];
@@ -145,8 +157,8 @@ export function SimpleChart({ title, series, yLabel, robustScale = true, annotat
     if (dragging && dragRef.current) {
       const dx = e.clientX - dragRef.current.startX;
       const dy = e.clientY - dragRef.current.startY;
-      const dataDx = -(dx / containerSize.w) * (dragRef.current.startViewX[1] - dragRef.current.startViewX[0]);
-      const dataDy = (dy / containerSize.h) * (dragRef.current.startViewY[1] - dragRef.current.startViewY[0]);
+      const dataDx = -(dx / plotW) * (dragRef.current.startViewX[1] - dragRef.current.startViewX[0]);
+      const dataDy = (dy / plotH) * (dragRef.current.startViewY[1] - dragRef.current.startViewY[0]);
       setXView([dragRef.current.startViewX[0] + dataDx, dragRef.current.startViewX[1] + dataDx]);
       setYView([dragRef.current.startViewY[0] + dataDy, dragRef.current.startViewY[1] + dataDy]);
     } else {
@@ -164,8 +176,8 @@ export function SimpleChart({ title, series, yLabel, robustScale = true, annotat
 
   function nearestPoint(clientX: number, clientY: number, svg: SVGSVGElement): HoverPoint | null {
     const rect = svg.getBoundingClientRect();
-    const mx = ((clientX - rect.left) / rect.width) * VB_W;
-    const my = ((clientY - rect.top) / rect.height) * VB_H;
+    const mx = ((clientX - rect.left) / rect.width) * chartW;
+    const my = ((clientY - rect.top) / rect.height) * chartH;
     let best: HoverPoint | null = null;
     let bestD = Infinity;
     for (const s of series) {
@@ -183,10 +195,10 @@ export function SimpleChart({ title, series, yLabel, robustScale = true, annotat
   function wheelZoom(event: ReactWheelEvent<SVGSVGElement>) {
     event.preventDefault();
     const rect = event.currentTarget.getBoundingClientRect();
-    const mouseX = ((event.clientX - rect.left) / rect.width) * VB_W;
-    const mouseY = ((event.clientY - rect.top) / rect.height) * VB_H;
-    const cx = xmin + ((mouseX - MARGIN.left) / plotW) * (xmax - xmin);
-    const cy = ymax - ((mouseY - MARGIN.top) / plotH) * (ymax - ymin);
+    const mouseX = ((event.clientX - rect.left) / rect.width) * chartW;
+    const mouseY = ((event.clientY - rect.top) / rect.height) * chartH;
+    const cx = xmin + ((mouseX - margin.left) / plotW) * (xmax - xmin);
+    const cy = ymax - ((mouseY - margin.top) / plotH) * (ymax - ymin);
     const factor = event.deltaY > 0 ? 1.18 : 0.84;
 
     if (event.ctrlKey) {
@@ -210,8 +222,8 @@ export function SimpleChart({ title, series, yLabel, robustScale = true, annotat
   const clippedCount = ys.filter((y, i) => Number.isFinite(y) && (!inYRange(y) || !inXRange(xs[i]))).length;
   const tooltipW = 244;
   const tooltipH = 54;
-  const tooltipX = hover ? clip(hover.px + 12, MARGIN.left + 4, VB_W - tooltipW - 8) : 0;
-  const tooltipY = hover ? clip(hover.py - tooltipH - 8, MARGIN.top + 4, VB_H - tooltipH - MARGIN.bottom - 4) : 0;
+  const tooltipX = hover ? clip(hover.px + 12, margin.left + 4, chartW - tooltipW - 8) : 0;
+  const tooltipY = hover ? clip(hover.py - tooltipH - 8, margin.top + 4, chartH - tooltipH - margin.bottom - 4) : 0;
 
   return <div className="simple-chart" ref={containerRef}>
     <div className="chart-toolbar compact-chart-toolbar" aria-label={`${title} chart controls`}>
@@ -222,10 +234,10 @@ export function SimpleChart({ title, series, yLabel, robustScale = true, annotat
       </div>
     </div>
     <svg
-      width={containerSize.w}
-      height={containerSize.h}
-      viewBox={`0 0 ${VB_W} ${VB_H}`}
-      preserveAspectRatio="none"
+      width="100%"
+      height="100%"
+      viewBox={`0 0 ${chartW} ${chartH}`}
+      preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-label={title}
       style={{ cursor: dragging ? "grabbing" : "crosshair" }}
@@ -239,43 +251,44 @@ export function SimpleChart({ title, series, yLabel, robustScale = true, annotat
     >
       <title>{title}</title>
       <desc>{yLabel ? `${title}, ${yLabel}` : title}</desc>
-      <rect x={0} y={0} width={VB_W} height={VB_H} className="chart-bg" />
-      <text x={MARGIN.left} y={22} className="chart-title">{title}</text>
+      <rect x={0} y={0} width={chartW} height={chartH} className="chart-bg" />
+      <text x={margin.left} y={22} className="chart-title">{title}</text>
       {clippedCount > 0 && <g className="chart-clip-badge" onClick={() => setShowClipInfo((v) => !v)} role="button" aria-label={`${clippedCount} clipped points`}>
-        <rect x={VB_W - MARGIN.right - 78} y={8} width={74} height={22} rx={11} />
-        <text x={VB_W - MARGIN.right - 41} y={23} textAnchor="middle">clipped {clippedCount}</text>
+        <rect x={chartW - margin.right - 110} y={36} width={98} height={22} rx={11} />
+        <text x={chartW - margin.right - 61} y={51} textAnchor="middle">{clippedCount} clipped</text>
         <title>{clippedCount} point(s) are outside the current robust scale or zoom window. Click to show the note.</title>
       </g>}
 
       {ticks.map((t) => {
-        const x = MARGIN.left + t * plotW;
-        const y = MARGIN.top + t * plotH;
+        const x = margin.left + t * plotW;
+        const y = margin.top + t * plotH;
         const xv = xmin + t * (xmax - xmin);
         const yv = ymax - t * (ymax - ymin);
         return <g key={`grid-${t}`}>
-          <line x1={x} x2={x} y1={MARGIN.top} y2={MARGIN.top + plotH} className="chart-grid" />
-          <line x1={MARGIN.left} x2={MARGIN.left + plotW} y1={y} y2={y} className="chart-grid" />
-          <text x={x} y={VB_H - 18} textAnchor="middle" className="chart-tick">{fmtEng(xv, 3)}</text>
-          <text x={MARGIN.left - 8} y={y + 4} textAnchor="end" className="chart-tick">{fmtEng(yv, 3)}</text>
+          <line x1={x} x2={x} y1={margin.top} y2={margin.top + plotH} className="chart-grid" />
+          <line x1={margin.left} x2={margin.left + plotW} y1={y} y2={y} className="chart-grid" />
+          <text x={x} y={chartH - 18} textAnchor="middle" className="chart-tick">{fmtEng(xv, 3)}</text>
+          <text x={margin.left - 8} y={y + 4} textAnchor="end" className="chart-tick">{fmtEng(yv, 3)}</text>
         </g>;
       })}
 
-      <line x1={MARGIN.left} x2={MARGIN.left + plotW} y1={MARGIN.top + plotH} y2={MARGIN.top + plotH} className="chart-axis" />
-      <line x1={MARGIN.left} x2={MARGIN.left} y1={MARGIN.top} y2={MARGIN.top + plotH} className="chart-axis" />
-      {yLabel && <text x={16} y={MARGIN.top + plotH / 2} transform={`rotate(-90 16 ${MARGIN.top + plotH / 2})`} className="chart-label">{yLabel}</text>}
+      <line x1={margin.left} x2={margin.left + plotW} y1={margin.top + plotH} y2={margin.top + plotH} className="chart-axis" />
+      <line x1={margin.left} x2={margin.left} y1={margin.top} y2={margin.top + plotH} className="chart-axis" />
+      {showZeroLine && ymin < 0 && ymax > 0 && <line x1={margin.left} x2={margin.left + plotW} y1={sy(0)} y2={sy(0)} className="chart-zero-line" />}
+      {yLabel && <text x={16} y={margin.top + plotH / 2} transform={`rotate(-90 16 ${margin.top + plotH / 2})`} className="chart-label">{yLabel}</text>}
       {regions.map((region) => {
-        const x0 = clip(sx(region.x0), MARGIN.left, MARGIN.left + plotW);
-        const x1 = clip(sx(region.x1), MARGIN.left, MARGIN.left + plotW);
+        const x0 = clip(sx(region.x0), margin.left, margin.left + plotW);
+        const x1 = clip(sx(region.x1), margin.left, margin.left + plotW);
         const w = Math.max(2, Math.abs(x1 - x0));
         return <g className="chart-mismatch-region" key={`${region.x0}-${region.x1}-${region.label}`}>
-          <rect x={Math.min(x0, x1)} y={MARGIN.top} width={w} height={plotH} />
-          {w > 54 ? <text x={Math.min(x0, x1) + 6} y={MARGIN.top + 16}>{region.label}</text> : null}
+          <rect x={Math.min(x0, x1)} y={margin.top} width={w} height={plotH} />
+          {w > 54 ? <text x={Math.min(x0, x1) + 6} y={margin.top + 16}>{region.label}</text> : null}
         </g>;
       })}
       {annotation && <g className="chart-annotation">
-        <rect x={MARGIN.left + 12} y={MARGIN.top + 12} width={Math.min(360, plotW - 24)} height={46} rx={8} />
-        <text x={MARGIN.left + 24} y={MARGIN.top + 31}>{annotation.slice(0, 86)}</text>
-        {annotation.length > 86 ? <text x={MARGIN.left + 24} y={MARGIN.top + 47}>{annotation.slice(86, 158)}</text> : null}
+        <rect x={margin.left + 12} y={margin.top + 12} width={Math.min(360, plotW - 24)} height={46} rx={8} />
+        <text x={margin.left + 24} y={margin.top + 31}>{annotation.slice(0, 86)}</text>
+        {annotation.length > 86 ? <text x={margin.left + 24} y={margin.top + 47}>{annotation.slice(86, 158)}</text> : null}
       </g>}
 
       {series.map((s, idx) => {
@@ -289,7 +302,7 @@ export function SimpleChart({ title, series, yLabel, robustScale = true, annotat
         </g>;
       })}
 
-      <g transform={`translate(${MARGIN.left + 8}, ${MARGIN.top + 10})`}>
+      <g transform={`translate(${margin.left + 8}, ${margin.top + 10})`}>
         {series.map((s, idx) => <g key={s.label} transform={`translate(0, ${idx * 16})`}>
           <rect width={10} height={10} className={idx === 0 ? "chart-series-a-fill" : "chart-series-b-fill"} />
           <text x={16} y={9} className="chart-legend">{s.label}</text>
@@ -297,7 +310,7 @@ export function SimpleChart({ title, series, yLabel, robustScale = true, annotat
       </g>
 
       {hover && <g className="chart-hover" aria-live="polite">
-        <line x1={hover.px} x2={hover.px} y1={MARGIN.top} y2={MARGIN.top + plotH} />
+        <line x1={hover.px} x2={hover.px} y1={margin.top} y2={margin.top + plotH} />
         <circle cx={hover.px} cy={hover.py} r={4.5} />
         <rect x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} rx={7} />
         <text x={tooltipX + 10} y={tooltipY + 16}>{hover.label}</text>
@@ -305,9 +318,9 @@ export function SimpleChart({ title, series, yLabel, robustScale = true, annotat
         <text x={tooltipX + 10} y={tooltipY + 47}>Y = {fmtEng(hover.y, 6)}</text>
       </g>}
       {showClipInfo && <g className="chart-clip-info">
-        <rect x={VB_W - MARGIN.right - 246} y={34} width={238} height={42} rx={8} />
-        <text x={VB_W - MARGIN.right - 236} y={52}>{clippedCount} point(s) outside visible scale.</text>
-        <text x={VB_W - MARGIN.right - 236} y={68}>Use reset or inspect anomalies.</text>
+        <rect x={chartW - margin.right - 258} y={64} width={250} height={42} rx={8} />
+        <text x={chartW - margin.right - 248} y={82}>{clippedCount} point(s) outside visible scale.</text>
+        <text x={chartW - margin.right - 248} y={98}>Reset view or inspect anomalies.</text>
       </g>}
     </svg>
   </div>;

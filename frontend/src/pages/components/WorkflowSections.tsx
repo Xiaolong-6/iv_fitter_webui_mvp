@@ -1,4 +1,4 @@
-import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import type {
   EquationSummary,
   FitConfig,
@@ -7,7 +7,6 @@ import type {
   ModelSpec,
   TraceData,
 } from "../../model/types";
-import type { DataBoundsApplicationReport } from "../../model/boundsSuggestion";
 import type { AppView } from "../../components/WorkflowSidebar";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { ModelBuilder } from "../../components/ModelBuilder";
@@ -56,6 +55,7 @@ export function ModelWorkflowPage({
   leftPct,
   onResizeStart,
   syntheticTool,
+  onGoToFitting,
 }: {
   model: ModelSpec;
   setModel: (model: ModelSpec) => void;
@@ -67,43 +67,33 @@ export function ModelWorkflowPage({
   leftPct: number;
   onResizeStart: (event: ReactPointerEvent<HTMLDivElement>) => void;
   syntheticTool?: ReactNode;
+  onGoToFitting?: () => void;
 }) {
+  void leftPct;
+  void onResizeStart;
   return (
-    <section className="workflow-page model-page">
-      <div
-        className="workflow-two-column resizable-workflow-grid"
-        style={{
-          gridTemplateColumns: `minmax(320px, ${leftPct}fr) 8px minmax(420px, ${100 - leftPct}fr)`,
-        }}
-      >
-        <PageSection title={t(language, "modelBuilder")} action={syntheticTool}>
-          <ErrorBoundary label="Model builder">
-            <ModelBuilder
-              model={model}
-              registry={registry}
-              onChange={setModel}
-              language={language}
-              disabled={isFitting}
-            />
-          </ErrorBoundary>
-        </PageSection>
-        <div
-          className="pane-resizer"
-          role="separator"
-          aria-label="Resize Model page columns"
-          onPointerDown={onResizeStart}
+    <section className="workflow-page model-page webpage-model-page mbv3-direct-page">
+      <ErrorBoundary label="Model builder">
+        <ModelBuilder
+          model={model}
+          registry={registry}
+          onChange={setModel}
+          language={language}
+          disabled={isFitting}
+          onGoToFitting={onGoToFitting}
+          canvasActions={syntheticTool ? <div className="model-page-tool-row">{syntheticTool}</div> : null}
+          previewContent={
+            <ErrorBoundary label="Equation preview">
+              <EquationPreview
+                equations={equationSummary}
+                model={model}
+                result={result}
+                language={language}
+              />
+            </ErrorBoundary>
+          }
         />
-        <PageSection title={t(language, "equationPreview")}>
-          <ErrorBoundary label="Equation preview">
-            <EquationPreview
-              equations={equationSummary}
-              model={model}
-              result={result}
-              language={language}
-            />
-          </ErrorBoundary>
-        </PageSection>
-      </div>
+      </ErrorBoundary>
     </section>
   );
 }
@@ -126,12 +116,6 @@ export function FittingWorkflowPage({
   registry,
   model,
   updateParameterModel,
-  canRestoreInitialValues,
-  onRestoreInitialValues,
-  onApplyDataBounds,
-  canSeedSyntheticGroundTruth,
-  onSeedSyntheticGroundTruth,
-  dataBoundsReport,
   isFitting,
   language,
   leftPct,
@@ -156,12 +140,6 @@ export function FittingWorkflowPage({
   registry: FunctionDefinition[];
   model: ModelSpec;
   updateParameterModel: (model: ModelSpec) => void;
-  canRestoreInitialValues: boolean;
-  onRestoreInitialValues: () => void;
-  onApplyDataBounds: () => void;
-  canSeedSyntheticGroundTruth: boolean;
-  onSeedSyntheticGroundTruth: () => void;
-  dataBoundsReport: DataBoundsApplicationReport | null;
   isFitting: boolean;
   language: Language;
   leftPct: number;
@@ -169,27 +147,19 @@ export function FittingWorkflowPage({
   onResizeStart: (event: ReactPointerEvent<HTMLDivElement>) => void;
   onPlotResizeStart: (event: ReactPointerEvent<HTMLDivElement>) => void;
 }) {
+  void leftPct;
+  void plotPct;
+  void onResizeStart;
+  void onPlotResizeStart;
+  void fitDrawerMode;
+  void setFitDrawerMode;
   const hasTrace = selectedTrace.voltage_V.length > 0;
+  void hasTrace;
+  void setActiveView;
   return (
-    <section className="workflow-page fitting-page">
-      {!hasTrace ? (
-        <div className="card workflow-empty-state">
-          <h2>No trace loaded</h2>
-          <p>Import data before running a fit.</p>
-          <button type="button" className="primary" onClick={() => setActiveView("data")}>
-            Go to Data
-          </button>
-        </div>
-      ) : null}
-      <div
-        className="fitting-workflow-grid resizable-fitting-grid"
-        style={
-          {
-            "--fit-grid-template": `minmax(270px, ${leftPct}fr) 8px minmax(520px, ${100 - leftPct}fr)`,
-          } as CSSProperties
-        }
-      >
-        <aside className="fitting-control-column">
+    <section className="workflow-page fitting-page fitting-page-one-column">
+      <div className="fitting-webpage-stack">
+        <div className="fit-setup-sticky">
           <ErrorBoundary label="Fit config panel">
             <FitConfigPanel
               config={config}
@@ -206,55 +176,32 @@ export function FittingWorkflowPage({
               hasDetails={false}
             />
           </ErrorBoundary>
-        </aside>
-        <div
-          className="pane-resizer"
-          role="separator"
-          aria-label="Resize Fitting setup and results columns"
-          onPointerDown={onResizeStart}
-        />
-        <main
-          className="fitting-results-column resizable-results-column"
-          style={{ "--plot-pane-pct": `${plotPct}%` } as CSSProperties}
-        >
-          <PageSection title={t(language, "plots")} hideHeader className="plots-section">
-            <ErrorBoundary label="Plot workspace">
-              <PlotWorkspace
-                traces={traces}
-                selectedTraceId={selectedTraceId}
-                onSelectTrace={setSelectedTraceId}
-                onImportData={() => setActiveView("data")}
-                result={result}
-                language={language}
-                disabled={isFitting}
-              />
-            </ErrorBoundary>
-          </PageSection>
-          <div
-            className="horizontal-pane-resizer"
-            role="separator"
-            aria-label="Resize plots and parameters"
-            onPointerDown={onPlotResizeStart}
-          />
-          <PageSection title={t(language, "parameters")} hideHeader className="parameters-section">
-            <ErrorBoundary label="Parameter table">
-              <ParameterTable
-                result={result}
-                model={model}
-                registry={registry}
-                onModelChange={updateParameterModel}
-                language={language}
-                canRestoreInitialValues={canRestoreInitialValues}
-                onRestoreInitialValues={onRestoreInitialValues}
-                onApplyDataBounds={onApplyDataBounds}
-                canSeedSyntheticGroundTruth={canSeedSyntheticGroundTruth}
-                onSeedSyntheticGroundTruth={onSeedSyntheticGroundTruth}
-                dataBoundsReport={dataBoundsReport}
-                disabled={isFitting}
-              />
-            </ErrorBoundary>
-          </PageSection>
-        </main>
+        </div>
+        <PageSection title={t(language, "plots")} hideHeader className="plots-section">
+          <ErrorBoundary label="Plot workspace">
+            <PlotWorkspace
+              traces={traces}
+              selectedTraceId={selectedTraceId}
+              onSelectTrace={setSelectedTraceId}
+              onImportData={() => setActiveView("data")}
+              result={result}
+              language={language}
+              disabled={isFitting}
+            />
+          </ErrorBoundary>
+        </PageSection>
+        <PageSection title={t(language, "parameters")} hideHeader className="parameters-section">
+          <ErrorBoundary label="Parameter table">
+            <ParameterTable
+              result={result}
+              model={model}
+              registry={registry}
+              onModelChange={updateParameterModel}
+              language={language}
+              disabled={isFitting}
+            />
+          </ErrorBoundary>
+        </PageSection>
       </div>
     </section>
   );

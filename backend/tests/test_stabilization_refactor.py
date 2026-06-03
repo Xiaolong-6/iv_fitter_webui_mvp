@@ -46,38 +46,42 @@ def test_fit_result_carries_backend_reportability_fields_for_graph_solver():
     )
     trace = TraceData(voltage_V=[-0.1, 0.0, 0.1], current_A=[0.0, 0.0, 1e-9])
     result = fit_trace(FitRequest(trace=trace, model=model, config=FitConfig(solver_mode="graph_dc", exclude_compliance=False)))
-    assert result.reportable is False
-    assert "graph_solver" in result.reportability_reason
+    assert result.reportable is True
+    assert "passed backend numerical/reportability checks" in result.reportability_reason
 
 
-def test_frontend_model_builder_rules_are_extracted_and_imported():
+def test_frontend_model_builder_uses_v3_source_boundary():
     root = Path(__file__).resolve().parents[2]
-    rules = root / "frontend" / "src" / "model-builder" / "rules.ts"
-    mutations = root / "frontend" / "src" / "model-builder" / "mutations.ts"
+    legacy_rules = root / "frontend" / "src" / "model-builder" / "rules.ts"
+    legacy_mutations = root / "frontend" / "src" / "model-builder" / "mutations.ts"
+    legacy_v2 = root / "frontend" / "src" / "model-builder-v2"
     model_builder = root / "frontend" / "src" / "components" / "ModelBuilder.tsx"
-    assert rules.exists()
-    assert mutations.exists()
-    rules_text = rules.read_text(encoding="utf-8")
-    mutation_text = mutations.read_text(encoding="utf-8")
+    v3_builder = root / "frontend" / "src" / "model-builder-v3" / "SchematicBuilderV3.tsx"
+    v3_compile = root / "frontend" / "src" / "model-builder-v3" / "domain" / "compile.ts"
+    assert not legacy_rules.exists()
+    assert not legacy_mutations.exists()
+    assert not legacy_v2.exists()
+    assert v3_builder.exists()
+    assert v3_compile.exists()
     builder_text = model_builder.read_text(encoding="utf-8")
-    assert "export function definitionsForBucket" in rules_text
-    assert "export function canAddComponent" in rules_text
-    assert "export function addDefinitionToModel" in mutation_text
-    assert "../model-builder/rules" in builder_text
-    assert "../model-builder/mutations" in builder_text
+    assert "../model-builder-v3" in builder_text
+    assert "../model-builder/rules" not in builder_text
+    assert "../model-builder/mutations" not in builder_text
     assert "function isDuplicateBlocked" not in builder_text
 
 
-def test_css_model_builder_rules_are_split_out():
+def test_css_model_builder_v3_owns_styles_without_legacy_shell():
     root = Path(__file__).resolve().parents[2]
     style = root / "frontend" / "src" / "style.css"
-    extracted = root / "frontend" / "src" / "styles" / "model-builder.css"
-    assert extracted.exists()
+    legacy_extracted = root / "frontend" / "src" / "styles" / "model-builder.css"
+    v3_styles = root / "frontend" / "src" / "model-builder-v3" / "styles" / "model-builder-v3.css"
+    assert not legacy_extracted.exists()
+    assert v3_styles.exists()
     style_text = style.read_text(encoding="utf-8")
     base_text = (root / "frontend" / "src" / "styles" / "base-shell.css").read_text(encoding="utf-8")
     assert '@import "./styles/base-shell.css";' in style_text
-    assert '@import "./model-builder.css";' in base_text
-    assert ".circuit-panel-v2" in extracted.read_text(encoding="utf-8")
+    assert "model-builder.css" not in base_text
+    assert ".mbv3-shell" in v3_styles.read_text(encoding="utf-8")
 
 
 def test_duplicate_unidentifiable_component_makes_fit_non_reportable():
@@ -123,15 +127,17 @@ def test_location_placement_mismatch_makes_fit_non_reportable():
     assert any(w.code == "incoherent_location_placement" and w.severity == "error" for w in result.warnings)
 
 
-def test_secondary_diode_action_is_single_use_in_model_builder():
+def test_secondary_diode_button_removed_in_favor_of_v3_model_preset():
     root = Path(__file__).resolve().parents[2]
     model_builder = root / "frontend" / "src" / "components" / "ModelBuilder.tsx"
-    text = model_builder.read_text(encoding="utf-8")
-    assert "function canAddSecondaryDiode" in text
-    assert "forwardDiodes.length === 1" in text
-    assert "!hasSecondaryForwardDiode(model)" in text
-    assert "if (!canAddSecondaryDiode(model)) return;" in text
-    assert "allDiodeCount" not in text
+    presets = root / "frontend" / "src" / "model-builder-v3" / "domain" / "presets.ts"
+    builder_text = model_builder.read_text(encoding="utf-8")
+    preset_text = presets.read_text(encoding="utf-8")
+    assert "Add secondary diode D2" not in builder_text
+    assert "secondary-diode-button" not in builder_text
+    assert "canAddSecondaryDiode" not in builder_text
+    assert "Two diode model" in preset_text
+    assert 'id: "D2"' in preset_text
 
 
 def test_plot_empty_state_has_import_shortcut():
@@ -148,9 +154,13 @@ def test_collapsed_language_icon_reflects_next_language():
     assert 'language === "en" ? "ZH" : "EN"' in text
 
 
-def test_parameter_table_uses_scientific_format_for_extreme_values():
+def test_parameter_table_uses_shared_scientific_format_for_extreme_values():
     root = Path(__file__).resolve().parents[2]
-    text = (root / "frontend" / "src" / "components" / "ParameterTable.tsx").read_text(encoding="utf-8")
-    assert "formatParameterNumber" in text
-    assert "toExponential(3)" in text
-    assert "abs < 1e-3 || abs >= 1e4" in text
+    table_text = (root / "frontend" / "src" / "components" / "ParameterTable.tsx").read_text(encoding="utf-8")
+    format_text = (root / "frontend" / "src" / "model" / "format.ts").read_text(encoding="utf-8")
+    format_test_text = (root / "frontend" / "src" / "model" / "__tests__" / "format.test.ts").read_text(encoding="utf-8")
+    assert "formatParameterNumber" in table_text
+    assert "formatValueWithUnit(v, unit, 4)" in table_text
+    assert "abs < 1e-3 || abs >= 1e4" in format_text
+    assert "toExponential(Math.max(digits - 1, 0))" in format_text
+    assert 'formatValueWithUnit(0.0000001234, "A", 4)' in format_test_text

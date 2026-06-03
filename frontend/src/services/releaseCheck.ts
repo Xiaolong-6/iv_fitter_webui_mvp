@@ -82,3 +82,28 @@ export async function checkLatestRelease({
     return { ...base, error: error instanceof Error ? error.message : String(error) };
   }
 }
+
+
+export type ReleasePrivacyFinding = {
+  kind: "windows_path" | "unix_home_path" | "email";
+  match: string;
+};
+
+export function detectSensitiveReleaseText(text: string): ReleasePrivacyFinding[] {
+  const findings: ReleasePrivacyFinding[] = [];
+  const patterns: Array<[ReleasePrivacyFinding["kind"], RegExp]> = [
+    ["windows_path", /[A-Za-z]:\\Users\\[^\s`'"<>]+/g],
+    ["unix_home_path", /\/home\/[^\s`'"<>]+/g],
+    ["email", /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi],
+  ];
+  for (const [kind, pattern] of patterns) {
+    for (const match of text.matchAll(pattern)) {
+      findings.push({ kind, match: match[0] });
+    }
+  }
+  return findings;
+}
+
+export function releaseTextIsPrivacySafe(text: string): boolean {
+  return detectSensitiveReleaseText(text).length === 0;
+}

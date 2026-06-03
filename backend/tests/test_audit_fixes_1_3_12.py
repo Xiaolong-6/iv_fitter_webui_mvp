@@ -81,3 +81,12 @@ def test_custom_expression_rejects_unsafe_syntax():
         pass
     else:
         raise AssertionError("unsafe custom expression should be rejected")
+
+
+def test_custom_expression_compile_once_path_is_explicit():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[2]
+    text = (root / "backend" / "ivfitter" / "components" / "custom.py").read_text(encoding="utf-8")
+    assert "tree = _parse_and_validate_expression(expression)" in text
+    assert "code = compile(tree" in text
+    assert "compile(ast.parse(expression" not in text

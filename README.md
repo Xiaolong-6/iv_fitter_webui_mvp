@@ -1,6 +1,6 @@
 # IV-fitter Web UI MVP
 
-Current version: **1.6.0**
+Current version: **1.9.0**
 
 IV-fitter Web UI is a local-first browser app for fitting I-V traces with compact circuit models. It helps a user import voltage/current data, build a model from mathematical circuit terms, run a fit, inspect diagnostics, and export a result only after the residuals, warnings, parameters, and model structure make sense.
 
@@ -23,7 +23,7 @@ The app is a working prototype for the IV-fitter workflow. It is not yet a full 
 
 - **Start:** workflow overview, current project state, and quick navigation.
 - **Data:** CSV/TXT/DAT import, publication/demo multi-trace auto-detection, pasted-data import, synthetic trace generation, dataset naming, unit selection, trace selection, import-quality summary, and spreadsheet preview.
-- **Model:** Model Builder, equivalent-circuit component controls, and model/equation preview.
+- **Model:** Model Builder V3 graph canvas, equivalent-circuit controls, and model/equation preview.
 - **Fitting:** Fit setup, Run/Stop/Report controls, plots, residuals, and grouped Parameters table.
 - **Report:** report verdict, full fit process/quality diagnostics, warnings, and export actions.
 - **Help:** tutorial-style workflow guide, Function Guide, fitting logic, convergence guidance, reporting notes, and glossary.
@@ -42,12 +42,18 @@ The app is a working prototype for the IV-fitter workflow. It is not yet a full 
 
 ## Model Builder
 
-The user-facing model is organized as:
+The default Model Builder is V3, a graph-native free schematic editor:
 
-- **Main path:** terms that consume voltage or modify the main current path before junction branches see the remaining voltage.
-- **Junction branches:** current-producing terms evaluated at the internal junction voltage and summed into terminal current.
+- **Fixed terminals:** `V` and `GND` define the two-terminal model.
+- **Component palette:** users drag R(V), I(V), dV(I), residual, or saved custom components onto the canvas. Resistor, diode, current-source, and saved-model entries are presets/templates, not separate architecture classes.
+- **Wires:** users connect component ports and terminals. Only the active V-to-GND connected subgraph is compiled; disconnected draft components and open branches stay visible on the canvas and are shown as ignored, dashed branches rather than disappearing.
+- **Node labels:** generated node-voltage labels act as junction drag handles. Dragging a voltage label moves the underlying junction dot and its connected wires, not a detached text annotation.
+- **Canvas equations:** the canvas shows readable fitting-equation notes generated from the current graph, including what is used, each component law, and how the active graph is assembled for fitting.
+- **Inspector:** selected components expose expression editing, sign/polarity, and a parameter table with symbol/value/bounds/fit controls.
+- **Canvas toolbar:** clear canvas, presets, save preset, Synthetic IV trace, and Go to fitting actions are available as floating canvas controls.
+- **Report/export preview:** report pages and exported HTML render equivalent-circuit diagrams from the V3 graph when V3 metadata is available, with legacy SVG fallback for older saved models.
 
-Model Builder rows are intentionally compact: each component shows an editable nickname, the component name, per-component polarity when relevant, and a Remove button. Detailed law/form/placement information is available through hover text and in the User manual rather than repeated inline.
+Older Law / Form / Placement builder source has been removed from the active frontend. Saved older models may still be read through compatibility paths, but new UI work should target the V3 schematic graph.
 
 The app treats components as mathematical circuit terms. It should not require a user to frame the problem as a specific device family. Domain-specific interpretations belong in the user's modeling judgment, diagnostics, and report narrative.
 
@@ -59,11 +65,11 @@ The Parameters table is grouped first by placement, then by component instance. 
 
 - Plain CSV/TXT import compatibility for single traces, wide publication/demo files with one voltage column and multiple current/current-density traces, and long trace-grouped files.
 - HappyMeasure CSV v2 import compatibility for single, wide, and long files, including current-source conversion.
-- Synthetic IV trace generation from the current Model Builder model, with voltage sweep controls, optional noise, seed, current compliance, and ground-truth metadata.
+- Synthetic IV trace generation from the current Model Builder model, available directly from the V3 canvas toolbar, with voltage sweep controls, optional noise, seed, current compliance, and ground-truth metadata.
 - Grouped parameter editing with next-fit initials, bounds, fit/fixed state, fitted values, uncertainty, and interpretation hints.
-- Main-path terms such as Ohmic resistance, diode-like series barrier drop, bias-dependent series conductance modifier, custom transport modifier, and softplus voltage drop.
-- Branch terms such as Shockley diode, Ohmic leakage/shunt behavior, soft-threshold power-law current branch, reverse leakage / soft-breakdown current, and custom expressions.
-- Model preview with beginner-friendly equation steps and softplus definition.
+- Model Builder V3 schematic graph editing with fixed V/GND terminals, drag-in two-terminal components, obstacle-aware orthogonal wire routing, draggable junction labels, presets, save/load, V-to-GND validation, and canvas fitting-equation notes.
+- Component behavior forms such as R(V), I(V), dV(I), and F(I,V)=0, with resistor/diode/source entries handled as presets.
+- Model Builder V3 is the single active frontend builder path; older builder source has been removed to keep the UI maintainable.
 - Mobile portrait layout with compact controls and sticky mobile Run fit action.
 - LAN phone/tablet testing helper for local network testing.
 - User-facing Function Guide with internal schema details hidden in Advanced details.
@@ -226,3 +232,8 @@ Fit results now use more consistent parameter formatting in the Parameters table
 ## Release Manager workflow
 
 The app includes a read-only update checker in the User Manual / Updates panel. It queries GitHub public release metadata and never blocks startup or fitting. Maintainer-only release-page auditing and optional release updating live in `tools/audit_release_page.py` and `tools/update_github_release.py`; see `docs/RELEASE_MANAGER.md`. Automatic binary self-update is intentionally not implemented.
+
+
+## External testing
+
+See `docs/EXTERNAL_TESTING_GUIDE.md` for structured UI, research-user, and synthetic-data testing workflows.

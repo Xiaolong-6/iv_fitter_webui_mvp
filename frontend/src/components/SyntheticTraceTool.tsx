@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import type { ModelSpec, SyntheticNoiseConfig, TraceData } from "../model/types";
 import { generateSyntheticTrace } from "../api/client";
 import type { Language } from "../model/i18n";
@@ -87,54 +88,61 @@ export function SyntheticTraceTool({ traces, onTraces, onSelectTrace, model, lan
   }
 
   const validation = validateSyntheticTraceForm(form);
+  const modal = open ? createPortal(
+    <div className="synthetic-modal-backdrop" role="presentation" onClick={() => !busy && setOpen(false)}>
+      <div className="drawer synthetic-drawer synthetic-modal" role="dialog" aria-modal="true" aria-labelledby="synthetic-trace-title" onClick={(event) => event.stopPropagation()}>
+        <div className="drawer-head">
+          <div>
+            <h2 id="synthetic-trace-title">Synthetic IV trace</h2>
+            <p className="muted">{language === "zh" ? "根据当前 Model Builder 模型和已知参数正向仿真，用于检查拟合稳定性和参数恢复；不能证明真实器件物理模型正确。" : "Forward-simulate from the current Model Builder model and known parameters. Use it to test fitting stability and parameter recovery; it does not prove that the model is physically correct for a real device."}</p>
+          </div>
+          <button onClick={() => setOpen(false)} disabled={busy}>{language === "zh" ? "取消" : "Cancel"}</button>
+        </div>
+
+        {error ? <div className="warning error">{error}</div> : null}
+        {!error && !validation.ok ? <div className="warning error">{validation.error}</div> : null}
+
+        <div className="synthetic-form">
+          <label><span>Model source</span><select value="current" disabled><option>Use current Model Builder model</option></select></label>
+          <label><span>Trace name</span><input value={form.traceName} onChange={(e) => updateForm({ traceName: e.target.value })} /></label>
+          <div className="synthetic-field-grid">
+            <label><span>V start</span><input type="number" step="any" value={form.voltageStart} onChange={(e) => updateForm({ voltageStart: e.target.value })} /></label>
+            <label><span>V stop</span><input type="number" step="any" value={form.voltageStop} onChange={(e) => updateForm({ voltageStop: e.target.value })} /></label>
+            <label><span>V step</span><input type="number" step="any" value={form.voltageStep} onChange={(e) => updateForm({ voltageStep: e.target.value })} /></label>
+          </div>
+          <p className="muted">Point count: {validation.pointCount || "-"}</p>
+          <label><span>Noise</span><select value={form.noiseMode} onChange={(e) => updateForm({ noiseMode: e.target.value as SyntheticNoiseConfig["mode"] })}>
+            <option value="none">None</option>
+            <option value="gaussian_absolute">Gaussian absolute current noise</option>
+            <option value="gaussian_relative">Gaussian relative current noise</option>
+          </select></label>
+          {form.noiseMode === "gaussian_absolute" ? <label><span>noise_level_A</span><input type="number" step="any" value={form.noiseLevelA} onChange={(e) => updateForm({ noiseLevelA: e.target.value })} /></label> : null}
+          {form.noiseMode === "gaussian_relative" ? <label><span>relative_noise_fraction</span><input type="number" step="any" value={form.relativeNoiseFraction} onChange={(e) => updateForm({ relativeNoiseFraction: e.target.value })} /></label> : null}
+          <label><span>Random seed</span><input type="number" step="1" value={form.seed} onChange={(e) => updateForm({ seed: e.target.value })} /></label>
+          <label className="inline-check"><input type="checkbox" checked={form.complianceEnabled} onChange={(e) => updateForm({ complianceEnabled: e.target.checked })} /> <span>Current compliance</span></label>
+          {form.complianceEnabled ? <label><span>compliance_current_A</span><input type="number" step="any" value={form.complianceCurrentA} onChange={(e) => updateForm({ complianceCurrentA: e.target.value })} /></label> : null}
+        </div>
+        <div className="synthetic-actions">
+          <button className="primary" disabled={busy || !validation.ok} onClick={generateAndImport}>{busy ? "Generating..." : "Generate and import"}</button>
+          <button disabled={busy || !validation.ok} onClick={generateCsvOnly}>Generate CSV only</button>
+          <button disabled={busy} onClick={() => setOpen(false)}>Cancel</button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  ) : null;
+
   return <>
     <button
       type="button"
-      className="debug-algorithm-button"
+      className="synthetic-trace-launch-button"
       disabled={disabled}
-      title={language === "zh" ? "从当前 Model Builder 模型正向生成 synthetic IV trace，用于调试算法和参数反演。" : "Forward-simulate a synthetic IV trace from the current Model Builder model for algorithm/debug validation."}
+      title={language === "zh" ? "从当前 Model Builder 模型生成 Synthetic IV trace。" : "Generate a synthetic IV trace from the current Model Builder model."}
       onClick={() => setOpen(true)}
     >
-      {language === "zh" ? "Debug algorithm" : "Debug algorithm"}
+      {language === "zh" ? "Synthetic IV trace" : "Synthetic IV trace"}
     </button>
     {message ? <span className="synthetic-inline-message">{message}</span> : null}
-    {open ? <div className="drawer synthetic-drawer" role="dialog" aria-modal="true" aria-labelledby="synthetic-trace-title">
-      <div className="drawer-head">
-        <div>
-          <h2 id="synthetic-trace-title">Synthetic IV trace</h2>
-          <p className="muted">{language === "zh" ? "根据当前 Model Builder 模型和已知参数正向仿真，用于检查拟合稳定性和参数恢复；不能证明真实器件物理模型正确。" : "Forward-simulate from the current Model Builder model and known parameters. Use it to test fitting stability and parameter recovery; it does not prove that the model is physically correct for a real device."}</p>
-        </div>
-        <button onClick={() => setOpen(false)} disabled={busy}>{language === "zh" ? "取消" : "Cancel"}</button>
-      </div>
-
-      {error ? <div className="warning error">{error}</div> : null}
-      {!error && !validation.ok ? <div className="warning error">{validation.error}</div> : null}
-
-      <div className="synthetic-form">
-        <label><span>Model source</span><select value="current" disabled><option>Use current Model Builder model</option></select></label>
-        <label><span>Trace name</span><input value={form.traceName} onChange={(e) => updateForm({ traceName: e.target.value })} /></label>
-        <div className="synthetic-field-grid">
-          <label><span>V start</span><input type="number" step="any" value={form.voltageStart} onChange={(e) => updateForm({ voltageStart: e.target.value })} /></label>
-          <label><span>V stop</span><input type="number" step="any" value={form.voltageStop} onChange={(e) => updateForm({ voltageStop: e.target.value })} /></label>
-          <label><span>V step</span><input type="number" step="any" value={form.voltageStep} onChange={(e) => updateForm({ voltageStep: e.target.value })} /></label>
-        </div>
-        <p className="muted">Point count: {validation.pointCount || "-"}</p>
-        <label><span>Noise</span><select value={form.noiseMode} onChange={(e) => updateForm({ noiseMode: e.target.value as SyntheticNoiseConfig["mode"] })}>
-          <option value="none">None</option>
-          <option value="gaussian_absolute">Gaussian absolute current noise</option>
-          <option value="gaussian_relative">Gaussian relative current noise</option>
-        </select></label>
-        {form.noiseMode === "gaussian_absolute" ? <label><span>noise_level_A</span><input type="number" step="any" value={form.noiseLevelA} onChange={(e) => updateForm({ noiseLevelA: e.target.value })} /></label> : null}
-        {form.noiseMode === "gaussian_relative" ? <label><span>relative_noise_fraction</span><input type="number" step="any" value={form.relativeNoiseFraction} onChange={(e) => updateForm({ relativeNoiseFraction: e.target.value })} /></label> : null}
-        <label><span>Random seed</span><input type="number" step="1" value={form.seed} onChange={(e) => updateForm({ seed: e.target.value })} /></label>
-        <label className="inline-check"><input type="checkbox" checked={form.complianceEnabled} onChange={(e) => updateForm({ complianceEnabled: e.target.checked })} /> <span>Current compliance</span></label>
-        {form.complianceEnabled ? <label><span>compliance_current_A</span><input type="number" step="any" value={form.complianceCurrentA} onChange={(e) => updateForm({ complianceCurrentA: e.target.value })} /></label> : null}
-      </div>
-      <div className="synthetic-actions">
-        <button className="primary" disabled={busy || !validation.ok} onClick={generateAndImport}>{busy ? "Generating..." : "Generate and import"}</button>
-        <button disabled={busy || !validation.ok} onClick={generateCsvOnly}>Generate CSV only</button>
-        <button disabled={busy} onClick={() => setOpen(false)}>Cancel</button>
-      </div>
-    </div> : null}
+    {modal}
   </>;
 }

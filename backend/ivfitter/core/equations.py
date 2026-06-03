@@ -8,6 +8,9 @@ from .topology_graph import assemble_graph, graph_text_summary
 from .component_registry import registry_by_function
 
 
+def _custom_expr_display(comp) -> str:
+    return str(getattr(comp, "metadata", {}).get("expression", "A * I" if comp.location == "series" else "A * Vi"))
+
 
 def _component_equation(comp) -> str:
     nick = comp.metadata.get("nickname") or comp.id
@@ -23,8 +26,13 @@ def _component_equation(comp) -> str:
         return f"V_drop,{nick} = s A_V sp((sI - It)/Is)^m"
     if comp.function_type == "softplus_rs_modifier":
         return f"R_eff,{nick} = R_base / [1 + A*sp((s*V_j - Vt)/Vs)]"
-    if comp.function_type == "custom" and (comp.evaluation_form == "conductance_modifier" or comp.placement == "series_conductance_modifier"):
-        return f"R_eff,{nick} = R_base / [1 + custom_modifier(V_j)]"
+    if comp.function_type == "custom":
+        expr = _custom_expr_display(comp)
+        if comp.location == "series" or comp.evaluation_form == "voltage_drop" or comp.placement == "series_voltage_drop":
+            return f"V_drop,{nick} = {expr}"
+        if comp.evaluation_form == "conductance_modifier" or comp.placement == "series_conductance_modifier":
+            return f"R_eff,{nick} = R_base / [1 + ({expr})]"
+        return f"I_{nick} = {expr}"
     definition = registry_by_function().get(comp.function_type)
     return definition.equation_template if definition else comp.function_type
 

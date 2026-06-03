@@ -25,11 +25,11 @@ $version = [string](Read-JsonFile "package.json").version
 $python = if (Test-Path ".venv/Scripts/python.exe") { ".venv/Scripts/python.exe" } else { "python" }
 
 if (-not $SkipFrontendBuild) {
-  Invoke-Native "Frontend production build" "npm" @("run", "build")
+  Invoke-Native "Frontend production build" "npm.cmd" @("run", "build")
 }
 
 if (-not $SkipTests) {
-  Invoke-Native "Frontend unit tests" "npm" @("run", "test:frontend", "--", "--reporter=dot")
+  Invoke-Native "Frontend unit tests" "npm.cmd" @("run", "test:frontend", "--", "--reporter=dot")
   $env:PYTHONPATH = "backend"
   Invoke-Native "Backend pytest suite" $python @("-m", "pytest", "-p", "no:cacheprovider", "backend/tests", "-q")
   Invoke-Native "Backend Python compile check" $python @("-m", "compileall", "-q", "backend/ivfitter", "backend/tests")

@@ -1,26 +1,29 @@
 {
   "name": "iv-fitter-webui-mvp-root",
-  "version": "1.6.0",
+  "version": "1.9.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -p frontend/tsconfig.json && vite build",
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
     "test": "npm run test:frontend",
     "test:frontend": "npm --prefix frontend run test --",
-    "preview": "vite preview",
+    "preview": "npm --prefix frontend run preview",
     "release:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release_build.ps1",
     "portable:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_portable_windows.ps1"
   },
   "dependencies": {
+    "katex": "^0.16.22",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-katex": "^3.1.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^5.0.0",
-    "vite": "^7.0.0",
-    "typescript": "^5.8.0",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react-dom": "^19.0.0",
+    "@types/react-katex": "^3.0.4",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "^5.8.0",
+    "vite": "^7.0.0"
   }
 }

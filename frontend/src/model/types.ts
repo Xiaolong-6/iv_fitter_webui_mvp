@@ -8,7 +8,7 @@ export interface ParameterSpec { value: number; lower?: number | null; upper?: n
 export interface ComponentSpec { id: string; location: Location; function_type: string; law_id?: string | null; evaluation_form?: EvaluationForm | null; placement?: Placement | null; node_pos?: string | null; node_neg?: string | null; polarity?: Polarity | null; mode?: string | null; params: Record<string, ParameterSpec>; metadata?: Record<string, unknown>; }
 export interface GraphNode { id: string; label?: string | null; role: "terminal" | "internal" | "reference"; }
 export interface GraphComponent { id: string; function_type: string; law_id?: string | null; evaluation_form?: EvaluationForm | null; placement: Placement; node_pos: string; node_neg: string; polarity?: Polarity | null; params: Record<string, ParameterSpec>; metadata?: Record<string, unknown>; }
-export interface GraphSpec { terminals: string[]; reference_node: string; nodes: GraphNode[]; components: GraphComponent[]; assembly_notes: string[]; schema_version: string; }
+export interface GraphSpec { terminals: string[]; reference_node: string; nodes: GraphNode[]; components: GraphComponent[]; assembly_notes: string[]; schema_version: string; metadata?: Record<string, unknown>; }
 export interface ModelSpec { core: ComponentSpec[]; series: ComponentSpec[]; parallel: ComponentSpec[]; graph?: GraphSpec | null; temperature_K: number; version: string; }
 export interface TraceData { voltage_V: number[]; current_A: number[]; trace_id: string; metadata: Record<string, unknown>; }
 export interface FitConfig { v_min?: number | null; v_max?: number | null; weighting: string; loss: string; fit_speed: string; exclude_compliance: boolean; max_nfev: number; residual_floor_A?: number | null; multistart_enabled?: boolean; seed_scale_factors?: number[]; multistart_n_seeds?: number; run_timeout_s?: number; solver_mode?: SolverMode; }
@@ -56,7 +56,7 @@ export interface FitSessionStats {
   totalElapsedS: number;
   totalRootSolverFailures: number;
 }
-export interface FitResult { success: boolean; reportable: boolean; reportability_reason?: string; message: string; model: ModelSpec; config: FitConfig; parameters: Record<string, ParameterResult>; metrics: Record<string, number>; warnings: FitWarning[]; fit_diagnostics?: FitDiagnosticsSummary | null; curves: FitCurves; equations: EquationSummary; software_version: string; }
+export interface FitResult { success: boolean; reportable: boolean; reportability_reason?: string; message: string; model: ModelSpec; config: FitConfig; parameters: Record<string, ParameterResult>; initial_values?: Record<string, number> | null; metrics: Record<string, number>; warnings: FitWarning[]; fit_diagnostics?: FitDiagnosticsSummary | null; curves: FitCurves; equations: EquationSummary; software_version: string; }
 export type SyntheticNoiseMode = "none" | "gaussian_absolute" | "gaussian_relative";
 export interface SyntheticNoiseConfig { mode: SyntheticNoiseMode; noise_level_A?: number; relative_noise_fraction?: number; }
 export interface SyntheticArtifactConfig { compliance_enabled: boolean; compliance_current_A?: number | null; }

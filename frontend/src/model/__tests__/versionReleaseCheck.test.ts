@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { compareVersions, isNewerVersion, normalizeVersion } from "../../utils/version";
-import { checkLatestRelease } from "../../services/releaseCheck";
+import { checkLatestRelease, detectSensitiveReleaseText, releaseTextIsPrivacySafe } from "../../services/releaseCheck";
 
 describe("semantic version helpers", () => {
   it("normalizes leading v and compares stable versions", () => {
@@ -53,5 +53,14 @@ describe("release checker", () => {
     expect(result.updateAvailable).toBe(false);
     expect(result.latestVersion).toBeNull();
     expect(result.versionRelation).toBe("unknown");
+  });
+});
+
+
+describe("release privacy scanner", () => {
+  it("detects local paths and email addresses in release text", () => {
+    const findings = detectSensitiveReleaseText("Built from C:\\Users\\name\\repo and /home/name/repo; contact test@example.com");
+    expect(findings.map((item) => item.kind)).toEqual(["windows_path", "unix_home_path", "email"]);
+    expect(releaseTextIsPrivacySafe("Release notes without local paths")).toBe(true);
   });
 });

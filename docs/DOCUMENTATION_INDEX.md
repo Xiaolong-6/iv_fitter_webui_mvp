@@ -16,7 +16,8 @@ This file is the stable entry point for IV-fitter Web UI documentation.
 ### User-facing behavior
 
 - `README.md` — concise project overview and launch instructions.
-- `docs/DATA_IMPORT_EXPORT.md` — import/export expectations, example-data layout, HappyMeasure CSV compatibility, and the synthetic data generator.
+- `docs/USER_MANUAL.md` — full user manual for import, Model Builder V3, fitting, validation, and reporting.
+- `docs/DATA_IMPORT_EXPORT.md` — current Import page flow, CSV formats, all-trace spreadsheet preview, units, and export expectations.
 - `docs/REPORTING.md` — report/export requirements and reproducibility expectations.
 - `docs/RESPONSIVE_WORKSPACE.md` — responsive layout, mobile behavior, and app-local zoom.
 - `docs/USER_DOCUMENTATION_POLICY.md` — how user-facing docs should be written.
@@ -25,41 +26,32 @@ This file is the stable entry point for IV-fitter Web UI documentation.
 
 ### Developer-facing architecture
 
-- `docs/ARCHITECTURE.md` — current runtime split and model architecture.
-- `docs/FUNCTION_EXTENSION_GUIDE.md` — how to add model functions without breaking the Law / Form / Placement architecture.
-- `docs/PHYSICS_MODELING_POLICY.md` — modeling boundaries and interpretation policy.
-- `docs/SCHEMA_STABILITY.md` — API/result schema stability rules.
-- `DEPENDENCIES.md` — approved stack and dependency policy.
-
+- `docs/ARCHITECTURE.md` - current runtime split and Model Builder V3 architecture.
+- `docs/FUNCTION_EXTENSION_GUIDE.md` - how to add model functions without breaking the Law / Form / Placement architecture.
+- `docs/PHYSICS_MODELING_POLICY.md` - modeling boundaries and interpretation policy.
+- `docs/SCHEMA_STABILITY.md` - API/result schema stability rules.
+- `DEPENDENCIES.md` - approved stack and dependency policy.
 ### Agent and maintenance docs
 
 - `PROJECT_RULES.md` — highest-priority project rules.
 - `docs/DEVELOPMENT_PRINCIPLES.md` — recurring engineering principles distilled from commit-history fixes and audit findings.
-- `docs/WEBUI_AGENT_HANDOFF.md` — current agent handoff; this replaces historical root-level `HANDOFF_*` files.
-- `docs/VALIDATION_HISTORY.md` — consolidated history of older `TESTED_*` files.
+- `docs/WEBUI_AGENT_HANDOFF.md` — current agent handoff. Use this instead of old one-off handoff notes.
+- `docs/VALIDATION_HISTORY.md` — consolidated validation history.
 - `docs/TESTED_CURRENT.md` — current package validation note.
-- `docs/NPM_TROUBLESHOOTING.md` — Node/Vite troubleshooting.
+- `docs/NPM_TROUBLESHOOTING.md` — Node/Vite/npm troubleshooting.
 - `docs/FRONTEND_STYLESHEET_ARCHITECTURE.md` — CSS module ownership and cascade rules.
-- `docs/RELEASE_CHECKLIST.md` - release readiness checklist.
-- `docs/RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_40.md` — current external-style release-candidate audit.
-- `docs/FITTING_PARITY_AND_DIAGNOSTICS.md` - fitting parity and diagnostics notes.
-- `docs/NUMERICAL_SANITY_AND_HOVER.md` - numerical sanity and hover diagnostics notes.
+- `docs/RELEASE_CHECKLIST.md` — release readiness checklist.
+- `docs/RELEASE_MANAGER.md` — read-only in-app update checking and maintainer-only release workflow.
+- `docs/RELEASE_PRIVACY_CHECKLIST.md` — privacy/path leakage rules for release text.
+- `docs/FITTING_PARITY_AND_DIAGNOSTICS.md` — fitting parity and diagnostics notes.
+- `docs/NUMERICAL_SANITY_AND_HOVER.md` — numerical sanity and hover diagnostics notes.
 - `docs/ROADMAP.md` — future work.
 - `docs/VERSION_CONTROL.md` — versioning and packaging conventions.
 
-## Removed historical docs
+## Archived historical docs
 
-The repository previously accumulated many root-level `HANDOFF_*` files and per-version `docs/TESTED_*` files. Those have been consolidated into:
+Older release reports and superseded audit snapshots are historical context only. Keep them out of the active documentation index unless they are intentionally restored as part of a documentation cleanup.
 
-- `docs/WEBUI_AGENT_HANDOFF.md`
-- `docs/VALIDATION_HISTORY.md`
-- `docs/TESTED_CURRENT.md`
+Historical snapshots should not be used as current implementation guidance.
 
-Do not recreate one-off handoff/tested files for every small internal iteration. Update the current handoff/tested documents instead, and only create a version-specific document for a major public release or external audit package.
-
-- `RELEASE_MANAGER.md` — Read-only in-app update checking and maintainer-only GitHub release audit/update workflow.
-- `RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_38.md` — External-style release-candidate audit for v1.5.38.
-- `RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_41.md` — External-style release-candidate audit for v1.5.41 chart-control hotfix.
-
-- `RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_43.md` — external-style audit for the v1.5.43 Fitting/Data responsive polish.
-- `RELEASE_CANDIDATE_EXTERNAL_AUDIT_v1_5_42.md` — external-style audit for the v1.5.42 fitting plot layout hotfix.
+Do not recreate one-off handoff/tested/audit files for every small internal iteration. Update the current handoff/tested documents instead, and only create a version-specific document for a major public release or external audit package.
