@@ -50,34 +50,38 @@ def test_fit_result_carries_backend_reportability_fields_for_graph_solver():
     assert "passed backend numerical/reportability checks" in result.reportability_reason
 
 
-def test_frontend_model_builder_rules_are_extracted_and_imported():
+def test_frontend_model_builder_uses_v3_source_boundary():
     root = Path(__file__).resolve().parents[2]
-    rules = root / "frontend" / "src" / "model-builder" / "rules.ts"
-    mutations = root / "frontend" / "src" / "model-builder" / "mutations.ts"
+    legacy_rules = root / "frontend" / "src" / "model-builder" / "rules.ts"
+    legacy_mutations = root / "frontend" / "src" / "model-builder" / "mutations.ts"
+    legacy_v2 = root / "frontend" / "src" / "model-builder-v2"
     model_builder = root / "frontend" / "src" / "components" / "ModelBuilder.tsx"
-    assert rules.exists()
-    assert mutations.exists()
-    rules_text = rules.read_text(encoding="utf-8")
-    mutation_text = mutations.read_text(encoding="utf-8")
+    v3_builder = root / "frontend" / "src" / "model-builder-v3" / "SchematicBuilderV3.tsx"
+    v3_compile = root / "frontend" / "src" / "model-builder-v3" / "domain" / "compile.ts"
+    assert not legacy_rules.exists()
+    assert not legacy_mutations.exists()
+    assert not legacy_v2.exists()
+    assert v3_builder.exists()
+    assert v3_compile.exists()
     builder_text = model_builder.read_text(encoding="utf-8")
-    assert "export function definitionsForBucket" in rules_text
-    assert "export function canAddComponent" in rules_text
-    assert "export function addDefinitionToModel" in mutation_text
-    assert "../model-builder/rules" in builder_text
-    assert "../model-builder/mutations" in builder_text
+    assert "../model-builder-v3" in builder_text
+    assert "../model-builder/rules" not in builder_text
+    assert "../model-builder/mutations" not in builder_text
     assert "function isDuplicateBlocked" not in builder_text
 
 
-def test_css_model_builder_rules_are_split_out():
+def test_css_model_builder_v3_owns_styles_without_legacy_shell():
     root = Path(__file__).resolve().parents[2]
     style = root / "frontend" / "src" / "style.css"
-    extracted = root / "frontend" / "src" / "styles" / "model-builder.css"
-    assert extracted.exists()
+    legacy_extracted = root / "frontend" / "src" / "styles" / "model-builder.css"
+    v3_styles = root / "frontend" / "src" / "model-builder-v3" / "styles" / "model-builder-v3.css"
+    assert not legacy_extracted.exists()
+    assert v3_styles.exists()
     style_text = style.read_text(encoding="utf-8")
     base_text = (root / "frontend" / "src" / "styles" / "base-shell.css").read_text(encoding="utf-8")
     assert '@import "./styles/base-shell.css";' in style_text
-    assert '@import "./model-builder.css";' in base_text
-    assert ".circuit-panel-v2" in extracted.read_text(encoding="utf-8")
+    assert "model-builder.css" not in base_text
+    assert ".mbv3-shell" in v3_styles.read_text(encoding="utf-8")
 
 
 def test_duplicate_unidentifiable_component_makes_fit_non_reportable():
@@ -123,15 +127,17 @@ def test_location_placement_mismatch_makes_fit_non_reportable():
     assert any(w.code == "incoherent_location_placement" and w.severity == "error" for w in result.warnings)
 
 
-def test_secondary_diode_button_removed_in_favor_of_model_preset():
+def test_secondary_diode_button_removed_in_favor_of_v3_model_preset():
     root = Path(__file__).resolve().parents[2]
     model_builder = root / "frontend" / "src" / "components" / "ModelBuilder.tsx"
-    text = model_builder.read_text(encoding="utf-8")
-    assert "Add secondary diode D2" not in text
-    assert "secondary-diode-button" not in text
-    assert "canAddSecondaryDiode" not in text
-    assert "Double diode model" in text
-    assert "makeDoubleDiodePreset" in text
+    presets = root / "frontend" / "src" / "model-builder-v3" / "domain" / "presets.ts"
+    builder_text = model_builder.read_text(encoding="utf-8")
+    preset_text = presets.read_text(encoding="utf-8")
+    assert "Add secondary diode D2" not in builder_text
+    assert "secondary-diode-button" not in builder_text
+    assert "canAddSecondaryDiode" not in builder_text
+    assert "Two diode model" in preset_text
+    assert 'id: "D2"' in preset_text
 
 
 def test_plot_empty_state_has_import_shortcut():

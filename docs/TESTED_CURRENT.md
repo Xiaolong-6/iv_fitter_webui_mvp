@@ -2,7 +2,7 @@
 
 ## Package
 
-Model Builder V3 cleanup package prepared as v1.8.38.
+Model Builder V3 cleanup package prepared as v1.9.0.
 
 ## What changed in this package
 
@@ -12,7 +12,7 @@ Model Builder V3 cleanup package prepared as v1.8.38.
 - Current README/manual/roadmap/handoff docs describe V3 as the active Model Builder path and document the canvas Synthetic IV trace action.
 - Legacy V1/V2 frontend Model Builder source has been removed; `ModelBuilder` now depends on V3 types and V3 rendering only.
 - The old global `styles/model-builder.css` shell has been removed; Model Builder styling is owned by V3 CSS.
-- Root, frontend, backend, and lockfile version metadata are synchronized to v1.8.38.
+- Root, frontend, backend, and lockfile version metadata are synchronized to v1.9.0.
 
 ## Validation run in this workspace
 
