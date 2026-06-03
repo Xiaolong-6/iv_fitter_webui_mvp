@@ -51,6 +51,7 @@ The default Model Builder is V3, a graph-native free schematic editor:
 - **Canvas equations:** the canvas shows readable fitting-equation notes generated from the current graph, including what is used, each component law, and how the active graph is assembled for fitting.
 - **Inspector:** selected components expose expression editing, sign/polarity, and a parameter table with symbol/value/bounds/fit controls.
 - **Canvas toolbar:** clear canvas, presets, save preset, Synthetic IV trace, and Go to fitting actions are available as floating canvas controls.
+- **Report/export preview:** report pages and exported HTML render equivalent-circuit diagrams from the V3 graph when V3 metadata is available, with legacy SVG fallback for older saved models.
 
 The legacy Law / Form / Placement builder remains available elsewhere in the app for compatibility and comparison while graph-native fitting matures.
 

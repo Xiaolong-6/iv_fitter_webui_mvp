@@ -12,6 +12,86 @@ function model(): ModelSpec {
   };
 }
 
+function v3Model(): ModelSpec {
+  const graph = {
+    version: 3,
+    terminals: { positive: "V", ground: "GND" },
+    nodes: [
+      { id: "V", kind: "terminal", label: "V", role: "positive", position: { x: 360, y: 40 } },
+      { id: "GND", kind: "terminal", label: "GND", role: "ground", position: { x: 360, y: 360 } },
+    ],
+    components: [
+      {
+        id: "R0",
+        label: "R0",
+        templateKey: "resistance",
+        behavior: "R_of_V",
+        expression: "R0",
+        sign: 1,
+        position: { x: 265, y: 150 },
+        parameters: [{ symbol: "R0", value: 10, lower: 0, upper: 1e9, fit: true, unit: "ohm" }],
+      },
+      {
+        id: "D1",
+        label: "D1",
+        templateKey: "shockley_diode",
+        behavior: "I_of_V",
+        expression: "I0*(exp(V/(n*8.617333262e-5*T))-1)",
+        sign: 1,
+        position: { x: 265, y: 250 },
+        parameters: [
+          { symbol: "I0", value: 1e-12, lower: 1e-30, upper: 1, fit: true, unit: "A" },
+          { symbol: "n", value: 1.5, lower: 0.5, upper: 10, fit: true, unit: "1" },
+          { symbol: "T", value: 298.15, lower: 250, upper: 350, fit: false, unit: "K" },
+        ],
+      },
+    ],
+    wires: [
+      { id: "w1", from: { kind: "node", id: "V" }, to: { kind: "component", id: "R0", port: "p" } },
+      { id: "w2", from: { kind: "component", id: "R0", port: "n" }, to: { kind: "component", id: "D1", port: "p" } },
+      { id: "w3", from: { kind: "component", id: "D1", port: "n" }, to: { kind: "node", id: "GND" } },
+    ],
+  } as const;
+  return {
+    ...model(),
+    graph: {
+      terminals: ["V"],
+      reference_node: "GND",
+      nodes: [
+        { id: "V", label: "V", role: "terminal" },
+        { id: "GND", label: "GND", role: "reference" },
+      ],
+      components: [
+        {
+          id: "R0",
+          function_type: "custom",
+          law_id: "custom_expression",
+          evaluation_form: "current_branch",
+          placement: "parallel_current_branch",
+          node_pos: "V",
+          node_neg: "GND",
+          params: {},
+          metadata: { nickname: "R0" },
+        },
+        {
+          id: "D1",
+          function_type: "diode",
+          law_id: "shockley_diode",
+          evaluation_form: "current_branch",
+          placement: "junction_current_branch",
+          node_pos: "V",
+          node_neg: "GND",
+          params: {},
+          metadata: { nickname: "D1" },
+        },
+      ],
+      assembly_notes: [],
+      schema_version: "schematic_v3",
+      metadata: { modelBuilderV3: graph },
+    },
+  };
+}
+
 function result(): FitResult {
   return {
     success: true,
@@ -53,5 +133,16 @@ describe("HTML report export", () => {
     expect(html).toContain("Rs");
     expect(html).toContain("D1");
     expect(html).toContain("Rsh");
+  });
+
+  it("uses the V3 equivalent circuit SVG when modelBuilderV3 metadata exists", () => {
+    const fit = { ...result(), model: v3Model() };
+    const html = buildHtmlReportDocument({ result: fit, trace });
+    expect(html).toContain("V3 equivalent circuit");
+    expect(html).toContain("Vext");
+    expect(html).toContain("GND");
+    expect(html).toContain("R0");
+    expect(html).toContain("D1");
+    expect(html).not.toContain("Vi");
   });
 });

@@ -1,7 +1,7 @@
 import type { FitResult, FitSessionStats, TraceData } from "./types";
 import { fmtEng } from "./format";
 import { componentPlainRoleText } from "./modelDisplaySemantics";
-import { renderEquivalentCircuitSvg } from "./EquivalentCircuitStaticSvg";
+import { renderModelBuilderV3EquivalentCircuitSvg } from "../model-builder-v3/export/equivalentCircuitSvg";
 
 function escapeHtml(value: unknown) {
   return String(value ?? "")
@@ -373,7 +373,7 @@ function metricsSection(result: FitResult, sessionStats: FitSessionStats) {
 }
 
 function equivalentCircuitSection(result: FitResult) {
-  const svg = renderEquivalentCircuitSvg(result.model, "en");
+  const svg = renderModelBuilderV3EquivalentCircuitSvg(result.model, "en");
   const components = [
     ...result.model.series,
     ...result.model.core,
