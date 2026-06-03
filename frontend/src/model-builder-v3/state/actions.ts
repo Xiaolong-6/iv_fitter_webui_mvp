@@ -19,6 +19,13 @@ export type Mb3Action =
   | { type: "addComponent"; component: Mb3Component }
   | { type: "moveEntity"; entityId: string; x: number; y: number }
   | { type: "upsertComponentExpression"; componentId: string; expression: string }
-  | { type: "connectPorts"; sourceId: string; sourceHandle: string | null; targetId: string; targetHandle: string | null }
+  | {
+      type: "connectPorts";
+      sourceId: string;
+      sourceHandle: string | null;
+      targetId: string;
+      targetHandle: string | null;
+      position?: { x: number; y: number };
+    }
   | { type: "setDirty"; dirty: boolean }
   | { type: "hydrate"; state: Mb3State };

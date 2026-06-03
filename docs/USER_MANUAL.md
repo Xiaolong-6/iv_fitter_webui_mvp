@@ -44,6 +44,7 @@ Available behavior forms:
 2. Connect ports by dragging from one port to another.
 3. Use only the V-to-GND connected part of the schematic for the actual model.
 4. Leave draft or unused components on the canvas if needed. They are ignored until connected.
+5. If the compiler creates a junction label such as `V1`, drag the label to move the actual junction dot and its connected wires.
 
 ### Editing a component
 
@@ -71,11 +72,16 @@ The local variables are:
 
 ### Validation
 
-The validation panel reports whether the schematic is ready to compile. It also reports disconnected components. Disconnected components are not errors during drawing; they are simply ignored by fitting.
+The validation status reports whether the schematic is ready to compile. Disconnected or half-connected components are not drawing errors, but they are not part of fitting. Open branches remain visible on the canvas and are drawn with an ignored/dashed style so the visual schematic matches the compiled fitting state.
 
 ### Compilation rule
 
 The compiler extracts the active V-to-GND subgraph and converts it into backend graph data. React Flow positions and visual edges are not physics truth; the model truth is the graph of component ports and wires.
+
+The canvas equation area shows two layers:
+
+- component equations, using each component's local voltage drop and current convention;
+- an assembly summary generated from the current graph, including the active fitting component set, detected series set, detected branch set, node-voltage convention, and residual form used by fitting.
 
 ## Fitting page
 

@@ -1,6 +1,13 @@
 import type { Mb3Component } from "./types";
 import type { Mb3ComponentTemplate } from "./templates";
-import { getMb3BehaviorPrefix } from "./templates";
+
+function templateInstancePrefix(template: Mb3ComponentTemplate): string {
+  if (template.key === "resistance") return "R";
+  if (template.key === "shockley_diode") return "D";
+  if (template.key === "constant_current") return "I";
+  if (template.key === "custom" || template.userDefined) return "C";
+  return "X";
+}
 
 export function createComponentFromTemplate({
   template,
@@ -15,10 +22,7 @@ export function createComponentFromTemplate({
   const sequenceNumber = template.key === "resistance" ? existingCount : existingCount + 1;
   const spawnColumn = existingCount % 3;
   const spawnRow = Math.floor(existingCount / 3);
-  const id =
-    isCustomTemplate
-      ? `C${existingCount + 1}`
-      : `${getMb3BehaviorPrefix(template.behavior)}${sequenceNumber}`;
+  const id = `${templateInstancePrefix(template)}${isCustomTemplate ? existingCount + 1 : sequenceNumber}`;
   return {
     id,
     label: id,

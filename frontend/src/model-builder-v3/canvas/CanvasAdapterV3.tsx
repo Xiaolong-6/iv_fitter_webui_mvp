@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -9,15 +9,34 @@ import {
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
+  useViewport,
   useEdgesState,
   useNodesState,
   type Connection,
   type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { MathFormula } from "../../components/MathFormula";
+import { buildMb3VoltageLabels } from "../domain/compile";
 import type { Mb3Graph } from "../domain/types";
 import { mb3ToReactFlow } from "./adapter";
 import { SelectableWireEdge } from "./SelectableWireEdge";
+
+const DEFAULT_LABEL_OFFSET = { x: 15, y: -18 };
+
+function portSideToPosition(side?: string): Position {
+  switch (side) {
+    case "right":
+      return Position.Right;
+    case "bottom":
+      return Position.Bottom;
+    case "left":
+      return Position.Left;
+    case "top":
+    default:
+      return Position.Top;
+  }
+}
 
 function TerminalNode({ data }: NodeProps) {
   const payload = data as { label?: string; role?: "positive" | "ground" };
@@ -33,10 +52,90 @@ function TerminalNode({ data }: NodeProps) {
 }
 
 function JunctionNode({ data }: NodeProps) {
+  const payload = data as {
+    label?: string;
+    voltageLabel?: string;
+    nodeId?: string;
+    position?: { x: number; y: number };
+    zoom?: number;
+    onMoveEntity?: (entityId: string, x: number, y: number) => void;
+  };
+  const voltageLabel = payload.voltageLabel;
+  const nodePosition = payload.position ?? { x: 0, y: 0 };
+  const [draftPosition, setDraftPosition] = useState(nodePosition);
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+  } | null>(null);
+
+  useEffect(() => {
+    setDraftPosition(nodePosition);
+  }, [nodePosition.x, nodePosition.y]);
+
+  const startLabelDrag = (event: PointerEvent<HTMLSpanElement>) => {
+    if (!payload.nodeId || !payload.onMoveEntity) return;
+    event.preventDefault();
+    event.stopPropagation();
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: draftPosition.x,
+      originY: draftPosition.y,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const moveLabelDrag = (event: PointerEvent<HTMLSpanElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const zoom = payload.zoom && Number.isFinite(payload.zoom) ? payload.zoom : 1;
+    const nextPosition = {
+      x: drag.originX + (event.clientX - drag.startX) / zoom,
+      y: drag.originY + (event.clientY - drag.startY) / zoom,
+    };
+    setDraftPosition(nextPosition);
+    if (payload.nodeId && payload.onMoveEntity) {
+      payload.onMoveEntity(payload.nodeId, nextPosition.x, nextPosition.y);
+    }
+  };
+
+  const endLabelDrag = (event: PointerEvent<HTMLSpanElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    event.stopPropagation();
+    dragRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    if (payload.nodeId && payload.onMoveEntity) {
+      payload.onMoveEntity(payload.nodeId, draftPosition.x, draftPosition.y);
+    }
+  };
+
   return (
     <div className="mbv3-junction-node">
       <Handle type="target" position={Position.Top} id="node" />
-      {String((data as { label?: string }).label ?? "")}
+      {String(payload.label ?? "")}
+      {voltageLabel ? (
+        <span
+          className="mbv3-node-voltage-label"
+          style={{ left: DEFAULT_LABEL_OFFSET.x, top: DEFAULT_LABEL_OFFSET.y }}
+          title="Drag junction node"
+          onPointerDown={startLabelDrag}
+          onPointerMove={moveLabelDrag}
+          onPointerUp={endLabelDrag}
+          onPointerCancel={endLabelDrag}
+        >
+          {voltageLabel}
+        </span>
+      ) : null}
       <Handle type="source" position={Position.Bottom} id="node" />
     </div>
   );
@@ -47,6 +146,7 @@ function ComponentNode({ data, selected }: NodeProps) {
     label?: string;
     componentId?: string;
     inspected?: boolean;
+    portSides?: { p?: string; n?: string };
     onDeleteComponent?: (componentId: string) => void;
   };
   const className = [
@@ -72,9 +172,29 @@ function ComponentNode({ data, selected }: NodeProps) {
       >
         x
       </button>
-      <Handle type="target" position={Position.Top} id="p" />
+      <Handle type="target" position={portSideToPosition(payload.portSides?.p)} id="p" />
       {String(payload.label ?? "")}
-      <Handle type="source" position={Position.Bottom} id="n" />
+      <Handle type="source" position={portSideToPosition(payload.portSides?.n ?? "bottom")} id="n" />
+    </div>
+  );
+}
+
+function FormulaNode({ data }: NodeProps) {
+  const payload = data as { formulaLatex?: string[] };
+  const lines = payload.formulaLatex ?? [];
+  return (
+    <div className="mbv3-formula-node" aria-label="Compiled fitting equations">
+      <div className="mbv3-formula-node-title">Fitting equations</div>
+      <div className="mbv3-formula-node-lines">
+        {lines.map((line, index) => (
+          <MathFormula
+            key={`${index}-${line}`}
+            latex={line}
+            label={`Fitting equation ${index + 1}`}
+            className="mbv3-formula-node-line"
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -83,6 +203,7 @@ const nodeTypes = {
   mbv3Terminal: TerminalNode,
   mbv3Junction: JunctionNode,
   mbv3Component: ComponentNode,
+  mbv3Formula: FormulaNode,
 };
 
 const edgeTypes = {
@@ -101,8 +222,12 @@ function CanvasInner({
   onMoveEntity,
   onConnectPorts,
   onDropTemplate,
+  formulaLatex,
+  activeComponentIds,
 }: {
   graph: Mb3Graph;
+  formulaLatex: string[];
+  activeComponentIds: string[];
   selectedComponentId: string | null;
   inspectedComponentId: string | null;
   selectedWireId: string | null;
@@ -111,11 +236,16 @@ function CanvasInner({
   onDeleteWire: (wireId: string) => void;
   onDeleteComponent: (componentId: string) => void;
   onMoveEntity: (entityId: string, x: number, y: number) => void;
-  onConnectPorts: (connection: Connection) => void;
+  onConnectPorts: (connection: Connection, position?: { x: number; y: number }) => void;
   onDropTemplate: (templateKey: string, position: { x: number; y: number }) => void;
 }) {
   const { screenToFlowPosition, flowToScreenPosition } = useReactFlow();
-  const flowGraph = useMemo(() => mb3ToReactFlow(graph), [graph]);
+  const { zoom } = useViewport();
+  const flowGraph = useMemo(
+    () => mb3ToReactFlow(graph, formulaLatex, activeComponentIds),
+    [graph, formulaLatex, activeComponentIds],
+  );
+  const voltageLabels = useMemo(() => buildMb3VoltageLabels(graph), [graph]);
   const [nodes, setNodes, onNodesChange] = useNodesState(flowGraph.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(flowGraph.edges);
 
@@ -157,6 +287,15 @@ function CanvasInner({
                   inspected: node.id === inspectedComponentId,
                   onDeleteComponent,
                 }
+              : node.type === "mbv3Junction"
+                ? {
+                    ...(node.data ?? {}),
+                    nodeId: node.id,
+                    voltageLabel: voltageLabels.get(node.id),
+                    position: graph.nodes.find((graphNode) => graphNode.id === node.id)?.position,
+                    zoom,
+                    onMoveEntity,
+                  }
               : node.data,
         }))}
         edges={edges.map((edge) => ({
@@ -176,7 +315,18 @@ function CanvasInner({
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onConnect={onConnectPorts}
+        onConnect={(connection) => {
+          const sourceNode = nodes.find((node) => node.id === connection.source);
+          const targetNode = nodes.find((node) => node.id === connection.target);
+          const midpoint =
+            sourceNode && targetNode
+              ? {
+                  x: (sourceNode.position.x + targetNode.position.x) / 2,
+                  y: (sourceNode.position.y + targetNode.position.y) / 2,
+                }
+              : undefined;
+          onConnectPorts(connection, midpoint);
+        }}
         onEdgeClick={(_, edge) => onSelectWire(edge.id)}
         onNodeClick={(_, node) => {
           const isComponent = node.type === "mbv3Component";

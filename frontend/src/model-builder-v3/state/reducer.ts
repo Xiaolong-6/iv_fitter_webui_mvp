@@ -1,4 +1,4 @@
-import type { Mb3PortRef, Mb3State } from "../domain/types";
+import type { Mb3Node, Mb3PortRef, Mb3State, Mb3Wire } from "../domain/types";
 import { resolveNonCollidingPosition } from "../domain/collision";
 import type { Mb3Action } from "./actions";
 
@@ -7,6 +7,77 @@ function handleToPort(id: string, handle: string | null): Mb3PortRef {
     return { kind: "component", id, port: handle };
   }
   return { kind: "node", id };
+}
+
+function samePort(a: Mb3PortRef, b: Mb3PortRef): boolean {
+  return a.kind === b.kind && a.id === b.id && (a.port ?? "node") === (b.port ?? "node");
+}
+
+function wireTouchesPort(wire: Mb3Wire, port: Mb3PortRef): boolean {
+  return samePort(wire.from, port) || samePort(wire.to, port);
+}
+
+function otherWireEnd(wire: Mb3Wire, port: Mb3PortRef): Mb3PortRef {
+  return samePort(wire.from, port) ? wire.to : wire.from;
+}
+
+function nodePositionForPort(state: Mb3State, port: Mb3PortRef, fallback?: { x: number; y: number }) {
+  if (port.kind === "node") {
+    return state.graph.nodes.find((node) => node.id === port.id)?.position ?? fallback ?? { x: 520, y: 320 };
+  }
+  const component = state.graph.components.find((candidate) => candidate.id === port.id);
+  if (!component) return fallback ?? { x: 520, y: 320 };
+  return {
+    x: component.position.x + 95,
+    y: component.position.y + (port.port === "n" ? 54 : 0),
+  };
+}
+
+function ensureJunctionForPort(
+  state: Mb3State,
+  wires: Mb3Wire[],
+  nodes: Mb3Node[],
+  port: Mb3PortRef,
+  position?: { x: number; y: number },
+): { port: Mb3PortRef; wires: Mb3Wire[]; nodes: Mb3Node[] } {
+  if (port.kind === "node") {
+    const node = state.graph.nodes.find((candidate) => candidate.id === port.id);
+    if (node?.kind === "junction") return { port, wires, nodes };
+  }
+  const touching = wires.filter((wire) => wireTouchesPort(wire, port));
+  if (touching.length === 0) return { port, wires, nodes };
+  if (touching.length === 1) {
+    const other = otherWireEnd(touching[0], port);
+    const otherNode = other.kind === "node"
+      ? nodes.find((node) => node.id === other.id)
+      : null;
+    if (otherNode?.kind === "junction") {
+      return { port: other, wires, nodes };
+    }
+  }
+
+  const junctionId = `J${state.graph.nodes.filter((node) => node.kind === "junction").length + 1}_${Date.now()}`;
+  const junctionPort: Mb3PortRef = { kind: "node", id: junctionId };
+  const junction: Mb3Node = {
+    id: junctionId,
+    kind: "junction",
+    label: "",
+    position: position ?? nodePositionForPort(state, port),
+  };
+  const rewritten = wires.map((wire) => {
+    if (!wireTouchesPort(wire, port)) return wire;
+    return {
+      ...wire,
+      from: otherWireEnd(wire, port),
+      to: junctionPort,
+    };
+  });
+  rewritten.push({
+    id: `w${rewritten.length + 1}_${Date.now()}_junction`,
+    from: junctionPort,
+    to: port,
+  });
+  return { port: junctionPort, wires: rewritten, nodes: [...nodes, junction] };
 }
 
 export function mb3Reducer(state: Mb3State, action: Mb3Action): Mb3State {
@@ -157,11 +228,20 @@ export function mb3Reducer(state: Mb3State, action: Mb3Action): Mb3State {
       if (action.sourceId === action.targetId && action.sourceHandle === action.targetHandle) {
         return state;
       }
-      const from = handleToPort(action.sourceId, action.sourceHandle);
-      const to = handleToPort(action.targetId, action.targetHandle);
-      const id = `w${state.graph.wires.length + 1}_${Date.now()}`;
-      const wires = [...state.graph.wires, { id, from, to }];
-      return { ...state, graph: { ...state.graph, wires }, dirty: true };
+      let nodes = state.graph.nodes;
+      let wires = state.graph.wires;
+      const rawFrom = handleToPort(action.sourceId, action.sourceHandle);
+      const rawTo = handleToPort(action.targetId, action.targetHandle);
+      const fromJunction = ensureJunctionForPort(state, wires, nodes, rawFrom, action.position);
+      nodes = fromJunction.nodes;
+      wires = fromJunction.wires;
+      const toJunction = ensureJunctionForPort(state, wires, nodes, rawTo, action.position);
+      nodes = toJunction.nodes;
+      wires = toJunction.wires;
+      if (samePort(fromJunction.port, toJunction.port)) return state;
+      const id = `w${wires.length + 1}_${Date.now()}`;
+      wires = [...wires, { id, from: fromJunction.port, to: toJunction.port }];
+      return { ...state, graph: { ...state.graph, nodes, wires }, dirty: true };
     }
     default:
       return state;

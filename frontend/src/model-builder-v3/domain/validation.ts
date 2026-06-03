@@ -36,6 +36,21 @@ function hasPath(adjacency: Map<string, Set<string>>, start: string, target: str
   return false;
 }
 
+function hasComponentPortWire(graph: Mb3Graph, componentId: string, port: "p" | "n"): boolean {
+  return graph.wires.some((wire) =>
+    (wire.from.kind === "component" && wire.from.id === componentId && wire.from.port === port) ||
+    (wire.to.kind === "component" && wire.to.id === componentId && wire.to.port === port)
+  );
+}
+
+function openComponentLabels(graph: Mb3Graph): string[] {
+  return graph.components
+    .filter((component) =>
+      hasComponentPortWire(graph, component.id, "p") !== hasComponentPortWire(graph, component.id, "n")
+    )
+    .map((component) => component.label || component.id);
+}
+
 export function evaluateMb3GraphConnectivity(graph: Mb3Graph): Mb3ConnectivityStatus {
   const positive = `node:${graph.terminals.positive}`;
   const ground = `node:${graph.terminals.ground}`;
@@ -58,6 +73,10 @@ export function evaluateMb3GraphConnectivity(graph: Mb3Graph): Mb3ConnectivitySt
   }
 
   if (hasPath(fullAdjacency, positive, ground)) {
+    const openLabels = openComponentLabels(graph);
+    if (openLabels.length > 0) {
+      return { level: "warning", label: `Warning: open branch ignored (${openLabels.join(", ")})` };
+    }
     return { level: "ok", label: "Path OK: V to GND" };
   }
 

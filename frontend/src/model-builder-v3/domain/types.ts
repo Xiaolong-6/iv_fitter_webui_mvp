@@ -74,5 +74,6 @@ export interface Mb3CompileResult {
   activeComponentIds: string[];
   model: ModelSpec;
   warnings: string[];
+  formulaLatex: string[];
 }
 import type { ModelSpec } from "../../model/types";

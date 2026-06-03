@@ -44,7 +44,7 @@ export function SchematicBuilderV3({
   canvasActions?: ReactNode;
   onGoToFitting?: () => void;
 }) {
-  const [state, dispatch] = useReducer(mb3Reducer, undefined, createMb3InitialState);
+  const [state, dispatch] = useReducer(mb3Reducer, model, createMb3InitialState);
   const [stickySelectedComponentId, setStickySelectedComponentId] = useState<string | null>(null);
   const [previewTemplateKey, setPreviewTemplateKey] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<Mb3ListPanel>(null);
@@ -79,7 +79,7 @@ export function SchematicBuilderV3({
       : null;
   const hasInspectorDetails = Boolean(inspectorComponent || inspectorTemplateDetails);
 
-  const onConnect = (connection: Connection) => {
+  const onConnect = (connection: Connection, position?: { x: number; y: number }) => {
     if (!connection.source || !connection.target) return;
     dispatch({
       type: "connectPorts",
@@ -87,6 +87,7 @@ export function SchematicBuilderV3({
       sourceHandle: connection.sourceHandle ?? null,
       targetId: connection.target,
       targetHandle: connection.targetHandle ?? null,
+      position,
     });
   };
 
@@ -101,15 +102,18 @@ export function SchematicBuilderV3({
     () => evaluateMb3GraphConnectivity(state.graph),
     [state.graph],
   );
+  const compiledGraph = useMemo(
+    () => compileMb3Graph(state.graph, baseModelRef.current),
+    [state.graph],
+  );
 
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
 
   useEffect(() => {
-    const compiled = compileMb3Graph(state.graph, baseModelRef.current);
-    onChangeRef.current(compiled.model);
-  }, [state.graph]);
+    onChangeRef.current(compiledGraph.model);
+  }, [compiledGraph]);
 
   const selectExistingComponentByTemplate = (template: Mb3ComponentTemplate, anchor: DOMRect) => {
     setPreviewTemplateKey(template.key);
@@ -324,6 +328,8 @@ export function SchematicBuilderV3({
       ) : null}
       <CanvasAdapterV3
         graph={state.graph}
+        formulaLatex={compiledGraph.formulaLatex}
+        activeComponentIds={compiledGraph.activeComponentIds}
         selectedComponentId={state.selectedComponentId}
         inspectedComponentId={inspectorOpen && inspectorComponent ? inspectorComponent.id : null}
         selectedWireId={state.selectedWireId}

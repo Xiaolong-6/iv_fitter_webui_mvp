@@ -47,6 +47,34 @@ function portKey(ref: Mb3PortRef): string {
     : `node:${ref.id}`;
 }
 
+function nodePortKey(nodeId: string): string {
+  return `node:${nodeId}`;
+}
+
+export function buildMb3VoltageLabels(graph: Mb3Graph): Map<string, string> {
+  const dsu = new DisjointSet();
+  graph.nodes.forEach((node) => dsu.add(nodePortKey(node.id)));
+  graph.wires.forEach((wire) => dsu.union(portKey(wire.from), portKey(wire.to)));
+
+  const positiveRoot = dsu.find(nodePortKey(graph.terminals.positive));
+  const groundRoot = dsu.find(nodePortKey(graph.terminals.ground));
+  const labelsByRoot = new Map<string, string>([
+    [positiveRoot, "Vext"],
+    [groundRoot, "0"],
+  ]);
+  let nextIndex = 1;
+  const labelsByNode = new Map<string, string>();
+  for (const node of graph.nodes) {
+    const root = dsu.find(nodePortKey(node.id));
+    if (!labelsByRoot.has(root)) {
+      labelsByRoot.set(root, `V${nextIndex}`);
+      nextIndex += 1;
+    }
+    labelsByNode.set(node.id, labelsByRoot.get(root)!);
+  }
+  return labelsByNode;
+}
+
 function paramToSpec(parameter: Mb3Parameter): ParameterSpec {
   return {
     value: parameter.value,
@@ -263,6 +291,136 @@ function temperatureFromGraph(graph: Mb3Graph, fallback: number): number {
   return fallback;
 }
 
+function texId(value: string): string {
+  return value.replace(/[^A-Za-z0-9]+/g, "");
+}
+
+function texParameter(component: Mb3Component, fallback: string): string {
+  return texId(component.label || component.parameters[0]?.symbol || fallback) || fallback;
+}
+
+function texExpression(expression: string): string {
+  return expression
+    .replace(/\*/g, "\\cdot ")
+    .replace(/\bexp\s*\(/g, "\\exp(")
+    .replace(/\bV\b/g, "\\Delta V")
+    .replace(/\bI\b/g, "I");
+}
+
+function texVoltageDiff(positiveVoltage: string, negativeVoltage: string): string {
+  return `${positiveVoltage}-${negativeVoltage}`;
+}
+
+function componentFormula(
+  component: Mb3Component,
+  isSeriesBridge: boolean,
+  positiveVoltage: string,
+  negativeVoltage: string,
+): string {
+  const label = texId(component.label || component.id) || "X";
+  const delta = texVoltageDiff(positiveVoltage, negativeVoltage);
+  if (component.templateKey === "shockley_diode") {
+    return `I_{${label}}=I_0\\left[\\exp\\left(\\frac{${delta}}{n k_B T}\\right)-1\\right]`;
+  }
+  if (component.templateKey === "resistance" && isSeriesBridge) {
+    return `\\Delta V_{${label}}=${delta}=I\\,${texParameter(component, "R")}`;
+  }
+  if (component.templateKey === "resistance") {
+    return `I_{${label}}=\\frac{\\Delta V_{${label}}}{${texParameter(component, "R")}}=\\frac{${delta}}{${texParameter(component, "R")}}`;
+  }
+  if (component.behavior === "I_of_V") {
+    return `I_{${label}}(\\Delta V_{${label}})=${texExpression(component.expression)}`;
+  }
+  if (component.behavior === "R_of_V") {
+    return `I_{${label}}=\\frac{\\Delta V_{${label}}}{${texExpression(component.expression)}}`;
+  }
+  if (component.behavior === "dV_of_I") {
+    return `\\Delta V_{${label}}(I)=${texExpression(component.expression)}`;
+  }
+  return `F_{${label}}(I,\\Delta V_{${label}})=${texExpression(component.expression)}=0`;
+}
+
+function buildFormulaLatex(
+  activeComponents: Mb3Component[],
+  rootForPort: (ref: Mb3PortRef) => string,
+  positiveRoot: string,
+  groundRoot: string,
+  hasTerminalPath: boolean,
+  openComponents: Mb3Component[] = [],
+): string[] {
+  if (!hasTerminalPath || activeComponents.length === 0) {
+    const lines = ["\\text{No valid V\\!\\to\\!GND fitting path}"];
+    if (openComponents.length > 0) {
+      lines.push(`\\text{Open branches drawn dashed and ignored: ${openComponents.map((component) => component.label || component.id).join(", ")}}`);
+    }
+    return lines;
+  }
+
+  const seriesComponents = activeComponents.filter((component) =>
+    !hasPathWithoutComponent(activeComponents, rootForPort, positiveRoot, groundRoot, component.id),
+  );
+  const branchComponents = activeComponents.filter((component) => !seriesComponents.includes(component));
+  const voltageLabelsByRoot = new Map<string, string>([
+    [positiveRoot, "V_{ext}"],
+    [groundRoot, "0"],
+  ]);
+  let nextVoltageIndex = 1;
+  const voltageLabel = (root: string) => {
+    if (!voltageLabelsByRoot.has(root)) {
+      voltageLabelsByRoot.set(root, `V_${nextVoltageIndex}`);
+      nextVoltageIndex += 1;
+    }
+    return voltageLabelsByRoot.get(root)!;
+  };
+
+  const voltageDropTerms = seriesComponents.map((component) => `\\Delta V_{${texId(component.label || component.id)}}(I)`);
+  const activeLabels = activeComponents.map((component) => texId(component.label || component.id)).filter(Boolean);
+  const seriesLabels = seriesComponents.map((component) => texId(component.label || component.id)).filter(Boolean);
+  const branchLabels = branchComponents.map((component) => texId(component.label || component.id)).filter(Boolean);
+  const activeSet = activeLabels.length ? activeLabels.join(",") : "\\varnothing";
+  const seriesSet = seriesLabels.length ? seriesLabels.join(",") : "\\varnothing";
+  const branchSet = branchLabels.length ? branchLabels.join(",") : "\\varnothing";
+  const currentTerms = branchComponents.map((component) => `I_{${texId(component.label || component.id)}}(\\Delta V_{${texId(component.label || component.id)}})`);
+  const voltageConstraint =
+    seriesComponents.length > 0
+      ? `r_V=V_{ext}-\\sum_{k\\in\\mathcal{S}}\\Delta V_k-\\Delta V_{network}`
+      : "r_V=V_{ext}-\\Delta V_{network}";
+  const branchCurrent =
+    currentTerms.length > 0
+      ? `I_{model}=${currentTerms.join("+")}`
+      : "I_{model}=0";
+  const assemblyLines = [
+    "\\text{Assembly for fitting from the current graph}",
+    `\\mathcal{C}_{fit}=\\{${activeSet}\\},\\quad \\mathcal{S}=\\{${seriesSet}\\},\\quad \\mathcal{B}=\\{${branchSet}\\}`,
+    "\\Delta V_m=V_{m,+}-V_{m,-}",
+    "\\text{Solve graph node voltages with KCL/KVL on the active V-to-GND subgraph}",
+    branchCurrent,
+    "r_I=I_{meas}-I_{model}",
+    voltageConstraint,
+  ];
+  if (openComponents.length > 0) {
+    assemblyLines.push(`\\text{Dashed/open branches ignored by fitting: ${openComponents.map((component) => component.label || component.id).join(", ")}}`);
+  }
+  const lines = [
+    voltageDropTerms.length > 0
+      ? `V_{ext}=\\sum_k \\Delta V_k`
+      : "V_{GND}=0",
+    branchComponents.length > 0
+      ? "I=\\sum_m I_m(\\Delta V_m)"
+      : "I=0",
+    ...activeComponents.map((component) =>
+      componentFormula(
+        component,
+        seriesComponents.includes(component),
+        voltageLabel(rootForPort({ kind: "component", id: component.id, port: "p" })),
+        voltageLabel(rootForPort({ kind: "component", id: component.id, port: "n" })),
+      ),
+    ),
+    ...assemblyLines,
+  ];
+  return lines;
+}
+
 export function compileMb3Graph(graph: Mb3Graph, baseModel?: ModelSpec): Mb3CompileResult {
   const dsu = new DisjointSet();
   graph.nodes.forEach((node) => dsu.add(`node:${node.id}`));
@@ -297,12 +455,67 @@ export function compileMb3Graph(graph: Mb3Graph, baseModel?: ModelSpec): Mb3Comp
     ? graph.components.filter((component) => {
         const pRoot = rootForPort({ kind: "component", id: component.id, port: "p" });
         const nRoot = rootForPort({ kind: "component", id: component.id, port: "n" });
+        const hasPositiveWire = graph.wires.some((wire) =>
+          wire.from.kind === "component" && wire.from.id === component.id && wire.from.port === "p"
+          || wire.to.kind === "component" && wire.to.id === component.id && wire.to.port === "p"
+        );
+        const hasNegativeWire = graph.wires.some((wire) =>
+          wire.from.kind === "component" && wire.from.id === component.id && wire.from.port === "n"
+          || wire.to.kind === "component" && wire.to.id === component.id && wire.to.port === "n"
+        );
+        if (!hasPositiveWire || !hasNegativeWire) return false;
+        const positiveToP = hasPathWithoutComponent(
+          graph.components,
+          rootForPort,
+          positiveRoot,
+          pRoot,
+          component.id,
+        );
+        const nToGround = hasPathWithoutComponent(
+          graph.components,
+          rootForPort,
+          nRoot,
+          groundRoot,
+          component.id,
+        );
+        const positiveToN = hasPathWithoutComponent(
+          graph.components,
+          rootForPort,
+          positiveRoot,
+          nRoot,
+          component.id,
+        );
+        const pToGround = hasPathWithoutComponent(
+          graph.components,
+          rootForPort,
+          pRoot,
+          groundRoot,
+          component.id,
+        );
         return (
-          (fromPositive.has(pRoot) && fromGround.has(nRoot)) ||
-          (fromPositive.has(nRoot) && fromGround.has(pRoot))
+          (positiveToP && nToGround) ||
+          (positiveToN && pToGround)
         );
       })
     : [];
+
+  const openComponents = graph.components.filter((component) => {
+    const hasPositiveWire = graph.wires.some((wire) =>
+      wire.from.kind === "component" && wire.from.id === component.id && wire.from.port === "p"
+      || wire.to.kind === "component" && wire.to.id === component.id && wire.to.port === "p"
+    );
+    const hasNegativeWire = graph.wires.some((wire) =>
+      wire.from.kind === "component" && wire.from.id === component.id && wire.from.port === "n"
+      || wire.to.kind === "component" && wire.to.id === component.id && wire.to.port === "n"
+    );
+    return hasPositiveWire !== hasNegativeWire;
+  });
+
+  if (openComponents.length > 0) {
+    warnings.push(
+      `Open branch ignored in fitting: ${openComponents.map((component) => component.label || component.id).join(", ")}.`,
+    );
+  }
 
   const rootLabels = new Map<string, string>();
   rootLabel(positiveRoot, rootLabels, positiveRoot, groundRoot);
@@ -368,6 +581,10 @@ export function compileMb3Graph(graph: Mb3Graph, baseModel?: ModelSpec): Mb3Comp
       "Canvas positions are visual metadata; graph ports and wires define fitting topology.",
     ],
     schema_version: "schematic_v3",
+    metadata: {
+      ...(baseModel?.graph?.metadata ?? {}),
+      modelBuilderV3: graph,
+    },
   };
 
   const legacy = activeComponents
@@ -378,6 +595,14 @@ export function compileMb3Graph(graph: Mb3Graph, baseModel?: ModelSpec): Mb3Comp
         : false;
       return legacyComponent(component, isBridge);
     });
+  const formulaLatex = buildFormulaLatex(
+    activeComponents,
+    rootForPort,
+    positiveRoot,
+    groundRoot,
+    hasTerminalPath,
+    openComponents,
+  );
   const core = legacy.filter((component) => component.location === "core");
   const series = legacy.filter((component) => component.location === "series");
   const parallel = legacy.filter((component) => component.location === "parallel");
@@ -398,5 +623,6 @@ export function compileMb3Graph(graph: Mb3Graph, baseModel?: ModelSpec): Mb3Comp
     activeComponentIds: activeComponents.map((component) => component.id),
     model,
     warnings,
+    formulaLatex,
   };
 }

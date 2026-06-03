@@ -46,7 +46,9 @@ The default Model Builder is V3, a graph-native free schematic editor:
 
 - **Fixed terminals:** `V` and `GND` define the two-terminal model.
 - **Component palette:** users drag R(V), I(V), dV(I), residual, or saved custom components onto the canvas. Resistor, diode, current-source, and saved-model entries are presets/templates, not separate architecture classes.
-- **Wires:** users connect component ports and terminals. Only the active V-to-GND connected subgraph is compiled; disconnected draft components stay visible but are ignored.
+- **Wires:** users connect component ports and terminals. Only the active V-to-GND connected subgraph is compiled; disconnected draft components and open branches stay visible on the canvas and are shown as ignored, dashed branches rather than disappearing.
+- **Node labels:** generated node-voltage labels act as junction drag handles. Dragging a voltage label moves the underlying junction dot and its connected wires, not a detached text annotation.
+- **Canvas equations:** the canvas shows the generated fitting equations plus an assembly summary generated from the current graph. The assembly summary lists the active component set, series/branch grouping, local voltage-drop convention, and residual shape used for fitting.
 - **Inspector:** selected components expose expression editing, sign/polarity, and a parameter table with symbol/value/bounds/fit controls.
 - **Canvas toolbar:** clear canvas, presets, save preset, Synthetic IV trace, and Go to fitting actions are available as floating canvas controls.
 
@@ -64,7 +66,7 @@ The Parameters table is grouped first by placement, then by component instance. 
 - HappyMeasure CSV v2 import compatibility for single, wide, and long files, including current-source conversion.
 - Synthetic IV trace generation from the current Model Builder model, available directly from the V3 canvas toolbar, with voltage sweep controls, optional noise, seed, current compliance, and ground-truth metadata.
 - Grouped parameter editing with next-fit initials, bounds, fit/fixed state, fitted values, uncertainty, and interpretation hints.
-- Model Builder V3 schematic graph editing with fixed V/GND terminals, drag-in two-terminal components, orthogonal wires, presets, save/load, and V-to-GND validation.
+- Model Builder V3 schematic graph editing with fixed V/GND terminals, drag-in two-terminal components, orthogonal wires, draggable junction labels, presets, save/load, V-to-GND validation, and canvas fitting-equation assembly display.
 - Component behavior forms such as R(V), I(V), dV(I), and F(I,V)=0, with resistor/diode/source entries handled as presets.
 - Legacy Model Builder remains available for comparison while graph-native fitting is matured.
 - Mobile portrait layout with compact controls and sticky mobile Run fit action.

@@ -1,5 +1,6 @@
 .mbv3-shell {
   --mbv3-left-panel-width: 280px;
+  --mbv3-topbar-control-size: calc((16px * var(--app-zoom) * 1.1) + 22px);
   position: relative;
   width: 100%;
   height: calc(100vh - 180px);
@@ -24,7 +25,6 @@
 }
 
 .mbv3-topbar {
-  --mbv3-topbar-control-size: calc((16px * var(--app-zoom) * 1.1) + 22px);
   display: grid;
   grid-template-columns: var(--mbv3-left-panel-width) max-content;
   gap: 8px;
@@ -636,6 +636,76 @@
   font-weight: 700;
 }
 
+.mbv3-formula-node {
+  width: max-content;
+  min-width: 420px;
+  max-width: none;
+  color: rgba(15, 23, 42, 0.84);
+  pointer-events: none;
+  user-select: none;
+}
+
+.mbv3-formula-node-title {
+  margin: 0 0 6px;
+  color: rgba(71, 85, 105, 0.72);
+  font-size: calc(10px * var(--app-zoom));
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mbv3-formula-node-lines {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border-left: 2px solid rgba(100, 116, 139, 0.22);
+  background:
+    linear-gradient(90deg, rgba(248, 250, 252, 0.62), rgba(248, 250, 252, 0.2) 72%, transparent),
+    repeating-linear-gradient(0deg, transparent 0 28px, rgba(148, 163, 184, 0.08) 29px);
+}
+
+.mbv3-formula-node .mbv3-formula-node-line {
+  display: block;
+  margin: 0;
+  padding: 0 !important;
+  width: max-content;
+  max-width: none;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: rgba(15, 23, 42, 0.9);
+  font-size: calc(11px * var(--app-zoom));
+  line-height: 1.25;
+  font-family: "Cambria Math", "STIX Two Math", "Noto Serif", "Times New Roman", serif;
+}
+
+.mbv3-formula-node .mbv3-formula-node-line .katex-display {
+  margin: 0;
+  text-align: left;
+}
+
+.mbv3-formula-node .mbv3-formula-node-line .latex-rendered {
+  white-space: nowrap;
+}
+
+.mbv3-formula-node .mbv3-formula-node-line .katex {
+  white-space: nowrap;
+}
+
+.mbv3-formula-node .mbv3-formula-node-line .latex-copy {
+  display: none;
+}
+
+.mbv3-canvas .react-flow__node-mbv3Formula {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+}
+
 .mbv3-canvas {
   width: 100%;
   height: 100%;
@@ -664,12 +734,33 @@
 }
 
 .mbv3-junction-node {
-  min-width: 86px;
-  min-height: 38px;
-  padding: 6px 14px;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  background: #f8fafc;
+  width: 13px;
+  height: 13px;
+  min-width: 13px;
+  min-height: 13px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #111827;
+  color: transparent;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.92);
+}
+
+.mbv3-node-voltage-label {
+  position: absolute;
+  color: rgba(51, 65, 85, 0.76);
+  font-size: calc(9px * var(--app-zoom));
+  font-weight: 900;
+  line-height: 1;
+  cursor: grab;
+  pointer-events: all;
+  white-space: nowrap;
+  user-select: none;
+  z-index: 5;
+}
+
+.mbv3-node-voltage-label:active {
+  cursor: grabbing;
 }
 
 .mbv3-component-node {
@@ -758,6 +849,21 @@
   z-index: 4 !important;
 }
 
+.mbv3-canvas .mbv3-component-node .react-flow__handle-left {
+  left: 0 !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 4 !important;
+}
+
+.mbv3-canvas .mbv3-component-node .react-flow__handle-right {
+  right: 0 !important;
+  left: auto !important;
+  top: 50% !important;
+  transform: translate(50%, -50%) !important;
+  z-index: 4 !important;
+}
+
 /* Fill the entire Model page content area with V3 canvas */
 .workflow-page.model-page .model-webpage-stack,
 .workflow-page.model-page .model-builder-section,
@@ -783,6 +889,12 @@
   background: #111827 !important;
   border: 0 !important;
   box-shadow: none !important;
+}
+
+.mbv3-canvas .mbv3-junction-node .react-flow__handle {
+  width: 13px !important;
+  height: 13px !important;
+  opacity: 0 !important;
 }
 
 .mbv3-edge-delete {
