@@ -18,7 +18,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { MathFormula } from "../../components/MathFormula";
 import { buildMb3VoltageLabels } from "../domain/compile";
-import type { Mb3Graph } from "../domain/types";
+import type { Mb3FormulaSection, Mb3Graph } from "../domain/types";
 import { mb3ToReactFlow } from "./adapter";
 import { SelectableWireEdge } from "./SelectableWireEdge";
 
@@ -46,6 +46,8 @@ function TerminalNode({ data }: NodeProps) {
     <div className="mbv3-terminal-node">
       {isGnd ? <Handle type="target" position={Position.Top} id="node" /> : null}
       {String(payload.label ?? "")}
+      {isV ? <span className="mbv3-terminal-voltage-label">Vext</span> : null}
+      {isGnd ? <span className="mbv3-terminal-voltage-label">0</span> : null}
       {isV ? <Handle type="source" position={Position.Bottom} id="node" /> : null}
     </div>
   );
@@ -173,26 +175,47 @@ function ComponentNode({ data, selected }: NodeProps) {
         x
       </button>
       <Handle type="target" position={portSideToPosition(payload.portSides?.p)} id="p" />
+      <Handle type="source" position={portSideToPosition(payload.portSides?.p)} id="p" />
       {String(payload.label ?? "")}
+      <Handle type="target" position={portSideToPosition(payload.portSides?.n ?? "bottom")} id="n" />
       <Handle type="source" position={portSideToPosition(payload.portSides?.n ?? "bottom")} id="n" />
     </div>
   );
 }
 
 function FormulaNode({ data }: NodeProps) {
-  const payload = data as { formulaLatex?: string[] };
+  const payload = data as { formulaLatex?: string[]; formulaSections?: Mb3FormulaSection[] };
   const lines = payload.formulaLatex ?? [];
+  const sections = payload.formulaSections?.length
+    ? payload.formulaSections
+    : [{
+        title: "Equations",
+        lines: lines.map((line) => ({ kind: "formula" as const, text: line })),
+      }];
   return (
     <div className="mbv3-formula-node" aria-label="Compiled fitting equations">
       <div className="mbv3-formula-node-title">Fitting equations</div>
       <div className="mbv3-formula-node-lines">
-        {lines.map((line, index) => (
-          <MathFormula
-            key={`${index}-${line}`}
-            latex={line}
-            label={`Fitting equation ${index + 1}`}
-            className="mbv3-formula-node-line"
-          />
+        {sections.map((section, sectionIndex) => (
+          <section className="mbv3-formula-section" key={`${sectionIndex}-${section.title}`}>
+            <div className="mbv3-formula-section-title">{section.title}</div>
+            <div className="mbv3-formula-section-lines">
+              {section.lines.map((line, lineIndex) =>
+                line.kind === "formula" ? (
+                  <MathFormula
+                    key={`${lineIndex}-${line.text}`}
+                    latex={line.text}
+                    label={`${section.title} equation ${lineIndex + 1}`}
+                    className="mbv3-formula-node-line"
+                  />
+                ) : (
+                  <p className="mbv3-formula-node-text" key={`${lineIndex}-${line.text}`}>
+                    {line.text}
+                  </p>
+                ),
+              )}
+            </div>
+          </section>
         ))}
       </div>
     </div>
@@ -223,10 +246,12 @@ function CanvasInner({
   onConnectPorts,
   onDropTemplate,
   formulaLatex,
+  formulaSections,
   activeComponentIds,
 }: {
   graph: Mb3Graph;
   formulaLatex: string[];
+  formulaSections: Mb3FormulaSection[];
   activeComponentIds: string[];
   selectedComponentId: string | null;
   inspectedComponentId: string | null;
@@ -242,8 +267,8 @@ function CanvasInner({
   const { screenToFlowPosition, flowToScreenPosition } = useReactFlow();
   const { zoom } = useViewport();
   const flowGraph = useMemo(
-    () => mb3ToReactFlow(graph, formulaLatex, activeComponentIds),
-    [graph, formulaLatex, activeComponentIds],
+    () => mb3ToReactFlow(graph, formulaLatex, activeComponentIds, formulaSections),
+    [graph, formulaLatex, activeComponentIds, formulaSections],
   );
   const voltageLabels = useMemo(() => buildMb3VoltageLabels(graph), [graph]);
   const [nodes, setNodes, onNodesChange] = useNodesState(flowGraph.nodes);
@@ -291,7 +316,10 @@ function CanvasInner({
                 ? {
                     ...(node.data ?? {}),
                     nodeId: node.id,
-                    voltageLabel: voltageLabels.get(node.id),
+                    voltageLabel: (() => {
+                      const label = voltageLabels.get(node.id);
+                      return label === "Vext" || label === "0" ? undefined : label;
+                    })(),
                     position: graph.nodes.find((graphNode) => graphNode.id === node.id)?.position,
                     zoom,
                     onMoveEntity,

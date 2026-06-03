@@ -1,4 +1,4 @@
-import type { Mb3Node, Mb3PortRef, Mb3State, Mb3Wire } from "../domain/types";
+import type { Mb3Graph, Mb3Node, Mb3PortRef, Mb3State, Mb3Wire } from "../domain/types";
 import { resolveNonCollidingPosition } from "../domain/collision";
 import type { Mb3Action } from "./actions";
 
@@ -19,6 +19,62 @@ function wireTouchesPort(wire: Mb3Wire, port: Mb3PortRef): boolean {
 
 function otherWireEnd(wire: Mb3Wire, port: Mb3PortRef): Mb3PortRef {
   return samePort(wire.from, port) ? wire.to : wire.from;
+}
+
+function portKey(port: Mb3PortRef): string {
+  return port.kind === "component"
+    ? `component:${port.id}:${port.port ?? "p"}`
+    : `node:${port.id}`;
+}
+
+function normalizedWireKey(wire: Mb3Wire): string {
+  const keys = [portKey(wire.from), portKey(wire.to)].sort();
+  return `${keys[0]}--${keys[1]}`;
+}
+
+function normalizeTerminalJunctions(graph: Mb3Graph): Mb3Graph {
+  const terminalIds = [graph.terminals.positive, graph.terminals.ground];
+  let nodes = graph.nodes;
+  let wires = graph.wires;
+
+  for (const terminalId of terminalIds) {
+    const terminalPort: Mb3PortRef = { kind: "node", id: terminalId };
+    const junctionIds = new Set<string>();
+    for (const wire of wires) {
+      if (!wireTouchesPort(wire, terminalPort)) continue;
+      const other = otherWireEnd(wire, terminalPort);
+      if (other.kind !== "node") continue;
+      const otherNode = nodes.find((node) => node.id === other.id);
+      if (otherNode?.kind === "junction") {
+        junctionIds.add(other.id);
+      }
+    }
+
+    for (const junctionId of junctionIds) {
+      const junctionPort: Mb3PortRef = { kind: "node", id: junctionId };
+      wires = wires.flatMap((wire) => {
+        const touchesTerminal = wireTouchesPort(wire, terminalPort);
+        const touchesJunction = wireTouchesPort(wire, junctionPort);
+        if (touchesTerminal && touchesJunction) return [];
+        if (!touchesJunction) return [wire];
+        const other = otherWireEnd(wire, junctionPort);
+        if (samePort(other, terminalPort)) return [];
+        return [{ ...wire, from: terminalPort, to: other }];
+      });
+      nodes = nodes.filter((node) => node.id !== junctionId);
+    }
+  }
+
+  const seen = new Set<string>();
+  wires = wires.filter((wire) => {
+    if (samePort(wire.from, wire.to)) return false;
+    const key = normalizedWireKey(wire);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return { ...graph, nodes, wires };
 }
 
 function nodePositionForPort(state: Mb3State, port: Mb3PortRef, fallback?: { x: number; y: number }) {
@@ -42,6 +98,7 @@ function ensureJunctionForPort(
 ): { port: Mb3PortRef; wires: Mb3Wire[]; nodes: Mb3Node[] } {
   if (port.kind === "node") {
     const node = state.graph.nodes.find((candidate) => candidate.id === port.id);
+    if (node?.kind === "terminal") return { port, wires, nodes };
     if (node?.kind === "junction") return { port, wires, nodes };
   }
   const touching = wires.filter((wire) => wireTouchesPort(wire, port));
@@ -62,7 +119,9 @@ function ensureJunctionForPort(
     id: junctionId,
     kind: "junction",
     label: "",
-    position: position ?? nodePositionForPort(state, port),
+    position: port.kind === "component"
+      ? nodePositionForPort(state, port, position)
+      : position ?? nodePositionForPort(state, port),
   };
   const rewritten = wires.map((wire) => {
     if (!wireTouchesPort(wire, port)) return wire;
@@ -83,7 +142,7 @@ function ensureJunctionForPort(
 export function mb3Reducer(state: Mb3State, action: Mb3Action): Mb3State {
   switch (action.type) {
     case "hydrate":
-      return action.state;
+      return { ...action.state, graph: normalizeTerminalJunctions(action.state.graph) };
     case "setDirty":
       return { ...state, dirty: action.dirty };
     case "setActivePreset":
@@ -193,7 +252,7 @@ export function mb3Reducer(state: Mb3State, action: Mb3Action): Mb3State {
       const wires = state.graph.wires.filter((wire) => wire.id !== action.wireId);
       return {
         ...state,
-        graph: { ...state.graph, wires },
+        graph: normalizeTerminalJunctions({ ...state.graph, wires }),
         selectedWireId: state.selectedWireId === action.wireId ? null : state.selectedWireId,
         dirty: true,
       };
@@ -241,7 +300,7 @@ export function mb3Reducer(state: Mb3State, action: Mb3Action): Mb3State {
       if (samePort(fromJunction.port, toJunction.port)) return state;
       const id = `w${wires.length + 1}_${Date.now()}`;
       wires = [...wires, { id, from: fromJunction.port, to: toJunction.port }];
-      return { ...state, graph: { ...state.graph, nodes, wires }, dirty: true };
+      return { ...state, graph: normalizeTerminalJunctions({ ...state.graph, nodes, wires }), dirty: true };
     }
     default:
       return state;

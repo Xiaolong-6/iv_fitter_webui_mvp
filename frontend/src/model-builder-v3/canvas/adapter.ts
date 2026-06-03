@@ -1,5 +1,6 @@
 import type { Edge, Node } from "@xyflow/react";
-import type { Mb3Component, Mb3Graph, Mb3PortRef } from "../domain/types";
+import type { Mb3Component, Mb3FormulaSection, Mb3Graph, Mb3PortRef } from "../domain/types";
+import { routeMb3Wire, type Mb3Point } from "./routing";
 
 const FORMULA_NODE_ID = "__mbv3_formula__";
 const COMPONENT_WIDTH = 190;
@@ -134,7 +135,11 @@ function componentPortSides(graph: Mb3Graph, component: Mb3Component): Record<"p
   return { p, n: p === n ? oppositeSide(p) : n };
 }
 
-function formulaNode(graph: Mb3Graph, formulaLatex: string[]): Node {
+function formulaNode(
+  graph: Mb3Graph,
+  formulaLatex: string[],
+  formulaSections: Mb3FormulaSection[],
+): Node {
   const bounds = graphBounds(graph);
   return {
     id: FORMULA_NODE_ID,
@@ -143,7 +148,7 @@ function formulaNode(graph: Mb3Graph, formulaLatex: string[]): Node {
     draggable: false,
     selectable: false,
     connectable: false,
-    data: { formulaLatex },
+    data: { formulaLatex, formulaSections },
     style: {
       background: "transparent",
       border: 0,
@@ -158,6 +163,7 @@ export function mb3ToReactFlow(
   graph: Mb3Graph,
   formulaLatex: string[] = [],
   activeComponentIds: string[] = [],
+  formulaSections: Mb3FormulaSection[] = [],
 ): { nodes: Node[]; edges: Edge[] } {
   const adj = buildAdjacency(graph);
   const vId = graph.terminals.positive;
@@ -206,11 +212,13 @@ export function mb3ToReactFlow(
     })),
   ];
 
-  if (formulaLatex.length) {
-    nodes.push(formulaNode(graph, formulaLatex));
+  if (formulaLatex.length || formulaSections.length) {
+    nodes.push(formulaNode(graph, formulaLatex, formulaSections));
   }
 
-  const edges: Edge[] = graph.wires.map((wire): Edge => {
+  const routedEdges: Edge[] = [];
+  const existingRoutes: Mb3Point[][] = [];
+  for (const wire of graph.wires) {
     const dFrom = fromVDist.get(wire.from.id);
     const dTo = fromVDist.get(wire.to.id);
     const touchesInactiveComponent =
@@ -220,7 +228,9 @@ export function mb3ToReactFlow(
     const shouldFlip = dFrom !== undefined && dTo !== undefined && dFrom > dTo;
     const source = shouldFlip ? wire.to : wire.from;
     const target = shouldFlip ? wire.from : wire.to;
-    return {
+    const routePoints = routeMb3Wire(graph, source, target, existingRoutes);
+    if (routePoints.length) existingRoutes.push(routePoints);
+    routedEdges.push({
       id: wire.id,
       source: source.id,
       sourceHandle: source.kind === "component" ? source.port : "node",
@@ -235,11 +245,14 @@ export function mb3ToReactFlow(
         strokeDasharray: touchesInactiveComponent ? "7 6" : undefined,
         opacity: touchesInactiveComponent ? 0.82 : 1,
       },
-      data: touchesInactiveComponent
-        ? { status: "inactive", reason: "Open branch: visible on canvas, ignored by fitting." }
-        : undefined,
-    };
-  });
+      data: {
+        routePoints,
+        ...(touchesInactiveComponent
+          ? { status: "inactive", reason: "Open branch: visible on canvas, ignored by fitting." }
+          : {}),
+      },
+    });
+  }
 
-  return { nodes, edges };
+  return { nodes, edges: routedEdges };
 }

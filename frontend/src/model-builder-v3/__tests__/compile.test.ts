@@ -34,8 +34,11 @@ describe("model-builder-v3 compile contract", () => {
     expect(compiled.formulaLatex.join("\n")).toContain("V_{ext}");
     expect(compiled.formulaLatex.join("\n")).toContain("I_{D1}");
     expect(compiled.formulaLatex.join("\n")).toContain("I_{Rsh}");
-    expect(compiled.formulaLatex.join("\n")).toContain("Assembly for fitting");
-    expect(compiled.formulaLatex.join("\n")).toContain("\\mathcal{C}_{fit}");
+    expect(compiled.formulaSections.map((section) => section.title)).toEqual(
+      expect.arrayContaining(["What is used", "Component laws", "How fitting is assembled"]),
+    );
+    expect(JSON.stringify(compiled.formulaSections)).toContain("Used for fitting");
+    expect(JSON.stringify(compiled.formulaSections)).toContain("adjusts fitted parameters");
     expect(compiled.formulaLatex.join("\n")).not.toContain("V_j");
   });
 

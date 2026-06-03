@@ -13,6 +13,7 @@ import type {
   Mb3Behavior,
   Mb3CompileResult,
   Mb3Component,
+  Mb3FormulaSection,
   Mb3Graph,
   Mb3Parameter,
   Mb3PortRef,
@@ -421,6 +422,119 @@ function buildFormulaLatex(
   return lines;
 }
 
+function buildFormulaSections(
+  activeComponents: Mb3Component[],
+  rootForPort: (ref: Mb3PortRef) => string,
+  positiveRoot: string,
+  groundRoot: string,
+  hasTerminalPath: boolean,
+  openComponents: Mb3Component[] = [],
+): Mb3FormulaSection[] {
+  const activeNames = activeComponents.map((component) => component.label || component.id);
+  const openNames = openComponents.map((component) => component.label || component.id);
+
+  if (!hasTerminalPath || activeComponents.length === 0) {
+    return [
+      {
+        title: "Status",
+        lines: [
+          {
+            kind: "text",
+            text: "No complete V-to-GND path is available yet, so the fitter will not use any component from this canvas.",
+          },
+          ...(openNames.length
+            ? [{
+                kind: "text" as const,
+                text: `Open branches are drawn as dashed wires and ignored: ${openNames.join(", ")}.`,
+              }]
+            : []),
+        ],
+      },
+    ];
+  }
+
+  const seriesComponents = activeComponents.filter((component) =>
+    !hasPathWithoutComponent(activeComponents, rootForPort, positiveRoot, groundRoot, component.id),
+  );
+  const branchComponents = activeComponents.filter((component) => !seriesComponents.includes(component));
+  const voltageLabelsByRoot = new Map<string, string>([
+    [positiveRoot, "V_{ext}"],
+    [groundRoot, "0"],
+  ]);
+  let nextVoltageIndex = 1;
+  const voltageLabel = (root: string) => {
+    if (!voltageLabelsByRoot.has(root)) {
+      voltageLabelsByRoot.set(root, `V_${nextVoltageIndex}`);
+      nextVoltageIndex += 1;
+    }
+    return voltageLabelsByRoot.get(root)!;
+  };
+  const componentFormulaLines = activeComponents.map((component) => ({
+    kind: "formula" as const,
+    text: componentFormula(
+      component,
+      seriesComponents.includes(component),
+      voltageLabel(rootForPort({ kind: "component", id: component.id, port: "p" })),
+      voltageLabel(rootForPort({ kind: "component", id: component.id, port: "n" })),
+    ),
+  }));
+  const currentTerms = branchComponents.map((component) => {
+    const label = texId(component.label || component.id) || "X";
+    return `I_{${label}}(\\Delta V_{${label}})`;
+  });
+  const seriesTerms = seriesComponents.map((component) => {
+    const label = texId(component.label || component.id) || "X";
+    return `\\Delta V_{${label}}(I)`;
+  });
+  const modelCurrent = currentTerms.length
+    ? `I_{model}=${currentTerms.join("+")}`
+    : "I_{model}=0";
+  const voltageBalance = seriesTerms.length
+    ? `V_{ext}=\\Delta V_{network}+${seriesTerms.join("+")}`
+    : "V_{ext}=\\Delta V_{network}";
+
+  return [
+    {
+      title: "What is used",
+      lines: [
+        {
+          kind: "text",
+          text: `Used for fitting: ${activeNames.join(", ")}.`,
+        },
+        {
+          kind: "text",
+          text: openNames.length
+            ? `Dashed/open branches remain visible but are ignored: ${openNames.join(", ")}.`
+            : "No open branch is ignored.",
+        },
+      ],
+    },
+    {
+      title: "Component laws",
+      lines: [
+        {
+          kind: "text",
+          text: "Each component is evaluated from the voltage difference between its two connected nodes.",
+        },
+        ...componentFormulaLines,
+      ],
+    },
+    {
+      title: "How fitting is assembled",
+      lines: [
+        {
+          kind: "text",
+          text: "For each measured voltage point, the solver assigns graph-node voltages, evaluates the active component laws, sums the branch currents, then adjusts fitted parameters to reduce the current error.",
+        },
+        { kind: "formula", text: "\\Delta V_m=V_{m,+}-V_{m,-}" },
+        { kind: "formula", text: modelCurrent },
+        { kind: "formula", text: voltageBalance },
+        { kind: "formula", text: "error_I=I_{measured}-I_{model}" },
+      ],
+    },
+  ];
+}
+
 export function compileMb3Graph(graph: Mb3Graph, baseModel?: ModelSpec): Mb3CompileResult {
   const dsu = new DisjointSet();
   graph.nodes.forEach((node) => dsu.add(`node:${node.id}`));
@@ -603,6 +717,14 @@ export function compileMb3Graph(graph: Mb3Graph, baseModel?: ModelSpec): Mb3Comp
     hasTerminalPath,
     openComponents,
   );
+  const formulaSections = buildFormulaSections(
+    activeComponents,
+    rootForPort,
+    positiveRoot,
+    groundRoot,
+    hasTerminalPath,
+    openComponents,
+  );
   const core = legacy.filter((component) => component.location === "core");
   const series = legacy.filter((component) => component.location === "series");
   const parallel = legacy.filter((component) => component.location === "parallel");
@@ -624,5 +746,6 @@ export function compileMb3Graph(graph: Mb3Graph, baseModel?: ModelSpec): Mb3Comp
     model,
     warnings,
     formulaLatex,
+    formulaSections,
   };
 }

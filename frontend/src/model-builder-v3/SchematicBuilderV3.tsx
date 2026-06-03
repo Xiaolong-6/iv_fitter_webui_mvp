@@ -329,6 +329,7 @@ export function SchematicBuilderV3({
       <CanvasAdapterV3
         graph={state.graph}
         formulaLatex={compiledGraph.formulaLatex}
+        formulaSections={compiledGraph.formulaSections}
         activeComponentIds={compiledGraph.activeComponentIds}
         selectedComponentId={state.selectedComponentId}
         inspectedComponentId={inspectorOpen && inspectorComponent ? inspectorComponent.id : null}

@@ -638,7 +638,7 @@
 
 .mbv3-formula-node {
   width: max-content;
-  min-width: 420px;
+  min-width: 520px;
   max-width: none;
   color: rgba(15, 23, 42, 0.84);
   pointer-events: none;
@@ -656,12 +656,41 @@
 
 .mbv3-formula-node-lines {
   display: grid;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 12px 14px;
   border-left: 2px solid rgba(100, 116, 139, 0.22);
   background:
     linear-gradient(90deg, rgba(248, 250, 252, 0.62), rgba(248, 250, 252, 0.2) 72%, transparent),
     repeating-linear-gradient(0deg, transparent 0 28px, rgba(148, 163, 184, 0.08) 29px);
+}
+
+.mbv3-formula-section {
+  display: grid;
+  gap: 6px;
+  width: max-content;
+  max-width: none;
+}
+
+.mbv3-formula-section-title {
+  color: rgba(30, 41, 59, 0.82);
+  font-size: calc(10px * var(--app-zoom));
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mbv3-formula-section-lines {
+  display: grid;
+  gap: 5px;
+}
+
+.mbv3-formula-node-text {
+  max-width: 540px;
+  margin: 0;
+  color: rgba(51, 65, 85, 0.92);
+  font-size: calc(10px * var(--app-zoom));
+  font-weight: 750;
+  line-height: 1.28;
 }
 
 .mbv3-formula-node .mbv3-formula-node-line {
@@ -731,6 +760,19 @@
   border: 1px solid transparent;
   border-radius: 0;
   background: transparent;
+}
+
+.mbv3-terminal-voltage-label {
+  position: absolute;
+  left: calc(100% + 4px);
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(51, 65, 85, 0.78);
+  font-size: calc(9px * var(--app-zoom));
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .mbv3-junction-node {

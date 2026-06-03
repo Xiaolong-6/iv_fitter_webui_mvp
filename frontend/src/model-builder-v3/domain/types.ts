@@ -75,5 +75,16 @@ export interface Mb3CompileResult {
   model: ModelSpec;
   warnings: string[];
   formulaLatex: string[];
+  formulaSections: Mb3FormulaSection[];
 }
 import type { ModelSpec } from "../../model/types";
+
+export interface Mb3FormulaLine {
+  kind: "text" | "formula";
+  text: string;
+}
+
+export interface Mb3FormulaSection {
+  title: string;
+  lines: Mb3FormulaLine[];
+}
