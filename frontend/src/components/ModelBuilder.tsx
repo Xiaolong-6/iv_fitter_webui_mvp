@@ -6,8 +6,6 @@ import type { ModelBuilderProps } from "./model-builder/types";
 import { SchematicBuilderV3 } from "../model-builder-v3";
 import { renderModelBuilderV3EquivalentCircuitSvg } from "../model-builder-v3/export/equivalentCircuitSvg";
 
-export { buildFlowGraph } from "./model-builder/modelFlowGraph";
-
 export function ModelBuilder(props: ModelBuilderProps) {
   return (
     <SchematicBuilderV3
