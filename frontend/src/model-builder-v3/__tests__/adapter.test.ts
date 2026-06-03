@@ -110,4 +110,40 @@ describe("model-builder-v3 canvas adapter", () => {
       segmentCrossesBox(point, route[index + 1], blockerBox),
     )).toBe(false);
   });
+
+  it("routes junction wires toward the connected side instead of always exiting downward", () => {
+    const graph: Mb3Graph = {
+      version: 3,
+      terminals: { positive: "V", ground: "GND" },
+      nodes: [
+        { id: "V", kind: "terminal", label: "V", role: "positive", position: { x: 280, y: 20 } },
+        { id: "GND", kind: "terminal", label: "GND", role: "ground", position: { x: 280, y: 420 } },
+        { id: "J1", kind: "junction", label: "V1", position: { x: 300, y: 150 } },
+      ],
+      components: [
+        {
+          id: "Rsh",
+          label: "Rsh",
+          templateKey: "resistance",
+          behavior: "R_of_V",
+          expression: "Rsh",
+          sign: 1,
+          position: { x: 470, y: 130 },
+          parameters: [{ symbol: "Rsh", value: 1e9, lower: 1e3, upper: 1e18, fit: true, unit: "ohm" }],
+        },
+      ],
+      wires: [
+        { id: "w-v", from: { kind: "node", id: "V" }, to: { kind: "node", id: "J1" } },
+        { id: "w-rsh", from: { kind: "node", id: "J1" }, to: { kind: "component", id: "Rsh", port: "p" } },
+        { id: "w-gnd", from: { kind: "component", id: "Rsh", port: "n" }, to: { kind: "node", id: "GND" } },
+      ],
+    };
+
+    const flow = mb3ToReactFlow(graph, [], ["Rsh"]);
+    const route = (flow.edges.find((edge) => edge.id === "w-rsh")?.data as RoutedEdgeData | undefined)?.routePoints ?? [];
+
+    expect(route.length).toBeGreaterThan(2);
+    expect(route[1].x).toBeGreaterThan(route[0].x);
+    expect(Math.abs(route[1].y - route[0].y)).toBe(0);
+  });
 });

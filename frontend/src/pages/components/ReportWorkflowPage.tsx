@@ -52,10 +52,10 @@ const REPORT_TEXT = {
     diagnosticValues: "Values are shown for diagnostics only and are not a validated model.",
     metrics: "Fit process and quality metrics",
     modelEvaluation: "Model evaluation summary",
-    modelIntro: "The terminal voltage is mapped through the main path to the internal junction voltage. Branch currents are then evaluated at that internal voltage and summed.",
+    modelIntro: "This summary explains how the drawn V-to-GND graph was converted into fitting equations.",
     howRead: "How to read this model",
-    voltageRelation: "External voltage balance",
-    currentSum: "Total current",
+    voltageRelation: "Component voltage",
+    currentSum: "Current residual",
     backendEquations: "Show technical equation details",
     exports: "Next",
     downloadHtml: "Download HTML report",
@@ -118,10 +118,10 @@ const REPORT_TEXT = {
     diagnosticValues: "这些数值仅用于诊断，不是已验证模型。",
     metrics: "拟合过程和质量指标",
     modelEvaluation: "模型求解摘要",
-    modelIntro: "端口电压先经过主路映射为内部结点电压；随后各支路在该内部电压下求电流并相加。",
+    modelIntro: "本摘要说明当前 V-to-GND 画布图如何被转换为拟合方程。",
     howRead: "如何阅读这个模型",
-    voltageRelation: "外部电压平衡",
-    currentSum: "总电流",
+    voltageRelation: "组件电压",
+    currentSum: "电流残差",
     backendEquations: "查看技术公式细节",
     exports: "下一步",
     downloadHtml: "下载 HTML 报告",
@@ -459,17 +459,19 @@ function ReportPlots({ result, language }: { result: FitResult; language: Langua
 
 function ModelAssemblyExplanation({ model, equationLines, language }: { model: ModelSpec; equationLines: string[]; language: Language }) {
   const isZh = language === "zh";
-  const main = model.series;
-  const branches = [...model.core, ...model.parallel];
-  const mainNames = main.map((item) => String(item.metadata?.nickname ?? item.id)).join(" + ") || (isZh ? "无主路压降" : "no main-path drop");
-  const branchNames = branches.map((item) => String(item.metadata?.nickname ?? item.id)).join(" + ") || (isZh ? "无支路" : "no current branch");
+  const components = [...model.series, ...model.core, ...model.parallel];
+  const activeNames = components.map((item) => String(item.metadata?.nickname ?? item.id)).join(", ") || (isZh ? "无活跃组件" : "no active components");
+  const graphComponentCount = model.graph?.components?.length ?? components.length;
+  const readText = isZh
+    ? `后端图模型包含 ${graphComponentCount} 个组件；当前拟合使用 ${activeNames}。每个组件由两端节点的电压差驱动，开放或未连通支路不会悄悄进入拟合。`
+    : `The backend graph contains ${graphComponentCount} component(s); fitting uses ${activeNames}. Each component is driven by the voltage difference between its two connected nodes. Open or disconnected branches do not silently enter fitting.`;
   return <section className="card report-section report-model-equation-card"><h2>{rt(language, "modelEvaluation")}</h2><p className="muted">{rt(language, "modelIntro")}</p><div className="report-model-explainer">
-    <p><strong>{rt(language, "howRead")}</strong>: {isZh ? `外部电压先经过主路（${mainNames}）得到内部结点电压 Vj；支路（${branchNames}）在 Vj 下产生电流并相加。` : `The external voltage first passes through the main path (${mainNames}) to get the internal junction voltage Vj. Branches (${branchNames}) generate currents at Vj and those currents are summed.`}</p>
+    <p><strong>{rt(language, "howRead")}</strong>: {readText}</p>
     <div className="report-core-equations">
-      <div className="report-equation-line friendly-equation"><span className="report-equation-label">{rt(language, "voltageRelation")}</span><MathFormula latex="V_{ext}=V_j+\sum_k V_{drop,k}(I,V_j)" className="report-formula" /></div>
-      <div className="report-equation-line friendly-equation"><span className="report-equation-label">{rt(language, "currentSum")}</span><MathFormula latex="I=\sum_m I_{branch,m}(V_j)" className="report-formula" /></div>
+      <div className="report-equation-line friendly-equation"><span className="report-equation-label">{rt(language, "voltageRelation")}</span><MathFormula latex="\Delta V_m=V_{m,+}-V_{m,-}" className="report-formula" /></div>
+      <div className="report-equation-line friendly-equation"><span className="report-equation-label">{rt(language, "currentSum")}</span><MathFormula latex="r_i=I_{measured,i}-I_{model}(V_i,\theta)" className="report-formula" /></div>
     </div>
-    <div className="report-component-role-grid">{[...main, ...branches].map((component) => <div key={component.id} className="report-component-role">{componentPlainRole(component, language)}</div>)}</div>
+    <div className="report-component-role-grid">{components.map((component) => <div key={component.id} className="report-component-role">{componentPlainRole(component, language)}</div>)}</div>
     {equationLines.length ? <details className="report-technical-equations"><summary>{rt(language, "backendEquations")}</summary><div className="technical-equation-list">{equationLines.map((line, idx) => <code key={`${line}-${idx}`}>{line}</code>)}</div></details> : null}
   </div></section>;
 }

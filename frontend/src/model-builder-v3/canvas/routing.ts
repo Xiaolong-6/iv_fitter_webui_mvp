@@ -107,7 +107,11 @@ function portCenter(graph: Mb3Graph, port: Mb3PortRef): Mb3Point | null {
   };
 }
 
-function portPoint(graph: Mb3Graph, port: Mb3PortRef): { point: Mb3Point; side: Mb3PortSide } | null {
+function portPoint(
+  graph: Mb3Graph,
+  port: Mb3PortRef,
+  toward?: Mb3PortRef,
+): { point: Mb3Point; side: Mb3PortSide } | null {
   if (port.kind === "component") {
     const component = graph.components.find((candidate) => candidate.id === port.id);
     if (!component) return null;
@@ -134,12 +138,17 @@ function portPoint(graph: Mb3Graph, port: Mb3PortRef): { point: Mb3Point; side: 
       },
     };
   }
+  const point = {
+    x: node.position.x + JUNCTION_SIZE / 2,
+    y: node.position.y + JUNCTION_SIZE / 2,
+  };
+  const target = toward ? portCenter(graph, toward) : null;
+  const side = target
+    ? sideFromVector(target.x - point.x, target.y - point.y, "bottom")
+    : "bottom";
   return {
-    side: "bottom",
-    point: {
-      x: node.position.x + JUNCTION_SIZE / 2,
-      y: node.position.y + JUNCTION_SIZE / 2,
-    },
+    side,
+    point,
   };
 }
 
@@ -307,8 +316,8 @@ export function routeMb3Wire(
   target: Mb3PortRef,
   existingRoutes: Mb3Point[][] = [],
 ): Mb3Point[] {
-  const sourcePort = portPoint(graph, source);
-  const targetPort = portPoint(graph, target);
+  const sourcePort = portPoint(graph, source, target);
+  const targetPort = portPoint(graph, target, source);
   if (!sourcePort || !targetPort) return [];
 
   const sourceExit = offsetPoint(sourcePort.point, sourcePort.side);

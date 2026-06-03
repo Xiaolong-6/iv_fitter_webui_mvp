@@ -238,25 +238,23 @@ function componentPlainRole(component: FitResult["model"]["series"][number]) {
 
 function modelEquationSection(result: FitResult) {
   const lines = equationLinesFromResult(result);
-  const main =
-    result.model.series
-      .map((c) => String(c.metadata?.nickname ?? c.id))
-      .join(" + ") || "no main-path drop";
-  const branches =
-    [...result.model.core, ...result.model.parallel]
-      .map((c) => String(c.metadata?.nickname ?? c.id))
-      .join(" + ") || "no branch current";
   const components = [
     ...result.model.series,
     ...result.model.core,
     ...result.model.parallel,
-  ]
+  ];
+  const activeNames =
+    components
+      .map((component) => String(component.metadata?.nickname ?? component.id))
+      .join(", ") || "no active components";
+  const graphComponentCount = result.model.graph?.components?.length ?? components.length;
+  const componentRoles = components
     .map((component) => `<li>${escapeHtml(componentPlainRole(component))}</li>`)
     .join("");
   const technicalRows = lines.length
     ? `<details><summary>Show technical equation details</summary><div class="formula-list">${lines.map((line) => `<code>${escapeHtml(line)}</code>`).join("")}</div></details>`
     : "";
-  return `<section class="card report-section"><h2>Model evaluation summary</h2><p class="muted">The terminal voltage is mapped through the main path to the internal junction voltage. Branch currents are then evaluated at that internal voltage and summed.</p><p><strong>How to read this model:</strong> The terminal voltage first passes through the main path (${escapeHtml(main)}) to give the internal junction voltage. The branches (${escapeHtml(branches)}) then generate currents at that internal voltage, and those currents are summed.</p><div class="formula-list"><code>External voltage balance: V_ext = V_j + Σ V_drop,k(I,V_j)</code><code>Total current: I = Σ I_branch,m(V_j)</code></div><ul>${components}</ul>${technicalRows}</section>`;
+  return `<section class="card report-section"><h2>Model evaluation summary</h2><p class="muted">This summary explains how the drawn V-to-GND graph was converted into fitting equations.</p><p><strong>How to read this model:</strong> The backend graph contains ${escapeHtml(graphComponentCount)} component(s); fitting uses ${escapeHtml(activeNames)}. Each component is driven by the voltage difference between its two connected nodes. Open or disconnected branches do not silently enter fitting.</p><div class="formula-list"><code>Component voltage: &Delta;V_m = V_m,+ - V_m,-</code><code>Current residual: r_i = I_measured,i - I_model(V_i, theta)</code></div><ul>${componentRoles}</ul>${technicalRows}</section>`;
 }
 
 function finitePairs(x: number[], y: number[]) {
