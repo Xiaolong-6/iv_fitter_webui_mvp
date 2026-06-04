@@ -442,8 +442,14 @@
   line-height: 1.15;
 }
 
-.mbv3-inspector-head-action {
+.mbv3-inspector-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin-left: auto;
+}
+
+.mbv3-inspector-head-action {
   padding: 4px 8px;
   border: 1px solid #93c5fd;
   border-radius: 999px;

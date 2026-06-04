@@ -108,17 +108,32 @@ export function InspectorPanel({
       <div className="mbv3-inspector-head" onPointerDown={onDragPointerDown}>
         <strong>Inspector</strong>
         {component ? (
-          <button
-            type="button"
-            className="mbv3-inspector-head-action"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => {
-              event.stopPropagation();
-              onDuplicateComponent?.(component);
-            }}
-          >
-            Duplicate
-          </button>
+          <div className="mbv3-inspector-head-actions">
+            <button
+              type="button"
+              className="mbv3-inspector-head-action"
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDuplicateComponent?.(component);
+              }}
+            >
+              Duplicate
+            </button>
+            {canEditCustom ? (
+              <button
+                type="button"
+                className="mbv3-inspector-head-action"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onSaveCustomComponentTemplate(component);
+                }}
+              >
+                Save
+              </button>
+            ) : null}
+          </div>
         ) : templateDetails ? (
           <button
             type="button"
@@ -201,15 +216,6 @@ export function InspectorPanel({
                 <b title="Ohmic R(V) components are orientation-neutral.">Symmetric</b>
               )}
             </div>
-          ) : null}
-          {canEditCustom ? (
-            <button
-              className="mbv3-inspector-save-template"
-              type="button"
-              onClick={() => onSaveCustomComponentTemplate(component)}
-            >
-              Save to components
-            </button>
           ) : null}
           <div className="mbv3-inspector-param-block">
             <div className="mbv3-inspector-param-head">
