@@ -12,6 +12,12 @@ const JUNCTION_SIZE = 13;
 const OBSTACLE_PADDING = 18;
 const ROUTE_STEP = 24;
 const MAX_ROUTE_STEPS = 6000;
+const SAME_SIDE_FALLBACK: Record<Mb3PortSide, Mb3PortSide> = {
+  top: "bottom",
+  bottom: "top",
+  left: "right",
+  right: "left",
+};
 
 function samePort(a: Mb3PortRef, b: Mb3PortRef): boolean {
   return a.kind === b.kind && a.id === b.id && (a.port ?? "node") === (b.port ?? "node");
@@ -114,17 +120,18 @@ function oppositeSide(side: Mb3PortSide): Mb3PortSide {
 function componentPortSides(graph: Mb3Graph, componentId: string): Record<"p" | "n", Mb3PortSide> {
   const pPoint = averageConnectedPoint(graph, componentId, "p");
   const nPoint = averageConnectedPoint(graph, componentId, "n");
-  if (pPoint && nPoint) {
-    const dx = nPoint.x - pPoint.x;
-    const dy = nPoint.y - pPoint.y;
-    if (Math.abs(dy) >= Math.abs(dx) * 0.75) {
-      const p = pPoint.y <= nPoint.y ? "top" : "bottom";
-      return { p, n: oppositeSide(p) };
+  const component = graph.components.find((candidate) => candidate.id === componentId);
+  if (component && pPoint && nPoint) {
+    const center = {
+      x: component.position.x + COMPONENT_WIDTH / 2,
+      y: component.position.y + COMPONENT_HEIGHT / 2,
+    };
+    const p = sideFromVector(pPoint.x - center.x, pPoint.y - center.y, "top");
+    let n = sideFromVector(nPoint.x - center.x, nPoint.y - center.y, "bottom");
+    if (p === n) {
+      n = SAME_SIDE_FALLBACK[p];
     }
-    if (Math.abs(dx) > 0) {
-      const p = pPoint.x <= nPoint.x ? "left" : "right";
-      return { p, n: oppositeSide(p) };
-    }
+    return { p, n };
   }
   const p = rawComponentPortSide(graph, componentId, "p");
   const n = rawComponentPortSide(graph, componentId, "n");
@@ -260,6 +267,62 @@ function routeCost(points: Mb3Point[], existingRoutes: Mb3Point[][]): number {
   return cost;
 }
 
+function pointInsideRect(point: Mb3Point, rect: Mb3Rect): boolean {
+  return point.x > rect.x && point.x < rect.x + rect.width && point.y > rect.y && point.y < rect.y + rect.height;
+}
+
+function routeIntersectsObstacle(points: Mb3Point[], obstacles: Mb3Rect[]): boolean {
+  return points.slice(0, -1).some((point, index) => {
+    const next = points[index + 1];
+    return obstacles.some((rect) =>
+      pointInsideRect(point, rect) ||
+      pointInsideRect(next, rect) ||
+      segmentIntersectsRect(point, next, rect),
+    );
+  });
+}
+
+function bends(points: Mb3Point[]): number {
+  let count = 0;
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const previous = points[index - 1];
+    const current = points[index];
+    const next = points[index + 1];
+    if ((previous.x === current.x && current.y === next.y) || (previous.y === current.y && current.x === next.x)) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function candidateRoutes(start: Mb3Point, end: Mb3Point): Mb3Point[][] {
+  const midX = Math.round((start.x + end.x) / 2);
+  const midY = Math.round((start.y + end.y) / 2);
+  return [
+    [start, end],
+    [start, { x: start.x, y: end.y }, end],
+    [start, { x: end.x, y: start.y }, end],
+    [start, { x: start.x, y: midY }, { x: end.x, y: midY }, end],
+    [start, { x: midX, y: start.y }, { x: midX, y: end.y }, end],
+  ].map(compactPoints);
+}
+
+function findCandidatePath(
+  start: Mb3Point,
+  end: Mb3Point,
+  obstacles: Mb3Rect[],
+  existingRoutes: Mb3Point[][],
+): Mb3Point[] | null {
+  const valid = candidateRoutes(start, end).filter((route) => !routeIntersectsObstacle(route, obstacles));
+  if (!valid.length) return null;
+  return valid
+    .map((route) => ({
+      route,
+      cost: routeCost(route, existingRoutes) + bends(route) * 120,
+    }))
+    .sort((a, b) => a.cost - b.cost)[0].route;
+}
+
 function buildGrid(start: Mb3Point, end: Mb3Point, rects: Mb3Rect[]): { xs: number[]; ys: number[] } {
   const xs = new Set<number>([start.x, end.x]);
   const ys = new Set<number>([start.y, end.y]);
@@ -372,6 +435,7 @@ export function routeMb3Wire(
   const obstacles = boxes(graph)
     .filter((rect) => !excludedIds.has(rect.id))
     .map((rect) => expanded(rect));
-  const middle = findGridPath(sourceExit, targetExit, obstacles, existingRoutes);
+  const middle = findCandidatePath(sourceExit, targetExit, obstacles, existingRoutes)
+    ?? findGridPath(sourceExit, targetExit, obstacles, existingRoutes);
   return compactPoints([sourcePort.point, sourceExit, ...middle, targetExit, targetPort.point]);
 }

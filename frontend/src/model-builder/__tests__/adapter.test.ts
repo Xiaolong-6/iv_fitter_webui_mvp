@@ -179,7 +179,7 @@ describe("model-builder canvas adapter", () => {
     expect(Math.abs(route[1].y - route[0].y)).toBe(0);
   });
 
-  it("prefers vertical component ports when p/n neighbors are upper and lower potentials", () => {
+  it("places component ports on the nearest useful border for diagonal branches", () => {
     const graph: Mb3Graph = {
       version: 3,
       terminals: { positive: "V", ground: "GND" },
@@ -212,7 +212,55 @@ describe("model-builder canvas adapter", () => {
     const entryPoint = inRoute[inRoute.length - 1];
     const exitPoint = outRoute[0];
 
-    expect(entryPoint).toEqual({ x: 395, y: 180 });
-    expect(exitPoint).toEqual({ x: 395, y: 234 });
+    expect(entryPoint).toEqual({ x: 320, y: 207 });
+    expect(exitPoint).toEqual({ x: 470, y: 207 });
+  });
+
+  it("keeps simple serial routes compact instead of wrapping around the canvas", () => {
+    const graph: Mb3Graph = {
+      version: 3,
+      terminals: { positive: "V", ground: "GND" },
+      nodes: [
+        { id: "V", kind: "terminal", label: "V", role: "positive", position: { x: 360, y: 40 } },
+        { id: "GND", kind: "terminal", label: "GND", role: "ground", position: { x: 320, y: 520 } },
+      ],
+      components: [
+        {
+          id: "R0",
+          label: "R0",
+          templateKey: "resistance",
+          behavior: "R_of_V",
+          expression: "R0",
+          sign: 1,
+          position: { x: 80, y: 250 },
+          parameters: [{ symbol: "R0", value: 10, lower: 0, upper: 1e9, fit: true, unit: "ohm" }],
+        },
+        {
+          id: "D1",
+          label: "D1",
+          templateKey: "shockley_diode",
+          behavior: "I_of_V",
+          expression: "I0*(exp(V/(n*8.617333262e-5*T))-1)",
+          sign: 1,
+          position: { x: 320, y: 300 },
+          parameters: [{ symbol: "I0", value: 1e-12, lower: 1e-30, upper: 1, fit: true, unit: "A" }],
+        },
+      ],
+      wires: [
+        { id: "w-v-r0", from: { kind: "node", id: "V" }, to: { kind: "component", id: "R0", port: "p" } },
+        { id: "w-r0-d1", from: { kind: "component", id: "R0", port: "n" }, to: { kind: "component", id: "D1", port: "p" } },
+        { id: "w-d1-gnd", from: { kind: "component", id: "D1", port: "n" }, to: { kind: "node", id: "GND" } },
+      ],
+    };
+
+    const flow = mb3ToReactFlow(graph, [], ["R0", "D1"]);
+    const d1Node = flow.nodes.find((node) => node.id === "D1");
+    const d1Sides = d1Node?.data.portSides as { p?: string; n?: string } | undefined;
+    const d1GroundRoute = (flow.edges.find((edge) => edge.id === "w-d1-gnd")?.data as RoutedEdgeData | undefined)?.routePoints ?? [];
+    const r0D1Route = (flow.edges.find((edge) => edge.id === "w-r0-d1")?.data as RoutedEdgeData | undefined)?.routePoints ?? [];
+
+    expect(d1Sides?.n).toBe("bottom");
+    expect(Math.max(...d1GroundRoute.map((point) => point.x))).toBeLessThan(430);
+    expect(Math.max(...r0D1Route.map((point) => point.x))).toBeLessThan(430);
   });
 });

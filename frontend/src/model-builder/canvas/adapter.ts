@@ -6,6 +6,12 @@ const FORMULA_NODE_ID = "__mbv3_formula__";
 const COMPONENT_WIDTH = 150;
 const COMPONENT_HEIGHT = 54;
 type Mb3PortSide = "top" | "right" | "bottom" | "left";
+const SAME_SIDE_FALLBACK: Record<Mb3PortSide, Mb3PortSide> = {
+  top: "bottom",
+  bottom: "top",
+  left: "right",
+  right: "left",
+};
 
 function buildAdjacency(graph: Mb3Graph): Map<string, string[]> {
   const adj = new Map<string, string[]>();
@@ -144,16 +150,16 @@ function componentPortSides(graph: Mb3Graph, component: Mb3Component): Record<"p
   const pPoint = averageConnectedPoint(graph, component, "p");
   const nPoint = averageConnectedPoint(graph, component, "n");
   if (pPoint && nPoint) {
-    const dx = nPoint.x - pPoint.x;
-    const dy = nPoint.y - pPoint.y;
-    if (Math.abs(dy) >= Math.abs(dx) * 0.75) {
-      const p = pPoint.y <= nPoint.y ? "top" : "bottom";
-      return { p, n: oppositeSide(p) };
+    const center = {
+      x: component.position.x + COMPONENT_WIDTH / 2,
+      y: component.position.y + COMPONENT_HEIGHT / 2,
+    };
+    const p = sideFromVector(pPoint.x - center.x, pPoint.y - center.y, "top");
+    let n = sideFromVector(nPoint.x - center.x, nPoint.y - center.y, "bottom");
+    if (p === n) {
+      n = SAME_SIDE_FALLBACK[p];
     }
-    if (Math.abs(dx) > 0) {
-      const p = pPoint.x <= nPoint.x ? "left" : "right";
-      return { p, n: oppositeSide(p) };
-    }
+    return { p, n };
   }
   const p = componentPortSide(graph, component, "p");
   const n = componentPortSide(graph, component, "n");
