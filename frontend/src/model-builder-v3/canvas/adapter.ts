@@ -3,7 +3,7 @@ import type { Mb3Component, Mb3FormulaSection, Mb3Graph, Mb3PortRef } from "../d
 import { routeMb3Wire, type Mb3Point } from "./routing";
 
 const FORMULA_NODE_ID = "__mbv3_formula__";
-const COMPONENT_WIDTH = 190;
+const COMPONENT_WIDTH = 150;
 const COMPONENT_HEIGHT = 54;
 type Mb3PortSide = "top" | "right" | "bottom" | "left";
 
@@ -129,7 +129,32 @@ function componentPortSide(graph: Mb3Graph, component: Mb3Component, port: "p" |
   return sideFromVector(avg.x / vectors.length, avg.y / vectors.length, fallback);
 }
 
+function averageConnectedPoint(graph: Mb3Graph, component: Mb3Component, port: "p" | "n"): { x: number; y: number } | null {
+  const selfPort: Mb3PortRef = { kind: "component", id: component.id, port };
+  const touching = graph.wires.filter((wire) => samePort(wire.from, selfPort) || samePort(wire.to, selfPort));
+  const points = touching
+    .map((wire) => portCenter(graph, otherWireEnd(wire, selfPort)))
+    .filter((point): point is { x: number; y: number } => Boolean(point));
+  if (!points.length) return null;
+  const total = points.reduce((acc, point) => ({ x: acc.x + point.x, y: acc.y + point.y }), { x: 0, y: 0 });
+  return { x: total.x / points.length, y: total.y / points.length };
+}
+
 function componentPortSides(graph: Mb3Graph, component: Mb3Component): Record<"p" | "n", Mb3PortSide> {
+  const pPoint = averageConnectedPoint(graph, component, "p");
+  const nPoint = averageConnectedPoint(graph, component, "n");
+  if (pPoint && nPoint) {
+    const dx = nPoint.x - pPoint.x;
+    const dy = nPoint.y - pPoint.y;
+    if (Math.abs(dy) >= Math.abs(dx) * 0.75) {
+      const p = pPoint.y <= nPoint.y ? "top" : "bottom";
+      return { p, n: oppositeSide(p) };
+    }
+    if (Math.abs(dx) > 0) {
+      const p = pPoint.x <= nPoint.x ? "left" : "right";
+      return { p, n: oppositeSide(p) };
+    }
+  }
   const p = componentPortSide(graph, component, "p");
   const n = componentPortSide(graph, component, "n");
   return { p, n: p === n ? oppositeSide(p) : n };
@@ -244,9 +269,9 @@ export function mb3ToReactFlow(
     routedEdges.push({
       id: wire.id,
       source: source.id,
-      sourceHandle: source.kind === "component" ? source.port : "node",
+      sourceHandle: reactFlowHandleId(source, "source"),
       target: target.id,
-      targetHandle: target.kind === "component" ? target.port : "node",
+      targetHandle: reactFlowHandleId(target, "target"),
       type: "step",
       animated: false,
       markerEnd: touchesTerminalPath ? { type: "arrowclosed", color: "#334155", width: 13, height: 13 } : undefined,

@@ -34,6 +34,37 @@ describe("model-builder-v3 canvas adapter", () => {
     expect(flow.edges.length).toBe(graph.wires.length);
   });
 
+  it("maps component wire endpoints to concrete React Flow handles", () => {
+    const graph: Mb3Graph = {
+      version: 3,
+      terminals: { positive: "V", ground: "GND" },
+      nodes: [
+        { id: "V", kind: "terminal", label: "V", role: "positive", position: { x: 0, y: 0 } },
+        { id: "GND", kind: "terminal", label: "GND", role: "ground", position: { x: 0, y: 240 } },
+      ],
+      components: [
+        {
+          id: "R0",
+          label: "R0",
+          templateKey: "resistance",
+          behavior: "R_of_V",
+          expression: "R0",
+          sign: 1,
+          position: { x: 80, y: 100 },
+          parameters: [{ symbol: "R0", value: 10, lower: 0, upper: 1e9, fit: true, unit: "ohm" }],
+        },
+      ],
+      wires: [
+        { id: "w-top", from: { kind: "node", id: "V" }, to: { kind: "component", id: "R0", port: "p" } },
+      ],
+    };
+    const flow = mb3ToReactFlow(graph);
+    const componentEdge = flow.edges.find((edge) => edge.id === "w-top");
+
+    expect(componentEdge?.sourceHandle).toBe("node");
+    expect(componentEdge?.targetHandle).toBe("p-target");
+  });
+
   it("keeps half-connected wires visible as inactive edges", () => {
     const graph: Mb3Graph = {
       version: 3,
@@ -104,7 +135,7 @@ describe("model-builder-v3 canvas adapter", () => {
 
     const flow = mb3ToReactFlow(graph, [], ["R0"]);
     const route = (flow.edges.find((edge) => edge.id === "w-route")?.data as RoutedEdgeData | undefined)?.routePoints ?? [];
-    const blockerBox = { x: 100, y: 150, width: 190, height: 54 };
+    const blockerBox = { x: 100, y: 150, width: 150, height: 54 };
 
     expect(route.length).toBeGreaterThan(2);
     expect(route.slice(0, -1).some((point, index) =>
@@ -148,7 +179,7 @@ describe("model-builder-v3 canvas adapter", () => {
     expect(Math.abs(route[1].y - route[0].y)).toBe(0);
   });
 
-  it("keeps component entry and exit ports visually separate when both neighbors are on one side", () => {
+  it("prefers vertical component ports when p/n neighbors are upper and lower potentials", () => {
     const graph: Mb3Graph = {
       version: 3,
       terminals: { positive: "V", ground: "GND" },
@@ -181,7 +212,7 @@ describe("model-builder-v3 canvas adapter", () => {
     const entryPoint = inRoute[inRoute.length - 1];
     const exitPoint = outRoute[0];
 
-    expect(entryPoint).toEqual({ x: 320, y: 207 });
-    expect(exitPoint).toEqual({ x: 510, y: 207 });
+    expect(entryPoint).toEqual({ x: 395, y: 180 });
+    expect(exitPoint).toEqual({ x: 395, y: 234 });
   });
 });

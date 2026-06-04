@@ -4,7 +4,7 @@ export type Mb3Point = { x: number; y: number };
 type Mb3PortSide = "top" | "right" | "bottom" | "left";
 type Mb3Rect = { x: number; y: number; width: number; height: number; id: string };
 
-const COMPONENT_WIDTH = 190;
+const COMPONENT_WIDTH = 150;
 const COMPONENT_HEIGHT = 54;
 const TERMINAL_WIDTH = 72;
 const TERMINAL_HEIGHT = 46;
@@ -84,6 +84,20 @@ function rawComponentPortSide(graph: Mb3Graph, componentId: string, port: "p" | 
   return sideFromVector(average.x / vectors.length, average.y / vectors.length, fallback);
 }
 
+function averageConnectedPoint(graph: Mb3Graph, componentId: string, port: "p" | "n"): Mb3Point | null {
+  const selfPort: Mb3PortRef = { kind: "component", id: componentId, port };
+  const touching = graph.wires.filter((wire) => samePort(wire.from, selfPort) || samePort(wire.to, selfPort));
+  const points = touching
+    .map((wire) => {
+      const other = samePort(wire.from, selfPort) ? wire.to : wire.from;
+      return portCenter(graph, other);
+    })
+    .filter((point): point is Mb3Point => Boolean(point));
+  if (!points.length) return null;
+  const total = points.reduce((acc, point) => ({ x: acc.x + point.x, y: acc.y + point.y }), { x: 0, y: 0 });
+  return { x: total.x / points.length, y: total.y / points.length };
+}
+
 function sideFromVector(dx: number, dy: number, fallback: Mb3PortSide): Mb3PortSide {
   if (!Number.isFinite(dx) || !Number.isFinite(dy) || (dx === 0 && dy === 0)) return fallback;
   if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? "right" : "left";
@@ -98,6 +112,20 @@ function oppositeSide(side: Mb3PortSide): Mb3PortSide {
 }
 
 function componentPortSides(graph: Mb3Graph, componentId: string): Record<"p" | "n", Mb3PortSide> {
+  const pPoint = averageConnectedPoint(graph, componentId, "p");
+  const nPoint = averageConnectedPoint(graph, componentId, "n");
+  if (pPoint && nPoint) {
+    const dx = nPoint.x - pPoint.x;
+    const dy = nPoint.y - pPoint.y;
+    if (Math.abs(dy) >= Math.abs(dx) * 0.75) {
+      const p = pPoint.y <= nPoint.y ? "top" : "bottom";
+      return { p, n: oppositeSide(p) };
+    }
+    if (Math.abs(dx) > 0) {
+      const p = pPoint.x <= nPoint.x ? "left" : "right";
+      return { p, n: oppositeSide(p) };
+    }
+  }
   const p = rawComponentPortSide(graph, componentId, "p");
   const n = rawComponentPortSide(graph, componentId, "n");
   return { p, n: p === n ? oppositeSide(p) : n };

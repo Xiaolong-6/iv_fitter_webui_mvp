@@ -146,6 +146,37 @@ export function SchematicBuilderV3({
     addComponentFromTemplate(template, position);
   };
 
+  const nextDuplicateId = (component: Mb3Component): string => {
+    const prefix = component.id.match(/^[A-Za-z]+/)?.[0] ?? "C";
+    const used = new Set(state.graph.components.map((candidate) => candidate.id));
+    const maxExistingNumber = state.graph.components.reduce((max, candidate) => {
+      const match = candidate.id.match(new RegExp(`^${prefix}(\\d+)$`));
+      return match ? Math.max(max, Number(match[1])) : max;
+    }, -1);
+    let index = maxExistingNumber + 1;
+    let id = `${prefix}${index}`;
+    while (used.has(id)) {
+      index += 1;
+      id = `${prefix}${index}`;
+    }
+    return id;
+  };
+
+  const duplicateComponent = (component: Mb3Component) => {
+    const id = nextDuplicateId(component);
+    const duplicate: Mb3Component = {
+      ...component,
+      id,
+      label: id,
+      position: { x: component.position.x + 40, y: component.position.y + 40 },
+      parameters: component.parameters.map((parameter) => ({ ...parameter })),
+    };
+    setPreviewTemplateKey(null);
+    setStickySelectedComponentId(id);
+    dispatch({ type: "addComponent", component: duplicate });
+    setInspectorOpen(true);
+  };
+
   const saveCustomComponentTemplate = (component: Mb3Component) => {
     if (component.templateKey !== "custom" && !component.templateKey?.startsWith("custom_saved_")) {
       return;
@@ -327,6 +358,12 @@ export function SchematicBuilderV3({
             dispatch({ type: "updateComponentParameter", componentId, symbol, changes })
           }
           onSaveCustomComponentTemplate={saveCustomComponentTemplate}
+          onAddTemplateComponent={() => {
+            if (previewTemplate) {
+              addComponentFromTemplate(previewTemplate);
+            }
+          }}
+          onDuplicateComponent={duplicateComponent}
         />
       ) : null}
       <CanvasAdapterV3

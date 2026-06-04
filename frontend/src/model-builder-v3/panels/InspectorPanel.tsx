@@ -29,6 +29,8 @@ export function InspectorPanel({
   onAddComponentParameter,
   onUpdateComponentParameter,
   onSaveCustomComponentTemplate,
+  onAddTemplateComponent,
+  onDuplicateComponent,
 }: {
   component: Mb3Component | null;
   templateDetails: Mb3TemplateInspectorDetails | null;
@@ -47,6 +49,8 @@ export function InspectorPanel({
     changes: Partial<Omit<Mb3Parameter, "symbol">>,
   ) => void;
   onSaveCustomComponentTemplate: (component: Mb3Component) => void;
+  onAddTemplateComponent?: () => void;
+  onDuplicateComponent?: (component: Mb3Component) => void;
 }) {
   const details = component ?? templateDetails;
   const canEditCustom = component?.templateKey === "custom";
@@ -103,6 +107,31 @@ export function InspectorPanel({
     >
       <div className="mbv3-inspector-head" onPointerDown={onDragPointerDown}>
         <strong>Inspector</strong>
+        {component ? (
+          <button
+            type="button"
+            className="mbv3-inspector-head-action"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              onDuplicateComponent?.(component);
+            }}
+          >
+            Duplicate
+          </button>
+        ) : templateDetails ? (
+          <button
+            type="button"
+            className="mbv3-inspector-head-action"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              onAddTemplateComponent?.();
+            }}
+          >
+            Add
+          </button>
+        ) : null}
         <span className="mbv3-drag-grip" aria-hidden="true" />
       </div>
       {details ? (

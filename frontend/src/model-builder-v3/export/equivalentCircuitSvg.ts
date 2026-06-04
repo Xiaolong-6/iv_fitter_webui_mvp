@@ -4,7 +4,7 @@ import { renderEquivalentCircuitSvg as renderLegacyEquivalentCircuitSvg } from "
 import type { Mb3Graph, Mb3PortRef } from "../domain/types";
 import { routeMb3Wire, type Mb3Point } from "../canvas/routing";
 
-const COMPONENT_WIDTH = 190;
+const COMPONENT_WIDTH = 150;
 const COMPONENT_HEIGHT = 54;
 const TERMINAL_WIDTH = 72;
 const TERMINAL_HEIGHT = 46;

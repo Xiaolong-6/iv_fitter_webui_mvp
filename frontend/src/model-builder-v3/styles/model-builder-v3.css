@@ -442,6 +442,24 @@
   line-height: 1.15;
 }
 
+.mbv3-inspector-head-action {
+  margin-left: auto;
+  padding: 4px 8px;
+  border: 1px solid #93c5fd;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: calc(10px * var(--app-zoom));
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mbv3-inspector-head-action:hover {
+  border-color: #2563eb;
+  background: #dbeafe;
+}
+
 .mbv3-drag-grip {
   width: 18px;
   height: 18px;
@@ -806,9 +824,9 @@
 }
 
 .mbv3-component-node {
-  min-width: 190px;
+  min-width: 150px;
   min-height: 54px;
-  padding: 8px 38px 8px 14px;
+  padding: 8px 32px 8px 12px;
   border: 1px solid #93c5fd;
   border-radius: 14px;
   background: #ffffff;
