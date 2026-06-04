@@ -23,7 +23,7 @@ The app is a working prototype for the IV-fitter workflow. It is not yet a full 
 
 - **Start:** workflow overview, current project state, and quick navigation.
 - **Data:** CSV/TXT/DAT import, publication/demo multi-trace auto-detection, pasted-data import, synthetic trace generation, dataset naming, unit selection, trace selection, import-quality summary, and spreadsheet preview.
-- **Model:** Model Builder V3 graph canvas, equivalent-circuit controls, and model/equation preview.
+- **Model:** Model Builder graph canvas, equivalent-circuit controls, and model/equation preview.
 - **Fitting:** Fit setup, Run/Stop/Report controls, plots, residuals, and grouped Parameters table.
 - **Report:** report verdict, full fit process/quality diagnostics, warnings, and export actions.
 - **Help:** tutorial-style workflow guide, Function Guide, fitting logic, convergence guidance, reporting notes, and glossary.
@@ -42,7 +42,7 @@ The app is a working prototype for the IV-fitter workflow. It is not yet a full 
 
 ## Model Builder
 
-The default Model Builder is V3, a graph-native free schematic editor:
+The default Model Builder is a graph-native free schematic editor:
 
 - **Fixed terminals:** `V` and `GND` define the two-terminal model.
 - **Component palette:** users drag R(V), I(V), dV(I), residual, or saved custom components onto the canvas. Resistor, diode, current-source, and saved-model entries are presets/templates, not separate architecture classes.
@@ -51,9 +51,9 @@ The default Model Builder is V3, a graph-native free schematic editor:
 - **Canvas equations:** the canvas shows readable fitting-equation notes generated from the current graph, including what is used, each component law, and how the active graph is assembled for fitting.
 - **Inspector:** selected components expose expression editing, sign/polarity, and a parameter table with symbol/value/bounds/fit controls.
 - **Canvas toolbar:** clear canvas, presets, save preset, Synthetic IV trace, and Go to fitting actions are available as floating canvas controls.
-- **Report/export preview:** report pages and exported HTML render equivalent-circuit diagrams from the V3 graph when V3 metadata is available, with legacy SVG fallback for older saved models.
+- **Report/export preview:** report pages and exported HTML render equivalent-circuit diagrams from the Model Builder graph when Model Builder graph metadata is available, with legacy SVG fallback for older saved models.
 
-Older Law / Form / Placement builder source has been removed from the active frontend. Saved older models may still be read through compatibility paths, but new UI work should target the V3 schematic graph.
+Older Law / Form / Placement builder source has been removed from the active frontend. Saved older models may still be read through compatibility paths, but new UI work should target the Model Builder schematic graph.
 
 The app treats components as mathematical circuit terms. It should not require a user to frame the problem as a specific device family. Domain-specific interpretations belong in the user's modeling judgment, diagnostics, and report narrative.
 
@@ -65,11 +65,11 @@ The Parameters table is grouped first by placement, then by component instance. 
 
 - Plain CSV/TXT import compatibility for single traces, wide publication/demo files with one voltage column and multiple current/current-density traces, and long trace-grouped files.
 - HappyMeasure CSV v2 import compatibility for single, wide, and long files, including current-source conversion.
-- Synthetic IV trace generation from the current Model Builder model, available directly from the V3 canvas toolbar, with voltage sweep controls, optional noise, seed, current compliance, and ground-truth metadata.
+- Synthetic IV trace generation from the current Model Builder model, available directly from the Model Builder canvas toolbar, with voltage sweep controls, optional noise, seed, current compliance, and ground-truth metadata.
 - Grouped parameter editing with next-fit initials, bounds, fit/fixed state, fitted values, uncertainty, and interpretation hints.
-- Model Builder V3 schematic graph editing with fixed V/GND terminals, drag-in two-terminal components, obstacle-aware orthogonal wire routing, draggable junction labels, presets, save/load, V-to-GND validation, and canvas fitting-equation notes.
+- Model Builder schematic graph editing with fixed V/GND terminals, drag-in two-terminal components, obstacle-aware orthogonal wire routing, draggable junction labels, presets, save/load, V-to-GND validation, and canvas fitting-equation notes.
 - Component behavior forms such as R(V), I(V), dV(I), and F(I,V)=0, with resistor/diode/source entries handled as presets.
-- Model Builder V3 is the single active frontend builder path; older builder source has been removed to keep the UI maintainable.
+- Model Builder is the single active frontend builder path; older builder source has been removed to keep the UI maintainable.
 - Mobile portrait layout with compact controls and sticky mobile Run fit action.
 - LAN phone/tablet testing helper for local network testing.
 - User-facing Function Guide with internal schema details hidden in Advanced details.

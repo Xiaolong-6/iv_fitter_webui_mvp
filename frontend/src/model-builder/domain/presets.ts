@@ -1,6 +1,6 @@
 import type { Mb3Graph } from "./types";
 
-const MB3_PRESET_STORAGE_KEY = "iv-fitter:model-builder-v3:presets";
+const MB3_PRESET_STORAGE_KEY = "iv-fitter:model-builder:presets";
 
 export interface Mb3SavedPreset {
   id: string;

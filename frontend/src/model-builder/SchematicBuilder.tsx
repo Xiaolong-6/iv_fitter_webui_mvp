@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useReducer, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import type { Connection } from "@xyflow/react";
-import { CanvasAdapterV3 } from "./canvas/CanvasAdapterV3";
+import { CanvasAdapter } from "./canvas/CanvasAdapter";
 import type { ModelSpec } from "../model/types";
 import { compileMb3Graph } from "./domain/compile";
 import { createComponentFromTemplate } from "./domain/componentFactory";
@@ -29,11 +29,11 @@ import { InspectorPanel, type Mb3TemplateInspectorDetails } from "./panels/Inspe
 import { PresetListPanel } from "./panels/PresetListPanel";
 import { createMb3InitialState } from "./state/factory";
 import { mb3Reducer } from "./state/reducer";
-import "./styles/model-builder-v3.css";
+import "./styles/model-builder.css";
 
 type Mb3ListPanel = "presets" | null;
 
-export function SchematicBuilderV3({
+export function SchematicBuilder({
   model,
   onChange,
   canvasActions,
@@ -308,7 +308,7 @@ export function SchematicBuilderV3({
   };
 
   return (
-    <section className="mbv3-shell" aria-label="Model Builder V3">
+    <section className="mbv3-shell" aria-label="Model Builder">
       <div className="mbv3-left-rail" onPointerDown={(event) => event.stopPropagation()}>
         <div className="mbv3-topbar">
           <div className="mbv3-title-float">
@@ -412,7 +412,7 @@ export function SchematicBuilderV3({
           onDuplicateComponent={duplicateComponent}
         />
       ) : null}
-      <CanvasAdapterV3
+      <CanvasAdapter
         graph={state.graph}
         formulaLatex={compiledGraph.formulaLatex}
         formulaSections={compiledGraph.formulaSections}

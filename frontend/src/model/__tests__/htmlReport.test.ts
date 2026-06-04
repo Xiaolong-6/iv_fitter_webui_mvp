@@ -86,8 +86,8 @@ function v3Model(): ModelSpec {
         },
       ],
       assembly_notes: [],
-      schema_version: "schematic_v3",
-      metadata: { modelBuilderV3: graph },
+      schema_version: "model_builder",
+      metadata: { modelBuilder: graph },
     },
   };
 }
@@ -135,10 +135,10 @@ describe("HTML report export", () => {
     expect(html).toContain("Rsh");
   });
 
-  it("uses the V3 equivalent circuit SVG when modelBuilderV3 metadata exists", () => {
+  it("uses the Model Builder equivalent circuit SVG when modelBuilder metadata exists", () => {
     const fit = { ...result(), model: v3Model() };
     const html = buildHtmlReportDocument({ result: fit, trace });
-    expect(html).toContain("V3 equivalent circuit");
+    expect(html).toContain("Model Builder equivalent circuit");
     expect(html).toContain("Vext");
     expect(html).toContain("GND");
     expect(html).toContain("R0");

@@ -1,4 +1,4 @@
-export * from "./SchematicBuilderV3";
+export * from "./SchematicBuilder";
 export * from "./domain/types";
 export * from "./domain/compile";
 export * from "./domain/collision";

@@ -50,38 +50,41 @@ def test_fit_result_carries_backend_reportability_fields_for_graph_solver():
     assert "passed backend numerical/reportability checks" in result.reportability_reason
 
 
-def test_frontend_model_builder_uses_v3_source_boundary():
+def test_frontend_model_builder_uses_model_builder_source_boundary():
     root = Path(__file__).resolve().parents[2]
     legacy_rules = root / "frontend" / "src" / "model-builder" / "rules.ts"
     legacy_mutations = root / "frontend" / "src" / "model-builder" / "mutations.ts"
     legacy_v2 = root / "frontend" / "src" / "model-builder-v2"
     model_builder = root / "frontend" / "src" / "components" / "ModelBuilder.tsx"
-    v3_builder = root / "frontend" / "src" / "model-builder-v3" / "SchematicBuilderV3.tsx"
-    v3_compile = root / "frontend" / "src" / "model-builder-v3" / "domain" / "compile.ts"
+    schematic_builder = root / "frontend" / "src" / "model-builder" / "SchematicBuilder.tsx"
+    graph_compile = root / "frontend" / "src" / "model-builder" / "domain" / "compile.ts"
     assert not legacy_rules.exists()
     assert not legacy_mutations.exists()
     assert not legacy_v2.exists()
-    assert v3_builder.exists()
-    assert v3_compile.exists()
+    assert schematic_builder.exists()
+    assert graph_compile.exists()
     builder_text = model_builder.read_text(encoding="utf-8")
-    assert "../model-builder-v3" in builder_text
+    assert "../model-builder" in builder_text
     assert "../model-builder/rules" not in builder_text
     assert "../model-builder/mutations" not in builder_text
     assert "function isDuplicateBlocked" not in builder_text
 
 
-def test_css_model_builder_v3_owns_styles_without_legacy_shell():
+def test_css_model_builder_owns_styles_without_legacy_shell():
     root = Path(__file__).resolve().parents[2]
     style = root / "frontend" / "src" / "style.css"
     legacy_extracted = root / "frontend" / "src" / "styles" / "model-builder.css"
-    v3_styles = root / "frontend" / "src" / "model-builder-v3" / "styles" / "model-builder-v3.css"
+    model_builder_styles = root / "frontend" / "src" / "model-builder" / "styles" / "model-builder.css"
+    model_builder_shell_styles = root / "frontend" / "src" / "model-builder" / "styles" / "shell.css"
     assert not legacy_extracted.exists()
-    assert v3_styles.exists()
+    assert model_builder_styles.exists()
+    assert model_builder_shell_styles.exists()
     style_text = style.read_text(encoding="utf-8")
     base_text = (root / "frontend" / "src" / "styles" / "base-shell.css").read_text(encoding="utf-8")
     assert '@import "./styles/base-shell.css";' in style_text
     assert "model-builder.css" not in base_text
-    assert ".mbv3-shell" in v3_styles.read_text(encoding="utf-8")
+    assert "@import './shell.css';" in model_builder_styles.read_text(encoding="utf-8")
+    assert ".mbv3-shell" in model_builder_shell_styles.read_text(encoding="utf-8")
 
 
 def test_duplicate_unidentifiable_component_makes_fit_non_reportable():
@@ -130,7 +133,7 @@ def test_location_placement_mismatch_makes_fit_non_reportable():
 def test_secondary_diode_button_removed_in_favor_of_v3_model_preset():
     root = Path(__file__).resolve().parents[2]
     model_builder = root / "frontend" / "src" / "components" / "ModelBuilder.tsx"
-    presets = root / "frontend" / "src" / "model-builder-v3" / "domain" / "presets.ts"
+    presets = root / "frontend" / "src" / "model-builder" / "domain" / "presets.ts"
     builder_text = model_builder.read_text(encoding="utf-8")
     preset_text = presets.read_text(encoding="utf-8")
     assert "Add secondary diode D2" not in builder_text

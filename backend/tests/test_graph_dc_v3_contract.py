@@ -25,7 +25,7 @@ def _simple_graph_component(polarity="forward"):
         node_neg="GND",
         polarity=polarity,
         params={"A": ParameterSpec(value=2e-6, fit=False, unit="A/V")},
-        metadata={"behavior": "I_of_V", "expression": "A*exp(V)", "templateKey": "custom", "source": "schematic_v3"},
+        metadata={"behavior": "I_of_V", "expression": "A*exp(V)", "templateKey": "custom", "source": "model_builder"},
     )
 
 
@@ -36,7 +36,7 @@ def test_graph_dc_reverse_polarity_changes_custom_branch_orientation():
             reference_node="GND",
             nodes=[GraphNode(id="V", role="terminal"), GraphNode(id="GND", role="reference")],
             components=[_simple_graph_component("forward")],
-            schema_version="schematic_v3",
+            schema_version="model_builder",
         )
     )
     reverse = ModelSpec(
@@ -45,7 +45,7 @@ def test_graph_dc_reverse_polarity_changes_custom_branch_orientation():
             reference_node="GND",
             nodes=[GraphNode(id="V", role="terminal"), GraphNode(id="GND", role="reference")],
             components=[_simple_graph_component("reverse")],
-            schema_version="schematic_v3",
+            schema_version="model_builder",
         )
     )
 
@@ -77,10 +77,10 @@ def test_graph_dc_fit_uses_graph_params_not_legacy_ghost_params():
                 node_neg="GND",
                 polarity="forward",
                 params={"Rsh": ParameterSpec(value=5e5, lower=1e3, upper=1e9, fit=True, unit="ohm")},
-                metadata={"behavior": "R_of_V", "expression": "Rsh", "templateKey": "resistance", "source": "schematic_v3"},
+                metadata={"behavior": "R_of_V", "expression": "Rsh", "templateKey": "resistance", "source": "model_builder"},
             )
         ],
-        schema_version="schematic_v3",
+        schema_version="model_builder",
     )
     model = ModelSpec(parallel=[legacy], graph=graph)
     voltage = [-1.0, -0.5, 0.0, 0.5, 1.0]

@@ -5,10 +5,10 @@ import type { Mb3Graph } from "../domain/types";
 import { MB3_BUILT_IN_PRESETS } from "../domain/presets";
 import { createMb3InitialState, createMb3StarterGraph } from "../state/factory";
 
-describe("model-builder-v3 compile contract", () => {
+describe("model-builder compile contract", () => {
   it("compiles the clear canvas as an empty fitting model", () => {
     const compiled = compileMb3Graph(createMb3StarterGraph());
-    expect(compiled.graphSchemaVersion).toBe("schematic_v3");
+    expect(compiled.graphSchemaVersion).toBe("model_builder");
     expect(compiled.activeComponentIds).toEqual([]);
     expect(compiled.model.core).toEqual([]);
     expect(compiled.model.series).toEqual([]);
@@ -21,7 +21,7 @@ describe("model-builder-v3 compile contract", () => {
     const compiled = compileMb3Graph(graph);
 
     expect(compiled.activeComponentIds).toEqual(expect.arrayContaining(["Rs", "D1", "Rsh"]));
-    expect(compiled.model.graph?.schema_version).toBe("schematic_v3");
+    expect(compiled.model.graph?.schema_version).toBe("model_builder");
     expect(compiled.model.graph?.components.map((component) => component.id)).toEqual(
       expect.arrayContaining(["Rs", "D1", "Rsh"]),
     );
@@ -98,11 +98,11 @@ describe("model-builder-v3 compile contract", () => {
     expect(labels.get("GND")).toBe("0");
   });
 
-  it("stores and restores the V3 canvas graph in model metadata", () => {
+  it("stores and restores the Model Builder canvas graph in model metadata", () => {
     const graph = MB3_BUILT_IN_PRESETS.find((preset) => preset.id === "builtin_single_diode_model")!.graph;
     const compiled = compileMb3Graph(graph);
 
-    expect(compiled.model.graph?.metadata?.modelBuilderV3).toEqual(graph);
+    expect(compiled.model.graph?.metadata?.modelBuilder).toEqual(graph);
     expect(createMb3InitialState(compiled.model).graph).toEqual(graph);
   });
 

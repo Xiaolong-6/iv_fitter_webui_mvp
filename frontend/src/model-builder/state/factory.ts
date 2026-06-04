@@ -6,7 +6,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function graphFromModelMetadata(model?: ModelSpec): Mb3Graph | null {
-  const candidate = model?.graph?.metadata?.modelBuilderV3;
+  const candidate = model?.graph?.metadata?.modelBuilder ?? model?.graph?.metadata?.modelBuilderV3;
   if (!isRecord(candidate)) return null;
   if (candidate.version !== 3) return null;
   if (!isRecord(candidate.terminals)) return null;

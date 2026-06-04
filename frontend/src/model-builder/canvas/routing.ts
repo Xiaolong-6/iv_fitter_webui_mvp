@@ -350,7 +350,7 @@ function findGridPath(
 
   if (typeof console !== "undefined" && typeof console.warn === "function") {
     console.warn(
-      `Model Builder V3 wire router hit MAX_ROUTE_STEPS=${MAX_ROUTE_STEPS}; using fallback route.`,
+      `Model Builder wire router hit MAX_ROUTE_STEPS=${MAX_ROUTE_STEPS}; using fallback route.`,
     );
   }
   return compactPoints([start, { x: start.x, y: end.y }, end]);

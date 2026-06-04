@@ -6,9 +6,9 @@ IVfitter WebUI v1.9.6 verification-fix package, produced from the v1.9.5 staged 
 
 ## Main fixes in v1.9.6
 
-- Fixed Model Builder V3 handle normalization so the terminal handle id `node` is no longer misread as a component `n` port.
+- Fixed Model Builder handle normalization so the terminal handle id `node` is no longer misread as a component `n` port.
 - Restored frontend Vitest success after the v1.9.1 handle-ID changes.
-- Updated the FittingPage synthetic-trace toolbar test to assert the current V3 direct-shell DOM instead of the removed legacy `.model-webpage-stack` wrapper.
+- Updated the FittingPage synthetic-trace toolbar test to assert the current Model Builder direct-shell DOM instead of the removed legacy `.model-webpage-stack` wrapper.
 - Synchronized root, frontend, and backend version metadata to v1.9.6.
 - Updated this test-status document and the final audit to reflect actual commands run in this workspace.
 

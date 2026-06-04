@@ -9,7 +9,7 @@ export type Mb3ComponentTemplate = {
   userDefined?: boolean;
 };
 
-const MB3_CUSTOM_TEMPLATE_STORAGE_KEY = "iv-fitter:model-builder-v3:custom-component-templates";
+const MB3_CUSTOM_TEMPLATE_STORAGE_KEY = "iv-fitter:model-builder:custom-component-templates";
 
 export const MB3_COMPONENT_TEMPLATES: Mb3ComponentTemplate[] = [
   {

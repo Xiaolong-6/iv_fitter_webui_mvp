@@ -1,0 +1,59 @@
+.mbv3-shell {
+  --mbv3-left-panel-width: 280px;
+  --mbv3-topbar-control-size: calc((16px * var(--app-zoom) * 1.1) + 22px);
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 180px);
+  min-height: 720px;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.mbv3-left-rail {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 40;
+  width: fit-content;
+  max-height: calc(100% - 28px);
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  pointer-events: none;
+}
+
+.mbv3-topbar {
+  display: grid;
+  grid-template-columns: var(--mbv3-left-panel-width) max-content;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.mbv3-title-float {
+  position: relative;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: var(--mbv3-topbar-control-size);
+  padding: 10px 12px;
+  border: 1px solid #dbe5f4;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  pointer-events: none;
+}
+
+.mbv3-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mbv3-title-float strong {
+  color: #0f172a;
+  font-size: calc(16px * var(--app-zoom));
+  font-weight: 900;
+  line-height: 1.1;
+}

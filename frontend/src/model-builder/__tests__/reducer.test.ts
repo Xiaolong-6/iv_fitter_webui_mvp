@@ -4,7 +4,7 @@ import { mb3Reducer } from "../state/reducer";
 import type { Mb3State } from "../domain/types";
 import { MB3_BUILT_IN_PRESETS } from "../domain/presets";
 
-describe("model-builder-v3 reducer", () => {
+describe("model-builder reducer", () => {
   it("selects component and clears wire selection", () => {
     const initial = { ...createMb3InitialState(), selectedWireId: "w1" };
     const next = mb3Reducer(initial, { type: "selectComponent", componentId: "Rs" });

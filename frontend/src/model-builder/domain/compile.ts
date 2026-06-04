@@ -188,7 +188,7 @@ function legacyComponent(component: Mb3Component, isSeriesBridge: boolean): Comp
     behavior: component.behavior,
     expression: component.expression,
     templateKey: component.templateKey,
-    source: "schematic_v3",
+    source: "model_builder",
   };
 
   if (component.templateKey === "shockley_diode") {
@@ -680,7 +680,7 @@ export function compileMb3Graph(graph: Mb3Graph, baseModel?: ModelSpec): Mb3Comp
       behavior: component.behavior === "residual" ? "custom_residual" : component.behavior,
       expression: component.expression,
       templateKey: component.templateKey,
-      source: "schematic_v3",
+      source: "model_builder",
     },
   }));
 
@@ -690,14 +690,14 @@ export function compileMb3Graph(graph: Mb3Graph, baseModel?: ModelSpec): Mb3Comp
     nodes,
     components: graphComponents,
     assembly_notes: [
-      "Generated from Model Builder V3 Mb3Graph.",
+      "Generated from Model Builder graph.",
       "Only components on an active V-to-GND connected subgraph are included.",
       "Canvas positions are visual metadata; graph ports and wires define fitting topology.",
     ],
-    schema_version: "schematic_v3",
+    schema_version: "model_builder",
     metadata: {
       ...(baseModel?.graph?.metadata ?? {}),
-      modelBuilderV3: graph,
+      modelBuilder: graph,
     },
   };
 
@@ -739,7 +739,7 @@ export function compileMb3Graph(graph: Mb3Graph, baseModel?: ModelSpec): Mb3Comp
   };
 
   return {
-    graphSchemaVersion: "schematic_v3",
+    graphSchemaVersion: "model_builder",
     componentIds: graph.components.map((component) => component.id),
     wireIds: graph.wires.map((wire) => wire.id),
     activeComponentIds: activeComponents.map((component) => component.id),

@@ -26,7 +26,7 @@ function segmentCrossesBox(
   return false;
 }
 
-describe("model-builder-v3 canvas adapter", () => {
+describe("model-builder canvas adapter", () => {
   it("maps graph nodes and wires to react-flow elements", () => {
     const graph = createMb3StarterGraph();
     const flow = mb3ToReactFlow(graph);

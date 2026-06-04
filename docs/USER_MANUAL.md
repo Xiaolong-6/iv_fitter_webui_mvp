@@ -12,9 +12,9 @@ IV-fitter helps users import current-voltage data, define a two-terminal device 
 4. Run the fit.
 5. Inspect curves, residuals, parameters, warnings, and exported report.
 
-## Model Builder V3
+## Model Builder
 
-Model Builder V3 is a free schematic editor for two-terminal compact IV models. Its canvas toolbar includes clear canvas, presets, save, Synthetic IV trace, and Go to fitting actions.
+Model Builder is a free schematic editor for two-terminal compact IV models. Its canvas toolbar includes clear canvas, presets, save, Synthetic IV trace, and Go to fitting actions.
 
 ### Terminals
 
@@ -102,8 +102,8 @@ Start simple:
 
 ## Synthetic IV trace
 
-Use the **Synthetic IV trace** toolbar button on the Model Builder V3 canvas to forward-simulate from the current model. The dialog supports voltage sweep controls, optional noise, random seed, current compliance, CSV-only generation, and generate-and-import. Synthetic data is a debugging and validation aid; it does not prove that a model is physically correct for a real device.
+Use the **Synthetic IV trace** toolbar button on the Model Builder canvas to forward-simulate from the current model. The dialog supports voltage sweep controls, optional noise, random seed, current compliance, CSV-only generation, and generate-and-import. Synthetic data is a debugging and validation aid; it does not prove that a model is physically correct for a real device.
 
 ## Known boundaries
 
-Model Builder V3 is for DC steady-state two-terminal IV models. It is not a full SPICE replacement. It does not currently model capacitors, inductors, time-domain transients, or multi-terminal devices.
+Model Builder is for DC steady-state two-terminal IV models. It is not a full SPICE replacement. It does not currently model capacitors, inductors, time-domain transients, or multi-terminal devices.

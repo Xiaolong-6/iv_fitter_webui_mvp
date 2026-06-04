@@ -8,7 +8,7 @@ function template(key: string) {
   return found;
 }
 
-describe("model-builder-v3 component factory", () => {
+describe("model-builder component factory", () => {
   it("uses template-specific ids so diode and current components do not collide", () => {
     const diode = createComponentFromTemplate({
       template: template("shockley_diode"),

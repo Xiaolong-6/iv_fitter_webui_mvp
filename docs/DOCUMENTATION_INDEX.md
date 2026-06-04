@@ -16,7 +16,7 @@ This file is the stable entry point for IV-fitter Web UI documentation.
 ### User-facing behavior
 
 - `README.md` — concise project overview and launch instructions.
-- `docs/USER_MANUAL.md` — full user manual for import, Model Builder V3, fitting, validation, and reporting.
+- `docs/USER_MANUAL.md` — full user manual for import, Model Builder, fitting, validation, and reporting.
 - `docs/DATA_IMPORT_EXPORT.md` — current Import page flow, CSV formats, all-trace spreadsheet preview, units, and export expectations.
 - `docs/REPORTING.md` — report/export requirements and reproducibility expectations.
 - `docs/RESPONSIVE_WORKSPACE.md` — responsive layout, mobile behavior, and app-local zoom.
@@ -26,7 +26,7 @@ This file is the stable entry point for IV-fitter Web UI documentation.
 
 ### Developer-facing architecture
 
-- `docs/ARCHITECTURE.md` - current runtime split and Model Builder V3 architecture.
+- `docs/ARCHITECTURE.md` - current runtime split and Model Builder architecture.
 - `docs/FUNCTION_EXTENSION_GUIDE.md` - how to add model functions without breaking the Law / Form / Placement architecture.
 - `docs/PHYSICS_MODELING_POLICY.md` - modeling boundaries and interpretation policy.
 - `docs/SCHEMA_STABILITY.md` - API/result schema stability rules.

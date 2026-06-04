@@ -47,7 +47,7 @@
 
 - Promoted the cleaned Model Builder V3 path to the v1.9.0 baseline.
 - Removed legacy V1/V2 frontend Model Builder source, active V2 docs, orphan V2 hotfix notes, and the old global Model Builder stylesheet.
-- Updated project rules and active documentation so new Model Builder work targets `frontend/src/model-builder-v3/`.
+- Updated project rules and active documentation so new Model Builder work targets `frontend/src/model-builder/`.
 - Kept older Law/Form/Placement model paths as compatibility schema rather than active UI architecture.
 - Synchronized root, frontend, backend, and lockfile version metadata to v1.9.0.
 

@@ -24,7 +24,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function graphFromModel(model: ModelSpec): Mb3Graph | null {
-  const candidate = model.graph?.metadata?.modelBuilderV3;
+  const candidate = model.graph?.metadata?.modelBuilder ?? model.graph?.metadata?.modelBuilderV3;
   if (!isRecord(candidate)) return null;
   if (candidate.version !== 3) return null;
   if (!Array.isArray(candidate.nodes) || !Array.isArray(candidate.components) || !Array.isArray(candidate.wires)) {
@@ -94,7 +94,7 @@ function pathFromPoints(points: Mb3Point[], offsetX: number, offsetY: number): s
   return `M ${first.x + offsetX} ${first.y + offsetY} ${rest.map((point) => `L ${point.x + offsetX} ${point.y + offsetY}`).join(" ")}`;
 }
 
-function renderV3GraphSvg(model: ModelSpec, graph: Mb3Graph): string {
+function renderGraphSvg(model: ModelSpec, graph: Mb3Graph): string {
   const activeIds = activeComponentIds(model);
   const existingRoutes: Mb3Point[][] = [];
   const routed = graph.wires.map((wire) => {
@@ -111,7 +111,7 @@ function renderV3GraphSvg(model: ModelSpec, graph: Mb3Graph): string {
   const width = bounds.maxX - bounds.minX;
   const height = bounds.maxY - bounds.minY;
 
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="V3 equivalent circuit" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; border-radius: 10px;">`;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="Model Builder equivalent circuit" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; border-radius: 10px;">`;
   svg += `<defs><marker id="mbv3-report-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,4 L0,8 z" fill="#334155"/></marker></defs>`;
 
   for (const { wire, route, inactive } of routed) {
@@ -157,8 +157,8 @@ function renderV3GraphSvg(model: ModelSpec, graph: Mb3Graph): string {
   return svg;
 }
 
-export function renderModelBuilderV3EquivalentCircuitSvg(model: ModelSpec, language: Language): string {
+export function renderModelBuilderEquivalentCircuitSvg(model: ModelSpec, language: Language): string {
   const graph = graphFromModel(model);
   if (!graph) return renderLegacyEquivalentCircuitSvg(model, language);
-  return renderV3GraphSvg(model, graph);
+  return renderGraphSvg(model, graph);
 }

@@ -68,7 +68,7 @@ export interface Mb3State {
 }
 
 export interface Mb3CompileResult {
-  graphSchemaVersion: "schematic_v3";
+  graphSchemaVersion: "model_builder";
   componentIds: string[];
   wireIds: string[];
   activeComponentIds: string[];

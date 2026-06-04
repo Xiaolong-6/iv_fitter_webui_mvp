@@ -330,7 +330,7 @@ function CanvasInner({
   return (
     <div
       className="mbv3-canvas"
-      data-testid="model-builder-v3-canvas"
+      data-testid="model-builder-canvas"
       onDragOver={(event) => {
         event.preventDefault();
         event.dataTransfer.dropEffect = "copy";
@@ -435,7 +435,7 @@ function CanvasInner({
   );
 }
 
-export function CanvasAdapterV3(props: Parameters<typeof CanvasInner>[0]) {
+export function CanvasAdapter(props: Parameters<typeof CanvasInner>[0]) {
   return (
     <ReactFlowProvider>
       <CanvasInner {...props} />

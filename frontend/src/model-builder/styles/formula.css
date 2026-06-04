@@ -1,0 +1,98 @@
+.mbv3-formula-node {
+  width: max-content;
+  min-width: 520px;
+  max-width: none;
+  color: rgba(15, 23, 42, 0.84);
+  pointer-events: none;
+  user-select: none;
+}
+
+.mbv3-formula-node-title {
+  margin: 0 0 6px;
+  color: rgba(71, 85, 105, 0.72);
+  font-size: calc(10px * var(--app-zoom));
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mbv3-formula-node-lines {
+  display: grid;
+  gap: 12px;
+  padding: 12px 14px;
+  border-left: 2px solid rgba(100, 116, 139, 0.22);
+  background:
+    linear-gradient(90deg, rgba(248, 250, 252, 0.62), rgba(248, 250, 252, 0.2) 72%, transparent),
+    repeating-linear-gradient(0deg, transparent 0 28px, rgba(148, 163, 184, 0.08) 29px);
+}
+
+.mbv3-formula-section {
+  display: grid;
+  gap: 6px;
+  width: max-content;
+  max-width: none;
+}
+
+.mbv3-formula-section-title {
+  color: rgba(30, 41, 59, 0.82);
+  font-size: calc(10px * var(--app-zoom));
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mbv3-formula-section-lines {
+  display: grid;
+  gap: 5px;
+}
+
+.mbv3-formula-node-text {
+  max-width: 540px;
+  margin: 0;
+  color: rgba(51, 65, 85, 0.92);
+  font-size: calc(10px * var(--app-zoom));
+  font-weight: 750;
+  line-height: 1.28;
+}
+
+.mbv3-formula-node .mbv3-formula-node-line {
+  display: block;
+  margin: 0;
+  padding: 0 !important;
+  width: max-content;
+  max-width: none;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: rgba(15, 23, 42, 0.9);
+  font-size: calc(11px * var(--app-zoom));
+  line-height: 1.25;
+  font-family: "Cambria Math", "STIX Two Math", "Noto Serif", "Times New Roman", serif;
+}
+
+.mbv3-formula-node .mbv3-formula-node-line .katex-display {
+  margin: 0;
+  text-align: left;
+}
+
+.mbv3-formula-node .mbv3-formula-node-line .latex-rendered {
+  white-space: nowrap;
+}
+
+.mbv3-formula-node .mbv3-formula-node-line .katex {
+  white-space: nowrap;
+}
+
+.mbv3-formula-node .mbv3-formula-node-line .latex-copy {
+  display: none;
+}
+
+.mbv3-canvas .react-flow__node-mbv3Formula {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+}

@@ -1,4 +1,4 @@
-﻿
+
 .language-switch select option {
 
   background: #ffffff;
@@ -427,11 +427,11 @@ button.fit-action-unavailable:disabled {
 }
 .fit-details-drawer > summary::-webkit-details-marker { display: none; }
 .fit-details-drawer > summary::before {
-  content: "▸";
+  content: "?";
   margin-right: 5px;
   color: #64748b;
 }
-.fit-details-drawer[open] > summary::before { content: "▾"; }
+.fit-details-drawer[open] > summary::before { content: "?"; }
 .fit-details-drawer-body {
   display: grid;
   gap: calc(6px * var(--app-zoom));
@@ -1350,7 +1350,7 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
   align-content: start;
 }
 
-/* Model Builder V3 fullscreen host: remove historical centered/max-width layout constraints. */
+/* Model Builder fullscreen host: remove historical centered/max-width layout constraints. */
 .mbv3-fullscreen-page.webpage-model-page.model-page.workflow-page {
   padding: 0 !important;
   overflow: hidden !important;
@@ -1726,7 +1726,7 @@ button.primary { background: var(--theme-accent); border-color: var(--theme-acce
 
 /* v1.7.19: Spreadsheet preview shows all traces simultaneously; the trace menu only jumps. */
 .spreadsheet-toolbar select[aria-label*="Jump"],
-.spreadsheet-toolbar select[aria-label*="定位"] {
+.spreadsheet-toolbar select[aria-label*="??"] {
   min-width: calc(190px * var(--app-zoom));
 }
 .webpage-data-layout .spreadsheet-card .spreadsheet-wrap,

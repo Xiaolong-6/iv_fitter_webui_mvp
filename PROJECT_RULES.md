@@ -434,11 +434,11 @@ The Model Builder must be treated as a direct branch graph, not a floating-card 
 - React Flow node positions are visual metadata only; model truth remains the branch graph and component behavior/parameter data.
 - Any future Model Builder patch must verify visible wires, junctions, serial insertion buttons, parallel-path buttons, selected-component inspector behavior modes, and custom parameter editing.
 
-## 22. Consolidated Model Builder V3 references
+## 22. Consolidated Model Builder references
 
 Version-stamped Model Builder incident notes must not be appended here. Use these canonical docs instead:
 
-- Active V3 architecture and source ownership: `docs/ARCHITECTURE.md`.
+- Active Model Builder architecture and source ownership: `docs/ARCHITECTURE.md`.
 - CSS ownership and cascade rules: `docs/FRONTEND_STYLESHEET_ARCHITECTURE.md`.
 - Law / Form / Placement vocabulary and coordinator rules: `docs/DEVELOPMENT_PRINCIPLES.md`.
 - Current handoff and remaining risks: `docs/WEBUI_AGENT_HANDOFF.md`.
