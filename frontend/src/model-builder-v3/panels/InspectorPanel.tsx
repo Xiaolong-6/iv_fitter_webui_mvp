@@ -2,10 +2,12 @@ import { useState, type PointerEvent } from "react";
 import type { Mb3Behavior, Mb3Component, Mb3Parameter } from "../domain/types";
 
 export type Mb3TemplateInspectorDetails = {
+  key: string;
   label: string;
   behavior: Mb3Behavior;
   expression: string;
   parameters: Mb3Parameter[];
+  userDefined?: boolean;
 };
 
 function supportsPolarityToggle(component: Mb3Component | null): boolean {
@@ -29,6 +31,11 @@ export function InspectorPanel({
   onAddComponentParameter,
   onUpdateComponentParameter,
   onSaveCustomComponentTemplate,
+  onRenameTemplate,
+  onUpdateTemplateBehavior,
+  onUpdateTemplateExpression,
+  onAddTemplateParameter,
+  onUpdateTemplateParameter,
   onAddTemplateComponent,
   onDuplicateComponent,
 }: {
@@ -49,24 +56,42 @@ export function InspectorPanel({
     changes: Partial<Omit<Mb3Parameter, "symbol">>,
   ) => void;
   onSaveCustomComponentTemplate: (component: Mb3Component) => void;
+  onRenameTemplate: (templateKey: string, label: string) => void;
+  onUpdateTemplateBehavior: (templateKey: string, behavior: Mb3Behavior) => void;
+  onUpdateTemplateExpression: (templateKey: string, expression: string) => void;
+  onAddTemplateParameter: (templateKey: string, parameter: Mb3Parameter) => void;
+  onUpdateTemplateParameter: (
+    templateKey: string,
+    symbol: string,
+    changes: Partial<Omit<Mb3Parameter, "symbol">>,
+  ) => void;
   onAddTemplateComponent?: () => void;
   onDuplicateComponent?: (component: Mb3Component) => void;
 }) {
   const details = component ?? templateDetails;
-  const canEditCustom = component?.templateKey === "custom";
+  const canEditComponentCustom = Boolean(
+    component && (component.templateKey === "custom" || component.templateKey?.startsWith("custom_saved_")),
+  );
+  const canEditTemplateCustom = Boolean(!component && templateDetails?.userDefined);
+  const canEditCustom = canEditComponentCustom || canEditTemplateCustom;
   const canTogglePolarity = supportsPolarityToggle(component);
   const [newParameterSymbol, setNewParameterSymbol] = useState("");
 
   const addCustomParameter = () => {
-    if (!component || !newParameterSymbol.trim()) return;
-    onAddComponentParameter(component.id, {
+    if (!newParameterSymbol.trim()) return;
+    const parameter = {
       symbol: newParameterSymbol,
       value: 1,
       lower: null,
       upper: null,
       fit: true,
       unit: "1",
-    });
+    };
+    if (component) {
+      onAddComponentParameter(component.id, parameter);
+    } else if (templateDetails?.userDefined) {
+      onAddTemplateParameter(templateDetails.key, parameter);
+    }
     setNewParameterSymbol("");
   };
   const parseRequiredNumber = (value: string): number | null => {
@@ -160,6 +185,13 @@ export function InspectorPanel({
                 onPointerDown={(event) => event.stopPropagation()}
                 onChange={(event) => onRenameComponent(component.id, event.target.value)}
               />
+            ) : templateDetails?.userDefined ? (
+              <input
+                className="mbv3-inspector-name-input"
+                value={templateDetails.label}
+                onPointerDown={(event) => event.stopPropagation()}
+                onChange={(event) => onRenameTemplate(templateDetails.key, event.target.value)}
+              />
             ) : (
               <b>{details.label}</b>
             )}
@@ -169,11 +201,16 @@ export function InspectorPanel({
             {canEditCustom ? (
               <select
                 className="mbv3-inspector-select"
-                value={component.behavior}
+                value={component?.behavior ?? templateDetails?.behavior}
                 onPointerDown={(event) => event.stopPropagation()}
-                onChange={(event) =>
-                  onUpdateComponentBehavior(component.id, event.target.value as Mb3Behavior)
-                }
+                onChange={(event) => {
+                  const behavior = event.target.value as Mb3Behavior;
+                  if (component) {
+                    onUpdateComponentBehavior(component.id, behavior);
+                  } else if (templateDetails?.userDefined) {
+                    onUpdateTemplateBehavior(templateDetails.key, behavior);
+                  }
+                }}
               >
                 <option value="R_of_V">R(V) resistance</option>
                 <option value="I_of_V">I(V) current</option>
@@ -188,10 +225,16 @@ export function InspectorPanel({
             {canEditCustom ? (
               <textarea
                 className="mbv3-inspector-expression-input"
-                value={component.expression}
+                value={component?.expression ?? templateDetails?.expression ?? ""}
                 rows={3}
                 onPointerDown={(event) => event.stopPropagation()}
-                onChange={(event) => onUpdateComponentExpression(component.id, event.target.value)}
+                onChange={(event) => {
+                  if (component) {
+                    onUpdateComponentExpression(component.id, event.target.value);
+                  } else if (templateDetails?.userDefined) {
+                    onUpdateTemplateExpression(templateDetails.key, event.target.value);
+                  }
+                }}
               />
             ) : (
               <code>{details.expression}</code>
@@ -235,7 +278,7 @@ export function InspectorPanel({
                 >
                   <div>{parameter.symbol}</div>
                   <div>
-                    {component ? (
+                    {component || templateDetails?.userDefined ? (
                       <input
                         className="mbv3-param-input"
                         defaultValue={formatParameterNumber(parameter.value)}
@@ -243,7 +286,11 @@ export function InspectorPanel({
                         onBlur={(event) => {
                           const value = parseRequiredNumber(event.target.value);
                           if (value !== null) {
-                            onUpdateComponentParameter(component.id, parameter.symbol, { value });
+                            if (component) {
+                              onUpdateComponentParameter(component.id, parameter.symbol, { value });
+                            } else if (templateDetails?.userDefined) {
+                              onUpdateTemplateParameter(templateDetails.key, parameter.symbol, { value });
+                            }
                           } else {
                             event.target.value = String(parameter.value);
                           }
@@ -255,50 +302,59 @@ export function InspectorPanel({
                   </div>
                   <div>{inferParameterUnit(parameter)}</div>
                   <div>
-                    {component ? (
+                    {component || templateDetails?.userDefined ? (
                       <input
                         className="mbv3-param-input"
                         defaultValue={formatParameterNumber(parameter.lower)}
                         placeholder="-"
                         onPointerDown={(event) => event.stopPropagation()}
-                        onBlur={(event) =>
-                          onUpdateComponentParameter(component.id, parameter.symbol, {
-                            lower: parseOptionalNumber(event.target.value),
-                          })
-                        }
+                        onBlur={(event) => {
+                          const lower = parseOptionalNumber(event.target.value);
+                          if (component) {
+                            onUpdateComponentParameter(component.id, parameter.symbol, { lower });
+                          } else if (templateDetails?.userDefined) {
+                            onUpdateTemplateParameter(templateDetails.key, parameter.symbol, { lower });
+                          }
+                        }}
                       />
                     ) : (
                       parameter.lower ?? "-"
                     )}
                   </div>
                   <div>
-                    {component ? (
+                    {component || templateDetails?.userDefined ? (
                       <input
                         className="mbv3-param-input"
                         defaultValue={formatParameterNumber(parameter.upper)}
                         placeholder="-"
                         onPointerDown={(event) => event.stopPropagation()}
-                        onBlur={(event) =>
-                          onUpdateComponentParameter(component.id, parameter.symbol, {
-                            upper: parseOptionalNumber(event.target.value),
-                          })
-                        }
+                        onBlur={(event) => {
+                          const upper = parseOptionalNumber(event.target.value);
+                          if (component) {
+                            onUpdateComponentParameter(component.id, parameter.symbol, { upper });
+                          } else if (templateDetails?.userDefined) {
+                            onUpdateTemplateParameter(templateDetails.key, parameter.symbol, { upper });
+                          }
+                        }}
                       />
                     ) : (
                       parameter.upper ?? "-"
                     )}
                   </div>
                   <div className="mbv3-param-fit-cell">
-                    {component ? (
+                    {component || templateDetails?.userDefined ? (
                       <input
                         type="checkbox"
                         checked={parameter.fit}
                         onPointerDown={(event) => event.stopPropagation()}
-                        onChange={(event) =>
-                          onUpdateComponentParameter(component.id, parameter.symbol, {
-                            fit: event.target.checked,
-                          })
-                        }
+                        onChange={(event) => {
+                          const fit = event.target.checked;
+                          if (component) {
+                            onUpdateComponentParameter(component.id, parameter.symbol, { fit });
+                          } else if (templateDetails?.userDefined) {
+                            onUpdateTemplateParameter(templateDetails.key, parameter.symbol, { fit });
+                          }
+                        }}
                       />
                     ) : (
                       parameter.fit ? "Yes" : "No"

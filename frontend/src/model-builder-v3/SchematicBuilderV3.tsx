@@ -64,17 +64,23 @@ export function SchematicBuilderV3({
     originX: number;
     originY: number;
   } | null>(null);
+  const componentTemplates = useMemo(
+    () => [...MB3_COMPONENT_TEMPLATES, ...customTemplates],
+    [customTemplates],
+  );
   const selectedComponent = findMb3Component(state.graph, state.selectedComponentId);
   const stickySelectedComponent = findMb3Component(state.graph, stickySelectedComponentId);
-  const previewTemplate = MB3_COMPONENT_TEMPLATES.find((template) => template.key === previewTemplateKey) ?? null;
+  const previewTemplate = componentTemplates.find((template) => template.key === previewTemplateKey) ?? null;
   const inspectorComponent = selectedComponent ?? stickySelectedComponent;
   const inspectorTemplateDetails: Mb3TemplateInspectorDetails | null =
     !inspectorComponent && previewTemplate
       ? {
+          key: previewTemplate.key,
           label: previewTemplate.label,
           behavior: previewTemplate.behavior,
           expression: previewTemplate.expression,
           parameters: previewTemplate.parameters,
+          userDefined: previewTemplate.userDefined,
         }
       : null;
   const hasInspectorDetails = Boolean(inspectorComponent || inspectorTemplateDetails);
@@ -94,10 +100,6 @@ export function SchematicBuilderV3({
   const usageByTemplateKey = useMemo(() => {
     return countComponentsByTemplate(state.graph, [...MB3_COMPONENT_TEMPLATES, ...customTemplates]);
   }, [state.graph.components, customTemplates]);
-  const componentTemplates = useMemo(
-    () => [...MB3_COMPONENT_TEMPLATES, ...customTemplates],
-    [customTemplates],
-  );
   const connectivityStatus = useMemo(
     () => evaluateMb3GraphConnectivity(state.graph),
     [state.graph],
@@ -200,6 +202,21 @@ export function SchematicBuilderV3({
     const nextTemplates = customTemplates.filter((candidate) => candidate.key !== template.key);
     storeMb3CustomTemplates(nextTemplates);
     setCustomTemplates(nextTemplates);
+    if (previewTemplateKey === template.key) {
+      setPreviewTemplateKey(null);
+      setInspectorOpen(false);
+    }
+  };
+
+  const updateCustomComponentTemplate = (
+    templateKey: string,
+    updater: (template: Mb3ComponentTemplate) => Mb3ComponentTemplate,
+  ) => {
+    const nextTemplates = customTemplates.map((template) =>
+      template.key === templateKey && template.userDefined ? updater(template) : template,
+    );
+    storeMb3CustomTemplates(nextTemplates);
+    setCustomTemplates(nextTemplates);
   };
 
   const saveCurrentPreset = () => {
@@ -238,8 +255,8 @@ export function SchematicBuilderV3({
 
   const clampInspectorPosition = (x: number, y: number) => {
     const margin = 8;
-    const panelWidth = 520;
-    const panelHeight = 280;
+    const panelWidth = 640;
+    const panelHeight = 360;
     return {
       x: Math.max(margin, Math.min(x, window.innerWidth - panelWidth - margin)),
       y: Math.max(margin, Math.min(y, window.innerHeight - panelHeight - margin)),
@@ -358,6 +375,35 @@ export function SchematicBuilderV3({
             dispatch({ type: "updateComponentParameter", componentId, symbol, changes })
           }
           onSaveCustomComponentTemplate={saveCustomComponentTemplate}
+          onRenameTemplate={(templateKey, label) =>
+            updateCustomComponentTemplate(templateKey, (template) => ({
+              ...template,
+              label: label || template.label,
+            }))
+          }
+          onUpdateTemplateBehavior={(templateKey, behavior) =>
+            updateCustomComponentTemplate(templateKey, (template) => ({ ...template, behavior }))
+          }
+          onUpdateTemplateExpression={(templateKey, expression) =>
+            updateCustomComponentTemplate(templateKey, (template) => ({ ...template, expression }))
+          }
+          onAddTemplateParameter={(templateKey, parameter) =>
+            updateCustomComponentTemplate(templateKey, (template) => {
+              const symbol = parameter.symbol.trim();
+              if (!symbol || template.parameters.some((item) => item.symbol === symbol)) {
+                return template;
+              }
+              return { ...template, parameters: [...template.parameters, { ...parameter, symbol }] };
+            })
+          }
+          onUpdateTemplateParameter={(templateKey, symbol, changes) =>
+            updateCustomComponentTemplate(templateKey, (template) => ({
+              ...template,
+              parameters: template.parameters.map((parameter) =>
+                parameter.symbol === symbol ? { ...parameter, ...changes } : parameter,
+              ),
+            }))
+          }
           onAddTemplateComponent={() => {
             if (previewTemplate) {
               addComponentFromTemplate(previewTemplate);

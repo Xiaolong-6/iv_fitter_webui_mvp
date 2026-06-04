@@ -410,9 +410,13 @@
   z-index: 42;
   display: grid;
   gap: 8px;
-  width: 520px;
-  max-height: min(56vh, 520px);
+  width: 640px;
+  min-width: 520px;
+  min-height: 360px;
+  max-width: calc(100vw - 24px);
+  max-height: min(72vh, 680px);
   overflow: auto;
+  resize: both;
   padding: 10px 12px;
   border: 1px solid #dbe5f4;
   border-radius: 12px;
