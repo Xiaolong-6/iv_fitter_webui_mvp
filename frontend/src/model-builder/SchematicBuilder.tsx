@@ -57,6 +57,7 @@ export function SchematicBuilder({
   const [inspectorAnchor, setInspectorAnchor] = useState<{ x: number; y: number } | null>(null);
   const baseModelRef = useRef(model);
   const onChangeRef = useRef(onChange);
+  const shellRef = useRef<HTMLElement | null>(null);
   const inspectorDragRef = useRef<{
     pointerId: number;
     startX: number;
@@ -64,6 +65,7 @@ export function SchematicBuilder({
     originX: number;
     originY: number;
   } | null>(null);
+  const suppressNextSelectionInspectorRef = useRef(false);
   const componentTemplates = useMemo(
     () => [...MB3_COMPONENT_TEMPLATES, ...customTemplates],
     [customTemplates],
@@ -128,6 +130,7 @@ export function SchematicBuilder({
   const addComponentFromTemplate = (
     template: Mb3ComponentTemplate,
     position?: { x: number; y: number },
+    options: { openInspector?: boolean } = {},
   ) => {
     const isCustomTemplate = template.key === "custom" || template.userDefined;
     const sameType = state.graph.components.filter((component) =>
@@ -136,10 +139,16 @@ export function SchematicBuilder({
         : component.templateKey === template.key,
     ).length;
     const component = createComponentFromTemplate({ template, existingCount: sameType, position });
+    suppressNextSelectionInspectorRef.current = options.openInspector === false;
+    if (options.openInspector === false && typeof window !== "undefined") {
+      window.setTimeout(() => {
+        suppressNextSelectionInspectorRef.current = false;
+      }, 120);
+    }
     setPreviewTemplateKey(null);
-    setStickySelectedComponentId(component.id);
-    dispatch({ type: "addComponent", component });
-    setInspectorOpen(true);
+    setStickySelectedComponentId(options.openInspector === false ? null : component.id);
+    dispatch({ type: "addComponent", component, select: options.openInspector !== false });
+    setInspectorOpen(options.openInspector ?? true);
   };
 
   const dropComponentTemplate = (templateKey: string, position: { x: number; y: number }) => {
@@ -234,6 +243,7 @@ export function SchematicBuilder({
     setPreviewTemplateKey(null);
     setStickySelectedComponentId(null);
     setInspectorOpen(false);
+    setActivePanel(null);
     dispatch({
       type: "hydrate",
       state: {
@@ -255,19 +265,30 @@ export function SchematicBuilder({
 
   const clampInspectorPosition = (x: number, y: number) => {
     const margin = 8;
-    const panelWidth = 640;
-    const panelHeight = 360;
+    const leftRailWidth = 240;
+    const panelWidth = 560;
+    const panelHeight = 320;
+    const viewportWidth = shellRef.current?.clientWidth ?? document.documentElement.clientWidth ?? window.innerWidth;
+    const viewportHeight = shellRef.current?.clientHeight ?? document.documentElement.clientHeight ?? window.innerHeight;
+    const minX = leftRailWidth + margin;
     return {
-      x: Math.max(margin, Math.min(x, window.innerWidth - panelWidth - margin)),
-      y: Math.max(margin, Math.min(y, window.innerHeight - panelHeight - margin)),
+      x: Math.max(minX, Math.min(x, viewportWidth - panelWidth - margin)),
+      y: Math.max(margin, Math.min(y, viewportHeight - panelHeight - margin)),
     };
+  };
+
+  const positionInspectorFromAnchor = (anchor: { x: number; y: number }) => {
+    const gap = 12;
+    const shellRect = shellRef.current?.getBoundingClientRect();
+    const localAnchor = shellRect
+      ? { x: anchor.x - shellRect.left, y: anchor.y - shellRect.top }
+      : anchor;
+    return clampInspectorPosition(localAnchor.x + gap, localAnchor.y);
   };
 
   useEffect(() => {
     if (!inspectorAnchor) return;
-    const gap = 12;
-    const pos = clampInspectorPosition(inspectorAnchor.x + gap, inspectorAnchor.y);
-    setInspectorPosition(pos);
+    setInspectorPosition(positionInspectorFromAnchor(inspectorAnchor));
   }, [inspectorAnchor]);
 
   const startInspectorDrag = (event: PointerEvent<HTMLElement>) => {
@@ -308,7 +329,7 @@ export function SchematicBuilder({
   };
 
   return (
-    <section className="mbv3-shell" aria-label="Model Builder">
+    <section ref={shellRef} className="mbv3-shell" aria-label="Model Builder">
       <div className="mbv3-left-rail" onPointerDown={(event) => event.stopPropagation()}>
         <div className="mbv3-topbar">
           <div className="mbv3-title-float">
@@ -405,8 +426,13 @@ export function SchematicBuilder({
             }))
           }
           onAddTemplateComponent={() => {
-            if (previewTemplate) {
-              addComponentFromTemplate(previewTemplate);
+            const templateToAdd =
+              previewTemplate ??
+              (inspectorTemplateDetails
+                ? componentTemplates.find((template) => template.key === inspectorTemplateDetails.key)
+                : null);
+            if (templateToAdd) {
+              addComponentFromTemplate(templateToAdd, undefined, { openInspector: false });
             }
           }}
           onDuplicateComponent={duplicateComponent}
@@ -421,13 +447,19 @@ export function SchematicBuilder({
         inspectedComponentId={inspectorOpen && inspectorComponent ? inspectorComponent.id : null}
         selectedWireId={state.selectedWireId}
         onSelectComponent={(componentId, screenPos) => {
+          const suppressInspector =
+            suppressNextSelectionInspectorRef.current && Boolean(componentId);
+          if (suppressInspector) {
+            suppressNextSelectionInspectorRef.current = false;
+          }
           setPreviewTemplateKey(null);
           setStickySelectedComponentId(componentId);
           dispatch({ type: "selectComponent", componentId });
-          if (screenPos) {
+          if (screenPos && !suppressInspector) {
             setInspectorAnchor(screenPos);
+            setInspectorPosition(positionInspectorFromAnchor(screenPos));
           }
-          setInspectorOpen(Boolean(componentId));
+          setInspectorOpen(suppressInspector ? false : Boolean(componentId));
         }}
         onSelectWire={(wireId) => {
           dispatch({ type: "selectWire", wireId });
@@ -438,6 +470,9 @@ export function SchematicBuilder({
         }}
         onDeleteWire={(wireId) => dispatch({ type: "deleteWire", wireId })}
         onDeleteComponent={(componentId) => dispatch({ type: "deleteComponent", componentId })}
+        onUpdateWireRoute={(wireId, routePoints) =>
+          dispatch({ type: "updateWireRoute", wireId, routePoints })
+        }
         onMoveEntity={(entityId, x, y) => dispatch({ type: "moveEntity", entityId, x, y })}
         onConnectPorts={onConnect}
         onDropTemplate={dropComponentTemplate}

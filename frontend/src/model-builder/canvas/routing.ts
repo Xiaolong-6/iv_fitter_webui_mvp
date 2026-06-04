@@ -298,13 +298,16 @@ function bends(points: Mb3Point[]): number {
 function candidateRoutes(start: Mb3Point, end: Mb3Point): Mb3Point[][] {
   const midX = Math.round((start.x + end.x) / 2);
   const midY = Math.round((start.y + end.y) / 2);
-  return [
-    [start, end],
+  const routes = [
     [start, { x: start.x, y: end.y }, end],
     [start, { x: end.x, y: start.y }, end],
     [start, { x: start.x, y: midY }, { x: end.x, y: midY }, end],
     [start, { x: midX, y: start.y }, { x: midX, y: end.y }, end],
-  ].map(compactPoints);
+  ];
+  if (start.x === end.x || start.y === end.y) {
+    routes.unshift([start, end]);
+  }
+  return routes.map(compactPoints);
 }
 
 function findCandidatePath(

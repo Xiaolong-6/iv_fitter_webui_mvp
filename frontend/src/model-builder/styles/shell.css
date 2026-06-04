@@ -1,6 +1,6 @@
 .mbv3-shell {
-  --mbv3-left-panel-width: 280px;
-  --mbv3-topbar-control-size: calc((16px * var(--app-zoom) * 1.1) + 22px);
+  --mbv3-left-panel-width: 240px;
+  --mbv3-topbar-control-size: calc((16px * var(--app-zoom) * 1.05) + 20px);
   position: relative;
   width: 100%;
   height: calc(100vh - 180px);
@@ -8,7 +8,9 @@
   border: 0;
   border-radius: 0;
   overflow: hidden;
-  background: #ffffff;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(219, 234, 254, 0.34), transparent 24%),
+    linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%);
 }
 
 .mbv3-left-rail {
@@ -19,7 +21,7 @@
   width: fit-content;
   max-height: calc(100% - 28px);
   display: grid;
-  gap: 8px;
+  gap: 7px;
   align-content: start;
   pointer-events: none;
 }
@@ -37,11 +39,12 @@
   align-items: center;
   box-sizing: border-box;
   min-height: var(--mbv3-topbar-control-size);
-  padding: 10px 12px;
-  border: 1px solid #dbe5f4;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  padding: 8px 11px;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.10);
+  backdrop-filter: blur(14px);
   pointer-events: none;
 }
 
@@ -53,7 +56,7 @@
 
 .mbv3-title-float strong {
   color: #0f172a;
-  font-size: calc(16px * var(--app-zoom));
+  font-size: calc(15px * var(--app-zoom));
   font-weight: 900;
   line-height: 1.1;
 }

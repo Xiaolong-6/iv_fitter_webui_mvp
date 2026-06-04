@@ -2,7 +2,24 @@ import type { Mb3Graph, Mb3Node, Mb3PortRef, Mb3State, Mb3Wire } from "../domain
 import { resolveNonCollidingPosition } from "../domain/collision";
 import type { Mb3Action } from "./actions";
 
-function handleToPort(id: string, handle: string | null): Mb3PortRef {
+function componentPortConnected(wires: Mb3Wire[], componentId: string, port: "p" | "n"): boolean {
+  return wires.some(
+    (wire) =>
+      (wire.from.kind === "component" && wire.from.id === componentId && wire.from.port === port) ||
+      (wire.to.kind === "component" && wire.to.id === componentId && wire.to.port === port),
+  );
+}
+
+function handleToPort(id: string, handle: string | null, wires: Mb3Wire[]): Mb3PortRef {
+  if (handle?.startsWith("side-")) {
+    if (!componentPortConnected(wires, id, "p")) {
+      return { kind: "component", id, port: "p" };
+    }
+    if (!componentPortConnected(wires, id, "n")) {
+      return { kind: "component", id, port: "n" };
+    }
+    return { kind: "component", id, port: "n" };
+  }
   // React Flow handle ids for component ports are either the legacy physical
   // ids ("p"/"n") or the v1.9.1 directional ids ("p-source",
   // "p-target", "n-source", "n-target").  Do not use a broad
@@ -151,7 +168,7 @@ function ensureJunctionForPort(
 export function mb3Reducer(state: Mb3State, action: Mb3Action): Mb3State {
   switch (action.type) {
     case "hydrate":
-      return { ...action.state, graph: normalizeTerminalJunctions(action.state.graph) };
+      return action.state;
     case "setDirty":
       return { ...state, dirty: action.dirty };
     case "setActivePreset":
@@ -260,7 +277,7 @@ export function mb3Reducer(state: Mb3State, action: Mb3Action): Mb3State {
       return {
         ...state,
         graph: { ...state.graph, components: [...state.graph.components, component] },
-        selectedComponentId: component.id,
+        selectedComponentId: action.select === false ? state.selectedComponentId : component.id,
         selectedWireId: null,
         dirty: true,
       };
@@ -269,8 +286,18 @@ export function mb3Reducer(state: Mb3State, action: Mb3Action): Mb3State {
       const wires = state.graph.wires.filter((wire) => wire.id !== action.wireId);
       return {
         ...state,
-        graph: normalizeTerminalJunctions({ ...state.graph, wires }),
+        graph: { ...state.graph, wires },
         selectedWireId: state.selectedWireId === action.wireId ? null : state.selectedWireId,
+        dirty: true,
+      };
+    }
+    case "updateWireRoute": {
+      const wires = state.graph.wires.map((wire) =>
+        wire.id === action.wireId ? { ...wire, routePoints: action.routePoints } : wire,
+      );
+      return {
+        ...state,
+        graph: { ...state.graph, wires },
         dirty: true,
       };
     }
@@ -306,8 +333,14 @@ export function mb3Reducer(state: Mb3State, action: Mb3Action): Mb3State {
       }
       let nodes = state.graph.nodes;
       let wires = state.graph.wires;
-      const rawFrom = handleToPort(action.sourceId, action.sourceHandle);
-      const rawTo = handleToPort(action.targetId, action.targetHandle);
+      const rawFrom = handleToPort(action.sourceId, action.sourceHandle, wires);
+      const rawTo = handleToPort(action.targetId, action.targetHandle, wires);
+      if (
+        (rawFrom.kind === "component" && componentPortConnected(wires, rawFrom.id, rawFrom.port ?? "p")) ||
+        (rawTo.kind === "component" && componentPortConnected(wires, rawTo.id, rawTo.port ?? "p"))
+      ) {
+        return state;
+      }
       const fromJunction = ensureJunctionForPort(state, wires, nodes, rawFrom, action.position);
       nodes = fromJunction.nodes;
       wires = fromJunction.wires;
@@ -317,7 +350,7 @@ export function mb3Reducer(state: Mb3State, action: Mb3Action): Mb3State {
       if (samePort(fromJunction.port, toJunction.port)) return state;
       const id = `w${wires.length + 1}_${Date.now()}`;
       wires = [...wires, { id, from: fromJunction.port, to: toJunction.port }];
-      return { ...state, graph: normalizeTerminalJunctions({ ...state.graph, nodes, wires }), dirty: true };
+      return { ...state, graph: { ...state.graph, nodes, wires }, dirty: true };
     }
     default:
       return state;

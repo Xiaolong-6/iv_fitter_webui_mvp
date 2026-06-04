@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type PointerEvent } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -18,7 +18,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { MathFormula } from "../../components/MathFormula";
 import { buildMb3VoltageLabels } from "../domain/compile";
-import type { Mb3FormulaSection, Mb3Graph } from "../domain/types";
+import type { Mb3FormulaSection, Mb3Graph, Mb3Point } from "../domain/types";
 import { mb3ToReactFlow } from "./adapter";
 import { SelectableWireEdge } from "./SelectableWireEdge";
 
@@ -57,11 +57,13 @@ function JunctionNode({ data }: NodeProps) {
   const payload = data as {
     label?: string;
     voltageLabel?: string;
+    hidden?: boolean;
     nodeId?: string;
     position?: { x: number; y: number };
     zoom?: number;
     onMoveEntity?: (entityId: string, x: number, y: number) => void;
   };
+  const isHidden = Boolean(payload.hidden);
   const voltageLabel = payload.voltageLabel;
   const nodePosition = payload.position ?? { x: 0, y: 0 };
   const [draftPosition, setDraftPosition] = useState(nodePosition);
@@ -122,10 +124,10 @@ function JunctionNode({ data }: NodeProps) {
   };
 
   return (
-    <div className="mbv3-junction-node">
+    <div className={isHidden ? "mbv3-junction-node mbv3-junction-node-hidden" : "mbv3-junction-node"}>
       <Handle type="target" position={Position.Top} id="node" />
-      {String(payload.label ?? "")}
-      {voltageLabel ? (
+      {isHidden ? null : String(payload.label ?? "")}
+      {!isHidden && voltageLabel ? (
         <span
           className="mbv3-node-voltage-label"
           style={{ left: DEFAULT_LABEL_OFFSET.x, top: DEFAULT_LABEL_OFFSET.y }}
@@ -147,12 +149,59 @@ function portHandleId(port: "p" | "n", kind: "source" | "target"): string {
   return `${port}-${kind}`;
 }
 
+function candidateHandleId(side: "top" | "right" | "bottom" | "left", kind: "source" | "target"): string {
+  return `side-${side}-${kind}`;
+}
+
+function sideToPosition(side: "top" | "right" | "bottom" | "left"): Position {
+  switch (side) {
+    case "right":
+      return Position.Right;
+    case "bottom":
+      return Position.Bottom;
+    case "left":
+      return Position.Left;
+    case "top":
+      return Position.Top;
+  }
+}
+
+function CandidatePortHandles({
+  side,
+  disabled,
+}: {
+  side: "top" | "right" | "bottom" | "left";
+  disabled: boolean;
+}) {
+  const position = sideToPosition(side);
+  if (disabled) return null;
+  return (
+    <>
+      <Handle
+        className="mbv3-candidate-port-hit-target"
+        type="target"
+        position={position}
+        id={candidateHandleId(side, "target")}
+      />
+      <Handle
+        className="mbv3-candidate-port-handle"
+        type="source"
+        position={position}
+        id={candidateHandleId(side, "source")}
+      />
+    </>
+  );
+}
+
 function ComponentNode({ data, selected }: NodeProps) {
   const payload = data as {
     label?: string;
     componentId?: string;
     inspected?: boolean;
     portSides?: { p?: string; n?: string };
+    connectedPorts?: { p?: boolean; n?: boolean };
+    connectedSides?: string[];
+    connectedCount?: number;
     sign?: 1 | -1;
     templateKey?: string;
     behavior?: string;
@@ -165,6 +214,10 @@ function ComponentNode({ data, selected }: NodeProps) {
   ]
     .filter(Boolean)
     .join(" ");
+  const connectedCount = payload.connectedCount ?? 0;
+  const connectedSides = new Set(payload.connectedSides ?? []);
+  const showCandidatePorts = connectedCount < 2;
+  const candidateSides = ["top", "right", "bottom", "left"] as const;
   return (
     <div className={className}>
       <button
@@ -181,19 +234,32 @@ function ComponentNode({ data, selected }: NodeProps) {
       >
         x
       </button>
-      <Handle
-        className="mbv3-port-hit-target"
-        type="target"
-        position={portSideToPosition(payload.portSides?.p)}
-        id={portHandleId("p", "target")}
-      />
-      <Handle
-        className="mbv3-port-handle"
-        type="source"
-        position={portSideToPosition(payload.portSides?.p)}
-        id={portHandleId("p", "source")}
-        aria-label={`${payload.label ?? "component"} positive port`}
-      />
+      {candidateSides.map((side) => (
+        <CandidatePortHandles
+          key={side}
+          side={side}
+          disabled={!showCandidatePorts || connectedSides.has(side)}
+        />
+      ))}
+      {payload.connectedPorts?.p ? (
+        <>
+          <Handle
+            className="mbv3-port-hit-target"
+            type="target"
+            position={portSideToPosition(payload.portSides?.p)}
+            id={portHandleId("p", "target")}
+            isConnectable={false}
+          />
+          <Handle
+            className="mbv3-port-handle"
+            type="source"
+            position={portSideToPosition(payload.portSides?.p)}
+            id={portHandleId("p", "source")}
+            aria-label={`${payload.label ?? "component"} connected port`}
+            isConnectable={false}
+          />
+        </>
+      ) : null}
       <span className="mbv3-component-label">{String(payload.label ?? "")}</span>
       {payload.sign === -1 ? (
         <span
@@ -203,19 +269,25 @@ function ComponentNode({ data, selected }: NodeProps) {
           REV
         </span>
       ) : null}
-      <Handle
-        className="mbv3-port-hit-target"
-        type="target"
-        position={portSideToPosition(payload.portSides?.n ?? "bottom")}
-        id={portHandleId("n", "target")}
-      />
-      <Handle
-        className="mbv3-port-handle"
-        type="source"
-        position={portSideToPosition(payload.portSides?.n ?? "bottom")}
-        id={portHandleId("n", "source")}
-        aria-label={`${payload.label ?? "component"} negative port`}
-      />
+      {payload.connectedPorts?.n ? (
+        <>
+          <Handle
+            className="mbv3-port-hit-target"
+            type="target"
+            position={portSideToPosition(payload.portSides?.n ?? "bottom")}
+            id={portHandleId("n", "target")}
+            isConnectable={false}
+          />
+          <Handle
+            className="mbv3-port-handle"
+            type="source"
+            position={portSideToPosition(payload.portSides?.n ?? "bottom")}
+            id={portHandleId("n", "source")}
+            aria-label={`${payload.label ?? "component"} connected port`}
+            isConnectable={false}
+          />
+        </>
+      ) : null}
     </div>
   );
 }
@@ -279,6 +351,7 @@ function CanvasInner({
   onSelectWire,
   onDeleteWire,
   onDeleteComponent,
+  onUpdateWireRoute,
   onMoveEntity,
   onConnectPorts,
   onDropTemplate,
@@ -297,12 +370,14 @@ function CanvasInner({
   onSelectWire: (wireId: string | null) => void;
   onDeleteWire: (wireId: string) => void;
   onDeleteComponent: (componentId: string) => void;
+  onUpdateWireRoute: (wireId: string, routePoints: Mb3Point[]) => void;
   onMoveEntity: (entityId: string, x: number, y: number) => void;
   onConnectPorts: (connection: Connection, position?: { x: number; y: number }) => void;
   onDropTemplate: (templateKey: string, position: { x: number; y: number }) => void;
 }) {
   const { screenToFlowPosition, flowToScreenPosition } = useReactFlow();
   const { zoom } = useViewport();
+  const canvasRef = useRef<HTMLDivElement | null>(null);
   const flowGraph = useMemo(
     () => mb3ToReactFlow(graph, formulaLatex, activeComponentIds, formulaSections),
     [graph, formulaLatex, activeComponentIds, formulaSections],
@@ -313,6 +388,20 @@ function CanvasInner({
 
   useEffect(() => setNodes(flowGraph.nodes), [flowGraph.nodes, setNodes]);
   useEffect(() => setEdges(flowGraph.edges), [flowGraph.edges, setEdges]);
+
+  const handleDeleteKey = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Delete" && event.key !== "Backspace") return;
+    if (!selectedWireId && !selectedComponentId) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (selectedWireId) {
+      onDeleteWire(selectedWireId);
+      return;
+    }
+    if (selectedComponentId) {
+      onDeleteComponent(selectedComponentId);
+    }
+  };
 
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     const templateKey =
@@ -330,7 +419,10 @@ function CanvasInner({
   return (
     <div
       className="mbv3-canvas"
+      ref={canvasRef}
       data-testid="model-builder-canvas"
+      tabIndex={0}
+      onKeyDown={handleDeleteKey}
       onDragOver={(event) => {
         event.preventDefault();
         event.dataTransfer.dropEffect = "copy";
@@ -354,6 +446,7 @@ function CanvasInner({
                     ...(node.data ?? {}),
                     nodeId: node.id,
                     voltageLabel: (() => {
+                      if ((node.data as { hidden?: boolean } | undefined)?.hidden) return undefined;
                       const label = voltageLabels.get(node.id);
                       if (label === "Vext" || label === "0") return undefined;
                       return label ?? "?";
@@ -371,6 +464,8 @@ function CanvasInner({
           data: {
             ...(edge.data ?? {}),
             onDeleteWire,
+            onUpdateWireRoute,
+            zoom,
           },
           style:
             edge.id === selectedWireId
@@ -393,8 +488,12 @@ function CanvasInner({
               : undefined;
           onConnectPorts(connection, midpoint);
         }}
-        onEdgeClick={(_, edge) => onSelectWire(edge.id)}
+        onEdgeClick={(_, edge) => {
+          canvasRef.current?.focus();
+          onSelectWire(edge.id);
+        }}
         onNodeClick={(_, node) => {
+          canvasRef.current?.focus();
           const isComponent = node.type === "mbv3Component";
           if (isComponent) {
             const screenPos = flowToScreenPosition({ x: node.position.x + 130, y: node.position.y });
@@ -407,7 +506,11 @@ function CanvasInner({
         onSelectionChange={({ nodes: selectedNodes }) => {
           const selectedComponentNode = selectedNodes.find((node) => node.type === "mbv3Component");
           if (selectedComponentNode) {
-            onSelectComponent(selectedComponentNode.id);
+            const screenPos = flowToScreenPosition({
+              x: selectedComponentNode.position.x + 130,
+              y: selectedComponentNode.position.y,
+            });
+            onSelectComponent(selectedComponentNode.id, screenPos);
             onSelectWire(null);
           }
         }}
@@ -418,8 +521,9 @@ function CanvasInner({
         onNodeDragStop={(_, node) => {
           onMoveEntity(node.id, node.position.x, node.position.y);
         }}
-        fitView
-        fitViewOptions={{ padding: 0.15 }}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        minZoom={0.45}
+        maxZoom={2.2}
         snapToGrid
         snapGrid={[20, 20]}
         defaultEdgeOptions={{ type: "mbv3SelectableEdge" }}
@@ -427,7 +531,7 @@ function CanvasInner({
         nodesConnectable
         elementsSelectable
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1.15} color="#cbd5e1" />
         <Controls showInteractive={false} />
         <MiniMap pannable zoomable nodeStrokeWidth={2} />
       </ReactFlow>

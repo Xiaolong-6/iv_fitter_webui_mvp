@@ -17,14 +17,17 @@ export function PresetListPanel({
           presets.map((preset) => (
             <div className="mbv3-preset-item-row" key={preset.id}>
               <button className="mbv3-preset-item" type="button" onClick={() => onLoadPreset(preset)}>
-                <span>{preset.name}</span>
+                <span>
+                  {preset.name}
+                  {preset.builtIn ? (
+                    <small className="mbv3-preset-badge" aria-label="System preset">
+                      sys
+                    </small>
+                  ) : null}
+                </span>
                 <small>{preset.builtIn ? "Built-in" : new Date(preset.updatedAt).toLocaleString()}</small>
               </button>
-              {preset.builtIn ? (
-                <span className="mbv3-preset-system-lock" aria-label="System preset">
-                  sys
-                </span>
-              ) : (
+              {!preset.builtIn ? (
                 <button
                   className="mbv3-preset-delete"
                   type="button"
@@ -36,7 +39,7 @@ export function PresetListPanel({
                 >
                   x
                 </button>
-              )}
+              ) : null}
             </div>
           ))
         ) : (

@@ -1,6 +1,5 @@
 import type { Edge, Node } from "@xyflow/react";
-import type { Mb3Component, Mb3FormulaSection, Mb3Graph, Mb3PortRef } from "../domain/types";
-import { routeMb3Wire, type Mb3Point } from "./routing";
+import type { Mb3Component, Mb3FormulaSection, Mb3Graph, Mb3Point, Mb3PortRef } from "../domain/types";
 
 const FORMULA_NODE_ID = "__mbv3_formula__";
 const COMPONENT_WIDTH = 150;
@@ -95,6 +94,65 @@ function portCenter(graph: Mb3Graph, port: Mb3PortRef): { x: number; y: number }
   };
 }
 
+function portPoint(graph: Mb3Graph, port: Mb3PortRef): Mb3Point | null {
+  if (port.kind === "node") return portCenter(graph, port);
+  const component = graph.components.find((candidate) => candidate.id === port.id);
+  if (!component) return null;
+  const sides = componentPortSides(graph, component);
+  const side = sides[port.port ?? "p"];
+  const center = {
+    x: component.position.x + COMPONENT_WIDTH / 2,
+    y: component.position.y + COMPONENT_HEIGHT / 2,
+  };
+  if (side === "top") return { x: center.x, y: component.position.y };
+  if (side === "bottom") return { x: center.x, y: component.position.y + COMPONENT_HEIGHT };
+  if (side === "left") return { x: component.position.x, y: center.y };
+  return { x: component.position.x + COMPONENT_WIDTH, y: center.y };
+}
+
+function compactPoints(points: Mb3Point[]): Mb3Point[] {
+  const deduped = points.filter((point, index) => {
+    const previous = points[index - 1];
+    return !previous || previous.x !== point.x || previous.y !== point.y;
+  });
+  return deduped.filter((point, index, list) => {
+    const previous = list[index - 1];
+    const next = list[index + 1];
+    if (!previous || !next) return true;
+    return !(
+      (previous.x === point.x && point.x === next.x) ||
+      (previous.y === point.y && point.y === next.y)
+    );
+  });
+}
+
+function simpleWireRoute(graph: Mb3Graph, source: Mb3PortRef, target: Mb3PortRef): Mb3Point[] {
+  const start = portPoint(graph, source);
+  const end = portPoint(graph, target);
+  if (!start || !end) return [];
+  if (start.x === end.x || start.y === end.y) return [start, end];
+  const midY = Math.round((start.y + end.y) / 2);
+  return compactPoints([
+    start,
+    { x: start.x, y: midY },
+    { x: end.x, y: midY },
+    end,
+  ]);
+}
+
+function storedOrSimpleRoute(
+  graph: Mb3Graph,
+  source: Mb3PortRef,
+  target: Mb3PortRef,
+  stored?: Mb3Point[],
+): Mb3Point[] {
+  const start = portPoint(graph, source);
+  const end = portPoint(graph, target);
+  if (!start || !end) return stored?.length ? stored : [];
+  if (!stored || stored.length < 2) return simpleWireRoute(graph, source, target);
+  return compactPoints([start, ...stored.slice(1, -1), end]);
+}
+
 function sideFromVector(dx: number, dy: number, fallback: Mb3PortSide): Mb3PortSide {
   if (!Number.isFinite(dx) || !Number.isFinite(dy) || (dx === 0 && dy === 0)) {
     return fallback;
@@ -166,6 +224,16 @@ function componentPortSides(graph: Mb3Graph, component: Mb3Component): Record<"p
   return { p, n: p === n ? oppositeSide(p) : n };
 }
 
+function connectedPortsForComponent(graph: Mb3Graph, componentId: string): Record<"p" | "n", boolean> {
+  const hasWire = (port: "p" | "n") =>
+    graph.wires.some(
+      (wire) =>
+        (wire.from.kind === "component" && wire.from.id === componentId && wire.from.port === port) ||
+        (wire.to.kind === "component" && wire.to.id === componentId && wire.to.port === port),
+    );
+  return { p: hasWire("p"), n: hasWire("n") };
+}
+
 function reactFlowHandleId(ref: Mb3PortRef, role: "source" | "target"): string {
   return ref.kind === "component" ? `${ref.port ?? "p"}-${role}` : "node";
 }
@@ -179,7 +247,7 @@ function formulaNode(
   return {
     id: FORMULA_NODE_ID,
     type: "mbv3Formula",
-    position: { x: bounds.right + 80, y: bounds.top + 20 },
+    position: { x: bounds.right - 16, y: bounds.top + 20 },
     draggable: false,
     selectable: false,
     connectable: false,
@@ -217,41 +285,52 @@ export function mb3ToReactFlow(
             ? "mbv3Junction"
             : undefined,
       position: node.position,
-      draggable: !node.locked,
-      selectable: true,
+      draggable: !node.locked && !node.hidden,
+      selectable: !node.hidden,
       connectable: true,
-      data: { label: node.label, role: node.role, kind: node.kind },
+      data: { label: node.label, role: node.role, kind: node.kind, hidden: node.hidden },
       style: {
         background: "transparent",
         border: 0,
         padding: 0,
-        cursor: "grab",
+        cursor: node.hidden ? "default" : "grab",
         overflow: "visible",
+        pointerEvents: node.hidden ? "none" : "all",
       },
     })),
-    ...graph.components.map((component): Node => ({
-      id: component.id,
-      type: "mbv3Component",
-      position: component.position,
-      draggable: true,
-      selectable: true,
-      connectable: true,
-      data: {
-        label: component.label,
-        kind: "component",
-        portSides: componentPortSides(graph, component),
-        sign: component.sign,
-        templateKey: component.templateKey,
-        behavior: component.behavior,
-      },
-      style: {
-        background: "transparent",
-        border: 0,
-        padding: 0,
-        cursor: "grab",
-        overflow: "visible",
-      },
-    })),
+    ...graph.components.map((component): Node => {
+      const portSides = componentPortSides(graph, component);
+      const connectedPorts = connectedPortsForComponent(graph, component.id);
+      const connectedSides = new Set<Mb3PortSide>();
+      if (connectedPorts.p) connectedSides.add(portSides.p);
+      if (connectedPorts.n) connectedSides.add(portSides.n);
+      return {
+        id: component.id,
+        type: "mbv3Component",
+        position: component.position,
+        draggable: true,
+        selectable: true,
+        connectable: true,
+        data: {
+          label: component.label,
+          kind: "component",
+          portSides,
+          connectedPorts,
+          connectedSides: [...connectedSides],
+          connectedCount: Number(connectedPorts.p) + Number(connectedPorts.n),
+          sign: component.sign,
+          templateKey: component.templateKey,
+          behavior: component.behavior,
+        },
+        style: {
+          background: "transparent",
+          border: 0,
+          padding: 0,
+          cursor: "grab",
+          overflow: "visible",
+        },
+      };
+    }),
   ];
 
   if (formulaLatex.length || formulaSections.length) {
@@ -259,19 +338,14 @@ export function mb3ToReactFlow(
   }
 
   const routedEdges: Edge[] = [];
-  const existingRoutes: Mb3Point[][] = [];
   for (const wire of graph.wires) {
-    const dFrom = fromVDist.get(wire.from.id);
-    const dTo = fromVDist.get(wire.to.id);
     const touchesInactiveComponent =
       (wire.from.kind === "component" && !activeComponents.has(wire.from.id)) ||
       (wire.to.kind === "component" && !activeComponents.has(wire.to.id));
     const touchesTerminalPath = !touchesInactiveComponent && (fromVDist.has(wire.from.id) || fromVDist.has(wire.to.id) || fromGndDist.has(wire.from.id) || fromGndDist.has(wire.to.id));
-    const shouldFlip = dFrom !== undefined && dTo !== undefined && dFrom > dTo;
-    const source = shouldFlip ? wire.to : wire.from;
-    const target = shouldFlip ? wire.from : wire.to;
-    const routePoints = routeMb3Wire(graph, source, target, existingRoutes);
-    if (routePoints.length) existingRoutes.push(routePoints);
+    const source = wire.from;
+    const target = wire.to;
+    const routePoints = storedOrSimpleRoute(graph, source, target, wire.routePoints);
     routedEdges.push({
       id: wire.id,
       source: source.id,

@@ -141,7 +141,7 @@ describe("model-builder reducer", () => {
     )).toBe(true);
   });
 
-  it("normalizes legacy terminal-equivalent junctions during hydrate", () => {
+  it("preserves saved junction wires during hydrate instead of silently rewriting user wiring", () => {
     const initial = createMb3InitialState();
     const graph = structuredClone(initial.graph);
     graph.nodes.push({ id: "Jlegacy", kind: "junction", label: "", position: { x: 320, y: 120 } });
@@ -156,14 +156,11 @@ describe("model-builder reducer", () => {
       state: { ...initial, graph },
     });
 
-    expect(next.graph.nodes.some((node) => node.id === "Jlegacy")).toBe(false);
-    expect(next.graph.wires.some((wire) =>
-      wire.from.kind === "node" && wire.from.id === "V"
-      && wire.to.kind === "component" && wire.to.id === "Rs" && wire.to.port === "p",
-    )).toBe(true);
+    expect(next.graph.nodes.some((node) => node.id === "Jlegacy")).toBe(true);
+    expect(next.graph.wires.map((wire) => wire.id)).toEqual(["w-v-j", "w-j-r", "w-r-g"]);
   });
 
-  it("places auto junctions at the split component port instead of a remote midpoint", () => {
+  it("refuses to reconnect a component port that already has a user wire", () => {
     const initial: Mb3State = {
       ...createMb3InitialState(),
       graph: {
@@ -225,9 +222,8 @@ describe("model-builder reducer", () => {
       position: { x: 999, y: 999 },
     });
 
-    const junction = next.graph.nodes.find((node) => node.kind === "junction");
-    const rs = next.graph.components.find((component) => component.id === "Rs");
-    expect(junction?.position).toEqual({ x: (rs?.position.x ?? 0) + 95, y: (rs?.position.y ?? 0) + 54 });
+    expect(next.graph.nodes.filter((node) => node.kind === "junction")).toEqual([]);
+    expect(next.graph.wires.map((wire) => wire.id)).toEqual(["w-v-rs", "w-rs-r0", "w-r0-g"]);
   });
   it("normalizes React Flow source/target handle ids back to physical p/n ports", () => {
     const initial: Mb3State = {

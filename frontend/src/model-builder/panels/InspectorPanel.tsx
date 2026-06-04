@@ -163,6 +163,8 @@ export function InspectorPanel({
           <button
             type="button"
             className="mbv3-inspector-head-action"
+            aria-label={`Add ${templateDetails.label} to canvas`}
+            title={`Add ${templateDetails.label} to canvas`}
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.stopPropagation();

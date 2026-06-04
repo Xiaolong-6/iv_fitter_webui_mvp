@@ -524,12 +524,24 @@ function buildFormulaSections(
       lines: [
         {
           kind: "text",
-          text: "For each measured voltage point, the solver assigns graph-node voltages, evaluates the active component laws, sums the branch currents, then adjusts fitted parameters to reduce the current error.",
+          text: "For each measured voltage point, the fitter solves the internal node voltages, evaluates each active branch, and compares the summed model current with the measured current.",
+        },
+        {
+          kind: "text",
+          text: "The graph decides each component voltage from its two connected nodes.",
         },
         { kind: "formula", text: "\\Delta V_m=V_{m,+}-V_{m,-}" },
+        {
+          kind: "text",
+          text: "Branch currents are added together; series voltage drops are included in the voltage balance.",
+        },
         { kind: "formula", text: modelCurrent },
         { kind: "formula", text: voltageBalance },
-        { kind: "formula", text: "error_I=I_{measured}-I_{model}" },
+        {
+          kind: "text",
+          text: "The optimizer adjusts fitted parameters only when their Fit box is checked, reducing this residual.",
+        },
+        { kind: "formula", text: "r_I=I_{measured}-I_{model}" },
       ],
     },
   ];

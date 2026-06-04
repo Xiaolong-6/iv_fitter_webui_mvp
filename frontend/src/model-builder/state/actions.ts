@@ -1,4 +1,4 @@
-import type { Mb3Behavior, Mb3Component, Mb3Parameter, Mb3State } from "../domain/types";
+import type { Mb3Behavior, Mb3Component, Mb3Parameter, Mb3Point, Mb3State } from "../domain/types";
 
 export type Mb3Action =
   | { type: "selectComponent"; componentId: string | null }
@@ -16,8 +16,9 @@ export type Mb3Action =
   | { type: "clearCanvas" }
   | { type: "selectWire"; wireId: string | null }
   | { type: "deleteWire"; wireId: string }
+  | { type: "updateWireRoute"; wireId: string; routePoints: Mb3Point[] }
   | { type: "setActivePreset"; presetId: string }
-  | { type: "addComponent"; component: Mb3Component }
+  | { type: "addComponent"; component: Mb3Component; select?: boolean }
   | { type: "moveEntity"; entityId: string; x: number; y: number }
   | { type: "upsertComponentExpression"; componentId: string; expression: string }
   | {

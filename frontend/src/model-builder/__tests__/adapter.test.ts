@@ -8,22 +8,11 @@ type RoutedEdgeData = {
   routePoints?: Array<{ x: number; y: number }>;
 };
 
-function segmentCrossesBox(
-  a: { x: number; y: number },
-  b: { x: number; y: number },
-  box: { x: number; y: number; width: number; height: number },
-): boolean {
-  if (a.x === b.x) {
-    return a.x > box.x && a.x < box.x + box.width
-      && Math.max(a.y, b.y) > box.y
-      && Math.min(a.y, b.y) < box.y + box.height;
-  }
-  if (a.y === b.y) {
-    return a.y > box.y && a.y < box.y + box.height
-      && Math.max(a.x, b.x) > box.x
-      && Math.min(a.x, b.x) < box.x + box.width;
-  }
-  return false;
+function routeIsOrthogonal(points: Array<{ x: number; y: number }>): boolean {
+  return points.slice(0, -1).every((point, index) => {
+    const next = points[index + 1];
+    return point.x === next.x || point.y === next.y;
+  });
 }
 
 describe("model-builder canvas adapter", () => {
@@ -97,7 +86,7 @@ describe("model-builder canvas adapter", () => {
     expect(flow.edges[0].markerEnd).toBeUndefined();
   });
 
-  it("routes wires around component obstacles instead of through them", () => {
+  it("keeps wires visible as compact orthogonal routes instead of auto-hiding or auto-rerouting them", () => {
     const graph: Mb3Graph = {
       version: 3,
       terminals: { positive: "V", ground: "GND" },
@@ -135,15 +124,13 @@ describe("model-builder canvas adapter", () => {
 
     const flow = mb3ToReactFlow(graph, [], ["R0"]);
     const route = (flow.edges.find((edge) => edge.id === "w-route")?.data as RoutedEdgeData | undefined)?.routePoints ?? [];
-    const blockerBox = { x: 100, y: 150, width: 150, height: 54 };
 
-    expect(route.length).toBeGreaterThan(2);
-    expect(route.slice(0, -1).some((point, index) =>
-      segmentCrossesBox(point, route[index + 1], blockerBox),
-    )).toBe(false);
+    expect(flow.edges.map((edge) => edge.id)).toContain("w-route");
+    expect(route.length).toBeGreaterThan(1);
+    expect(routeIsOrthogonal(route)).toBe(true);
   });
 
-  it("routes junction wires toward the connected side instead of always exiting downward", () => {
+  it("keeps junction wires orthogonal without guessing a hidden preferred direction", () => {
     const graph: Mb3Graph = {
       version: 3,
       terminals: { positive: "V", ground: "GND" },
@@ -175,8 +162,7 @@ describe("model-builder canvas adapter", () => {
     const route = (flow.edges.find((edge) => edge.id === "w-rsh")?.data as RoutedEdgeData | undefined)?.routePoints ?? [];
 
     expect(route.length).toBeGreaterThan(2);
-    expect(route[1].x).toBeGreaterThan(route[0].x);
-    expect(Math.abs(route[1].y - route[0].y)).toBe(0);
+    expect(routeIsOrthogonal(route)).toBe(true);
   });
 
   it("places component ports on the nearest useful border for diagonal branches", () => {

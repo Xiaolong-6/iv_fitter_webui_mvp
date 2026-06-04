@@ -14,6 +14,7 @@ export interface Mb3Node {
   role?: Mb3TerminalRole;
   position: Mb3Point;
   locked?: boolean;
+  hidden?: boolean;
 }
 
 export interface Mb3Parameter {
@@ -46,6 +47,7 @@ export interface Mb3Wire {
   id: string;
   from: Mb3PortRef;
   to: Mb3PortRef;
+  routePoints?: Mb3Point[];
 }
 
 export interface Mb3Graph {

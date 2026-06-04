@@ -30,7 +30,7 @@ export function createComponentFromTemplate({
     behavior: template.behavior,
     expression: template.expression,
     sign: 1,
-    position: position ?? { x: 820 + spawnColumn * 110, y: 260 + spawnRow * 110 },
+    position: position ?? { x: 520 + spawnColumn * 190, y: 260 + spawnRow * 110 },
     parameters: template.parameters.map((parameter) => ({ ...parameter })),
   };
 }
