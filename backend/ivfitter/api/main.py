@@ -203,6 +203,11 @@ def _check_fit_size(request: FitRequest) -> None:
 class ReportResponse(BaseModel):
     markdown: str
 
+# Canonical public API routes use /api/v2/. The bare /api/ aliases below are
+# retained for backward compatibility with pre-v2 local clients and scripts; keep
+# both decorators together until ROADMAP.md declares that legacy clients can be
+# dropped.
+
 @app.get("/api/v2/health")
 @app.get("/api/health")
 def health() -> dict[str, str]:

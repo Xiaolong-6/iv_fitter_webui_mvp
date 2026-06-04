@@ -147,6 +147,10 @@ function renderV3GraphSvg(model: ModelSpec, graph: Mb3Graph): string {
     const inactive = !activeIds.has(component.id);
     svg += `<rect x="${x}" y="${y}" width="${box.width}" height="${box.height}" rx="14" fill="${inactive ? "#f8fafc" : "#ffffff"}" stroke="${inactive ? "#cbd5e1" : "#93c5fd"}" stroke-width="1.6"${inactive ? ` stroke-dasharray="7 5"` : ""}/>`;
     svg += `<text x="${x + box.width / 2}" y="${y + box.height / 2 + 8}" text-anchor="middle" font-size="22" font-weight="900" fill="#0f172a">${escapeXml(component.label || component.id)}</text>`;
+    if (component.sign === -1) {
+      svg += `<rect x="${x + box.width / 2 - 18}" y="${y - 10}" width="36" height="14" rx="7" fill="#fffbeb" stroke="#fbbf24"/>`;
+      svg += `<text x="${x + box.width / 2}" y="${y + 1}" text-anchor="middle" font-size="9" font-weight="900" fill="#92400e">REV</text>`;
+    }
   }
 
   svg += `</svg>`;

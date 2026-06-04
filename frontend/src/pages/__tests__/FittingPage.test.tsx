@@ -178,12 +178,12 @@ describe("FittingPage", () => {
     fireEvent.click(await screen.findByTitle(/Build and preview the circuit model/i));
 
     await waitFor(() => {
-      const stack = document.querySelector(".model-webpage-stack");
+      const shell = document.querySelector(".mbv3-shell");
       const syntheticButton = screen.getByRole("button", { name: /Synthetic IV trace/i });
-      expect(stack).not.toBeNull();
+      expect(shell).not.toBeNull();
       expect(syntheticButton).toBeInTheDocument();
       expect(document.querySelector(".xy-canvas-advanced-button")).toBeNull();
-      expect(stack?.firstElementChild?.classList.contains("model-page-tool-row")).toBe(false);
+      expect(shell?.firstElementChild?.classList.contains("model-page-tool-row")).toBe(false);
     });
   });
 

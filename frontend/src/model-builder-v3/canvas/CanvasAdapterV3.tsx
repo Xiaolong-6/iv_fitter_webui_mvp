@@ -143,12 +143,19 @@ function JunctionNode({ data }: NodeProps) {
   );
 }
 
+function portHandleId(port: "p" | "n", kind: "source" | "target"): string {
+  return `${port}-${kind}`;
+}
+
 function ComponentNode({ data, selected }: NodeProps) {
   const payload = data as {
     label?: string;
     componentId?: string;
     inspected?: boolean;
     portSides?: { p?: string; n?: string };
+    sign?: 1 | -1;
+    templateKey?: string;
+    behavior?: string;
     onDeleteComponent?: (componentId: string) => void;
   };
   const className = [
@@ -174,11 +181,41 @@ function ComponentNode({ data, selected }: NodeProps) {
       >
         x
       </button>
-      <Handle type="target" position={portSideToPosition(payload.portSides?.p)} id="p" />
-      <Handle type="source" position={portSideToPosition(payload.portSides?.p)} id="p" />
-      {String(payload.label ?? "")}
-      <Handle type="target" position={portSideToPosition(payload.portSides?.n ?? "bottom")} id="n" />
-      <Handle type="source" position={portSideToPosition(payload.portSides?.n ?? "bottom")} id="n" />
+      <Handle
+        className="mbv3-port-hit-target"
+        type="target"
+        position={portSideToPosition(payload.portSides?.p)}
+        id={portHandleId("p", "target")}
+      />
+      <Handle
+        className="mbv3-port-handle"
+        type="source"
+        position={portSideToPosition(payload.portSides?.p)}
+        id={portHandleId("p", "source")}
+        aria-label={`${payload.label ?? "component"} positive port`}
+      />
+      <span className="mbv3-component-label">{String(payload.label ?? "")}</span>
+      {payload.sign === -1 ? (
+        <span
+          className="mbv3-polarity-badge"
+          title="Reverse polarity: the component law is evaluated from n to p."
+        >
+          REV
+        </span>
+      ) : null}
+      <Handle
+        className="mbv3-port-hit-target"
+        type="target"
+        position={portSideToPosition(payload.portSides?.n ?? "bottom")}
+        id={portHandleId("n", "target")}
+      />
+      <Handle
+        className="mbv3-port-handle"
+        type="source"
+        position={portSideToPosition(payload.portSides?.n ?? "bottom")}
+        id={portHandleId("n", "source")}
+        aria-label={`${payload.label ?? "component"} negative port`}
+      />
     </div>
   );
 }
@@ -318,7 +355,8 @@ function CanvasInner({
                     nodeId: node.id,
                     voltageLabel: (() => {
                       const label = voltageLabels.get(node.id);
-                      return label === "Vext" || label === "0" ? undefined : label;
+                      if (label === "Vext" || label === "0") return undefined;
+                      return label ?? "?";
                     })(),
                     position: graph.nodes.find((graphNode) => graphNode.id === node.id)?.position,
                     zoom,

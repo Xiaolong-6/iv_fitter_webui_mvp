@@ -229,4 +229,54 @@ describe("model-builder-v3 reducer", () => {
     const rs = next.graph.components.find((component) => component.id === "Rs");
     expect(junction?.position).toEqual({ x: (rs?.position.x ?? 0) + 95, y: (rs?.position.y ?? 0) + 54 });
   });
+  it("normalizes React Flow source/target handle ids back to physical p/n ports", () => {
+    const initial: Mb3State = {
+      ...createMb3InitialState(),
+      graph: {
+        version: 3,
+        terminals: { positive: "V", ground: "GND" },
+        nodes: [
+          { id: "V", kind: "terminal", label: "V", role: "positive", position: { x: 0, y: 0 } },
+          { id: "GND", kind: "terminal", label: "GND", role: "ground", position: { x: 0, y: 240 } },
+        ],
+        components: [
+          {
+            id: "R0",
+            label: "R0",
+            templateKey: "resistance",
+            behavior: "R_of_V",
+            expression: "R0",
+            sign: 1,
+            position: { x: 80, y: 100 },
+            parameters: [{ symbol: "R0", value: 10, lower: 0, upper: 1e9, fit: true, unit: "ohm" }],
+          },
+        ],
+        wires: [],
+      },
+    };
+
+    const next = mb3Reducer(initial, {
+      type: "connectPorts",
+      sourceId: "V",
+      sourceHandle: "node",
+      targetId: "R0",
+      targetHandle: "p-target",
+    });
+
+    expect(next.graph.wires[0]).toMatchObject({
+      from: { kind: "node", id: "V" },
+      to: { kind: "component", id: "R0", port: "p" },
+    });
+  });
+
+  it("updates component sign for inspector polarity toggles", () => {
+    const initial = {
+      ...createMb3InitialState(),
+      graph: MB3_BUILT_IN_PRESETS.find((preset) => preset.id === "builtin_single_diode_model")!.graph,
+    };
+    const next = mb3Reducer(initial, { type: "updateComponentSign", componentId: "D1", sign: -1 });
+    expect(next.graph.components.find((component) => component.id === "D1")?.sign).toBe(-1);
+    expect(next.dirty).toBe(true);
+  });
+
 });

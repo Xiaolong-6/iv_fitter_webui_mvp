@@ -20,6 +20,7 @@ import { StartHerePage } from "./components/StartHerePage";
 import { ModelWorkflowPage, FittingWorkflowPage } from "./components/WorkflowSections";
 import { ReportWorkflowPage } from "./components/ReportWorkflowPage";
 import { usePaneResize } from "./hooks/usePaneResize";
+import { useFitTimer } from "./hooks/useFitTimer";
 import { useAppZoom } from "./hooks/useAppZoom";
 import { useWorkflowLayoutState } from "./hooks/useWorkflowLayoutState";
 import { fitResultIsSafeToPromote, warningDismissKey } from "./fitPageUtils";
@@ -224,15 +225,13 @@ export function FittingPage() {
       .catch((e) => setError(String(e)));
   }, []);
 
-  useEffect(() => {
-    if (!isFitting || fitStartedAt === null) return;
-    const timer = window.setInterval(() => {
-      updateFitStatus({
-        elapsedSeconds: Math.max(0, Math.floor((Date.now() - fitStartedAt) / 1000)),
-      });
-    }, 500);
-    return () => window.clearInterval(timer);
-  }, [isFitting, fitStartedAt]);
+  useFitTimer({
+    isFitting,
+    fitStartedAt,
+    onElapsedSeconds: (nextElapsedSeconds) => {
+      updateFitStatus({ elapsedSeconds: nextElapsedSeconds });
+    },
+  });
 
   useEffect(() => {
     setDismissedWarningKey("");

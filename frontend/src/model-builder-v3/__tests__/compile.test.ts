@@ -141,4 +141,41 @@ describe("model-builder-v3 compile contract", () => {
     expect(component?.params.A).toMatchObject({ value: 2, lower: 0, upper: 10, fit: true, unit: "A/V" });
     expect(component?.params.B).toMatchObject({ value: 1e-9, lower: -1, upper: 1, fit: false, unit: "A" });
   });
+  it("compiles reverse polarity into both graph and legacy specs", () => {
+    const graph = structuredClone(
+      MB3_BUILT_IN_PRESETS.find((preset) => preset.id === "builtin_single_diode_model")!.graph,
+    ) as Mb3Graph;
+    const diode = graph.components.find((component) => component.id === "D1");
+    if (!diode) throw new Error("D1 missing from preset");
+    diode.sign = -1;
+
+    const compiled = compileMb3Graph(graph);
+
+    expect(compiled.model.graph?.components.find((component) => component.id === "D1")?.polarity).toBe("reverse");
+    expect(compiled.model.core.find((component) => component.id === "D1")?.polarity).toBe("reverse");
+  });
+
+  it("keeps visible active graph parameters aligned with compiled graph components", () => {
+    const graph = MB3_BUILT_IN_PRESETS.find((preset) => preset.id === "builtin_single_diode_model")!.graph;
+    const compiled = compileMb3Graph(graph);
+    const graphParameterKeys = (compiled.model.graph?.components ?? []).flatMap((component) =>
+      Object.keys(component.params).map((name) => `${component.id}.${name}`),
+    );
+
+    expect(graphParameterKeys).toEqual(expect.arrayContaining(["Rs.Rs", "D1.I0", "D1.n", "D1.T", "Rsh.Rsh"]));
+    expect(graphParameterKeys).not.toEqual(expect.arrayContaining(["Rs.Rs_ohm", "D1.I0_A", "Rsh.Rsh_ohm"]));
+  });
+
+  it("warns when V terminal is spatially below GND", () => {
+    const graph = structuredClone(
+      MB3_BUILT_IN_PRESETS.find((preset) => preset.id === "builtin_single_diode_model")!.graph,
+    ) as Mb3Graph;
+    const v = graph.nodes.find((node) => node.id === graph.terminals.positive);
+    const gnd = graph.nodes.find((node) => node.id === graph.terminals.ground);
+    if (!v || !gnd) throw new Error("terminal nodes missing");
+    v.position.y = gnd.position.y + 100;
+
+    expect(evaluateMb3GraphConnectivity(graph).label).toContain("V terminal is below GND");
+  });
+
 });

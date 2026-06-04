@@ -3,8 +3,17 @@ import { resolveNonCollidingPosition } from "../domain/collision";
 import type { Mb3Action } from "./actions";
 
 function handleToPort(id: string, handle: string | null): Mb3PortRef {
-  if (handle === "p" || handle === "n") {
-    return { kind: "component", id, port: handle };
+  // React Flow handle ids for component ports are either the legacy physical
+  // ids ("p"/"n") or the v1.9.1 directional ids ("p-source",
+  // "p-target", "n-source", "n-target").  Do not use a broad
+  // startsWith("n") check here: the terminal handle id is "node", and
+  // treating it as a component "n" port creates invalid wires from a fake
+  // component named V/GND.
+  if (handle === "p" || handle?.startsWith("p-")) {
+    return { kind: "component", id, port: "p" };
+  }
+  if (handle === "n" || handle?.startsWith("n-")) {
+    return { kind: "component", id, port: "n" };
   }
   return { kind: "node", id };
 }
@@ -161,6 +170,14 @@ export function mb3Reducer(state: Mb3State, action: Mb3Action): Mb3State {
       const components = state.graph.components.map((component) =>
         component.id === action.componentId
           ? { ...component, behavior: action.behavior }
+          : component,
+      );
+      return { ...state, graph: { ...state.graph, components }, dirty: true };
+    }
+    case "updateComponentSign": {
+      const components = state.graph.components.map((component) =>
+        component.id === action.componentId
+          ? { ...component, sign: action.sign }
           : component,
       );
       return { ...state, graph: { ...state.graph, components }, dirty: true };

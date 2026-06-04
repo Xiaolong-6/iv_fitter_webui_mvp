@@ -1,3 +1,9 @@
+# v1.9.6 verification-fix update
+
+The current package is v1.9.6. It corrects the frontend test failures left in the prior v1.9.5 staged package. In this workspace, `npm ci`, frontend Vitest, frontend production build, backend compile, and backend pytest were all run successfully. Browser manual smoke testing and Windows portable packaging still require local/manual validation.
+
+Important fix: `handleToPort` now treats the React Flow terminal handle id `node` as a node handle, not as a component `n` port. Do not regress this behavior when changing component handle IDs.
+
 # IV-fitter Web UI agent handoff
 
 ## Current baseline

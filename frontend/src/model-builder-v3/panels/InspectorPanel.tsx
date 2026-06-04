@@ -8,6 +8,13 @@ export type Mb3TemplateInspectorDetails = {
   parameters: Mb3Parameter[];
 };
 
+function supportsPolarityToggle(component: Mb3Component | null): boolean {
+  if (!component) return false;
+  if (component.templateKey === "resistance") return false;
+  if (component.behavior === "R_of_V") return false;
+  return component.behavior === "I_of_V" || component.behavior === "dV_of_I" || component.behavior === "residual";
+}
+
 export function InspectorPanel({
   component,
   templateDetails,
@@ -18,6 +25,7 @@ export function InspectorPanel({
   onRenameComponent,
   onUpdateComponentBehavior,
   onUpdateComponentExpression,
+  onUpdateComponentSign,
   onAddComponentParameter,
   onUpdateComponentParameter,
   onSaveCustomComponentTemplate,
@@ -31,6 +39,7 @@ export function InspectorPanel({
   onRenameComponent: (componentId: string, label: string) => void;
   onUpdateComponentBehavior: (componentId: string, behavior: Mb3Behavior) => void;
   onUpdateComponentExpression: (componentId: string, expression: string) => void;
+  onUpdateComponentSign: (componentId: string, sign: 1 | -1) => void;
   onAddComponentParameter: (componentId: string, parameter: Mb3Parameter) => void;
   onUpdateComponentParameter: (
     componentId: string,
@@ -41,6 +50,7 @@ export function InspectorPanel({
 }) {
   const details = component ?? templateDetails;
   const canEditCustom = component?.templateKey === "custom";
+  const canTogglePolarity = supportsPolarityToggle(component);
   const [newParameterSymbol, setNewParameterSymbol] = useState("");
 
   const addCustomParameter = () => {
@@ -143,6 +153,26 @@ export function InspectorPanel({
               <code>{details.expression}</code>
             )}
           </div>
+          {component ? (
+            <div className="mbv3-inspector-row mbv3-inspector-polarity-row">
+              <span>Polarity</span>
+              {canTogglePolarity ? (
+                <label className="mbv3-inspector-toggle">
+                  <input
+                    type="checkbox"
+                    checked={component.sign === -1}
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onChange={(event) =>
+                      onUpdateComponentSign(component.id, event.target.checked ? -1 : 1)
+                    }
+                  />
+                  <span>{component.sign === -1 ? "Reverse" : "Forward"}</span>
+                </label>
+              ) : (
+                <b title="Ohmic R(V) components are orientation-neutral.">Symmetric</b>
+              )}
+            </div>
+          ) : null}
           {canEditCustom ? (
             <button
               className="mbv3-inspector-save-template"

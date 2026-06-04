@@ -434,66 +434,14 @@ The Model Builder must be treated as a direct branch graph, not a floating-card 
 - React Flow node positions are visual metadata only; model truth remains the branch graph and component behavior/parameter data.
 - Any future Model Builder patch must verify visible wires, junctions, serial insertion buttons, parallel-path buttons, selected-component inspector behavior modes, and custom parameter editing.
 
+## 22. Consolidated Model Builder V3 references
 
-## 2026-05-31 — Model Builder ELK routing alignment hotfix
+Version-stamped Model Builder incident notes must not be appended here. Use these canonical docs instead:
 
-- Replaced smooth-step circuit-wire fallback rendering with straight/custom routed paths.
-- Preserved ELK edge section points and passed them into React Flow edge data.
-- Stopped giving ELK tall fake junction obstacles; junctions are small layout nodes while the rendered rail spans path handles.
-- Stopped overriding ELK component y positions with hand-coded `rowY(pathIndex)` values except as fallback.
-- Verified frontend tests and production build after the hotfix.
+- Active V3 architecture and source ownership: `docs/ARCHITECTURE.md`.
+- CSS ownership and cascade rules: `docs/FRONTEND_STYLESHEET_ARCHITECTURE.md`.
+- Law / Form / Placement vocabulary and coordinator rules: `docs/DEVELOPMENT_PRINCIPLES.md`.
+- Current handoff and remaining risks: `docs/WEBUI_AGENT_HANDOFF.md`.
+- Release validation status: `docs/TESTED_CURRENT.md`.
 
-
-## Model Builder Graph-Native Rule — v1.8.35
-
-The Model Builder canvas must be treated as a direct editable circuit graph. Do not render components as floating cards or visible gray modules. Rs-style series components belong before the split junction; branch components such as D1/Rsh belong as parallel paths between split/merge junction rails. Edges must be straight circuit-wire segments unless a future full routing engine is used consistently end-to-end. Do not mix ELK coordinates with hand-written y coordinates or discard route constraints halfway. Component behavior is user-facing R(V), I(V), dV(I), or F(I,V)=0. User expressions must be preserved; solvers may only map local V/I variables and compile residuals. Custom parameter symbols, value, lower, upper, and fit flag are first-class fitting controls.
-
-
-## Model Builder CSS ownership rule — v1.8.36
-
-The Model Builder must not rely on a late-loaded global override pile. `final-overrides.css` was removed after it accumulated conflicting `!important` rules and repeated selector definitions. Future UI work must edit the canonical owner file instead:
-
-- Model Builder V3 canvas/editor styles belong in `frontend/src/model-builder-v3/styles/model-builder-v3.css`.
-- Do not reintroduce `final-overrides.css` or an equivalent catch-all override file.
-- Each core Model Builder selector should have one base definition. Responsive changes should use CSS variables or scoped media rules instead of redefining the same selector repeatedly.
-- `!important` is allowed only for narrowly scoped third-party library overrides such as React Flow internals, not for normal layout control.
-- Inspector/editor panels must have explicit height and overflow rules; content must scroll rather than be clipped.
-
-## Model Builder direct graph interaction polish rule
-
-For the graph-native Model Builder, do not reintroduce visible module containers, arrow-ended terminal wires, or dashed V-shaped helper edges that look like physical branches. The intended user interaction is direct circuit growth:
-
-- empty state: `V — (+) — GND`;
-- path-edge `+`: serial component insertion in that exact path;
-- lower floating `+`: add a new parallel path between the same junction pair;
-- all physical model wires should remain horizontal/vertical circuit wires wherever possible;
-- helper affordances must not be visually confused with physical circuit branches.
-
-Any future layout change must preserve these visual semantics and update the browser manual-test checklist.
-
-### Model Builder visual-control rule
-
-Direct branch graph controls must not visually dominate the circuit. Serial insertion controls should be quiet by default and become prominent on hover/focus/selection. Parallel insertion should be a semantic UI control (`+ Add parallel path`) and must not look like a physical branch or dashed circuit wire. Terminal wires, especially merge-to-GND, must remain horizontal unless a future explicit topology requires otherwise.
-
-## Model Builder V3 source ownership rule
-
-Model Builder V3 is the only active frontend Model Builder implementation. Future work must preserve these boundaries:
-
-- Keep active Model Builder source under `frontend/src/model-builder-v3/`.
-- Do not reintroduce V1/V2 builder source directories, legacy builder toggles, or copied V2 docs unless the user explicitly asks for a separate historical restoration.
-- Do not mix V3 domain graph data with React Flow render state.
-- Do not make React Flow nodes/edges the physics source of truth.
-- Do not import or recreate legacy `frontend/src/styles/model-builder.css`.
-- Do not recreate `final-overrides.css` or any late-loaded catch-all override file.
-- V3 components are two-terminal functions with behavior `R(V)`, `I(V)`, `dV(I)`, or `F(I,V)=0`; resistor and diode are presets only.
-- The compiler must include only the active V-to-GND connected subgraph and ignore disconnected draft components while keeping them visibly dashed on the canvas.
-- Graph validation, graph compilation, routing, and preset conversion should remain domain/testable modules rather than browser-only behavior.
-
-
-## Model Builder V3 maintenance rules
-
-- V3 must import `ReactFlow` as a named export from `@xyflow/react`; do not use the default-export compatibility shim.
-- Do not silently discard parent workflow props. If a parent workflow feature is not native to V3 yet, wire it into the canvas toolbar or expose an explicit user-visible limitation.
-- `compile.ts` must have direct tests before changing `schematic_v3` output, formula sections, active-subgraph detection, or model round-trip behavior.
-- Active V3 docs belong in current docs such as `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/WEBUI_AGENT_HANDOFF.md`, and `docs/USER_MANUAL.md`; do not leave one-off hotfix docs in the repository root.
-- A no-console blank screen must be debugged by checking DOM mount and container height before changing solver/model logic.
+Historical hotfix detail belongs in `CHANGELOG.md`, not in this rules file.

@@ -1,3 +1,48 @@
+## 1.9.6 - Verification fix package
+
+- Fixed Model Builder V3 handle normalization so the terminal handle id `node` is not misclassified as a component `n` port.
+- Updated the FittingPage synthetic-trace toolbar test to match the current V3 direct-shell DOM.
+- Verified frontend dependency install, Vitest, and production build in this workspace.
+- Verified backend Python compile and backend pytest in this workspace.
+- Updated TESTED_CURRENT, WEBUI_AGENT_HANDOFF, and final audit notes with honest remaining manual-test requirements.
+
+## 1.9.5 - Final audit cleanup package
+
+- Synchronized final staged test package version metadata to v1.9.5.
+- Updated TESTED_CURRENT.md with accurate backend-pass/frontend-unverified status.
+- Updated WEBUI_AGENT_HANDOFF.md with the staged-package summary and remaining frontend validation requirement.
+- Kept code behavior from v1.9.4 except for documentation/test-status cleanup.
+
+## 1.9.4 - Phase 4 maintainability and release hygiene
+
+- Consolidated PROJECT_RULES.md by replacing version-stamped Model Builder append blocks with canonical documentation references.
+- Indexed external/frontend testing and release smoke-test docs in DOCUMENTATION_INDEX.md.
+- Documented /api/v2 as canonical while preserving bare /api aliases for backward compatibility.
+- Extracted the fitting elapsed-time interval into `useFitTimer` and removed a duplicate release-demo setter.
+- Left large UI rewrites out of scope to avoid destabilizing the release-candidate path.
+
+## 1.9.3 - Phase 3 external beta test package
+
+- Added canonical demo CSV files for clean diode, photodiode-like, and noisy non-ideal IV workflows.
+- Added expected-results notes for the canonical demo set.
+- Added beta quick-start and colleague testing guides focused on import → model → fit → report → export.
+- Kept the code path from v1.9.2 intact; this phase packages reproducible testing assets rather than adding fitting features.
+
+## 1.9.2 - Phase 2 release-candidate hardening
+
+- Added a Model Builder V3 warning when the V terminal is dragged below GND.
+- Added a router warning if the A*/grid wire router hits its safety step ceiling and falls back.
+- Kept junction voltage labels visible as `?` when no stable label can be computed.
+- Included reverse-polarity badges in the equivalent-circuit SVG export.
+- Added a release smoke-test checklist for import → model → fit → report → export validation.
+
+## 1.9.1 - Phase 1 Model Builder V3 correctness hardening
+
+- Fixed Model Builder V3 component ports so React Flow no longer receives duplicate same-id source/target handles for the same physical port.
+- Added Inspector polarity control for orientation-sensitive V3 components and a visible reverse-polarity badge on canvas nodes.
+- Made graph_dc fitting use graph-native parameters when an explicit graph is present, avoiding legacy ghost parameters in V3-compiled models.
+- Added frontend compile/reducer tests and backend graph_dc contract tests for reverse polarity and graph parameter selection.
+
 ## 1.9.0 - Model Builder V3 consolidation
 
 - Promoted the cleaned Model Builder V3 path to the v1.9.0 baseline.

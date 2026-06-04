@@ -317,6 +317,9 @@ export function SchematicBuilderV3({
           onUpdateComponentExpression={(componentId, expression) =>
             dispatch({ type: "upsertComponentExpression", componentId, expression })
           }
+          onUpdateComponentSign={(componentId, sign) =>
+            dispatch({ type: "updateComponentSign", componentId, sign })
+          }
           onAddComponentParameter={(componentId, parameter) =>
             dispatch({ type: "addComponentParameter", componentId, parameter })
           }

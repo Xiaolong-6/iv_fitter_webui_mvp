@@ -135,6 +135,10 @@ function componentPortSides(graph: Mb3Graph, component: Mb3Component): Record<"p
   return { p, n: p === n ? oppositeSide(p) : n };
 }
 
+function reactFlowHandleId(ref: Mb3PortRef, role: "source" | "target"): string {
+  return ref.kind === "component" ? `${ref.port ?? "p"}-${role}` : "node";
+}
+
 function formulaNode(
   graph: Mb3Graph,
   formulaLatex: string[],
@@ -201,7 +205,14 @@ export function mb3ToReactFlow(
       draggable: true,
       selectable: true,
       connectable: true,
-      data: { label: component.label, kind: "component", portSides: componentPortSides(graph, component) },
+      data: {
+        label: component.label,
+        kind: "component",
+        portSides: componentPortSides(graph, component),
+        sign: component.sign,
+        templateKey: component.templateKey,
+        behavior: component.behavior,
+      },
       style: {
         background: "transparent",
         border: 0,

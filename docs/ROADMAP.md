@@ -37,3 +37,10 @@ Current capabilities:
 Do not add features that make the core workflow slower, less reliable, or harder to explain: import I-V data, build a physically interpretable model, fit, inspect diagnostics, and export defensible results.
 
 For Model Builder V3, do not reintroduce hidden legacy placement assumptions. The user-facing model editor is a schematic graph: fixed V/GND terminals, two-terminal components, wires, validation, and compilation of only the active V-to-GND subgraph.
+
+## API compatibility lifecycle
+
+- `/api/v2/...` is the canonical frontend/backend API path.
+- Bare `/api/...` aliases are retained for pre-v2 local clients and old scripts.
+- Do not remove aliases until an external beta has confirmed no active tester package depends on them.
+- When removal is approved, document the target version here and in `CHANGELOG.md` before deleting decorators.

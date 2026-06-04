@@ -43,6 +43,11 @@ This file is the stable entry point for IV-fitter Web UI documentation.
 - `docs/RELEASE_CHECKLIST.md` — release readiness checklist.
 - `docs/RELEASE_MANAGER.md` — read-only in-app update checking and maintainer-only release workflow.
 - `docs/RELEASE_PRIVACY_CHECKLIST.md` — privacy/path leakage rules for release text.
+- `docs/EXTERNAL_TESTING_GUIDE.md` — instructions for non-developer scientific testers.
+- `docs/FRONTEND_TESTING.md` — frontend test/build expectations and browser smoke checks.
+- `docs/release/RELEASE_SMOKE_TEST.md` — current release-candidate smoke-test path.
+- `docs/release/QUICK_START_BETA.md` — short launch guide for beta packages.
+- `docs/release/TESTING_GUIDE_FOR_COLLEAGUES.md` — colleague-focused testing script.
 - `docs/FITTING_PARITY_AND_DIAGNOSTICS.md` — fitting parity and diagnostics notes.
 - `docs/NUMERICAL_SANITY_AND_HOVER.md` — numerical sanity and hover diagnostics notes.
 - `docs/ROADMAP.md` — future work.

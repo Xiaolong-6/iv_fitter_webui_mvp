@@ -5,6 +5,7 @@ export type Mb3Action =
   | { type: "deleteComponent"; componentId: string }
   | { type: "renameComponent"; componentId: string; label: string }
   | { type: "updateComponentBehavior"; componentId: string; behavior: Mb3Behavior }
+  | { type: "updateComponentSign"; componentId: string; sign: 1 | -1 }
   | { type: "addComponentParameter"; componentId: string; parameter: Mb3Parameter }
   | {
       type: "updateComponentParameter";

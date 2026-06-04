@@ -172,6 +172,15 @@ def predict_current(voltage_v, model, solver_mode: str = "legacy_composite") -> 
 
 def _all_fit_params(request: FitRequest):
     params = []
+    graph = getattr(request.model, "graph", None)
+    graph_components = list(getattr(graph, "components", []) or []) if graph is not None else []
+    if request.config.solver_mode == "graph_dc" and graph_components:
+        for comp in graph_components:
+            for name, spec in comp.params.items():
+                key = f"{comp.id}.{name}"
+                params.append((key, comp, name, spec))
+        return params
+
     seen: set[tuple[str, str]] = set()
     for group_name in ("core", "series", "parallel"):
         for comp in getattr(request.model, group_name):
@@ -179,9 +188,8 @@ def _all_fit_params(request: FitRequest):
                 key = f"{comp.id}.{name}"
                 params.append((key, comp, name, spec))
                 seen.add((comp.id, name))
-    graph = getattr(request.model, "graph", None)
     if graph is not None:
-        for comp in getattr(graph, "components", []) or []:
+        for comp in graph_components:
             for name, spec in comp.params.items():
                 if (comp.id, name) in seen:
                     continue

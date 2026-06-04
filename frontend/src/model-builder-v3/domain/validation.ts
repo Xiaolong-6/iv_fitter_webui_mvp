@@ -52,6 +52,12 @@ function openComponentLabels(graph: Mb3Graph): string[] {
 }
 
 export function evaluateMb3GraphConnectivity(graph: Mb3Graph): Mb3ConnectivityStatus {
+  const positiveNode = graph.nodes.find((node) => node.id === graph.terminals.positive);
+  const groundNode = graph.nodes.find((node) => node.id === graph.terminals.ground);
+  if (positiveNode && groundNode && positiveNode.position.y >= groundNode.position.y) {
+    return { level: "warning", label: "Warning: V terminal is below GND" };
+  }
+
   const positive = `node:${graph.terminals.positive}`;
   const ground = `node:${graph.terminals.ground}`;
   const wireOnlyAdjacency = new Map<string, Set<string>>();

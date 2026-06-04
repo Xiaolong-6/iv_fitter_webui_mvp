@@ -1029,3 +1029,66 @@
   height: 100%;
   min-height: 0;
 }
+
+/* v1.9.1: each physical component port has one visible dot; hidden target handles keep bidirectional connect/drop semantics without duplicate visible ports. */
+.mbv3-canvas .mbv3-component-node .mbv3-port-hit-target {
+  opacity: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  pointer-events: all !important;
+}
+
+.mbv3-canvas .mbv3-component-node .mbv3-port-handle {
+  opacity: 1 !important;
+  pointer-events: all !important;
+}
+
+.mbv3-component-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  line-height: 1.1;
+}
+
+.mbv3-polarity-badge {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 5px;
+  border: 1px solid #fbbf24;
+  border-radius: 999px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: calc(8px * var(--app-zoom));
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.mbv3-inspector-polarity-row {
+  padding: 7px 8px;
+  border: 1px solid #dbe5f4;
+  border-radius: 9px;
+  background: #f8fafc;
+}
+
+.mbv3-inspector-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #0f172a;
+  font-size: calc(12px * var(--app-zoom));
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.mbv3-inspector-toggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #2563eb;
+}

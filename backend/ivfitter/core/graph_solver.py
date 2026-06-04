@@ -62,19 +62,21 @@ def _eval_user_expr(comp: GraphComponent, v: float, i: float, temperature_K: flo
 def _solve_current_from_voltage_law(comp: GraphComponent, v_component: float, temperature_K: float) -> float:
     behavior = str((comp.metadata or {}).get("behavior", ""))
     expression = str((comp.metadata or {}).get("expression", ""))
+    orientation = -1.0 if (comp.polarity or "forward") == "reverse" else 1.0
+    v_law = orientation * float(v_component)
     if behavior == "R_of_V":
-        r = _eval_user_expr(comp, v_component, 0.0, temperature_K)
+        r = _eval_user_expr(comp, v_law, 0.0, temperature_K)
         if not np.isfinite(r) or abs(r) < 1e-30:
             return float("nan")
-        return float(v_component) / r
+        return orientation * float(v_law) / r
     if behavior == "I_of_V":
-        return _eval_user_expr(comp, v_component, 0.0, temperature_K)
+        return orientation * _eval_user_expr(comp, v_law, 0.0, temperature_K)
     if behavior == "dV_of_I":
         # Solve f(I) = V. Bracket around a broad current range and fall back to
         # a scalar root from the ohmic estimate if possible.
         def f(cur: float) -> float:
-            return _eval_user_expr(comp, v_component, cur, temperature_K) - float(v_component)
-        scale = max(abs(float(v_component)) / max(abs(_param_dict(comp).get("R0", 1.0)), 1e-30), 1e-15)
+            return _eval_user_expr(comp, v_law, orientation * cur, temperature_K) - float(v_law)
+        scale = max(abs(float(v_law)) / max(abs(_param_dict(comp).get("R0", 1.0)), 1e-30), 1e-15)
         brackets = [scale * 10 ** k for k in range(-6, 13, 3)]
         for b in brackets:
             lo, hi = -b, b
@@ -92,8 +94,8 @@ def _solve_current_from_voltage_law(comp: GraphComponent, v_component: float, te
     if behavior == "custom_residual":
         # User expression is F(I,V)=0.
         def f(cur: float) -> float:
-            return _eval_user_expr(comp, v_component, cur, temperature_K)
-        scale = max(abs(float(v_component)) / max(abs(_param_dict(comp).get("R0", 1.0)), 1e-30), 1e-15)
+            return _eval_user_expr(comp, v_law, orientation * cur, temperature_K)
+        scale = max(abs(float(v_law)) / max(abs(_param_dict(comp).get("R0", 1.0)), 1e-30), 1e-15)
         for b in [scale * 10 ** k for k in range(-6, 13, 3)]:
             try:
                 flo, fhi = f(-b), f(b)
@@ -104,7 +106,7 @@ def _solve_current_from_voltage_law(comp: GraphComponent, v_component: float, te
         return float("nan")
     if expression:
         # Backward-compatible custom current expression.
-        return _eval_user_expr(comp, v_component, 0.0, temperature_K)
+        return orientation * _eval_user_expr(comp, v_law, 0.0, temperature_K)
     return float("nan")
 
 
