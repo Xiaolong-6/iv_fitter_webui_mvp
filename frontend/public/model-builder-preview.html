@@ -1,245 +1,902 @@
-<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Model Builder Canvas</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; }
-    canvas { display: block; width: 100%; height: 100%; background: #fafafa; cursor: crosshair; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Stable Box Connector Editor</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;height:100vh;overflow:hidden;font-family:Arial,sans-serif;background:#f3f4f6}
+#toolbar{height:44px;display:flex;align-items:center;gap:8px;padding:0 10px;background:#111827;color:white}
+button{height:30px;padding:0 12px;border:1px solid #4b5563;background:#1f2937;color:white;border-radius:6px;cursor:pointer}
+#zoomLabel{min-width:48px;text-align:center;font-size:13px;color:#d1d5db}
+#status{margin-left:auto;font-size:13px;color:#d1d5db}
+#canvas{position:relative;width:100vw;height:calc(100vh - 44px);overflow:hidden;background:linear-gradient(#e5e7eb 1px,transparent 1px),linear-gradient(90deg,#e5e7eb 1px,transparent 1px);background-size:24px 24px}
+#viewport{position:absolute;inset:0;transform-origin:0 0;overflow:visible}
+svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
+.node{position:absolute;z-index:2;background:white;border:2px solid #374151;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:move;user-select:none}
+.node.selected{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.25)}
+.node.protected{border-color:#111827}
+.box{width:120px;height:60px}
+.terminal{width:28px;height:28px;border-radius:999px;font-size:12px;font-weight:700}
+.terminal-label{position:absolute;left:34px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:700;color:#111827;white-space:nowrap;pointer-events:none}
+.dot{position:absolute;width:12px;height:12px;border-radius:999px;background:white;border:2px solid #2563eb;cursor:crosshair;z-index:3}
+.dot:hover,.dot.target{background:#2563eb}
+.dot.hidden{display:none}
+.dot.top{top:-8px;left:50%;transform:translateX(-50%)}
+.dot.right{right:-8px;top:50%;transform:translateY(-50%)}
+.dot.bottom{bottom:-8px;left:50%;transform:translateX(-50%)}
+.dot.left{left:-8px;top:50%;transform:translateY(-50%)}
+.terminal .dot{left:50%;top:50%;transform:translate(-50%,-50%)}
+.connector{fill:none;stroke:#111827;stroke-width:2.8;vector-effect:non-scaling-stroke;pointer-events:none}
+.connector.selected{stroke:#2563eb;stroke-width:4;vector-effect:non-scaling-stroke}
+.hit{fill:none;stroke:transparent;stroke-width:18;vector-effect:non-scaling-stroke;pointer-events:stroke;cursor:pointer}
+.preview{fill:none;stroke:#2563eb;stroke-width:2.4;stroke-dasharray:5 5;vector-effect:non-scaling-stroke;pointer-events:none}
+.mid{fill:#facc15;stroke:#111827;stroke-width:2;cursor:grab;pointer-events:all}
+</style>
 </head>
 <body>
-  <canvas id="circuit-canvas"></canvas>
-  <script>
-    const canvas = document.getElementById("circuit-canvas");
-    const ctx = canvas.getContext("2d");
+<div id="toolbar">
+  <button id="addBox">Add box</button>
+  <button id="deleteBtn">Delete</button>
+  <button id="zoomOutBtn">−</button>
+  <button id="zoomInBtn">+</button>
+  <button id="fitBtn">Auto fit</button>
+  <span id="zoomLabel">100%</span>
+  <span id="status">拖拽时可临时重叠；松手后自动避开；V/GND 不可删除</span>
+</div>
+<div id="canvas"><div id="viewport"><svg id="svg"></svg></div></div>
 
-    function resize() {
-      canvas.width = canvas.clientWidth * devicePixelRatio;
-      canvas.height = canvas.clientHeight * devicePixelRatio;
-      ctx.scale(devicePixelRatio, devicePixelRatio);
-      draw();
-    }
+<script>
+(() => {
+  "use strict";
 
-    const state = {
-      boxes: [],
-      wires: [],
-      selected: null,
-      dragging: null,
-      dragOffset: { x: 0, y: 0 },
-      wireStart: null,
-      nextId: 1,
+  const $ = id => document.getElementById(id);
+  const canvas = $("canvas");
+  const viewport = $("viewport");
+  const svg = $("svg");
+
+  const W = 120, H = 60, TERM = 28, GRID = 20, PAD = 18, EXIT = 32, GAP = 8, WIRE_GAP = 12;
+  const SIDES = ["top", "right", "bottom", "left"];
+  const DIR = { top:[0,-1], right:[1,0], bottom:[0,1], left:[-1,0] };
+
+  const S = {
+    nodes: [],
+    conns: [],
+    selected: null,
+    drag: null,
+    view: { x:0, y:0, scale:1 },
+    nextNode: 1,
+    nextConn: 1
+  };
+
+  const node = id => S.nodes.find(n => n.id === id);
+  const conn = id => S.conns.find(c => c.id === id);
+  const clone = pts => pts.map(p => ({ x:p.x, y:p.y }));
+  const snap = v => Math.round(v / GRID) * GRID;
+
+  function screen(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x:e.clientX - r.left, y:e.clientY - r.top };
+  }
+
+  function world(e) {
+    const p = screen(e);
+    return { x:(p.x - S.view.x) / S.view.scale, y:(p.y - S.view.y) / S.view.scale };
+  }
+
+    function nodeRectForMessage(n) {
+    const r = n.el.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
+    return {
+      x: r.left - canvasRect.left,
+      y: r.top - canvasRect.top,
+      width: r.width,
+      height: r.height
     };
+  }
 
-    const COMPONENT_DEFS = {
-      Resistance:   { w: 100, h: 60, color: "#e3f2fd", label: "R" },
-      "Shockley diode": { w: 100, h: 60, color: "#fce4ec", label: "D" },
-      "Constant current": { w: 100, h: 60, color: "#e8f5e9", label: "I" },
-      Custom:       { w: 100, h: 60, color: "#fff3e0", label: "?" },
-    };
+  function postComponentEvent(type, n) {
+    if (!n || n.terminal) return;
+    window.parent?.postMessage({
+      type,
+      id: n.id,
+      label: n.label,
+      rect: nodeRectForMessage(n)
+    }, window.location.origin);
+  }
 
-    function boxCenter(b) { return { x: b.x + b.w / 2, y: b.y + b.h / 2 }; }
+  function applyView() {
+    viewport.style.transform = `translate(${S.view.x}px,${S.view.y}px) scale(${S.view.scale})`;
+    $("zoomLabel").textContent = `${Math.round(S.view.scale * 100)}%`;
+  }
 
-    function nearEdge(b, px, py) {
-      const thr = 6;
-      if (Math.abs(px - b.x) < thr && py > b.y && py < b.y + b.h) return "left";
-      if (Math.abs(px - (b.x + b.w)) < thr && py > b.y && py < b.y + b.h) return "right";
-      if (Math.abs(py - b.y) < thr && px > b.x && px < b.x + b.w) return "top";
-      if (Math.abs(py - (b.y + b.h)) < thr && px > b.x && px < b.x + b.w) return "bottom";
-      return null;
+  function zoomTo(next, anchor = null) {
+    const old = S.view.scale;
+    const scale = Math.max(0.25, Math.min(3, next));
+    if (scale === old) return;
+
+    anchor ??= { x:canvas.clientWidth / 2, y:canvas.clientHeight / 2 };
+    const w = { x:(anchor.x - S.view.x) / old, y:(anchor.y - S.view.y) / old };
+
+    S.view.scale = scale;
+    S.view.x = anchor.x - w.x * scale;
+    S.view.y = anchor.y - w.y * scale;
+    applyView();
+  }
+
+  function autoFit() {
+    if (!S.nodes.length) {
+      S.view = { x:0, y:0, scale:1 };
+      applyView();
+      return;
     }
 
-    function edgePoint(b, edge) {
-      if (edge === "left")   return { x: b.x, y: b.y + b.h / 2 };
-      if (edge === "right")  return { x: b.x + b.w, y: b.y + b.h / 2 };
-      if (edge === "top")    return { x: b.x + b.w / 2, y: b.y };
-      if (edge === "bottom") return { x: b.x + b.w / 2, y: b.y + b.h };
-    }
+    const pad = 100;
+    const minX = Math.min(...S.nodes.map(n => n.x));
+    const minY = Math.min(...S.nodes.map(n => n.y));
+    const maxX = Math.max(...S.nodes.map(n => n.x + n.w));
+    const maxY = Math.max(...S.nodes.map(n => n.y + n.h));
+    const cw = Math.max(1, maxX - minX);
+    const ch = Math.max(1, maxY - minY);
+    const scale = Math.max(0.25, Math.min(2, (canvas.clientWidth - pad * 2) / cw, (canvas.clientHeight - pad * 2) / ch));
 
-    function draw() {
-      const w = canvas.clientWidth;
-      const h = canvas.clientHeight;
-      ctx.clearRect(0, 0, w, h);
+    S.view.scale = scale;
+    S.view.x = (canvas.clientWidth - cw * scale) / 2 - minX * scale;
+    S.view.y = (canvas.clientHeight - ch * scale) / 2 - minY * scale;
+    applyView();
+  }
 
-      ctx.strokeStyle = "#e0e0e0";
-      ctx.lineWidth = 1;
-      for (let x = 0; x < w; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
-      for (let y = 0; y < h; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+  function handle(n, side) {
+    if (n.terminal) return { x:n.x + n.w / 2, y:n.y + n.h / 2 };
+    if (side === "top") return { x:n.x + n.w / 2, y:n.y };
+    if (side === "right") return { x:n.x + n.w, y:n.y + n.h / 2 };
+    if (side === "bottom") return { x:n.x + n.w / 2, y:n.y + n.h };
+    return { x:n.x, y:n.y + n.h / 2 };
+  }
 
-      for (const wire of state.wires) {
-        const from = wire.from;
-        const to = wire.to;
-        ctx.beginPath();
-        ctx.strokeStyle = state.selected === wire.id ? "#1976d2" : "#555";
-        ctx.lineWidth = state.selected === wire.id ? 3 : 2;
-        ctx.moveTo(from.x, from.y);
-        const midX = (from.x + to.x) / 2;
-        ctx.bezierCurveTo(midX, from.y, midX, to.y, to.x, to.y);
-        ctx.stroke();
+  function exitPoint(p, side) {
+    const [dx, dy] = DIR[side];
+    return { x:p.x + dx * EXIT, y:p.y + dy * EXIT };
+  }
+
+  function rectAt(x, y, w, h, pad = 0) {
+    return { x1:x - pad, y1:y - pad, x2:x + w + pad, y2:y + h + pad };
+  }
+
+  function rect(n, pad = PAD) {
+    return rectAt(n.x, n.y, n.w, n.h, pad);
+  }
+
+  function overlap(a, b) {
+    return a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
+  }
+
+  function freePosition(id, x, y, w, h) {
+    const r = rectAt(x, y, w, h, GAP);
+    return S.nodes.every(n => n.id === id || !overlap(r, rectAt(n.x, n.y, n.w, n.h)));
+  }
+
+  function nearestFree(id, x, y, w, h) {
+    if (freePosition(id, x, y, w, h)) return { x, y };
+
+    for (let radius = 1; radius <= 30; radius++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        for (let dy = -radius; dy <= radius; dy++) {
+          if (Math.abs(dx) !== radius && Math.abs(dy) !== radius) continue;
+
+          const nx = x + dx * 16;
+          const ny = y + dy * 16;
+
+          if (freePosition(id, nx, ny, w, h)) return { x:nx, y:ny };
+        }
       }
+    }
 
-      for (const box of state.boxes) {
-        const def = COMPONENT_DEFS[box.name] || COMPONENT_DEFS.Custom;
-        ctx.fillStyle = state.selected === box.id ? "#bbdefb" : def.color;
-        ctx.strokeStyle = state.selected === box.id ? "#1976d2" : "#888";
-        ctx.lineWidth = state.selected === box.id ? 2 : 1;
-        ctx.beginPath();
-        ctx.roundRect(box.x, box.y, box.w, box.h, 6);
-        ctx.fill();
-        ctx.stroke();
+    return { x, y };
+  }
 
-        ctx.fillStyle = "#333";
-        ctx.font = "bold 14px system-ui";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(def.label, box.x + box.w / 2, box.y + box.h / 2 - 8);
-        ctx.font = "11px system-ui";
-        ctx.fillStyle = "#666";
-        ctx.fillText(box.name, box.x + box.w / 2, box.y + box.h / 2 + 10);
+  function inside(p, r) {
+    return p.x >= r.x1 && p.x <= r.x2 && p.y >= r.y1 && p.y <= r.y2;
+  }
 
-        for (const edge of ["left", "right", "top", "bottom"]) {
-          const pt = edgePoint(box, edge);
-          ctx.beginPath();
-          ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
-          ctx.fillStyle = "#1976d2";
-          ctx.fill();
+  function segHitsRect(a, b, r) {
+    if (inside(a, r) || inside(b, r)) return true;
+
+    if (a.y === b.y) {
+      return a.y >= r.y1 && a.y <= r.y2 &&
+        Math.max(a.x,b.x) >= r.x1 && Math.min(a.x,b.x) <= r.x2;
+    }
+
+    if (a.x === b.x) {
+      return a.x >= r.x1 && a.x <= r.x2 &&
+        Math.max(a.y,b.y) >= r.y1 && Math.min(a.y,b.y) <= r.y2;
+    }
+
+    return true;
+  }
+
+  function segmentsOf(points) {
+    const pts = clean(points);
+    const segs = [];
+
+    for (let i = 1; i < pts.length; i++) {
+      if (pts[i - 1].x !== pts[i].x || pts[i - 1].y !== pts[i].y) {
+        segs.push([pts[i - 1], pts[i]]);
+      }
+    }
+
+    return segs;
+  }
+
+  function pointOnSegment(p, a, b) {
+    if (a.x === b.x) {
+      return p.x === a.x && p.y >= Math.min(a.y, b.y) && p.y <= Math.max(a.y, b.y);
+    }
+
+    if (a.y === b.y) {
+      return p.y === a.y && p.x >= Math.min(a.x, b.x) && p.x <= Math.max(a.x, b.x);
+    }
+
+    return false;
+  }
+
+  function segsTooClose(a, b, c, d) {
+    // Same orientation: reject if they are parallel and too close while overlapping.
+    if (a.y === b.y && c.y === d.y) {
+      const overlap = Math.max(Math.min(a.x,b.x), Math.min(c.x,d.x)) <= Math.min(Math.max(a.x,b.x), Math.max(c.x,d.x));
+      return overlap && Math.abs(a.y - c.y) < WIRE_GAP;
+    }
+
+    if (a.x === b.x && c.x === d.x) {
+      const overlap = Math.max(Math.min(a.y,b.y), Math.min(c.y,d.y)) <= Math.min(Math.max(a.y,b.y), Math.max(c.y,d.y));
+      return overlap && Math.abs(a.x - c.x) < WIRE_GAP;
+    }
+
+    // Perpendicular: reject real crossings. Allow touching exactly at endpoints only.
+    const h1 = a.y === b.y;
+    const h2 = c.y === d.y;
+    const hA = h1 ? a : c;
+    const hB = h1 ? b : d;
+    const vA = h1 ? c : a;
+    const vB = h1 ? d : b;
+    const cross = vA.x >= Math.min(hA.x,hB.x) && vA.x <= Math.max(hA.x,hB.x) &&
+                  hA.y >= Math.min(vA.y,vB.y) && hA.y <= Math.max(vA.y,vB.y);
+
+    if (!cross) return false;
+
+    const crossPoint = { x:vA.x, y:hA.y };
+    const endpointTouch =
+      (crossPoint.x === a.x && crossPoint.y === a.y) ||
+      (crossPoint.x === b.x && crossPoint.y === b.y) ||
+      (crossPoint.x === c.x && crossPoint.y === c.y) ||
+      (crossPoint.x === d.x && crossPoint.y === d.y);
+
+    return !endpointTouch;
+  }
+
+  let collectingWireObstacles = false;
+
+  function wireObstacleSegments(exceptConnId = null) {
+    if (collectingWireObstacles) return [];
+
+    const segs = [];
+    collectingWireObstacles = true;
+
+    for (const c of S.conns) {
+      if (c.id === exceptConnId) continue;
+      for (const seg of segmentsOf(route(c, c.id))) segs.push(seg);
+    }
+
+    collectingWireObstacles = false;
+    return segs;
+  }
+
+  function clean(pts) {
+    let out = [];
+
+    for (const p of pts) {
+      const q = out[out.length - 1];
+      if (!q || q.x !== p.x || q.y !== p.y) out.push({ x:p.x, y:p.y });
+    }
+
+    let changed = true;
+    while (changed) {
+      changed = false;
+
+      for (let i = 1; i < out.length - 1;) {
+        const a = out[i - 1], b = out[i], c = out[i + 1];
+
+        if ((a.x === b.x && b.x === c.x) || (a.y === b.y && b.y === c.y)) {
+          out.splice(i, 1);
+          changed = true;
+        } else {
+          i++;
         }
       }
 
-      reportCircuitStatus();
-    }
+      for (let i = 0; i < out.length - 3; i++) {
+        const a = out[i], b = out[i + 1], c = out[i + 2], d = out[i + 3];
+        const hSpike = a.y === b.y && b.x === c.x && c.y === d.y && a.y === d.y;
+        const vSpike = a.x === b.x && b.y === c.y && c.x === d.x && a.x === d.x;
 
-    function reportCircuitStatus() {
-      const connected = state.wires.length >= 1 && state.boxes.length >= 1;
-      parent.postMessage({
-        type: "ivfitter:preview-circuit-status",
-        connected,
-        activeWireCount: state.wires.length,
-      }, window.location.origin);
-    }
-
-    function findBoxAt(px, py) {
-      for (let i = state.boxes.length - 1; i >= 0; i--) {
-        const b = state.boxes[i];
-        if (px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h) return b;
+        if (hSpike || vSpike) {
+          out.splice(i + 1, 2);
+          changed = true;
+          break;
+        }
       }
-      return null;
     }
 
-    function findWireAt(px, py) {
-      for (const wire of state.wires) {
-        const dx = wire.to.x - wire.from.x;
-        const dy = wire.to.y - wire.from.y;
-        const len = Math.sqrt(dx * dx + dy * dy);
-        if (len < 1) continue;
-        const t = Math.max(0, Math.min(1, ((px - wire.from.x) * dx + (py - wire.from.y) * dy) / (len * len)));
-        const closest = { x: wire.from.x + t * dx, y: wire.from.y + t * dy };
-        const dist = Math.sqrt((px - closest.x) ** 2 + (py - closest.y) ** 2);
-        if (dist < 8) return wire;
+    return out;
+  }
+
+  function pathD(pts) {
+    return "M " + clean(pts).map(p => `${Math.round(p.x)} ${Math.round(p.y)}`).join(" L ");
+  }
+
+  function segClear(a, b, ignore = [], exceptConnId = null) {
+    if (a.x !== b.x && a.y !== b.y) return false;
+
+    const boxesClear = S.nodes.every(n => {
+      if (ignore.includes(n.id)) return true;
+      return !segHitsRect(a, b, rect(n));
+    });
+
+    if (!boxesClear) return false;
+
+    for (const [c, d] of wireObstacleSegments(exceptConnId)) {
+      if (segsTooClose(a, b, c, d)) return false;
+    }
+
+    return true;
+  }
+
+  function pathClear(pts, ignore = [], exceptConnId = null) {
+    pts = clean(pts);
+    for (let i = 1; i < pts.length; i++) {
+      if (!segClear(pts[i - 1], pts[i], ignore, exceptConnId)) return false;
+    }
+    return true;
+  }
+
+  function visibleClear(pts, c) {
+    pts = clean(pts);
+    for (let i = 1; i < pts.length; i++) {
+      const ignore = [];
+      if (i === 1) ignore.push(c.from);
+      if (i === pts.length - 1) ignore.push(c.to);
+      if (!segClear(pts[i - 1], pts[i], ignore, c.id)) return false;
+    }
+    return true;
+  }
+
+  function score(pts) {
+    pts = clean(pts);
+    let length = 0;
+    let bends = 0;
+
+    for (let i = 1; i < pts.length; i++) {
+      length += Math.abs(pts[i].x - pts[i - 1].x) + Math.abs(pts[i].y - pts[i - 1].y);
+
+      if (i >= 2) {
+        const a = pts[i - 2], b = pts[i - 1], c = pts[i];
+        if ((a.y === b.y) !== (b.y === c.y)) bends++;
       }
-      return null;
     }
 
-    canvas.addEventListener("pointerdown", (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const px = e.clientX - rect.left;
-      const py = e.clientY - rect.top;
+    return length + bends * 12;
+  }
 
-      const box = findBoxAt(px, py);
-      if (box) {
-        state.selected = box.id;
-        state.dragging = box;
-        state.dragOffset = { x: px - box.x, y: py - box.y };
-        state.wireStart = null;
-        parent.postMessage({ type: "ivfitter:preview-component-selected", id: box.id, label: box.name }, window.location.origin);
-        draw();
+  function best(paths, ignore = [], exceptConnId = null) {
+    return paths
+      .filter(p => pathClear(p, ignore, exceptConnId))
+      .sort((a, b) => score(a) - score(b))[0] || null;
+  }
+
+  function orth(a, b, ignore = [], exceptConnId = null) {
+    const hv = clean([a, { x:b.x, y:a.y }, b]);
+    const vh = clean([a, { x:a.x,y:b.y }, b]);
+    return best([hv, vh], ignore, exceptConnId) || hv;
+  }
+
+  function zPath(a, b, axis, v) {
+    return axis === "x"
+      ? clean([a, { x:v, y:a.y }, { x:v, y:b.y }, b])
+      : clean([a, { x:a.x, y:v }, { x:b.x, y:v }, b]);
+  }
+
+  function endpoints(c) {
+    const a0 = handle(node(c.from), c.fromSide);
+    const b0 = handle(node(c.to), c.toSide);
+    return { a0, a:exitPoint(a0, c.fromSide), b:exitPoint(b0, c.toSide), b0 };
+  }
+
+  function manualRoute(a, b, manual, ignore, exceptConnId = null) {
+    if (!manual?.length) return null;
+    const first = manual[0];
+    const last = manual[manual.length - 1];
+
+    return clean([
+      ...orth(a, first, ignore, exceptConnId),
+      ...manual.slice(1),
+      ...orth(last, b, ignore, exceptConnId).slice(1)
+    ]);
+  }
+
+  function candidates(a, b, c) {
+    const list = [];
+    const ignore = [c.from, c.to];
+
+    if (a.x === b.x || a.y === b.y) list.push([a, b]);
+
+    list.push(
+      clean([a, { x:b.x, y:a.y }, b]),
+      clean([a, { x:a.x, y:b.y }, b])
+    );
+
+    const xs = new Set([snap((a.x+b.x)/2), snap(a.x+100), snap(a.x-100), snap(b.x+100), snap(b.x-100)]);
+    const ys = new Set([snap((a.y+b.y)/2), snap(a.y+100), snap(a.y-100), snap(b.y+100), snap(b.y-100)]);
+
+    for (const n of S.nodes) {
+      if (ignore.includes(n.id)) continue;
+      const r = rect(n, PAD + GRID);
+      xs.add(snap(r.x1 - GRID)); xs.add(snap(r.x2 + GRID));
+      ys.add(snap(r.y1 - GRID)); ys.add(snap(r.y2 + GRID));
+    }
+
+    for (const x of xs) list.push(zPath(a, b, "x", x));
+    for (const y of ys) list.push(zPath(a, b, "y", y));
+
+    const outsideX = [-GRID, canvas.clientWidth / S.view.scale + GRID];
+    const outsideY = [-GRID, canvas.clientHeight / S.view.scale + GRID];
+    for (const x of outsideX) list.push(zPath(a, b, "x", x));
+    for (const y of outsideY) list.push(zPath(a, b, "y", y));
+
+    return list;
+  }
+
+  function route(c, exceptConnId = c.id) {
+    const { a0, a, b, b0 } = endpoints(c);
+    const ignore = [c.from, c.to];
+
+    if (c.manual) {
+      const m = manualRoute(a, b, c.manual, ignore, exceptConnId);
+      if (m && pathClear(m, ignore, exceptConnId)) return clean([a0, ...m, b0]);
+    }
+
+    const m = best(candidates(a, b, c), ignore, exceptConnId) || orth(a, b, ignore, exceptConnId);
+    return clean([a0, ...m, b0]);
+  }
+
+  function usedSides(id) {
+    const sides = new Set();
+    for (const c of S.conns) {
+      if (c.from === id) sides.add(c.fromSide);
+      if (c.to === id) sides.add(c.toSide);
+    }
+    return sides;
+  }
+
+  function sideAvailable(id, side) {
+    const n = node(id);
+    if (!n || n.terminal) return true;
+
+    const used = usedSides(id);
+    return used.size < 2 || used.has(side);
+  }
+
+  function nearestConnectDot(e) {
+    const source = S.drag?.type === "connect" ? S.drag.from : null;
+    let bestDot = null;
+    let bestDistance = Infinity;
+
+    for (const dot of document.querySelectorAll(".dot:not(.hidden)")) {
+      const el = dot.closest(".node");
+      if (!el) continue;
+
+      const id = el.dataset.id;
+      const side = dot.dataset.side;
+
+      if (id === source) continue;
+      if (!sideAvailable(id, side)) continue;
+
+      const r = dot.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const d = Math.hypot(e.clientX - cx, e.clientY - cy);
+
+      if (d < bestDistance) {
+        bestDistance = d;
+        bestDot = dot;
+      }
+    }
+
+    return bestDot;
+  }
+
+  function clearTargets() {
+    document.querySelectorAll(".dot.target").forEach(d => d.classList.remove("target"));
+  }
+
+  function updateConnectTarget(e) {
+    clearTargets();
+    if (!S.drag || S.drag.type !== "connect") return;
+
+    const dot = nearestConnectDot(e);
+    S.drag.target = null;
+
+    if (!dot) return;
+
+    const el = dot.closest(".node");
+    S.drag.target = { id:el.dataset.id, side:dot.dataset.side };
+    dot.classList.add("target");
+  }
+
+  function editableHandles(pts) {
+    pts = clean(pts);
+    const hs = [];
+
+    for (let i = 1; i < pts.length - 2; i++) {
+      const a = pts[i];
+      const b = pts[i + 1];
+
+      if (a.x === b.x) hs.push({ x:a.x, y:(a.y+b.y)/2, axis:"x", segment:i });
+      else if (a.y === b.y) hs.push({ x:(a.x+b.x)/2, y:a.y, axis:"y", segment:i });
+    }
+
+    return hs;
+  }
+
+  function moveSegment(middle, index, axis, value) {
+    const pts = clean(middle);
+    const last = pts.length - 1;
+    if (index < 0 || index >= last) return pts;
+
+    const out = clone(pts);
+    const move = p => axis === "x" ? { x:value, y:p.y } : { x:p.x, y:value };
+    const a = move(pts[index]);
+    const b = move(pts[index + 1]);
+
+    if (index === 0) out.splice(1, 0, a);
+    else out[index] = a;
+
+    if (index + 1 === last) out.splice(index === 0 ? index + 2 : index + 1, 0, b);
+    else out[index + 1 + (index === 0 ? 1 : 0)] = b;
+
+    return clean(out);
+  }
+
+  function addNode(label, x, y, opt = {}) {
+    const terminal = opt.terminal === true;
+    const w = opt.w || (terminal ? TERM : W);
+    const h = opt.h || (terminal ? TERM : H);
+    const id = `n${S.nextNode++}`;
+    const free = nearestFree(id, x, y, w, h);
+
+    x = free.x;
+    y = free.y;
+
+    const el = document.createElement("div");
+    el.className = terminal ? "node terminal" : "node box";
+    el.dataset.id = id;
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+    el.style.width = `${w}px`;
+    el.style.height = `${h}px`;
+
+    if (terminal) {
+      const labelEl = document.createElement("div");
+      labelEl.className = "terminal-label";
+      labelEl.textContent = label;
+      el.appendChild(labelEl);
+    } else {
+      el.textContent = label;
+    }
+
+    const sides = terminal ? [opt.side || "right"] : SIDES;
+
+    for (const side of sides) {
+      const dot = document.createElement("div");
+      dot.className = terminal ? "dot" : `dot ${side}`;
+      dot.dataset.side = side;
+
+      dot.addEventListener("pointerdown", e => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!sideAvailable(id, side)) return;
+
+        S.selected = null;
+        S.drag = {
+          type:"connect",
+          from:id,
+          fromSide:side,
+          start:handle(node(id), side),
+          end:world(e),
+          target:null
+        };
+
+        updateConnectTarget(e);
+        render();
+      });
+
+      el.appendChild(dot);
+    }
+
+    el.addEventListener("pointerdown", e => {
+      if (e.target.classList.contains("dot")) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const p = world(e);
+      const n = node(id);
+
+      S.selected = { type:"node", id };
+      S.drag = {
+        type:"node",
+        id,
+        dx:p.x - n.x,
+        dy:p.y - n.y,
+        startX:n.x,
+        startY:n.y,
+        desiredX:n.x,
+        desiredY:n.y
+      };
+
+      render(); 
+      postComponentEvent("ivfitter:preview-component-selected", n);
+    });
+
+    viewport.appendChild(el);
+
+    const entry = {
+      id, label, x, y, w, h,
+      el,
+      terminal,
+      protected: opt.protected === true
+    };
+
+    S.nodes.push(entry);
+
+    render();
+    postComponentEvent("ivfitter:preview-component-added", entry);  
+    return id;
+  }
+
+  function addBox() {
+    const center = {
+      x:(canvas.clientWidth / 2 - S.view.x) / S.view.scale,
+      y:(canvas.clientHeight / 2 - S.view.y) / S.view.scale
+    };
+
+    return addNode(`box${S.nextNode}`, center.x - W / 2 + S.nodes.length * 12, center.y - H / 2 + S.nodes.length * 12);
+  }
+
+  function addTerminal(label, x, y, side) {
+    return addNode(label, x, y, { terminal:true, protected:true, side });
+  }
+
+  function addConn(from, fromSide, to, toSide) {
+    if (!from || !to || from === to) return;
+
+    const id = `c${S.nextConn++}`;
+    S.conns.push({ id, from, fromSide, to, toSide, manual:null });
+    S.selected = { type:"conn", id };
+    render();
+  }
+
+  function draw(tag, attrs, cls, down) {
+    const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    if (cls) el.setAttribute("class", cls);
+    if (down) el.addEventListener("pointerdown", down);
+
+    svg.appendChild(el);
+    return el;
+  }
+
+  function render() {
+    applyView();
+
+    for (const n of S.nodes) {
+      n.el.classList.toggle("selected", S.selected?.type === "node" && S.selected.id === n.id);
+      n.el.classList.toggle("protected", n.protected === true);
+
+      for (const dot of n.el.querySelectorAll(".dot")) {
+        dot.classList.toggle("hidden", !sideAvailable(n.id, dot.dataset.side));
+      }
+    }
+
+    svg.innerHTML = "";
+
+    for (const c of S.conns) {
+      const pts = route(c);
+      const selected = S.selected?.type === "conn" && S.selected.id === c.id;
+
+      draw("path", { d:pathD(pts) }, "hit", e => {
+        e.preventDefault();
+        e.stopPropagation();
+        S.selected = { type:"conn", id:c.id };
+        render();
+      });
+
+      draw("path", { d:pathD(pts) }, selected ? "connector selected" : "connector");
+
+      if (selected) {
+        for (const h of editableHandles(pts)) {
+          draw("circle", { cx:h.x, cy:h.y, r:7 }, "mid", e => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            S.drag = {
+              type:"mid",
+              connId:c.id,
+              segment:h.segment - 1,
+              axis:h.axis,
+              middle:clone(pts.slice(1, -1))
+            };
+          });
+        }
+      }
+    }
+
+    if (S.drag?.type === "connect") {
+      draw("path", { d:pathD(orth(S.drag.start, S.drag.end, [S.drag.from])) }, "preview");
+
+      if (S.drag.target) {
+        const target = node(S.drag.target.id)?.el.querySelector(`.dot[data-side="${S.drag.target.side}"]`);
+        target?.classList.add("target");
+      }
+    }
+  }
+
+  function deleteSelected() {
+    if (!S.selected) return;
+
+    if (S.selected.type === "node") {
+      const n = node(S.selected.id);
+
+      if (n?.protected) {
+        S.selected = null;
+        render();
         return;
       }
 
-      const edge = box ? nearEdge(box, px, py) : null;
-      if (box && edge) {
-        state.wireStart = edgePoint(box, edge);
-        state.selected = null;
-        draw();
-        return;
-      }
-
-      const wire = findWireAt(px, py);
-      if (wire) {
-        state.selected = wire.id;
-        parent.postMessage({ type: "ivfitter:preview-selection-cleared" }, window.location.origin);
-        draw();
-        return;
-      }
-
-      state.selected = null;
-      state.wireStart = null;
-      parent.postMessage({ type: "ivfitter:preview-selection-cleared" }, window.location.origin);
-      draw();
-    });
-
-    canvas.addEventListener("pointermove", (e) => {
-      if (!state.dragging) return;
-      const rect = canvas.getBoundingClientRect();
-      state.dragging.x = e.clientX - rect.left - state.dragOffset.x;
-      state.dragging.y = e.clientY - rect.top - state.dragOffset.y;
-      draw();
-    });
-
-    canvas.addEventListener("pointerup", () => {
-      state.dragging = null;
-    });
-
-    function addComponent(name, x, y) {
-      const def = COMPONENT_DEFS[name] || COMPONENT_DEFS.Custom;
-      const id = "prev_" + state.nextId++;
-      const box = { id, name, x: x - def.w / 2, y: y - def.h / 2, w: def.w, h: def.h };
-      state.boxes.push(box);
-      state.selected = id;
-      parent.postMessage({ type: "ivfitter:preview-component-added", id, label: name }, window.location.origin);
-      draw();
+      S.conns = S.conns.filter(c => c.from !== n.id && c.to !== n.id);
+      n.el.remove();
+      S.nodes = S.nodes.filter(x => x.id !== n.id);
+    } else if (S.selected.type === "conn") {
+      S.conns = S.conns.filter(c => c.id !== S.selected.id);
     }
 
-    function deleteSelected() {
-      if (!state.selected) return;
-      const idx = state.boxes.findIndex((b) => b.id === state.selected);
-      if (idx >= 0) {
-        state.boxes.splice(idx, 1);
-        state.wires = state.wires.filter((w) => w.fromBox !== state.selected && w.toBox !== state.selected);
-        parent.postMessage({ type: "ivfitter:preview-component-deleted", id: state.selected }, window.location.origin);
-        state.selected = null;
-        draw();
-        return;
+    S.selected = null;
+    render();
+  }
+
+  function updateDrag(e) {
+    if (!S.drag) return;
+
+    const p = world(e);
+
+    if (S.drag.type === "pan") {
+      S.view.x = S.drag.viewX + e.clientX - S.drag.x;
+      S.view.y = S.drag.viewY + e.clientY - S.drag.y;
+      applyView();
+      return;
+    }
+
+    if (S.drag.type === "node") {
+      const n = node(S.drag.id);
+      const nx = p.x - S.drag.dx;
+      const ny = p.y - S.drag.dy;
+
+      for (const c of S.conns) {
+        if (c.from === n.id || c.to === n.id) c.manual = null;
       }
-      const wIdx = state.wires.findIndex((w) => w.id === state.selected);
-      if (wIdx >= 0) {
-        state.wires.splice(wIdx, 1);
-        state.selected = null;
-        draw();
+
+      // During dragging, allow temporary overlap so nodes can pass through
+      // crowded areas. Final overlap is resolved on pointerup.
+      n.x = nx;
+      n.y = ny;
+      S.drag.desiredX = nx;
+      S.drag.desiredY = ny;
+
+      n.el.style.left = `${n.x}px`;
+      n.el.style.top = `${n.y}px`;
+      render();
+      return;
+    }
+
+    if (S.drag.type === "connect") {
+      S.drag.end = p;
+      updateConnectTarget(e);
+      render();
+      return;
+    }
+
+    if (S.drag.type === "mid") {
+      const c = conn(S.drag.connId);
+      const ep = endpoints(c);
+      const value = S.drag.axis === "x" ? p.x : p.y;
+      const manual = moveSegment(S.drag.middle, S.drag.segment, S.drag.axis, value);
+      const m = manualRoute(ep.a, ep.b, manual, [c.from, c.to], c.id);
+
+      if (!m) return;
+
+      const visible = clean([ep.a0, ...m, ep.b0]);
+
+      if (visibleClear(visible, c)) {
+        c.manual = manual;
+        render();
+      }
+    }
+  }
+
+  function finishDrag(e) {
+    if (S.drag?.type === "connect") {
+      updateConnectTarget(e);
+
+      if (S.drag.target) {
+        addConn(S.drag.from, S.drag.fromSide, S.drag.target.id, S.drag.target.side);
       }
     }
 
-    window.addEventListener("message", (e) => {
-      if (e.origin !== window.location.origin) return;
-      const data = e.data;
-      if (data.type === "ivfitter:add-preview-component") {
-        addComponent(data.label, data.x, data.y);
-      } else if (data.type === "ivfitter:delete-selected") {
-        deleteSelected();
-      }
-    });
+    if (S.drag?.type === "node") {
+      const n = node(S.drag.id);
 
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "Delete" || e.key === "Backspace") {
-        if (document.activeElement?.tagName === "INPUT") return;
-        deleteSelected();
+      if (n && !freePosition(n.id, n.x, n.y, n.w, n.h)) {
+        const free = nearestFree(n.id, n.x, n.y, n.w, n.h);
+        n.x = free.x;
+        n.y = free.y;
+        n.el.style.left = `${n.x}px`;
+        n.el.style.top = `${n.y}px`;
       }
-    });
+    }
 
-    resize();
-    window.addEventListener("resize", resize);
-  </script>
+    clearTargets();
+    S.drag = null;
+    render();
+  }
+
+  canvas.addEventListener("pointerdown", e => {
+    if (e.target !== canvas && e.target !== svg && e.target !== viewport) return;
+
+    e.preventDefault();
+    S.selected = null;
+    S.drag = { type:"pan", x:e.clientX, y:e.clientY, viewX:S.view.x, viewY:S.view.y };
+    render();
+  });
+
+  canvas.addEventListener("wheel", e => {
+    e.preventDefault();
+    zoomTo(S.view.scale * (e.deltaY < 0 ? 1.12 : 1 / 1.12), screen(e));
+  }, { passive:false });
+
+  window.addEventListener("pointermove", updateDrag);
+  window.addEventListener("pointerup", finishDrag);
+  window.addEventListener("pointercancel", finishDrag);
+  window.addEventListener("blur", () => {
+    clearTargets();
+    S.drag = null;
+    render();
+  });
+
+  window.addEventListener("keydown", e => {
+    if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
+  });
+
+  $("addBox").onclick = addBox;
+  $("deleteBtn").onclick = deleteSelected;
+  $("zoomOutBtn").onclick = () => zoomTo(S.view.scale / 1.2);
+  $("zoomInBtn").onclick = () => zoomTo(S.view.scale * 1.2);
+  $("fitBtn").onclick = autoFit;
+
+  addTerminal("V", 160, 80, "bottom");
+  addTerminal("GND", 160, 380, "top");
+  requestAnimationFrame(autoFit);
+})();
+</script>
 </body>
 </html>
