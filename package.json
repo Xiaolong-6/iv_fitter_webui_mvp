@@ -9,6 +9,10 @@
     "test": "npm run test:frontend",
     "test:frontend": "npm --prefix frontend run test --",
     "preview": "npm --prefix frontend run preview",
+    "lint": "npm --prefix frontend run lint",
+    "lint:fix": "npm --prefix frontend run lint:fix",
+    "format": "npm --prefix frontend run format",
+    "format:check": "npm --prefix frontend run format:check",
     "release:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release_build.ps1",
     "portable:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_portable_windows.ps1"
   },

@@ -25,6 +25,7 @@ Thumbs.db
 # Environment files
 .env
 .env.*
+!.env.example
 
 # Local release-manager scratch files
 .release-local/

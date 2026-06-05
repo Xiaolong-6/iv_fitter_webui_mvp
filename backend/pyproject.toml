@@ -8,17 +8,17 @@ version = "1.9.6"
 description = "Greenfield FastAPI backend prototype for IV-fitter"
 requires-python = ">=3.11"
 dependencies = [
-  "fastapi>=0.110",
-  "uvicorn>=0.29",
-  "pydantic>=2",
-  "numpy>=1.26",
-  "scipy>=1.11",
-  "pandas>=2.0",
+  "fastapi>=0.110,<1",
+  "uvicorn>=0.29,<1",
+  "pydantic>=2,<3",
+  "numpy>=1.26,<3",
+  "scipy>=1.11,<2",
+  "pandas>=2.0,<4",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "httpx>=0.27"]
-build = ["pyinstaller>=6.0"]
+dev = ["pytest>=8,<10", "httpx>=0.27,<1", "ruff>=0.4,<1", "mypy>=1.10,<2"]
+build = ["pyinstaller>=6.0,<7"]
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -26,4 +26,19 @@ include = ["ivfitter*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+addopts = "-q --tb=short --strict-markers"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.isort]
+known-first-party = ["ivfitter"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
