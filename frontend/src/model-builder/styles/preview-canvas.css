@@ -2,7 +2,6 @@
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 720px;
   overflow: hidden;
   background: #f3f4f6;
 }
@@ -11,7 +10,6 @@
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 720px;
   border: 0;
   background: #f3f4f6;
 }
@@ -28,64 +26,110 @@
   top: 12px;
   left: 12px;
   display: flex;
+  flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  gap: 4px;
   pointer-events: all;
+  z-index: 10;
 }
 
 .mb-preview-title-card,
-.mb-preview-toolbar button,
+.mb-preview-tool-btn,
+.mb-preview-go,
 .mb-preview-panel {
   border: 1px solid rgba(148, 163, 184, 0.42);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
   color: #0f172a;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.11);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1);
   backdrop-filter: blur(14px);
 }
 
 .mb-preview-title-card {
-  min-width: 190px;
   min-height: 38px;
   display: inline-flex;
   align-items: center;
-  padding: 8px 11px;
-  border-radius: 11px;
+  padding: 8px 12px;
+  border-radius: 10px;
 }
 
 .mb-preview-title-card strong {
-  font-size: calc(15px * var(--app-zoom));
+  font-size: 15px;
   font-weight: 950;
   line-height: 1;
 }
 
-.mb-preview-toolbar button {
-  width: 38px;
-  min-width: 38px;
-  height: 38px;
-  padding: 0;
-  border-radius: 11px;
-  font-size: calc(13px * var(--app-zoom));
-  font-weight: 950;
-  cursor: default;
+.mb-preview-tool-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  width: 72px;
+  min-height: 44px;
+  padding: 5px 4px 3px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f172a;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.07);
+  transition: background 0.15s, border-color 0.15s;
 }
 
-.mb-preview-toolbar .mb-preview-go {
-  width: auto;
-  min-width: 108px;
-  padding: 0 13px;
-  background: #34c79b;
+.mb-preview-tool-btn:hover {
+  border-color: rgba(37, 99, 235, 0.5);
+  background: #eff6ff;
+}
+
+.mb-preview-tool-btn:active {
+  background: #dbeafe;
+}
+
+.mb-preview-tool-icon {
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.mb-preview-tool-label {
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  color: #475569;
+}
+
+.mb-preview-go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  background: #94a3b8;
   color: #ffffff;
-  border-color: rgba(16, 185, 129, 0.55);
+  font-family: inherit;
+  transition: background 0.2s, border-color 0.2s;
+  width: 72px;
+}
+
+.mb-preview-go.is-connected {
+  background: #2563eb;
+  border-color: rgba(37, 99, 235, 0.55);
+}
+
+.mb-preview-components {
+  position: relative;
+  width: 72px;
 }
 
 .mb-preview-floating-panels {
   position: absolute;
   top: 58px;
   left: 12px;
-  display: grid;
-  grid-template-columns: 210px 300px 210px;
-  gap: 10px;
-  align-items: start;
   pointer-events: none;
 }
 
@@ -98,7 +142,7 @@
 }
 
 .mb-preview-panel strong {
-  font-size: calc(14px * var(--app-zoom));
+  font-size: 14px;
   font-weight: 950;
   line-height: 1.1;
 }
@@ -118,8 +162,8 @@
 .mb-preview-list-item {
   display: grid;
   gap: 2px;
-  min-height: 45px;
-  padding: 8px 9px;
+  min-height: 40px;
+  padding: 7px 8px;
   border: 1px solid rgba(148, 163, 184, 0.42);
   border-radius: 8px;
   background: rgba(248, 250, 252, 0.92);
@@ -140,7 +184,7 @@
 }
 
 .mb-preview-list-item span {
-  font-size: calc(13px * var(--app-zoom));
+  font-size: 12px;
   font-weight: 950;
   line-height: 1.05;
 }
@@ -149,13 +193,25 @@
 .mb-preview-inspector p,
 .mb-preview-inspector label span {
   color: #64748b;
-  font-size: calc(11px * var(--app-zoom));
+  font-size: 11px;
   font-weight: 850;
   line-height: 1.15;
 }
 
+.mb-preview-inspector {
+  width: 280px;
+}
+
 .mb-preview-inspector p {
   margin: 0;
+}
+
+.mb-preview-inspector.is-contextual {
+  position: absolute;
+  z-index: 12;
+  width: 280px;
+  max-width: calc(100% - 20px);
+  pointer-events: all;
 }
 
 .mb-preview-inspector label {
@@ -172,11 +228,20 @@
   background: rgba(248, 250, 252, 0.9);
   color: #0f172a;
   font: inherit;
-  font-size: calc(12px * var(--app-zoom));
+  font-size: 12px;
   padding: 6px 7px;
 }
 
 .mb-preview-inspector textarea {
   min-height: 62px;
   resize: none;
+}
+
+.mb-preview-presets.is-contextual {
+  position: absolute;
+  top: 0;
+  left: 80px;
+  z-index: 12;
+  width: 220px;
+  pointer-events: all;
 }

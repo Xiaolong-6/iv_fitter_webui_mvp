@@ -3,8 +3,8 @@
   --mbv3-topbar-control-size: calc((16px * var(--app-zoom) * 1.05) + 20px);
   position: relative;
   width: 100%;
-  height: calc(100vh - 180px);
-  min-height: 720px;
+  height: 100%;
+  min-height: 0;
   border: 0;
   border-radius: 0;
   overflow: hidden;

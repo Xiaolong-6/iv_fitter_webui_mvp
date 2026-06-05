@@ -12,7 +12,9 @@ button{height:30px;padding:0 12px;border:1px solid #4b5563;background:#1f2937;co
 #status{position:fixed;bottom:12px;left:12px;font-size:13px;color:#6b7280;background:rgba(255,255,255,.85);padding:4px 10px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.1);z-index:999;pointer-events:none}
 #canvas{position:relative;width:100vw;height:100vh;overflow:hidden;background:linear-gradient(#e5e7eb 1px,transparent 1px),linear-gradient(90deg,#e5e7eb 1px,transparent 1px);background-size:24px 24px}
 #viewport{position:absolute;inset:0;transform-origin:0 0;overflow:visible}
-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
+svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#svg{z-index:1}
+#svgTop{z-index:4}
 .node{position:absolute;z-index:2;background:white;border:2px solid #374151;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:move;user-select:none}
 .node.selected{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.25)}
 .node.protected{border-color:#111827}
@@ -27,11 +29,15 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
 .dot.bottom{bottom:-8px;left:50%;transform:translateX(-50%)}
 .dot.left{left:-8px;top:50%;transform:translateY(-50%)}
 .terminal .dot{left:50%;top:50%;transform:translate(-50%,-50%)}
-.connector{fill:none;stroke:#111827;stroke-width:2.8;vector-effect:non-scaling-stroke;pointer-events:none}
-.connector.selected{stroke:#2563eb;stroke-width:4;vector-effect:non-scaling-stroke}
+.connector{fill:none;stroke:#94a3b8;stroke-width:2.8;stroke-dasharray:6 4;vector-effect:non-scaling-stroke;pointer-events:none}
+.connector.active{stroke:#111827;stroke-dasharray:none}
+.connector.selected{stroke:#2563eb;stroke-width:4;stroke-dasharray:none;vector-effect:non-scaling-stroke}
+.connector.flow{stroke:#0ea5e9;stroke-width:3.2;stroke-dasharray:12 8;stroke-linecap:round;vector-effect:non-scaling-stroke;pointer-events:none;animation:currentFlow .8s linear infinite}
+@keyframes currentFlow{0%{stroke-dashoffset:0}100%{stroke-dashoffset:-20}}
 .hit{fill:none;stroke:transparent;stroke-width:18;vector-effect:non-scaling-stroke;pointer-events:stroke;cursor:pointer}
 .preview{fill:none;stroke:#2563eb;stroke-width:2.4;stroke-dasharray:5 5;vector-effect:non-scaling-stroke;pointer-events:none}
 .mid{fill:#facc15;stroke:#111827;stroke-width:2;cursor:grab;pointer-events:all}
+.arrow{fill:#111827;pointer-events:none}
 </style>
 </head>
 <body>
@@ -44,7 +50,7 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
   <span id="zoomLabel">100%</span>
 </div>
 <span id="status"></span>
-<div id="canvas"><div id="viewport"><svg id="svg"></svg></div></div>
+<div id="canvas"><div id="viewport"><svg id="svg"></svg><svg id="svgTop"></svg></div></div>
 
 <script>
 (() => {
@@ -54,6 +60,7 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
   const canvas = $("canvas");
   const viewport = $("viewport");
   const svg = $("svg");
+  const svgTop = $("svgTop");
 
   const W = 120, H = 60, TERM = 28, GRID = 20, PAD = 18, EXIT = 32, GAP = 8, WIRE_GAP = 12;
   const SIDES = ["top", "right", "bottom", "left"];
@@ -84,7 +91,7 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
     return { x:(p.x - S.view.x) / S.view.scale, y:(p.y - S.view.y) / S.view.scale };
   }
 
-    function nodeRectForMessage(n) {
+  function nodeRectForMessage(n) {
     const r = n.el.getBoundingClientRect();
     const canvasRect = canvas.getBoundingClientRect();
     return {
@@ -108,6 +115,20 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
   function postSelectionCleared() {
     window.parent?.postMessage({
       type: "ivfitter:preview-selection-cleared"
+    }, window.location.origin);
+  }
+
+  function postConnectivityStatus(connected) {
+    window.parent?.postMessage({
+      type: "ivfitter:connectivity-status",
+      connected
+    }, window.location.origin);
+  }
+
+  function postComponentDeleted(id) {
+    window.parent?.postMessage({
+      type: "ivfitter:preview-component-deleted",
+      id
     }, window.location.origin);
   }
 
@@ -247,7 +268,6 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
   }
 
   function segsTooClose(a, b, c, d) {
-    // Same orientation: reject if they are parallel and too close while overlapping.
     if (a.y === b.y && c.y === d.y) {
       const overlap = Math.max(Math.min(a.x,b.x), Math.min(c.x,d.x)) <= Math.min(Math.max(a.x,b.x), Math.max(c.x,d.x));
       return overlap && Math.abs(a.y - c.y) < WIRE_GAP;
@@ -258,9 +278,7 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
       return overlap && Math.abs(a.x - c.x) < WIRE_GAP;
     }
 
-    // Perpendicular: reject real crossings. Allow touching exactly at endpoints only.
     const h1 = a.y === b.y;
-    const h2 = c.y === d.y;
     const hA = h1 ? a : c;
     const hB = h1 ? b : d;
     const vA = h1 ? c : a;
@@ -572,6 +590,71 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
     return clean(out);
   }
 
+  function computeActiveConns() {
+    const vNode = S.nodes.find(n => n.terminal && n.label === "V");
+    const gndNode = S.nodes.find(n => n.terminal && n.label === "GND");
+    const activeSet = new Set();
+
+    if (!vNode || !gndNode || S.conns.length === 0) return activeSet;
+
+    function buildAdj(conns) {
+      const adj = {};
+      for (const n of S.nodes) adj[n.id] = new Set();
+      for (const c of conns) {
+        adj[c.from]?.add(c.to);
+        adj[c.to]?.add(c.from);
+      }
+      return adj;
+    }
+
+    function bfs(start, adj) {
+      const visited = new Set();
+      const queue = [start];
+      visited.add(start);
+      while (queue.length) {
+        const cur = queue.shift();
+        for (const nb of (adj[cur] || [])) {
+          if (!visited.has(nb)) {
+            visited.add(nb);
+            queue.push(nb);
+          }
+        }
+      }
+      return visited;
+    }
+
+    const adj = buildAdj(S.conns);
+    const reachable = bfs(vNode.id, adj);
+    if (!reachable.has(gndNode.id)) return activeSet;
+
+    let candidates = new Set(S.conns.map(c => c.id));
+
+    let changed = true;
+    while (changed) {
+      changed = false;
+      const activeConns = S.conns.filter(c => candidates.has(c.id));
+      const activeAdj = buildAdj(activeConns);
+
+      for (const n of S.nodes) {
+        if (n.terminal) continue;
+        const deg = activeAdj[n.id]?.size || 0;
+        if (deg === 1) {
+          for (const c of candidates) {
+            const conn = S.conns.find(cc => cc.id === c);
+            if (conn && (conn.from === n.id || conn.to === n.id)) {
+              candidates.delete(c);
+              changed = true;
+            }
+          }
+        }
+      }
+    }
+
+    return candidates;
+  }
+
+  let lastConnected = false;
+
   function addNode(label, x, y, opt = {}) {
     const terminal = opt.terminal === true;
     const w = opt.w || (terminal ? TERM : W);
@@ -648,10 +731,11 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
         startX:n.x,
         startY:n.y,
         desiredX:n.x,
-        desiredY:n.y
+        desiredY:n.y,
+        moved:false
       };
 
-      render(); 
+      render();
       postComponentEvent("ivfitter:preview-component-selected", n);
     });
 
@@ -667,7 +751,7 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
     S.nodes.push(entry);
 
     render();
-    postComponentEvent("ivfitter:preview-component-added", entry);  
+    if (!opt.silent) postComponentEvent("ivfitter:preview-component-added", entry);
     return id;
   }
 
@@ -693,15 +777,39 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
     render();
   }
 
-  function draw(tag, attrs, cls, down) {
+  function drawOn(targetSvg, tag, attrs, cls, down) {
     const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
 
     for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
     if (cls) el.setAttribute("class", cls);
-    if (down) el.addEventListener("pointerdown", down);
+    if (down) {
+      el.style.pointerEvents = "stroke";
+      el.addEventListener("pointerdown", down);
+    }
 
-    svg.appendChild(el);
+    targetSvg.appendChild(el);
     return el;
+  }
+
+  function midPoint(a, b) {
+    return { x:(a.x + b.x) / 2, y:(a.y + b.y) / 2 };
+  }
+
+  function arrowPath(pts, idx) {
+    if (idx < 0 || idx >= pts.length - 1) return null;
+    const a = pts[idx], b = pts[idx + 1];
+    const mx = (a.x + b.x) / 2;
+    const my = (a.y + b.y) / 2;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 1) return null;
+    const ux = dx / len;
+    const uy = dy / len;
+    const size = 8;
+    const px = -uy;
+    const py = ux;
+    return `M ${mx - ux*size} ${my - uy*size} L ${mx + px*size*.6} ${my + py*size*.6} L ${mx - px*size*.6} ${my - py*size*.6} Z`;
   }
 
   function render() {
@@ -717,24 +825,48 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
     }
 
     svg.innerHTML = "";
+    svgTop.innerHTML = "";
+
+    const activeConns = computeActiveConns();
+    const isConnected = activeConns.size > 0 && S.nodes.some(n => n.terminal && n.label === "V") && S.nodes.some(n => n.terminal && n.label === "GND");
+    if (isConnected !== lastConnected) {
+      lastConnected = isConnected;
+      postConnectivityStatus(isConnected);
+    }
 
     for (const c of S.conns) {
       const pts = route(c);
       const selected = S.selected?.type === "conn" && S.selected.id === c.id;
+      const active = activeConns.has(c.id);
 
-      draw("path", { d:pathD(pts) }, "hit", e => {
+      drawOn(svg, "path", { d:pathD(pts) }, "hit", e => {
         e.preventDefault();
         e.stopPropagation();
         S.selected = { type:"conn", id:c.id };
         postSelectionCleared();
         render();
+        postComponentEvent("ivfitter:preview-component-selected", node(c.from));
       });
 
-      draw("path", { d:pathD(pts) }, selected ? "connector selected" : "connector");
+      if (active && !selected) {
+        drawOn(svg, "path", { d:pathD(pts) }, "connector flow");
+      } else {
+        drawOn(svg, "path", { d:pathD(pts) }, selected ? "connector selected" : (active ? "connector active" : "connector"));
+      }
+
+      if (active && !selected) {
+        const cleanPts = clean(pts);
+        for (let i = 0; i < cleanPts.length - 1; i++) {
+          const d = arrowPath(cleanPts, i);
+          if (d) {
+            drawOn(svgTop, "path", { d }, "arrow");
+          }
+        }
+      }
 
       if (selected) {
         for (const h of editableHandles(pts)) {
-          draw("circle", { cx:h.x, cy:h.y, r:7 }, "mid", e => {
+          drawOn(svgTop, "circle", { cx:h.x, cy:h.y, r:7 }, "mid", e => {
             e.preventDefault();
             e.stopPropagation();
 
@@ -751,7 +883,7 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
     }
 
     if (S.drag?.type === "connect") {
-      draw("path", { d:pathD(orth(S.drag.start, S.drag.end, [S.drag.from])) }, "preview");
+      drawOn(svgTop, "path", { d:pathD(orth(S.drag.start, S.drag.end, [S.drag.from])) }, "preview");
 
       if (S.drag.target) {
         const target = node(S.drag.target.id)?.el.querySelector(`.dot[data-side="${S.drag.target.side}"]`);
@@ -772,10 +904,18 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
         return;
       }
 
+      const deletedId = n.id;
       S.conns = S.conns.filter(c => c.from !== n.id && c.to !== n.id);
       n.el.remove();
       S.nodes = S.nodes.filter(x => x.id !== n.id);
-    } else if (S.selected.type === "conn") {
+
+      S.selected = null;
+      render();
+      postComponentDeleted(deletedId);
+      return;
+    }
+
+    if (S.selected.type === "conn") {
       S.conns = S.conns.filter(c => c.id !== S.selected.id);
     }
 
@@ -800,12 +940,12 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
       const nx = p.x - S.drag.dx;
       const ny = p.y - S.drag.dy;
 
+      S.drag.moved = true;
+
       for (const c of S.conns) {
         if (c.from === n.id || c.to === n.id) c.manual = null;
       }
 
-      // During dragging, allow temporary overlap so nodes can pass through
-      // crowded areas. Final overlap is resolved on pointerup.
       n.x = nx;
       n.y = ny;
       S.drag.desiredX = nx;
@@ -869,10 +1009,11 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
   }
 
   canvas.addEventListener("pointerdown", e => {
-    if (e.target !== canvas && e.target !== svg && e.target !== viewport) return;
+    if (e.target !== canvas && e.target !== svg && e.target !== svgTop && e.target !== viewport) return;
 
     e.preventDefault();
     S.selected = null;
+    postSelectionCleared();
     S.drag = { type:"pan", x:e.clientX, y:e.clientY, viewX:S.view.x, viewY:S.view.y };
     render();
   });
@@ -902,14 +1043,20 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
   $("fitBtn").onclick = autoFit;
 
   window.addEventListener("message", e => {
-    if (e.data?.type === "ivfitter:add-preview-component") {
-      const { label, x, y } = e.data;
+    const d = e.data;
+    if (!d) return;
+
+    if (d.type === "ivfitter:add-preview-component") {
+      const { label, x, y } = d;
       const wx = (x - S.view.x) / S.view.scale;
       const wy = (y - S.view.y) / S.view.scale;
-      const node = addNode(label, wx - W / 2, wy - H / 2);
-      S.selected = { type: "node", id: node.id };
-      render();
-      postComponentEvent("ivfitter:preview-component-selected", node);
+      addNode(label, wx - W / 2, wy - H / 2, { silent: true });
+      return;
+    }
+
+    if (d.type === "ivfitter:delete-selected") {
+      deleteSelected();
+      return;
     }
   });
 
