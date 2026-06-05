@@ -901,6 +901,18 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
   $("zoomInBtn").onclick = () => zoomTo(S.view.scale * 1.2);
   $("fitBtn").onclick = autoFit;
 
+  window.addEventListener("message", e => {
+    if (e.data?.type === "ivfitter:add-preview-component") {
+      const { label, x, y } = e.data;
+      const wx = (x - S.view.x) / S.view.scale;
+      const wy = (y - S.view.y) / S.view.scale;
+      const node = addNode(label, wx - W / 2, wy - H / 2);
+      S.selected = { type: "node", id: node.id };
+      render();
+      postComponentEvent("ivfitter:preview-component-selected", node);
+    }
+  });
+
   addTerminal("V", 160, 80, "bottom");
   addTerminal("GND", 160, 380, "top");
   requestAnimationFrame(autoFit);
