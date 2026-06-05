@@ -42,7 +42,7 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
   <button id="zoomInBtn">+</button>
   <button id="fitBtn">Auto fit</button>
   <span id="zoomLabel">100%</span>
-  <span id="status">拖拽时可临时重叠；松手后自动避开；V/GND 不可删除</span>
+  <span id="status"></span>
 </div>
 <div id="canvas"><div id="viewport"><svg id="svg"></svg></div></div>
 
@@ -102,6 +102,12 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
       id: n.id,
       label: n.label,
       rect: nodeRectForMessage(n)
+    }, window.location.origin);
+  }
+
+  function postSelectionCleared() {
+    window.parent?.postMessage({
+      type: "ivfitter:preview-selection-cleared"
     }, window.location.origin);
   }
 
@@ -607,6 +613,7 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
         if (!sideAvailable(id, side)) return;
 
         S.selected = null;
+        postSelectionCleared();
         S.drag = {
           type:"connect",
           from:id,
@@ -719,6 +726,7 @@ svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
         e.preventDefault();
         e.stopPropagation();
         S.selected = { type:"conn", id:c.id };
+        postSelectionCleared();
         render();
       });
 
