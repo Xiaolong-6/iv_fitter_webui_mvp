@@ -1,0 +1,205 @@
+.mb-preview-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.mb-preview-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+.mb-preview-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.mb-preview-overlay > * {
+  pointer-events: auto;
+}
+
+.mb-preview-toolbar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 20;
+}
+
+.mb-preview-title-card {
+  background: #1a1a2e;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.mb-preview-tool-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mb-preview-tool-stack button,
+.mb-preview-go {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  background: #fff;
+  color: #333;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mb-preview-tool-stack button:hover {
+  background: #f0f0f0;
+}
+
+.mb-preview-tool-stack button svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.mb-preview-tool-stack button svg path,
+.mb-preview-tool-stack button svg rect {
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+.mb-preview-go {
+  margin-top: 4px;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.mb-preview-go.is-connected {
+  background: #d4edda;
+  border-color: #28a745;
+  color: #155724;
+}
+
+.mb-preview-go.is-disconnected {
+  background: #f8f9fa;
+  border-color: #ccc;
+  color: #666;
+}
+
+.mb-preview-panel {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 12px;
+  min-width: 160px;
+}
+
+.mb-preview-panel strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.mb-preview-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.mb-preview-panel label span {
+  font-weight: 600;
+  font-size: 11px;
+  color: #555;
+}
+
+.mb-preview-panel input,
+.mb-preview-panel select,
+.mb-preview-panel textarea {
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.mb-preview-panel textarea {
+  min-height: 48px;
+  resize: vertical;
+}
+
+.mb-preview-components {
+  top: 0;
+  left: 220px;
+}
+
+.mb-preview-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 6px;
+  border-radius: 3px;
+  margin-bottom: 2px;
+}
+
+.mb-preview-list-item.is-draggable {
+  cursor: grab;
+}
+
+.mb-preview-list-item.is-draggable:hover {
+  background: #e8f0fe;
+}
+
+.mb-preview-list-item small {
+  color: #888;
+  font-size: 11px;
+}
+
+.mb-preview-inspector {
+  width: 300px;
+}
+
+.mb-preview-inspector.is-contextual {
+  cursor: default;
+}
+
+.mb-preview-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.mb-preview-inspector-grip {
+  cursor: grab;
+  padding: 2px 6px;
+  color: #999;
+  font-size: 14px;
+}
+
+.mb-preview-inspector-grip:hover {
+  color: #333;
+}
+
+.mb-preview-presets {
+  top: 80px;
+  left: 240px;
+  z-index: 25;
+}

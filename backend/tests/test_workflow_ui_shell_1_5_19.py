@@ -23,7 +23,7 @@ def test_default_page_is_start_here_and_task_pages_exist():
     workflow_sections = read_repo_file("frontend/src/pages/components/WorkflowSections.tsx")
     report_page = read_repo_file("frontend/src/pages/components/ReportWorkflowPage.tsx")
     status = read_repo_file("frontend/src/pages/components/WorkflowStatus.tsx")
-    assert 'useState<AppView>("model")' in layout_hook
+    assert 'useState<AppView>("start")' in layout_hook
     for marker, text in [
         ("function StartHerePage", start_page),
         ("function ModelWorkflowPage", workflow_sections),

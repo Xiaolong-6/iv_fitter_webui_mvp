@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Model Builder Canvas</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; }
+    canvas { display: block; width: 100%; height: 100%; background: #fafafa; cursor: crosshair; }
+  </style>
+</head>
+<body>
+  <canvas id="circuit-canvas"></canvas>
+  <script>
+    const canvas = document.getElementById("circuit-canvas");
+    const ctx = canvas.getContext("2d");
+
+    function resize() {
+      canvas.width = canvas.clientWidth * devicePixelRatio;
+      canvas.height = canvas.clientHeight * devicePixelRatio;
+      ctx.scale(devicePixelRatio, devicePixelRatio);
+      draw();
+    }
+
+    const state = {
+      boxes: [],
+      wires: [],
+      selected: null,
+      dragging: null,
+      dragOffset: { x: 0, y: 0 },
+      wireStart: null,
+      nextId: 1,
+    };
+
+    const COMPONENT_DEFS = {
+      Resistance:   { w: 100, h: 60, color: "#e3f2fd", label: "R" },
+      "Shockley diode": { w: 100, h: 60, color: "#fce4ec", label: "D" },
+      "Constant current": { w: 100, h: 60, color: "#e8f5e9", label: "I" },
+      Custom:       { w: 100, h: 60, color: "#fff3e0", label: "?" },
+    };
+
+    function boxCenter(b) { return { x: b.x + b.w / 2, y: b.y + b.h / 2 }; }
+
+    function nearEdge(b, px, py) {
+      const thr = 6;
+      if (Math.abs(px - b.x) < thr && py > b.y && py < b.y + b.h) return "left";
+      if (Math.abs(px - (b.x + b.w)) < thr && py > b.y && py < b.y + b.h) return "right";
+      if (Math.abs(py - b.y) < thr && px > b.x && px < b.x + b.w) return "top";
+      if (Math.abs(py - (b.y + b.h)) < thr && px > b.x && px < b.x + b.w) return "bottom";
+      return null;
+    }
+
+    function edgePoint(b, edge) {
+      if (edge === "left")   return { x: b.x, y: b.y + b.h / 2 };
+      if (edge === "right")  return { x: b.x + b.w, y: b.y + b.h / 2 };
+      if (edge === "top")    return { x: b.x + b.w / 2, y: b.y };
+      if (edge === "bottom") return { x: b.x + b.w / 2, y: b.y + b.h };
+    }
+
+    function draw() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.strokeStyle = "#e0e0e0";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+      for (let y = 0; y < h; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+
+      for (const wire of state.wires) {
+        const from = wire.from;
+        const to = wire.to;
+        ctx.beginPath();
+        ctx.strokeStyle = state.selected === wire.id ? "#1976d2" : "#555";
+        ctx.lineWidth = state.selected === wire.id ? 3 : 2;
+        ctx.moveTo(from.x, from.y);
+        const midX = (from.x + to.x) / 2;
+        ctx.bezierCurveTo(midX, from.y, midX, to.y, to.x, to.y);
+        ctx.stroke();
+      }
+
+      for (const box of state.boxes) {
+        const def = COMPONENT_DEFS[box.name] || COMPONENT_DEFS.Custom;
+        ctx.fillStyle = state.selected === box.id ? "#bbdefb" : def.color;
+        ctx.strokeStyle = state.selected === box.id ? "#1976d2" : "#888";
+        ctx.lineWidth = state.selected === box.id ? 2 : 1;
+        ctx.beginPath();
+        ctx.roundRect(box.x, box.y, box.w, box.h, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#333";
+        ctx.font = "bold 14px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(def.label, box.x + box.w / 2, box.y + box.h / 2 - 8);
+        ctx.font = "11px system-ui";
+        ctx.fillStyle = "#666";
+        ctx.fillText(box.name, box.x + box.w / 2, box.y + box.h / 2 + 10);
+
+        for (const edge of ["left", "right", "top", "bottom"]) {
+          const pt = edgePoint(box, edge);
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+          ctx.fillStyle = "#1976d2";
+          ctx.fill();
+        }
+      }
+
+      reportCircuitStatus();
+    }
+
+    function reportCircuitStatus() {
+      const connected = state.wires.length >= 1 && state.boxes.length >= 1;
+      parent.postMessage({
+        type: "ivfitter:preview-circuit-status",
+        connected,
+        activeWireCount: state.wires.length,
+      }, window.location.origin);
+    }
+
+    function findBoxAt(px, py) {
+      for (let i = state.boxes.length - 1; i >= 0; i--) {
+        const b = state.boxes[i];
+        if (px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h) return b;
+      }
+      return null;
+    }
+
+    function findWireAt(px, py) {
+      for (const wire of state.wires) {
+        const dx = wire.to.x - wire.from.x;
+        const dy = wire.to.y - wire.from.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len < 1) continue;
+        const t = Math.max(0, Math.min(1, ((px - wire.from.x) * dx + (py - wire.from.y) * dy) / (len * len)));
+        const closest = { x: wire.from.x + t * dx, y: wire.from.y + t * dy };
+        const dist = Math.sqrt((px - closest.x) ** 2 + (py - closest.y) ** 2);
+        if (dist < 8) return wire;
+      }
+      return null;
+    }
+
+    canvas.addEventListener("pointerdown", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+
+      const box = findBoxAt(px, py);
+      if (box) {
+        state.selected = box.id;
+        state.dragging = box;
+        state.dragOffset = { x: px - box.x, y: py - box.y };
+        state.wireStart = null;
+        parent.postMessage({ type: "ivfitter:preview-component-selected", id: box.id, label: box.name }, window.location.origin);
+        draw();
+        return;
+      }
+
+      const edge = box ? nearEdge(box, px, py) : null;
+      if (box && edge) {
+        state.wireStart = edgePoint(box, edge);
+        state.selected = null;
+        draw();
+        return;
+      }
+
+      const wire = findWireAt(px, py);
+      if (wire) {
+        state.selected = wire.id;
+        parent.postMessage({ type: "ivfitter:preview-selection-cleared" }, window.location.origin);
+        draw();
+        return;
+      }
+
+      state.selected = null;
+      state.wireStart = null;
+      parent.postMessage({ type: "ivfitter:preview-selection-cleared" }, window.location.origin);
+      draw();
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      if (!state.dragging) return;
+      const rect = canvas.getBoundingClientRect();
+      state.dragging.x = e.clientX - rect.left - state.dragOffset.x;
+      state.dragging.y = e.clientY - rect.top - state.dragOffset.y;
+      draw();
+    });
+
+    canvas.addEventListener("pointerup", () => {
+      state.dragging = null;
+    });
+
+    function addComponent(name, x, y) {
+      const def = COMPONENT_DEFS[name] || COMPONENT_DEFS.Custom;
+      const id = "prev_" + state.nextId++;
+      const box = { id, name, x: x - def.w / 2, y: y - def.h / 2, w: def.w, h: def.h };
+      state.boxes.push(box);
+      state.selected = id;
+      parent.postMessage({ type: "ivfitter:preview-component-added", id, label: name }, window.location.origin);
+      draw();
+    }
+
+    function deleteSelected() {
+      if (!state.selected) return;
+      const idx = state.boxes.findIndex((b) => b.id === state.selected);
+      if (idx >= 0) {
+        state.boxes.splice(idx, 1);
+        state.wires = state.wires.filter((w) => w.fromBox !== state.selected && w.toBox !== state.selected);
+        parent.postMessage({ type: "ivfitter:preview-component-deleted", id: state.selected }, window.location.origin);
+        state.selected = null;
+        draw();
+        return;
+      }
+      const wIdx = state.wires.findIndex((w) => w.id === state.selected);
+      if (wIdx >= 0) {
+        state.wires.splice(wIdx, 1);
+        state.selected = null;
+        draw();
+      }
+    }
+
+    window.addEventListener("message", (e) => {
+      if (e.origin !== window.location.origin) return;
+      const data = e.data;
+      if (data.type === "ivfitter:add-preview-component") {
+        addComponent(data.label, data.x, data.y);
+      } else if (data.type === "ivfitter:delete-selected") {
+        deleteSelected();
+      }
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (document.activeElement?.tagName === "INPUT") return;
+        deleteSelected();
+      }
+    });
+
+    resize();
+    window.addEventListener("resize", resize);
+  </script>
+</body>
+</html>
