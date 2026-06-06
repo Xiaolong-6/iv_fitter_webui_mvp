@@ -15,6 +15,7 @@
     conns: [],
     selected: null,
     drag: null,
+    activePointerId: null,
     view: { x:0, y:0, scale:1 },
     nextNode: 1,
     nextConn: 1
@@ -25,6 +26,29 @@
   const clone = pts => pts.map(p => ({ x:p.x, y:p.y }));
   const snap = v => Math.round(v / GRID) * GRID;
   let lastStateSignature = "";
+  let renderFrame = 0;
+
+  function beginPointerDrag(e) {
+    S.activePointerId = e.pointerId;
+    try { e.currentTarget?.setPointerCapture?.(e.pointerId); } catch {}
+  }
+
+  function endPointerDrag(e) {
+    try { e.currentTarget?.releasePointerCapture?.(e.pointerId); } catch {}
+    S.activePointerId = null;
+  }
+
+  function isActivePointer(e) {
+    return S.activePointerId === null || e.pointerId === S.activePointerId;
+  }
+
+  function scheduleRender() {
+    if (renderFrame) return;
+    renderFrame = requestAnimationFrame(() => {
+      renderFrame = 0;
+      render();
+    });
+  }
 
   function screen(e) {
     const r = canvas.getBoundingClientRect();
@@ -650,6 +674,7 @@
         e.stopPropagation();
 
         if (!sideConnectable(id, side)) return;
+        beginPointerDrag(e);
 
         S.selected = null;
         postSelectionCleared();
@@ -674,6 +699,7 @@
 
       e.preventDefault();
       e.stopPropagation();
+      beginPointerDrag(e);
 
       const p = world(e);
       const n = node(id);
@@ -1033,6 +1059,7 @@
           draw("circle", { cx:h.x, cy:h.y, r:7 }, "mid", e => {
             e.preventDefault();
             e.stopPropagation();
+            beginPointerDrag(e);
 
             S.drag = {
               type:"mid",
@@ -1095,6 +1122,7 @@
 
   function updateDrag(e) {
     if (!S.drag) return;
+    if (!isActivePointer(e)) return;
 
     const p = world(e);
 
@@ -1124,14 +1152,14 @@
 
       n.el.style.left = `${n.x}px`;
       n.el.style.top = `${n.y}px`;
-      render();
+      scheduleRender();
       return;
     }
 
     if (S.drag.type === "connect") {
       S.drag.end = p;
       updateConnectTarget(e);
-      render();
+      scheduleRender();
       return;
     }
 
@@ -1148,12 +1176,13 @@
 
       if (visibleClear(visible, c)) {
         c.manual = manual;
-        render();
+        scheduleRender();
       }
     }
   }
 
   function finishDrag(e) {
+    if (!isActivePointer(e)) return;
     if (S.drag?.type === "connect") {
       updateConnectTarget(e);
 
@@ -1177,6 +1206,7 @@
 
     clearTargets();
     S.drag = null;
+    endPointerDrag(e);
     render();
   }
 
@@ -1184,6 +1214,7 @@
     if (e.target !== canvas && e.target !== svg && e.target !== viewport) return;
 
     e.preventDefault();
+    beginPointerDrag(e);
     S.selected = null;
     postSelectionCleared();
     S.drag = { type:"pan", x:e.clientX, y:e.clientY, viewX:S.view.x, viewY:S.view.y };
@@ -1201,6 +1232,7 @@
   window.addEventListener("blur", () => {
     clearTargets();
     S.drag = null;
+    S.activePointerId = null;
     render();
   });
 

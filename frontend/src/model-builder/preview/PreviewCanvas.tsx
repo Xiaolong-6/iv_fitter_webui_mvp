@@ -548,8 +548,8 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
     if (!shellRect) return;
     if (flyout?.kind === kind) { setFlyout(null); return; }
     const rect = event.currentTarget.getBoundingClientRect();
-    const width = kind === "examine" ? 460 : (kind === "synthetic" ? 420 : 260);
-    const height = kind === "examine" ? 560 : (kind === "synthetic" ? 520 : 320);
+    const width = kind === "examine" ? 560 : (kind === "synthetic" ? 520 : (kind === "components" ? 320 : 340));
+    const height = kind === "examine" ? 640 : (kind === "synthetic" ? 640 : (kind === "components" ? 420 : 380));
     setFlyout({
       kind,
       position: clampPosition({ x: rect.right - shellRect.left + 8, y: rect.top - shellRect.top }, { width, height }, shellRect),
