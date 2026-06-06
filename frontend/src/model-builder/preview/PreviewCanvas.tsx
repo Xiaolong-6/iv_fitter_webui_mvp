@@ -263,11 +263,14 @@ function PreviewPresetsPanel({ position, presets, onLoadPreset, onDeletePreset }
   );
 }
 
-function PreviewSyntheticPanel({ position, onLaunch }: { position: FloatingPosition; onLaunch: () => void }) {
+function PreviewSyntheticPanel({ position, syntheticTool }: { position: FloatingPosition; syntheticTool?: ReactNode }) {
   return (
     <PreviewFlyoutPanel position={position} title="Synthetic IV" className="mb-preview-synthetic">
-      <p className="mb-preview-flyout-copy">Generate or inspect a synthetic I-V trace from the current model setup.</p>
-      <button type="button" className="mb-preview-flyout-action" onClick={onLaunch}>Open Synthetic IV trace</button>
+      {syntheticTool ? (
+        <div className="mb-preview-synthetic-inline">{syntheticTool}</div>
+      ) : (
+        <p className="mb-preview-flyout-copy">Synthetic IV trace is unavailable for the current model.</p>
+      )}
     </PreviewFlyoutPanel>
   );
 }
@@ -309,7 +312,6 @@ function nodeToComponent(node: PreviewCanvasNode, templates: PreviewComponentTem
 export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticTool, formulaSections = [], compileWarnings = [] }: PreviewCanvasProps) {
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
-  const syntheticHostRef = useRef<HTMLDivElement | null>(null);
   const draggedTemplateRef = useRef<PreviewComponentTemplate | null>(null);
   const inspectorDragRef = useRef<{ dx: number; dy: number } | null>(null);
   const [canvasState, setCanvasState] = useState<PreviewCanvasState>(() => readJson(LAYOUT_STORAGE_KEY, emptyCanvasState()));
@@ -525,11 +527,6 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
     setInspectorPosition(clampPosition({ x: rect.right - shellRect.left + 10, y: rect.top - shellRect.top }, { width: 420, height: 420 }, shellRect));
   };
 
-  const launchSynthetic = () => {
-    const button = syntheticHostRef.current?.querySelector("button") as HTMLButtonElement | null;
-    button?.click();
-  };
-
   const effectiveCircuitStatus: CircuitStatus = {
     connected: circuitStatus.connected && compileWarnings.length === 0,
     activeWireCount: circuitStatus.activeWireCount,
@@ -539,7 +536,6 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
   return (
     <div ref={shellRef} className="mb-preview-shell" onPointerDownCapture={hideFloatingMenus}>
       <iframe ref={frameRef} className="mb-preview-frame" src="/model-builder-preview.html" title="Model Builder canvas" />
-      <div ref={syntheticHostRef} className="mb-preview-synthetic-host">{syntheticTool}</div>
       <div className="mb-preview-overlay" aria-label="Model Builder overlay">
         <PreviewToolbar
           templates={templates}
@@ -562,7 +558,7 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
           <PreviewPresetsPanel position={flyout.position} presets={presets} onLoadPreset={(preset) => { setFlyout(null); loadCanvasState(preset.state); }} onDeletePreset={(preset) => setSavedPresets((prev) => prev.filter((item) => item.id !== preset.id))} />
         ) : null}
         {flyout?.kind === "synthetic" ? (
-          <PreviewSyntheticPanel position={flyout.position} onLaunch={() => { setFlyout(null); launchSynthetic(); }} />
+          <PreviewSyntheticPanel position={flyout.position} syntheticTool={syntheticTool} />
         ) : null}
         {flyout?.kind === "examine" ? (
           <PreviewEquationsPanel position={flyout.position} sections={formulaSections} warnings={compileWarnings} />

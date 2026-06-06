@@ -213,22 +213,6 @@
   line-height: 1.3;
 }
 
-.mb-preview-flyout-action {
-  min-height: 34px;
-  border: 1px solid rgba(37, 99, 235, 0.38);
-  border-radius: 9px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: calc(12px * var(--app-zoom));
-  font-weight: 950;
-  cursor: pointer;
-}
-
-.mb-preview-flyout-action:hover {
-  background: #dbeafe;
-  border-color: rgba(37, 99, 235, 0.6);
-}
-
 .mb-preview-preset-item {
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -365,13 +349,27 @@
   justify-self: center;
 }
 
-.mb-preview-synthetic-host {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
+.mb-preview-synthetic-inline {
+  display: grid;
+  gap: 8px;
+}
+
+.mb-preview-synthetic-inline .model-page-tool-row {
+  display: grid;
+}
+
+.mb-preview-synthetic-inline .synthetic-trace-launch-button {
+  width: 100%;
+  min-height: 36px;
+  border-radius: 9px;
+  justify-content: center;
+  font-size: calc(12px * var(--app-zoom));
+}
+
+.mb-preview-synthetic-inline .synthetic-inline-message {
+  margin: 0;
+  font-size: calc(11px * var(--app-zoom));
+  line-height: 1.25;
 }
 
 .mb-preview-equations {
