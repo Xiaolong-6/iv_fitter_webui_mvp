@@ -36,6 +36,8 @@ type PreviewCanvasComponent = PreviewComponentTemplate & {
 type PreviewBoxRect = { x: number; y: number; width: number; height: number };
 type CircuitStatus = { connected: boolean; activeWireCount: number; warnings: string[] };
 type FloatingPosition = { x: number; y: number };
+type FlyoutKind = "presets" | "synthetic" | "examine";
+type FlyoutState = { kind: FlyoutKind; position: FloatingPosition } | null;
 
 type PreviewCanvasProps = {
   onCanvasStateChange?: (state: PreviewCanvasState) => void;
@@ -132,7 +134,7 @@ function PreviewComponentsPanel({ templates, countsByName, onDragStart, onDragEn
   );
 }
 
-function PreviewToolbar({ templates, countsByName, circuitStatus, onFitScreen, onDeleteSelected, onClearCanvas, onTogglePresets, onSaveLayout, onSynthetic, onGoToFitting, onDragStart, onDragEnd, onSelectTemplate, onDeleteCustom }: {
+function PreviewToolbar({ templates, countsByName, circuitStatus, onFitScreen, onDeleteSelected, onClearCanvas, onTogglePresets, onSaveLayout, onToggleSynthetic, onToggleExamine, onGoToFitting, onDragStart, onDragEnd, onSelectTemplate, onDeleteCustom }: {
   templates: PreviewComponentTemplate[];
   countsByName: Map<string, number>;
   circuitStatus: CircuitStatus;
@@ -141,7 +143,8 @@ function PreviewToolbar({ templates, countsByName, circuitStatus, onFitScreen, o
   onClearCanvas: () => void;
   onTogglePresets: (event: MouseEvent<HTMLButtonElement>) => void;
   onSaveLayout: () => void;
-  onSynthetic: () => void;
+  onToggleSynthetic: (event: MouseEvent<HTMLButtonElement>) => void;
+  onToggleExamine: (event: MouseEvent<HTMLButtonElement>) => void;
   onGoToFitting?: () => void;
   onDragStart: (template: PreviewComponentTemplate, event: DragEvent<HTMLDivElement>) => void;
   onDragEnd: (event: DragEvent<HTMLDivElement>) => void;
@@ -156,9 +159,10 @@ function PreviewToolbar({ templates, countsByName, circuitStatus, onFitScreen, o
         <PreviewToolButton icon="fit" label="Fit screen" title="Fit canvas to visible content" onClick={onFitScreen} />
         <PreviewToolButton icon="delete" label="Delete" title="Delete selected line or box" onClick={onDeleteSelected} />
         <PreviewToolButton icon="clear" label="Clear canvas" title="Clear canvas" onClick={onClearCanvas} />
-        <PreviewToolButton icon="presets" label="Presets" title="Show preset models" className="mb-preview-presets-toggle" onClick={onTogglePresets} />
+        <PreviewToolButton icon="presets" label="Presets" title="Show preset models" className="mb-preview-flyout-toggle mb-preview-presets-toggle" onClick={onTogglePresets} />
         <PreviewToolButton icon="save" label="Save layout" title="Save layout" onClick={onSaveLayout} />
-        <PreviewToolButton icon="iv" label="Synthetic IV" title="Synthetic IV trace" onClick={onSynthetic} />
+        <PreviewToolButton icon="iv" label="Synthetic IV" title="Synthetic IV trace" className="mb-preview-flyout-toggle mb-preview-synthetic-toggle" onClick={onToggleSynthetic} />
+        <PreviewToolButton icon="fit" label="Examine" title="Inspect fitting equations" className="mb-preview-flyout-toggle mb-preview-examine-toggle" onClick={onToggleExamine} />
         <button type="button" className={`mb-preview-go ${circuitStatus.connected ? "is-connected" : "is-disconnected"}`} title={goTitle} onClick={onGoToFitting}>Go to fitting</button>
       </div>
       <PreviewComponentsPanel templates={templates} countsByName={countsByName} onDragStart={onDragStart} onDragEnd={onDragEnd} onSelectTemplate={onSelectTemplate} onDeleteCustom={onDeleteCustom} />
@@ -226,16 +230,28 @@ function PreviewInspectorPanel({ component, templateMode, position, onStartDrag,
   );
 }
 
+function PreviewFlyoutPanel({ position, title, className = "", children }: {
+  position: FloatingPosition;
+  title: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <aside className={`mb-preview-panel mb-preview-flyout ${className}`} aria-label={title} style={{ left: position.x, top: position.y }}>
+      <strong>{title}</strong>
+      {children}
+    </aside>
+  );
+}
+
 function PreviewPresetsPanel({ position, presets, onLoadPreset, onDeletePreset }: {
-  position: FloatingPosition | null;
+  position: FloatingPosition;
   presets: PreviewPreset[];
   onLoadPreset: (preset: PreviewPreset) => void;
   onDeletePreset: (preset: PreviewPreset) => void;
 }) {
-  if (!position) return null;
   return (
-    <aside className="mb-preview-panel mb-preview-presets is-contextual" aria-label="Presets" style={{ left: position.x, top: position.y }}>
-      <strong>Presets</strong>
+    <PreviewFlyoutPanel position={position} title="Presets" className="mb-preview-presets">
       {presets.map((preset) => (
         <div key={preset.id} className="mb-preview-list-item mb-preview-preset-item" onClick={() => onLoadPreset(preset)}>
           <span>{preset.name}</span>
@@ -243,14 +259,23 @@ function PreviewPresetsPanel({ position, presets, onLoadPreset, onDeletePreset }
           {!preset.system ? <button type="button" className="mb-preview-item-delete" onClick={(event) => { event.stopPropagation(); onDeletePreset(preset); }}>x</button> : null}
         </div>
       ))}
-    </aside>
+    </PreviewFlyoutPanel>
   );
 }
 
-function PreviewEquationsPanel({ sections, warnings }: { sections: Mb3FormulaSection[]; warnings: string[] }) {
+function PreviewSyntheticPanel({ position, onLaunch }: { position: FloatingPosition; onLaunch: () => void }) {
+  return (
+    <PreviewFlyoutPanel position={position} title="Synthetic IV" className="mb-preview-synthetic">
+      <p className="mb-preview-flyout-copy">Generate or inspect a synthetic I-V trace from the current model setup.</p>
+      <button type="button" className="mb-preview-flyout-action" onClick={onLaunch}>Open Synthetic IV trace</button>
+    </PreviewFlyoutPanel>
+  );
+}
+
+function PreviewEquationsPanel({ position, sections, warnings }: { position: FloatingPosition; sections: Mb3FormulaSection[]; warnings: string[] }) {
   if (!sections.length && !warnings.length) return null;
   return (
-    <aside className="mb-preview-equations" aria-label="Fitting equations">
+    <PreviewFlyoutPanel position={position} title="Examine" className="mb-preview-equations">
       <h2>Fitting equations</h2>
       {warnings.length ? (
         <div className="mb-preview-equation-warning">
@@ -265,7 +290,7 @@ function PreviewEquationsPanel({ sections, warnings }: { sections: Mb3FormulaSec
             : <p key={`${section.title}-${index}`}>{line.text}</p>)}
         </section>
       ))}
-    </aside>
+    </PreviewFlyoutPanel>
   );
 }
 
@@ -293,7 +318,7 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [templatePreview, setTemplatePreview] = useState<PreviewComponentTemplate | null>(null);
   const [inspectorPosition, setInspectorPosition] = useState<FloatingPosition | null>(null);
-  const [presetsPosition, setPresetsPosition] = useState<FloatingPosition | null>(null);
+  const [flyout, setFlyout] = useState<FlyoutState>(null);
   const [circuitStatus, setCircuitStatus] = useState<CircuitStatus>({ connected: false, activeWireCount: 0, warnings: ["No complete V to GND path yet."] });
 
   const templates = useMemo(() => [...DEFAULT_COMPONENT_TEMPLATES, ...customTemplates], [customTemplates]);
@@ -318,7 +343,7 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
 
   const hideFloatingMenus = useCallback((event: PointerEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
-    if (!target.closest(".mb-preview-presets") && !target.closest(".mb-preview-presets-toggle")) setPresetsPosition(null);
+    if (!target.closest(".mb-preview-flyout") && !target.closest(".mb-preview-flyout-toggle")) setFlyout(null);
   }, []);
 
   useEffect(() => {
@@ -434,13 +459,18 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
     postToIframe({ type: "ivfitter:add-preview-component", label: template.name, behavior: template.behavior, expression: template.expression, parameters: template.parameters, x, y });
   };
 
-  const togglePresets = (event: MouseEvent<HTMLButtonElement>) => {
+  const toggleFlyout = (kind: FlyoutKind, event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     const shellRect = shellRef.current?.getBoundingClientRect();
     if (!shellRect) return;
-    if (presetsPosition) { setPresetsPosition(null); return; }
+    if (flyout?.kind === kind) { setFlyout(null); return; }
     const rect = event.currentTarget.getBoundingClientRect();
-    setPresetsPosition(clampPosition({ x: rect.right - shellRect.left + 8, y: rect.top - shellRect.top }, { width: 260, height: 260 }, shellRect));
+    const width = kind === "examine" ? 420 : 260;
+    const height = kind === "examine" ? 520 : 280;
+    setFlyout({
+      kind,
+      position: clampPosition({ x: rect.right - shellRect.left + 8, y: rect.top - shellRect.top }, { width, height }, shellRect),
+    });
   };
 
   const startInspectorDrag = (event: PointerEvent<HTMLSpanElement>) => {
@@ -518,16 +548,25 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
           onFitScreen={() => postToIframe({ type: "ivfitter:fit-screen" })}
           onDeleteSelected={() => postToIframe({ type: "ivfitter:delete-selected" })}
           onClearCanvas={() => loadCanvasState(emptyCanvasState())}
-          onTogglePresets={togglePresets}
+          onTogglePresets={(event) => toggleFlyout("presets", event)}
           onSaveLayout={saveLayout}
-          onSynthetic={launchSynthetic}
+          onToggleSynthetic={(event) => toggleFlyout("synthetic", event)}
+          onToggleExamine={(event) => toggleFlyout("examine", event)}
           onGoToFitting={onGoToFitting}
           onDragStart={startComponentDrag}
           onDragEnd={finishComponentDrag}
           onSelectTemplate={selectTemplate}
           onDeleteCustom={(template) => setCustomTemplates((prev) => prev.filter((item) => item.key !== template.key))}
         />
-        <PreviewPresetsPanel position={presetsPosition} presets={presets} onLoadPreset={(preset) => { setPresetsPosition(null); loadCanvasState(preset.state); }} onDeletePreset={(preset) => setSavedPresets((prev) => prev.filter((item) => item.id !== preset.id))} />
+        {flyout?.kind === "presets" ? (
+          <PreviewPresetsPanel position={flyout.position} presets={presets} onLoadPreset={(preset) => { setFlyout(null); loadCanvasState(preset.state); }} onDeletePreset={(preset) => setSavedPresets((prev) => prev.filter((item) => item.id !== preset.id))} />
+        ) : null}
+        {flyout?.kind === "synthetic" ? (
+          <PreviewSyntheticPanel position={flyout.position} onLaunch={() => { setFlyout(null); launchSynthetic(); }} />
+        ) : null}
+        {flyout?.kind === "examine" ? (
+          <PreviewEquationsPanel position={flyout.position} sections={formulaSections} warnings={compileWarnings} />
+        ) : null}
         <PreviewInspectorPanel
           component={selectedComponent}
           templateMode={Boolean(templatePreview)}
@@ -539,7 +578,6 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
           onAddTemplate={addTemplateToCanvas}
           onAddParameter={addParameter}
         />
-        <PreviewEquationsPanel sections={formulaSections} warnings={compileWarnings} />
       </div>
     </div>
   );
