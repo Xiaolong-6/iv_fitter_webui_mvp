@@ -130,6 +130,12 @@
   background: rgba(100, 116, 139, 0.92);
 }
 
+.mb-preview-go:disabled {
+  cursor: not-allowed;
+  opacity: 0.78;
+  transform: none;
+}
+
 .mb-preview-panel {
   display: grid;
   gap: 7px;

@@ -165,7 +165,15 @@ function PreviewToolbar({ circuitStatus, onFitScreen, onDeleteSelected, onClearC
         <PreviewToolButton icon="iv" label="Simulate IV" title="Simulate IV trace" className="mb-preview-flyout-toggle mb-preview-synthetic-toggle" onClick={onToggleSynthetic} />
         <PreviewToolButton icon="fit" label="Validate model" title="Validate model and inspect fitting equations" className="mb-preview-flyout-toggle mb-preview-examine-toggle" onClick={onToggleExamine} />
         <span className="mb-preview-tool-group">Next</span>
-        <button type="button" className={`mb-preview-go ${circuitStatus.connected ? "is-connected" : "is-disconnected"}`} title={goTitle} onClick={onGoToFitting}>Use model for fitting</button>
+        <button
+          type="button"
+          className={`mb-preview-go ${circuitStatus.connected ? "is-connected" : "is-disconnected"}`}
+          title={goTitle}
+          disabled={!circuitStatus.connected}
+          onClick={circuitStatus.connected ? onGoToFitting : undefined}
+        >
+          Use model for fitting
+        </button>
       </div>
     </div>
   );
