@@ -72,7 +72,19 @@ export function ModelWorkflowPage({
   void leftPct;
   void onResizeStart;
   return (
-    <section className="workflow-page model-page webpage-model-page mbv3-direct-page">
+    <section
+      className="workflow-page model-page webpage-model-page mbv3-direct-page"
+      style={{
+        height: "100%",
+        inset: 0,
+        margin: 0,
+        maxWidth: "none",
+        overflow: "hidden",
+        padding: 0,
+        position: "absolute",
+        width: "100%",
+      }}
+    >
       <ErrorBoundary label="Model builder">
         <ModelBuilder
           model={model}

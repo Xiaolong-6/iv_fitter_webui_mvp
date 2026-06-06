@@ -1,9 +1,10 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { ModelSpec } from "../model/types";
 import { compileMb3Graph } from "./domain/compile";
 import { createMb3InitialState } from "./state/factory";
 import { PreviewCanvas } from "./preview/PreviewCanvas";
+import { canvasStateToMb3Graph, type PreviewCanvasState } from "./preview/canvasState";
 
 type SchematicBuilderProps = {
   model: ModelSpec;
@@ -15,24 +16,46 @@ type SchematicBuilderProps = {
 /**
  * Stable Model Builder shell.
  *
- * The current canvas UI is intentionally isolated in PreviewCanvas while we
- * replace the old React Flow editor. Keep fitting/model publication here so
- * the surrounding workflow remains stable during the canvas rewrite.
+ * The canvas is intentionally dependency-light and reports a serializable
+ * canvas state. This shell compiles that state into the fitting ModelSpec so
+ * the rest of the app can stay model-driven.
  */
-export function SchematicBuilder({ model, onChange }: SchematicBuilderProps) {
-  const initialState = useMemo(() => createMb3InitialState(model), [model]);
-  const compiledModel = useMemo(
-    () => compileMb3Graph(initialState.graph, model).model,
-    [initialState.graph, model],
+export function SchematicBuilder({ model, onChange, canvasActions, onGoToFitting }: SchematicBuilderProps) {
+  const fallbackGraph = useMemo(() => createMb3InitialState(model).graph, [model]);
+  const [canvasState, setCanvasState] = useState<PreviewCanvasState | null>(null);
+  const graph = useMemo(
+    () => canvasState ? canvasStateToMb3Graph(canvasState) : fallbackGraph,
+    [canvasState, fallbackGraph],
   );
+  const compileResult = useMemo(
+    () => compileMb3Graph(graph, model),
+    [graph, model],
+  );
+  const compiledModel = compileResult.model;
 
   useEffect(() => {
     onChange(compiledModel);
   }, [compiledModel, onChange]);
 
   return (
-    <section className="mbv3-shell" aria-label="Model Builder">
-      <PreviewCanvas />
+    <section
+      className="mbv3-shell"
+      aria-label="Model Builder"
+      style={{
+        height: "100%",
+        inset: 0,
+        overflow: "hidden",
+        position: "absolute",
+        width: "100%",
+      }}
+    >
+      <PreviewCanvas
+        onCanvasStateChange={setCanvasState}
+        onGoToFitting={onGoToFitting}
+        syntheticTool={canvasActions}
+        formulaSections={compileResult.formulaSections}
+        compileWarnings={compileResult.warnings}
+      />
     </section>
   );
 }

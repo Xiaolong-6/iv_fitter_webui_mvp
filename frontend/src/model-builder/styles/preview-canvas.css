@@ -2,8 +2,9 @@
   position: relative;
   width: 100%;
   height: 100%;
+  min-height: 0;
   overflow: hidden;
-  background: #f3f4f6;
+  background: #f8fafc;
 }
 
 .mb-preview-frame {
@@ -11,7 +12,7 @@
   width: 100%;
   height: 100%;
   border: 0;
-  background: #f3f4f6;
+  background: #f8fafc;
 }
 
 .mb-preview-overlay {
@@ -25,12 +26,11 @@
   position: absolute;
   top: 12px;
   left: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 4px;
-  pointer-events: all;
   z-index: 10;
+  display: grid;
+  width: 210px;
+  gap: 8px;
+  pointer-events: all;
 }
 
 .mb-preview-title-card,
@@ -38,135 +38,132 @@
 .mb-preview-go,
 .mb-preview-panel {
   border: 1px solid rgba(148, 163, 184, 0.42);
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   color: #0f172a;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.09);
   backdrop-filter: blur(14px);
 }
 
 .mb-preview-title-card {
-  min-height: 38px;
   display: inline-flex;
+  min-height: 38px;
   align-items: center;
-  padding: 8px 12px;
   border-radius: 10px;
+  padding: 8px 12px;
 }
 
 .mb-preview-title-card strong {
-  font-size: 15px;
+  font-size: calc(16px * var(--app-zoom));
   font-weight: 950;
   line-height: 1;
 }
 
-.mb-preview-tool-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  width: 72px;
-  min-height: 44px;
-  padding: 5px 4px 3px;
-  border-radius: 8px;
-  cursor: pointer;
-  border: 1px solid rgba(148, 163, 184, 0.42);
-  background: rgba(255, 255, 255, 0.92);
-  color: #0f172a;
+.mb-preview-tool-stack {
+  display: grid;
+  gap: 6px;
+}
+
+.mb-preview-tool-btn,
+.mb-preview-go {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  border-radius: 9px;
   font-family: inherit;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.07);
-  transition: background 0.15s, border-color 0.15s;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.mb-preview-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  padding: 0 10px;
+  font-size: calc(12px * var(--app-zoom));
+}
+
+.mb-preview-tool-btn svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .mb-preview-tool-btn:hover {
-  border-color: rgba(37, 99, 235, 0.5);
+  border-color: rgba(37, 99, 235, 0.52);
   background: #eff6ff;
-}
-
-.mb-preview-tool-btn:active {
-  background: #dbeafe;
-}
-
-.mb-preview-tool-icon {
-  font-size: 16px;
-  font-weight: 900;
-  line-height: 1.1;
-}
-
-.mb-preview-tool-label {
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1;
-  color: #475569;
+  transform: translateY(-1px);
 }
 
 .mb-preview-go {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
   padding: 0 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 900;
-  cursor: pointer;
-  border: 1px solid rgba(148, 163, 184, 0.42);
-  background: #94a3b8;
-  color: #ffffff;
-  font-family: inherit;
-  transition: background 0.2s, border-color 0.2s;
-  width: 72px;
+  border: 1px solid rgba(100, 116, 139, 0.45);
+  font-size: calc(13px * var(--app-zoom));
+  color: #fff;
 }
 
 .mb-preview-go.is-connected {
+  border-color: rgba(37, 99, 235, 0.65);
   background: #2563eb;
-  border-color: rgba(37, 99, 235, 0.55);
 }
 
-.mb-preview-components {
-  position: relative;
-  width: 72px;
-}
-
-.mb-preview-floating-panels {
-  position: absolute;
-  top: 58px;
-  left: 12px;
-  pointer-events: none;
+.mb-preview-go.is-disconnected {
+  background: rgba(100, 116, 139, 0.92);
 }
 
 .mb-preview-panel {
   display: grid;
   gap: 7px;
-  padding: 10px;
   border-radius: 12px;
+  padding: 10px;
   pointer-events: all;
 }
 
 .mb-preview-panel strong {
-  font-size: 14px;
+  font-size: calc(15px * var(--app-zoom));
   font-weight: 950;
   line-height: 1.1;
 }
 
-.mb-preview-panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.mb-preview-panel-head span {
-  color: #94a3b8;
-  font-weight: 900;
+.mb-preview-components {
+  width: 100%;
 }
 
 .mb-preview-list-item {
   display: grid;
   gap: 2px;
-  min-height: 40px;
-  padding: 7px 8px;
+  min-height: 42px;
+  position: relative;
   border: 1px solid rgba(148, 163, 184, 0.42);
   border-radius: 8px;
   background: rgba(248, 250, 252, 0.92);
+  padding: 7px 8px;
+}
+
+.mb-preview-item-delete {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 999px;
+  background: #fff5f5;
+  color: #dc2626;
+  font-weight: 950;
+  padding: 0;
 }
 
 .mb-preview-list-item.is-draggable {
@@ -184,34 +181,82 @@
 }
 
 .mb-preview-list-item span {
-  font-size: 12px;
+  font-size: calc(13px * var(--app-zoom));
   font-weight: 950;
   line-height: 1.05;
 }
 
 .mb-preview-list-item small,
-.mb-preview-inspector p,
 .mb-preview-inspector label span {
   color: #64748b;
-  font-size: 11px;
+  font-size: calc(11px * var(--app-zoom));
   font-weight: 850;
   line-height: 1.15;
 }
 
-.mb-preview-inspector {
-  width: 280px;
+.mb-preview-presets.is-contextual {
+  position: absolute;
+  z-index: 12;
+  width: 210px;
+  pointer-events: all;
 }
 
-.mb-preview-inspector p {
-  margin: 0;
+.mb-preview-preset-item {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.mb-preview-preset-item small {
+  border-radius: 999px;
+  background: #e0ecff;
+  color: #1d4ed8;
+  padding: 2px 6px;
+  font-size: calc(10px * var(--app-zoom));
 }
 
 .mb-preview-inspector.is-contextual {
   position: absolute;
   z-index: 12;
-  width: 280px;
+  width: 420px;
   max-width: calc(100% - 20px);
   pointer-events: all;
+}
+
+.mb-preview-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mb-preview-inspector-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mb-preview-inspector-actions button,
+.mb-preview-param-head button {
+  min-height: 28px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: calc(10px * var(--app-zoom));
+  font-weight: 900;
+  padding: 3px 7px;
+}
+
+.mb-preview-inspector-grip {
+  color: #94a3b8;
+  font-weight: 950;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.mb-preview-inspector-grip:active {
+  cursor: grabbing;
 }
 
 .mb-preview-inspector label {
@@ -220,28 +265,207 @@
 }
 
 .mb-preview-inspector input,
-.mb-preview-inspector select,
-.mb-preview-inspector textarea {
+.mb-preview-inspector textarea,
+.mb-preview-inspector select {
   width: 100%;
   border: 1px solid rgba(148, 163, 184, 0.42);
   border-radius: 7px;
-  background: rgba(248, 250, 252, 0.9);
+  background: rgba(248, 250, 252, 0.92);
   color: #0f172a;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(12px * var(--app-zoom));
   padding: 6px 7px;
 }
 
 .mb-preview-inspector textarea {
-  min-height: 62px;
+  min-height: 76px;
   resize: none;
 }
 
-.mb-preview-presets.is-contextual {
+.mb-preview-param-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mb-preview-param-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr 0.8fr 1fr 1fr auto;
+  gap: 4px;
+  align-items: center;
+  overflow-x: auto;
+}
+
+.mb-preview-param-grid > span {
+  color: #64748b;
+  font-size: calc(10px * var(--app-zoom));
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.mb-preview-param-grid input {
+  min-width: 0;
+  padding: 4px 5px;
+  font-size: calc(10px * var(--app-zoom));
+}
+
+.mb-preview-param-grid input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  justify-self: center;
+}
+
+.mb-preview-synthetic-host {
   position: absolute;
-  top: 0;
-  left: 80px;
-  z-index: 12;
-  width: 220px;
-  pointer-events: all;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mb-preview-equations {
+  position: absolute;
+  top: 72px;
+  right: 32px;
+  z-index: 3;
+  width: min(520px, calc(100vw - 360px));
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+  padding: 16px 18px;
+  border-left: 2px solid rgba(148, 163, 184, 0.42);
+  background: rgba(248, 250, 252, 0.72);
+  color: #0f172a;
+  pointer-events: none;
+}
+
+.mb-preview-equations h2 {
+  margin: 0 0 12px;
+  color: #64748b;
+  font-size: calc(13px * var(--app-zoom));
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.mb-preview-equation-section {
+  display: grid;
+  gap: 7px;
+  margin-top: 13px;
+}
+
+.mb-preview-equation-section h3 {
+  margin: 0;
+  color: #334155;
+  font-size: calc(11px * var(--app-zoom));
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mb-preview-equation-section p,
+.mb-preview-equation-warning p {
+  margin: 0;
+  color: #475569;
+  font-size: calc(11px * var(--app-zoom));
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.mb-preview-equation-warning {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(245, 158, 11, 0.42);
+  border-radius: 10px;
+  background: rgba(255, 251, 235, 0.86);
+}
+
+.mb-preview-equations .latex-card {
+  margin: 0;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.mb-preview-equations .katex {
+  font-size: calc(15px * var(--app-zoom));
+}
+
+/* Preview canvas must fill the whole Model Builder page, independent of older v1/v2 layout rules. */
+.mbv3-direct-page,
+.mbv3-direct-page > .error-boundary,
+.mbv3-direct-page .model-builder,
+.mbv3-direct-page .mbv3-shell,
+.mbv3-direct-page .mb-preview-shell {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+.mbv3-direct-page .mbv3-shell,
+.mbv3-direct-page .mb-preview-shell,
+.mbv3-direct-page .mb-preview-frame,
+.mbv3-direct-page .mb-preview-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.mbv3-direct-page .mb-preview-frame {
+  min-height: 100% !important;
+}
+
+/* Model tab is a full-bleed canvas workspace; keep other workflow pages padded/readable. */
+.workspace.workflow-shell.workflow-view-model {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100dvh !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+}
+
+.workspace.workflow-shell.workflow-view-model > .mbv3-direct-page {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.app.sidebar-collapsed .workspace.workflow-shell.workflow-view-model > .mbv3-direct-page {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: clamp(54px, 4vw, 66px) !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+.app:not(.sidebar-collapsed) .workspace.workflow-shell.workflow-view-model > .mbv3-direct-page {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: clamp(168px, 14vw, 225px) !important;
+  width: auto !important;
+  height: auto !important;
 }
