@@ -46,6 +46,7 @@ type PreviewCanvasProps = {
   syntheticTool?: ReactNode;
   formulaSections?: Mb3FormulaSection[];
   compileWarnings?: string[];
+  activeWireIds?: string[];
 };
 
 const LAYOUT_STORAGE_KEY = "ivfitter.modelBuilder.preview.layout";
@@ -345,7 +346,7 @@ function nodeToComponent(node: PreviewCanvasNode, templates: PreviewComponentTem
   };
 }
 
-export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticTool, formulaSections = [], compileWarnings = [] }: PreviewCanvasProps) {
+export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticTool, formulaSections = [], compileWarnings = [], activeWireIds = [] }: PreviewCanvasProps) {
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const draggedTemplateRef = useRef<PreviewComponentTemplate | null>(null);
@@ -371,6 +372,10 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
     return counts;
   }, [canvasState]);
   const postToIframe = useCallback((message: Record<string, unknown>) => frameRef.current?.contentWindow?.postMessage(message, window.location.origin), []);
+
+  useEffect(() => {
+    postToIframe({ type: "ivfitter:set-active-wires", activeWireIds });
+  }, [activeWireIds, postToIframe]);
 
   const loadCanvasState = useCallback((state: PreviewCanvasState) => {
     const next = cloneState(state);

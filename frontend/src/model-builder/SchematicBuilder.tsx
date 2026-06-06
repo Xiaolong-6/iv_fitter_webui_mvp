@@ -55,6 +55,7 @@ export function SchematicBuilder({ model, onChange, canvasActions, onGoToFitting
         syntheticTool={canvasActions}
         formulaSections={compileResult.formulaSections}
         compileWarnings={compileResult.warnings}
+        activeWireIds={compileResult.activeWireIds}
       />
     </section>
   );

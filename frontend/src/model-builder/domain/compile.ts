@@ -643,6 +643,29 @@ export function compileMb3Graph(graph: Mb3Graph, baseModel?: ModelSpec): Mb3Comp
     );
   }
 
+  const activeComponentIds = new Set(activeComponents.map((component) => component.id));
+  const activePortKeys = new Set<string>([
+    portKey({ kind: "node", id: graph.terminals.positive }),
+    portKey({ kind: "node", id: graph.terminals.ground }),
+  ]);
+  for (const component of activeComponents) {
+    activePortKeys.add(portKey({ kind: "component", id: component.id, port: "p" }));
+    activePortKeys.add(portKey({ kind: "component", id: component.id, port: "n" }));
+  }
+  const activeWireIds = hasTerminalPath
+    ? graph.wires
+        .filter((wire) => {
+          const fromActive = activePortKeys.has(portKey(wire.from));
+          const toActive = activePortKeys.has(portKey(wire.to));
+          const touchesActiveComponent =
+            (wire.from.kind === "component" && activeComponentIds.has(wire.from.id)) ||
+            (wire.to.kind === "component" && activeComponentIds.has(wire.to.id));
+          const touchesTerminal = wire.from.kind === "node" || wire.to.kind === "node";
+          return fromActive && toActive && (touchesActiveComponent || touchesTerminal);
+        })
+        .map((wire) => wire.id)
+    : [];
+
   const rootLabels = new Map<string, string>();
   rootLabel(positiveRoot, rootLabels, positiveRoot, groundRoot);
   rootLabel(groundRoot, rootLabels, positiveRoot, groundRoot);
@@ -755,6 +778,7 @@ export function compileMb3Graph(graph: Mb3Graph, baseModel?: ModelSpec): Mb3Comp
     componentIds: graph.components.map((component) => component.id),
     wireIds: graph.wires.map((wire) => wire.id),
     activeComponentIds: activeComponents.map((component) => component.id),
+    activeWireIds,
     model,
     warnings,
     formulaLatex,

@@ -16,6 +16,7 @@
     selected: null,
     drag: null,
     activePointerId: null,
+    activeWireIds: null,
     view: { x:0, y:0, scale:1 },
     nextNode: 1,
     nextConn: 1
@@ -1032,7 +1033,7 @@
     }
 
     svg.innerHTML = "";
-    const activeIds = activeConnectionIds();
+    const activeIds = S.activeWireIds instanceof Set ? S.activeWireIds : activeConnectionIds();
     const signature = `${activeIds.size > 0}:${activeIds.size}`;
     if (signature !== lastCircuitSignature) {
       lastCircuitSignature = signature;
@@ -1273,6 +1274,10 @@
     if (d.type === "ivfitter:request-state") postStateChanged(true);
     if (d.type === "ivfitter:fit-screen") autoFit();
     if (d.type === "ivfitter:delete-selected") deleteSelected();
+    if (d.type === "ivfitter:set-active-wires") {
+      S.activeWireIds = new Set(Array.isArray(d.activeWireIds) ? d.activeWireIds.map(String) : []);
+      render();
+    }
   });
 
   addTerminal("V", 160, 80, "bottom");
