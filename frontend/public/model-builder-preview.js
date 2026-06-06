@@ -195,7 +195,7 @@
 
   function freePosition(id, x, y, w, h) {
     const r = rectAt(x, y, w, h, GAP);
-    return S.nodes.every(n => n.id === id || !overlap(r, rectAt(n.x, n.y, n.w, n.h)));
+    return S.nodes.every(n => n.id === id || !overlap(r, rectAt(n.x, n.y, n.w, n.h))) && wireClearForNode(id, r);
   }
 
   function nearestFree(id, x, y, w, h) {
@@ -248,6 +248,17 @@
     }
 
     return segs;
+  }
+
+  function wireClearForNode(id, r) {
+    for (const c of S.conns) {
+      if (c.from === id || c.to === id) continue;
+      for (const [a, b] of segmentsOf(route(c, c.id))) {
+        if (segHitsRect(a, b, r)) return false;
+      }
+    }
+
+    return true;
   }
 
   function pointOnSegment(p, a, b) {
