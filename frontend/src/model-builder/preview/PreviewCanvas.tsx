@@ -191,11 +191,11 @@ function PreviewInspectorPanel({ component, templateMode, position, onStartDrag,
     <aside className="mb-preview-panel mb-preview-inspector is-contextual" aria-label="Inspector" style={style}>
       <div className="mb-preview-panel-head">
         <strong>Inspector</strong>
-        <span className="mb-preview-inspector-actions">
-          {templateMode ? <button type="button" onClick={onAddTemplate}>Add</button> : <button type="button" onClick={onDuplicate}>Duplicate</button>}
-          <button type="button" onClick={onSaveAsComponent}>Save to components</button>
-          <span className="mb-preview-inspector-grip" aria-hidden="true" onPointerDown={onStartDrag}>::</span>
-        </span>
+        <span className="mb-preview-inspector-grip" aria-hidden="true" onPointerDown={onStartDrag}>::</span>
+      </div>
+      <div className="mb-preview-inspector-actions">
+        {templateMode ? <button type="button" onClick={onAddTemplate}>Add</button> : <button type="button" onClick={onDuplicate}>Duplicate</button>}
+        <button type="button" onClick={onSaveAsComponent}>Save to components</button>
       </div>
       <label><span>Name</span><input value={component.label} onChange={(event) => onPatch({ label: event.target.value })} /></label>
       <label>

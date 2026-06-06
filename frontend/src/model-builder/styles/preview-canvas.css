@@ -226,25 +226,46 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
+  margin-bottom: 4px;
 }
 
 .mb-preview-inspector-actions {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
+  margin: 2px 0 8px;
 }
 
 .mb-preview-inspector-actions button,
 .mb-preview-param-head button {
-  min-height: 28px;
-  border: 1px solid rgba(148, 163, 184, 0.5);
-  border-radius: 8px;
-  background: #f8fafc;
+  min-height: 26px;
+  border: 1px solid rgba(148, 163, 184, 0.48);
+  border-radius: 7px;
+  background: rgba(248, 250, 252, 0.92);
   color: #0f172a;
-  font-size: calc(10px * var(--app-zoom));
+  font-size: calc(10.5px * var(--app-zoom));
   font-weight: 900;
-  padding: 3px 7px;
+  line-height: 1;
+  padding: 4px 9px;
+  box-shadow: none;
+}
+
+.mb-preview-inspector-actions button:hover,
+.mb-preview-param-head button:hover {
+  border-color: rgba(37, 99, 235, 0.56);
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.mb-preview-inspector-actions button:first-child {
+  background: #eef4ff;
+  border-color: rgba(37, 99, 235, 0.3);
+  color: #1d4ed8;
+}
+
+.mb-preview-inspector-actions button:last-child {
+  margin-left: auto;
 }
 
 .mb-preview-inspector-grip {
