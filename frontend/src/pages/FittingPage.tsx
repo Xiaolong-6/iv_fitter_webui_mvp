@@ -746,6 +746,7 @@ export function FittingPage() {
                 model={model}
                 language={language}
                 disabled={isFitting}
+                variant="inline"
               />
             }
           />
