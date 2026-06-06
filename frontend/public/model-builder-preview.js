@@ -509,10 +509,12 @@
 
   function sideConnectable(id, side) {
     const n = node(id);
-    if (!n || n.terminal) return true;
+    if (!n) return false;
 
     const used = usedSides(id);
-    return !used.has(side) && used.size < 2;
+    if (n.terminal) return true;
+
+    return used.has(side) || used.size < 2;
   }
 
   function nearestConnectDot(e) {
