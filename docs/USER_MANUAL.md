@@ -76,7 +76,7 @@ The validation status reports whether the schematic is ready to compile. Disconn
 
 ### Compilation rule
 
-The compiler extracts the active V-to-GND subgraph and converts it into backend graph data. React Flow positions and visual edges are not physics truth; the model truth is the graph of component ports and wires.
+The compiler extracts the active V-to-GND subgraph and converts it into backend graph data. Screen positions and visual bends are not physics truth; the model truth is the graph of component ports and wires.
 
 The canvas equation area shows two layers:
 

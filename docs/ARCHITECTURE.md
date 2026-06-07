@@ -14,19 +14,24 @@ Model Builder is the default user-facing model editor. It is implemented as an i
 
 ```text
 frontend/src/model-builder/
-  canvas/       React Flow adapters, nodes, edges, drag/drop, and wire interactions
-  domain/       graph data, component templates, presets, validation, collision helpers
-  panels/       component list, toolbar, preset list, and inspector panels
+  preview/      React shell for the dependency-light iframe canvas
+  domain/       graph data, graph compilation, component templates, presets, validation
   state/        reducer, actions, and starter graph factory
-  styles/       Model Builder-only CSS; no legacy model-builder stylesheet imports
+  styles/       Model Builder-only CSS for the preview shell
+
+frontend/public/
+  model-builder-preview.html
+  model-builder-preview.css
+  model-builder-preview-config.js
+  model-builder-preview.js
 ```
 
-The Model Builder source of truth is `Mb3Graph`, not React Flow nodes/edges. React Flow is only the renderer and interaction layer:
+The Model Builder source of truth is the serializable preview canvas state compiled into `Mb3Graph`. The iframe canvas is the renderer and interaction layer; React owns the toolbar, floating menus, inspector, persistence, and compilation bridge:
 
 ```text
-Mb3Graph -> canvas adapter -> React Flow nodes/edges
-React Flow event -> mb3Reducer/domain helpers -> Mb3Graph
-Mb3Graph -> validation -> V-to-GND path status and short-circuit warning
+preview canvas state -> canvasStateToMb3Graph -> compileMb3Graph -> ModelSpec
+iframe pointer/edit event -> preview state message -> React persistence/inspector/compile bridge
+compiled graph -> V-to-GND path status, active wire ids, equation summary, and fitting readiness
 ```
 
 Model Builder fixes two terminal nodes, `V` and `GND`, and lets the user drag two-terminal components from the Components list onto the canvas. Components expose behaviors such as `R(V)`, `I(V)`, `dV(I)`, or custom residual forms; resistor, Shockley diode, constant-current, saved custom, and saved model entries are templates/presets rather than separate topology classes. Disconnected components remain on the canvas but are ignored until connected into a valid V-to-GND subgraph.
@@ -70,7 +75,7 @@ The frontend may render model summaries, formula cards, circuit previews, and us
 
 ## Styling boundary
 
-Model Builder owns `frontend/src/model-builder/styles/model-builder.css`. It must not import legacy `model-builder.css`, and it must not recreate `final-overrides.css` style cascades. Any React Flow-specific override must be local to Model Builder and documented in the stylesheet section where it appears.
+Model Builder owns `frontend/src/model-builder/styles/preview-canvas.css` plus the iframe-local `frontend/public/model-builder-preview.css`. It must not recreate `final-overrides.css` style cascades. Canvas constants that affect interaction geometry belong in `frontend/public/model-builder-preview-config.js`, not scattered through the main canvas script.
 
 ## Documentation boundary
 

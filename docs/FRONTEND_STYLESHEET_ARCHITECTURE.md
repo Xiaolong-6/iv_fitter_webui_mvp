@@ -16,7 +16,7 @@ The import order is part of the cascade contract:
 4. `styles/data-model-pages.css` � Data and Model page containment plus shared related page rules.
 5. `styles/fitting-page.css` — Fitting page layout, Fit setup containment, Parameters density, plot controls.
 6. `styles/report-manual-responsive.css` — Report page, Manual reader integration, and late responsive release-candidate overrides.
-7. Component-specific files: `model-builder/styles/model-builder.css` and `styles/user-documentation.css`.
+7. Component-specific files: `model-builder/styles/preview-canvas.css`, `frontend/public/model-builder-preview.css`, and `styles/user-documentation.css`.
 
 ## Rules for future CSS changes
 
@@ -30,4 +30,4 @@ The import order is part of the cascade contract:
 
 The previous single `style.css` file was about 4,690 lines with 255 `!important` declarations. The current structure keeps `style.css` as a small import manifest and removes all normal `!important` overrides. CSS is still visually large because the app has many workflow pages, but ownership boundaries are now explicit.
 
-The old global `styles/model-builder.css` file has been removed with the legacy V1/V2 Model Builder source. Model Builder owns its CSS under `frontend/src/model-builder/styles/`. The entry file `model-builder.css` imports focused sections: `shell.css`, `panels.css`, `formula.css`, and `canvas.css`.
+The old global `styles/model-builder.css` file has been removed with the legacy V1/V2 Model Builder source. The active Model Builder preview shell owns `frontend/src/model-builder/styles/preview-canvas.css`; the iframe canvas owns `frontend/public/model-builder-preview.css`. Do not recreate a Model Builder CSS import pile unless the preview shell is deliberately split into focused, currently imported modules.

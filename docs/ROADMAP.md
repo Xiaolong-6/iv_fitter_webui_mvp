@@ -10,13 +10,13 @@ Current capabilities:
 
 - Data import and pasted-data import.
 - HappyMeasure CSV v2 compatibility.
-- Model Builder: the single active frontend builder path, with a graph-native free two-terminal schematic editor, fixed V/GND terminals, drag-in components, React Flow canvas, presets/save, canvas Synthetic IV trace action, Go to fitting action, and V-to-GND validation.
+- Model Builder: the single active frontend builder path, with a graph-native free two-terminal schematic editor, fixed V/GND terminals, drag-in components, a dependency-light iframe canvas, presets/save, canvas Synthetic IV trace action, Go to fitting action, and V-to-GND validation.
 - Fit diagnostics, warnings, residual plots, and formula/report preview on the main workflow.
 - User-facing manual and external testing guide.
 
 ## Near-term priorities
 
-1. Stabilize Model Builder browser behavior on Windows: no blank canvas, no hidden panels, reliable React Flow rendering, and toolbar actions that stay inside the canvas layer.
+1. Stabilize Model Builder browser behavior on Windows: no blank canvas, no hidden panels, reliable preview-canvas rendering, and toolbar actions that stay inside the canvas layer.
 2. Expand Model Builder test coverage: graph mutations, component templates, validation, toolbar actions, and screenshot/manual smoke checks.
 3. Connect Model Builder graph state to the backend graph solver with explicit user-facing limitations.
 4. Continue integrating Model Builder-adjacent tools: equation preview, registry-driven extensions, and export/report synchronization. Synthetic IV trace and Go to fitting are now canvas toolbar actions.

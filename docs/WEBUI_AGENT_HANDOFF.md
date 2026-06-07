@@ -2,7 +2,7 @@
 
 The current package is v1.9.6. It corrects the frontend test failures left in the prior v1.9.5 staged package. In this workspace, `npm ci`, frontend Vitest, frontend production build, backend compile, and backend pytest were all run successfully. Browser manual smoke testing and Windows portable packaging still require local/manual validation.
 
-Important fix: `handleToPort` now treats the React Flow terminal handle id `node` as a node handle, not as a component `n` port. Do not regress this behavior when changing component handle IDs.
+Important baseline: Model Builder now uses the preview iframe canvas, not the old React Flow interaction surface. Do not reintroduce React Flow panels or legacy placement UI while working on the active builder.
 
 # IV-fitter Web UI agent handoff
 
@@ -29,26 +29,30 @@ Mb3Graph
   wires: port-to-port connections
 ```
 
-React Flow is only the renderer and interaction surface. The Model Builder domain/state layer owns mutations, validation, templates, presets, and the current canvas interaction model.
+The active renderer is the dependency-light preview iframe. The React side owns floating menus, inspector editing, persistence, compile status, Synthetic IV, and Go to fitting. The domain layer owns graph compilation, validation, templates, presets, and fitting-facing model output.
 
 Important Model Builder files:
 
 - `frontend/src/model-builder/SchematicBuilder.tsx`
-- `frontend/src/model-builder/canvas/CanvasAdapter.tsx`
+- `frontend/src/model-builder/preview/PreviewCanvas.tsx`
+- `frontend/src/model-builder/preview/PreviewChrome.tsx`
+- `frontend/src/model-builder/preview/canvasState.ts`
+- `frontend/src/model-builder/preview/previewStorage.ts`
+- `frontend/public/model-builder-preview.html`
+- `frontend/public/model-builder-preview.css`
+- `frontend/public/model-builder-preview-config.js`
+- `frontend/public/model-builder-preview.js`
 - `frontend/src/model-builder/domain/templates.ts`
 - `frontend/src/model-builder/domain/presets.ts`
 - `frontend/src/model-builder/domain/validation.ts`
-- `frontend/src/model-builder/panels/ComponentListPanel.tsx`
-- `frontend/src/model-builder/panels/ComponentPalettePanel.tsx`
-- `frontend/src/model-builder/panels/InspectorPanel.tsx`
-- `frontend/src/model-builder/styles/model-builder.css`
+- `frontend/src/model-builder/styles/preview-canvas.css`
 
 ## Known Model Builder caveats
 
 - Model Builder uses an internal component template list; runtime registry extension is not yet wired into the Model Builder palette.
 - Synthetic IV trace and Go to fitting are Model Builder canvas toolbar actions; equation preview/report synchronization should stay driven by Model Builder graph metadata.
 - Backend graph-native fitting must be treated as experimental unless the current release notes explicitly say otherwise.
-- If the browser shows a blank Model Builder page with no console error, first inspect container sizing and React Flow named imports; Model Builder requires an explicit canvas height and named `ReactFlow` import from `@xyflow/react`.
+- If the browser shows a blank Model Builder page with no console error, first inspect iframe sizing, `/model-builder-preview.html`, and the preview script load order. The iframe must load `model-builder-preview-config.js` before `model-builder-preview.js`.
 
 ## Current page architecture
 
