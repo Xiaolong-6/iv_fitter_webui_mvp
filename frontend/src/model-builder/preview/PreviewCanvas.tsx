@@ -263,7 +263,9 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
   const inspectorDragRef = useRef<{ dx: number; dy: number } | null>(null);
   const flyoutDragRef = useRef<{ dx: number; dy: number } | null>(null);
   const flyoutResizeRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+  const iframeHydratingRef = useRef(true);
   const [canvasState, setCanvasState] = useState<PreviewCanvasState>(() => readJson(LAYOUT_STORAGE_KEY, emptyCanvasState()));
+  const canvasStateRef = useRef<PreviewCanvasState>(canvasState);
   const [customTemplates, setCustomTemplates] = useState<PreviewComponentTemplate[]>(() => readJson(CUSTOM_COMPONENT_STORAGE_KEY, []));
   const [savedPresets, setSavedPresets] = useState<PreviewPreset[]>(() => readJson(PRESET_STORAGE_KEY, []));
   const [flyoutLayouts, setFlyoutLayouts] = useState<FlyoutLayoutMap>(() => readJson(FLYOUT_LAYOUT_STORAGE_KEY, {}));
@@ -283,6 +285,10 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
     return counts;
   }, [canvasState]);
   const postToIframe = useCallback((message: Record<string, unknown>) => frameRef.current?.contentWindow?.postMessage(message, window.location.origin), []);
+
+  useEffect(() => {
+    canvasStateRef.current = canvasState;
+  }, [canvasState]);
 
   useEffect(() => {
     postToIframe({ type: "ivfitter:set-active-wires", activeWireIds });
@@ -317,6 +323,11 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
       const data = event.data;
       if (!data?.type) return;
       if (data.type === "ivfitter:preview-state-changed") {
+        const incoming = data.state as PreviewCanvasState;
+        const saved = canvasStateRef.current;
+        const savedHasModel = Boolean(saved?.nodes?.some((node) => !node.terminal) || saved?.conns?.length);
+        const incomingHasModel = Boolean(incoming?.nodes?.some((node) => !node.terminal) || incoming?.conns?.length);
+        if (iframeHydratingRef.current && savedHasModel && !incomingHasModel) return;
         setCanvasState(data.state as PreviewCanvasState);
         return;
       }
@@ -363,13 +374,18 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
+  const handleFrameLoad = useCallback(() => {
+    iframeHydratingRef.current = true;
+    const state = canvasStateRef.current;
+    postToIframe({ type: "ivfitter:load-canvas-state", state });
+    window.setTimeout(() => {
+      iframeHydratingRef.current = false;
+    }, 350);
+  }, [postToIframe]);
+
   useEffect(() => {
-    const frame = frameRef.current;
-    if (!frame) return;
-    const sendInitialState = () => postToIframe({ type: "ivfitter:load-canvas-state", state: canvasState });
-    frame.addEventListener("load", sendInitialState);
-    return () => frame.removeEventListener("load", sendInitialState);
-  }, [canvasState, postToIframe]);
+    handleFrameLoad();
+  }, [handleFrameLoad]);
 
   useEffect(() => {
     function handleKey(event: KeyboardEvent) {
@@ -575,7 +591,7 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
 
   return (
     <div ref={shellRef} className="mb-preview-shell" onPointerDownCapture={hideFloatingMenus}>
-      <iframe ref={frameRef} className="mb-preview-frame" src="/model-builder-preview.html" title="Model Builder canvas" />
+      <iframe ref={frameRef} className="mb-preview-frame" src="/model-builder-preview.html" title="Model Builder canvas" onLoad={handleFrameLoad} />
       <div className="mb-preview-overlay" aria-label="Model Builder overlay">
         <PreviewToolbar
           circuitStatus={effectiveCircuitStatus}

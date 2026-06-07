@@ -647,7 +647,7 @@
     pts = clean(pts);
     const hs = [];
 
-    for (let i = 1; i < pts.length - 2; i++) {
+    for (let i = 2; i < pts.length - 3; i++) {
       const a = pts[i];
       const b = pts[i + 1];
 
@@ -1111,9 +1111,9 @@
             S.drag = {
               type:"mid",
               connId:c.id,
-              segment:h.segment - 1,
+              segment:h.segment - 2,
               axis:h.axis,
-              middle:clone(pts.slice(1, -1))
+              middle:clone(pts.slice(2, -2))
             };
           });
         }
