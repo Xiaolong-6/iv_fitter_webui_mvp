@@ -6,7 +6,16 @@
   const viewport = $("viewport");
   const svg = $("svg");
 
-  const W = 120, H = 60, TERM = 28, GRID = 20, PAD = 18, EXIT = 32, GAP = 8, WIRE_GAP = 12, CONNECT_SNAP_PX = 14;
+  const CONFIG = window.IVFITTER_MODEL_BUILDER_PREVIEW_CONFIG || {};
+  const W = CONFIG.boxWidth || 120;
+  const H = CONFIG.boxHeight || 60;
+  const TERM = CONFIG.terminalSize || 28;
+  const GRID = CONFIG.grid || 20;
+  const PAD = CONFIG.padding || 18;
+  const EXIT = CONFIG.portExit || 32;
+  const GAP = CONFIG.collisionGap || 8;
+  const WIRE_GAP = CONFIG.wireGap || 12;
+  const CONNECT_SNAP_PX = CONFIG.connectSnapPx || 14;
   const SIDES = ["top", "right", "bottom", "left"];
   const DIR = { top:[0,-1], right:[1,0], bottom:[0,1], left:[-1,0] };
 
