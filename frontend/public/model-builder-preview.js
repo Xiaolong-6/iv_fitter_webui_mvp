@@ -392,6 +392,33 @@
     return "M " + clean(pts).map(p => `${Math.round(p.x)} ${Math.round(p.y)}`).join(" L ");
   }
 
+  function drawArrowHead(pts) {
+    const cleanPts = clean(pts);
+    if (cleanPts.length < 2) return;
+
+    const tip = cleanPts[cleanPts.length - 1];
+    let tail = cleanPts[cleanPts.length - 2];
+    for (let i = cleanPts.length - 2; i >= 0; i--) {
+      if (cleanPts[i].x !== tip.x || cleanPts[i].y !== tip.y) {
+        tail = cleanPts[i];
+        break;
+      }
+    }
+
+    const dx = Math.sign(tip.x - tail.x);
+    const dy = Math.sign(tip.y - tail.y);
+    if (dx === 0 && dy === 0) return;
+
+    const size = 9;
+    const back = { x:tip.x - dx * size, y:tip.y - dy * size };
+    const wing = 5;
+    const points = dx !== 0
+      ? `${tip.x},${tip.y} ${back.x},${back.y - wing} ${back.x},${back.y + wing}`
+      : `${tip.x},${tip.y} ${back.x - wing},${back.y} ${back.x + wing},${back.y}`;
+
+    draw("polygon", { points }, "arrow");
+  }
+
   function segClear(a, b, ignore = [], exceptConnId = null) {
     if (a.x !== b.x && a.y !== b.y) return false;
 
@@ -457,6 +484,15 @@
     return best([hv, vh], ignore, exceptConnId) || hv;
   }
 
+  function simpleOrth(a, b) {
+    if (a.x === b.x || a.y === b.y) return clean([a, b]);
+    const dx = Math.abs(a.x - b.x);
+    const dy = Math.abs(a.y - b.y);
+    return dx >= dy
+      ? clean([a, { x:b.x, y:a.y }, b])
+      : clean([a, { x:a.x, y:b.y }, b]);
+  }
+
   function zPath(a, b, axis, v) {
     return axis === "x"
       ? clean([a, { x:v, y:a.y }, { x:v, y:b.y }, b])
@@ -475,9 +511,9 @@
     const last = manual[manual.length - 1];
 
     return clean([
-      ...orth(a, first, ignore, exceptConnId),
+      ...simpleOrth(a, first),
       ...manual.slice(1),
-      ...orth(last, b, ignore, exceptConnId).slice(1)
+      ...simpleOrth(last, b).slice(1)
     ]);
   }
 
@@ -515,15 +551,13 @@
 
   function route(c, exceptConnId = c.id) {
     const { a0, a, b, b0 } = endpoints(c);
-    const ignore = [c.from, c.to];
 
     if (c.manual) {
-      const m = manualRoute(a, b, c.manual, ignore, exceptConnId);
-      if (m && pathClear(m, ignore, exceptConnId)) return clean([a0, ...m, b0]);
+      const m = manualRoute(a, b, c.manual);
+      if (m) return clean([a0, ...m, b0]);
     }
 
-    const m = best(candidates(a, b, c), ignore, exceptConnId) || orth(a, b, ignore, exceptConnId);
-    return clean([a0, ...m, b0]);
+    return clean([a0, ...simpleOrth(a, b), b0]);
   }
 
   function usedSides(id) {
@@ -1053,7 +1087,10 @@
 
       const active = activeIds.has(c.id);
       draw("path", { d:pathD(pts) }, selected ? "connector selected" : (active ? "connector active" : "connector"));
-      if (active) draw("path", { d:pathD(pts) }, "connector-flow");
+      if (active) {
+        draw("path", { d:pathD(pts) }, "connector-flow");
+        drawArrowHead(pts);
+      }
 
       if (selected) {
         for (const h of editableHandles(pts)) {
@@ -1086,7 +1123,7 @@
     }
 
     if (S.drag?.type === "connect") {
-      draw("path", { d:pathD(orth(S.drag.start, S.drag.end, [S.drag.from])) }, "preview");
+      draw("path", { d:pathD(simpleOrth(S.drag.start, S.drag.end)) }, "preview");
 
       if (S.drag.target) {
         const target = node(S.drag.target.id)?.el.querySelector(`.dot[data-side="${S.drag.target.side}"]`);
@@ -1139,10 +1176,6 @@
       const nx = p.x - S.drag.dx;
       const ny = p.y - S.drag.dy;
 
-      for (const c of S.conns) {
-        if (c.from === n.id || c.to === n.id) c.manual = null;
-      }
-
       // During dragging, allow temporary overlap so nodes can pass through
       // crowded areas. Final overlap is resolved on pointerup.
       if (Math.hypot(nx - S.drag.startX, ny - S.drag.startY) > 4) S.drag.moved = true;
@@ -1172,13 +1205,8 @@
       const m = manualRoute(ep.a, ep.b, manual, [c.from, c.to], c.id);
 
       if (!m) return;
-
-      const visible = clean([ep.a0, ...m, ep.b0]);
-
-      if (visibleClear(visible, c)) {
-        c.manual = manual;
-        scheduleRender();
-      }
+      c.manual = manual;
+      scheduleRender();
     }
   }
 
