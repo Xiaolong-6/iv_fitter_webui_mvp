@@ -6,7 +6,7 @@
   const viewport = $("viewport");
   const svg = $("svg");
 
-  const W = 120, H = 60, TERM = 28, GRID = 20, PAD = 18, EXIT = 32, GAP = 8, WIRE_GAP = 12, CONNECT_SNAP_PX = 24;
+  const W = 120, H = 60, TERM = 28, GRID = 20, PAD = 18, EXIT = 32, GAP = 8, WIRE_GAP = 12, CONNECT_SNAP_PX = 14;
   const SIDES = ["top", "right", "bottom", "left"];
   const DIR = { top:[0,-1], right:[1,0], bottom:[0,1], left:[-1,0] };
 
