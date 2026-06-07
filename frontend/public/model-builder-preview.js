@@ -286,8 +286,14 @@
 
   function wireClearForNode(id, r) {
     for (const c of S.conns) {
-      if (c.from === id || c.to === id) continue;
-      for (const [a, b] of segmentsOf(route(c, c.id))) {
+      const segs = segmentsOf(route(c, c.id));
+      const checkSegs = segs.filter((_, index) => {
+        if (c.from === id && index === 0) return false;
+        if (c.to === id && index === segs.length - 1) return false;
+        return true;
+      });
+
+      for (const [a, b] of checkSegs) {
         if (segHitsRect(a, b, r)) return false;
       }
     }

@@ -362,22 +362,24 @@
 .mb-preview-inspector-actions {
   display: flex;
   align-items: center;
-  gap: 7px;
-  margin: 2px 0 8px;
+  justify-content: flex-end;
+  gap: 6px;
+  margin: 2px 0 10px;
 }
 
 .mb-preview-inspector-actions button,
 .mb-preview-param-head button {
-  min-height: 26px;
+  min-height: 28px;
   border: 1px solid rgba(148, 163, 184, 0.48);
-  border-radius: 7px;
-  background: rgba(248, 250, 252, 0.92);
+  border-radius: 9px;
+  background: #ffffff;
   color: #0f172a;
   font-size: calc(10.5px * var(--app-zoom));
   font-weight: 900;
-  line-height: 1;
-  padding: 4px 9px;
+  line-height: 1.05;
+  padding: 5px 10px;
   box-shadow: none;
+  white-space: nowrap;
 }
 
 .mb-preview-inspector-actions button:hover,
@@ -394,7 +396,8 @@
 }
 
 .mb-preview-inspector-actions button:last-child {
-  margin-left: auto;
+  background: #f8fafc;
+  color: #334155;
 }
 
 .mb-preview-inspector-grip {
