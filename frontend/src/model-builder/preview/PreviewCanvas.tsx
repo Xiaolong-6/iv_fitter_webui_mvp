@@ -26,6 +26,20 @@ import {
   type PreviewParameter,
   type PreviewPreset,
 } from "./canvasState";
+import {
+  CUSTOM_COMPONENT_STORAGE_KEY,
+  FLYOUT_LAYOUT_STORAGE_KEY,
+  LAYOUT_STORAGE_KEY,
+  PRESET_STORAGE_KEY,
+  clonePreviewPresetState,
+  readJson,
+  writeJson,
+  type FloatingPosition,
+  type FloatingSize,
+  type FlyoutKind,
+  type FlyoutLayoutMap,
+} from "./previewStorage";
+import { PreviewFlyoutPanel, PreviewToolbar, type PreviewCircuitStatus } from "./PreviewChrome";
 import "../styles/preview-canvas.css";
 
 type PreviewCanvasComponent = PreviewComponentTemplate & {
@@ -34,10 +48,7 @@ type PreviewCanvasComponent = PreviewComponentTemplate & {
 };
 
 type PreviewBoxRect = { x: number; y: number; width: number; height: number };
-type CircuitStatus = { connected: boolean; activeWireCount: number; warnings: string[] };
-type FloatingPosition = { x: number; y: number };
-type FloatingSize = { width: number; height: number };
-type FlyoutKind = "components" | "presets" | "synthetic" | "examine";
+type CircuitStatus = PreviewCircuitStatus;
 type FlyoutState = { kind: FlyoutKind; position: FloatingPosition; size: FloatingSize; pinned: boolean } | null;
 
 type PreviewCanvasProps = {
@@ -49,25 +60,8 @@ type PreviewCanvasProps = {
   activeWireIds?: string[];
 };
 
-const LAYOUT_STORAGE_KEY = "ivfitter.modelBuilder.preview.layout";
-const PRESET_STORAGE_KEY = "ivfitter.modelBuilder.preview.savedPresets";
-const CUSTOM_COMPONENT_STORAGE_KEY = "ivfitter.modelBuilder.preview.customComponents";
-
-function readJson<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) as T : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeJson(key: string, value: unknown) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
 function cloneState(state: PreviewCanvasState): PreviewCanvasState {
-  return JSON.parse(JSON.stringify(state)) as PreviewCanvasState;
+  return clonePreviewPresetState(state);
 }
 
 function clampPosition(pos: FloatingPosition, size: { width: number; height: number }, bounds: DOMRect): FloatingPosition {
@@ -91,27 +85,6 @@ function templateFromComponent(component: PreviewCanvasComponent): PreviewCompon
   };
 }
 
-function ToolIcon({ name }: { name: "fit" | "delete" | "clear" | "components" | "presets" | "save" | "iv" | "duplicate" }) {
-  if (name === "fit") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4M16 4h4v4M8 20H4v-4M16 20h4v-4" /><path d="M9 9h6v6H9z" /></svg>;
-  if (name === "delete") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8v10M12 8v10M16 8v10" /><path d="M5 6h14M10 4h4l1 2H9l1-2Z" /><path d="M7 6l1 15h8l1-15" /></svg>;
-  if (name === "clear") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17l4 4 10-10" /><path d="M4 6h16" /><path d="M4 10h10" /></svg>;
-  if (name === "components") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h7v7H6zM15 6h3v3M15 12h3v3M6 16h12" /></svg>;
-  if (name === "presets") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v5H5zM5 14h14v5H5z" /><path d="M8 7.5h8M8 16.5h8" /></svg>;
-  if (name === "save") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h12l2 2v12H5z" /><path d="M8 5v6h8V5" /><path d="M8 17h8" /></svg>;
-  if (name === "duplicate") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h10v10H8z" /><path d="M6 16H5a1 1 0 0 1-1-1V5h10v1" /></svg>;
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18V6M9 18V6" /><path d="M13 6l3 12 3-12" /></svg>;
-}
-
-function PreviewToolButton({ icon, label, title, onClick, className = "" }: {
-  icon: "fit" | "delete" | "clear" | "components" | "presets" | "save" | "iv" | "duplicate";
-  label: string;
-  title: string;
-  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
-  className?: string;
-}) {
-  return <button type="button" className={`mb-preview-tool-btn ${className}`} title={title} onClick={onClick}><ToolIcon name={icon} /><span>{label}</span></button>;
-}
-
 function PreviewComponentsPanel({ templates, countsByName, onDragStart, onDragEnd, onSelectTemplate, onDeleteCustom }: {
   templates: PreviewComponentTemplate[];
   countsByName: Map<string, number>;
@@ -132,49 +105,6 @@ function PreviewComponentsPanel({ templates, countsByName, onDragStart, onDragEn
           </div>
         );
       })}
-    </div>
-  );
-}
-
-function PreviewToolbar({ circuitStatus, onFitScreen, onDeleteSelected, onClearCanvas, onToggleComponents, onTogglePresets, onSaveLayout, onToggleSynthetic, onToggleExamine, onGoToFitting }: {
-  circuitStatus: CircuitStatus;
-  onFitScreen: () => void;
-  onDeleteSelected: () => void;
-  onClearCanvas: () => void;
-  onToggleComponents: (event: MouseEvent<HTMLButtonElement>) => void;
-  onTogglePresets: (event: MouseEvent<HTMLButtonElement>) => void;
-  onSaveLayout: () => void;
-  onToggleSynthetic: (event: MouseEvent<HTMLButtonElement>) => void;
-  onToggleExamine: (event: MouseEvent<HTMLButtonElement>) => void;
-  onGoToFitting?: () => void;
-}) {
-  const goTitle = circuitStatus.connected ? `V to GND path detected. ${circuitStatus.activeWireCount} active wire(s).` : (circuitStatus.warnings[0] || "No complete V to GND path yet.");
-  return (
-    <div className="mb-preview-toolbar" aria-label="Model Builder tools">
-      <div className="mb-preview-title-card"><strong>Model Builder</strong></div>
-      <div className="mb-preview-tool-stack">
-        <span className="mb-preview-tool-group">View</span>
-        <PreviewToolButton icon="fit" label="Fit view" title="Fit canvas to visible content" onClick={onFitScreen} />
-        <span className="mb-preview-tool-group">Edit</span>
-        <PreviewToolButton icon="delete" label="Delete selected" title="Delete selected line or box" onClick={onDeleteSelected} />
-        <PreviewToolButton icon="clear" label="Clear model" title="Clear model" onClick={onClearCanvas} />
-        <span className="mb-preview-tool-group">Model</span>
-        <PreviewToolButton icon="components" label="Component" title="Show component templates" className="mb-preview-flyout-toggle mb-preview-components-toggle" onClick={onToggleComponents} />
-        <PreviewToolButton icon="presets" label="Model presets" title="Show preset models" className="mb-preview-flyout-toggle mb-preview-presets-toggle" onClick={onTogglePresets} />
-        <PreviewToolButton icon="save" label="Save model" title="Save model" onClick={onSaveLayout} />
-        <PreviewToolButton icon="iv" label="Simulate IV" title="Simulate IV trace" className="mb-preview-flyout-toggle mb-preview-synthetic-toggle" onClick={onToggleSynthetic} />
-        <PreviewToolButton icon="fit" label="Validate model" title="Validate model and inspect fitting equations" className="mb-preview-flyout-toggle mb-preview-examine-toggle" onClick={onToggleExamine} />
-        <span className="mb-preview-tool-group">Next</span>
-        <button
-          type="button"
-          className={`mb-preview-go ${circuitStatus.connected ? "is-connected" : "is-disconnected"}`}
-          title={goTitle}
-          disabled={!circuitStatus.connected}
-          onClick={circuitStatus.connected ? onGoToFitting : undefined}
-        >
-          Use model for fitting
-        </button>
-      </div>
     </div>
   );
 }
@@ -235,34 +165,6 @@ function PreviewInspectorPanel({ component, templateMode, position, onStartDrag,
           </Fragment>
         ))}
       </div>
-    </aside>
-  );
-}
-
-function PreviewFlyoutPanel({ position, size, title, className = "", pinned, onTogglePinned, onStartDrag, onStartResize, children }: {
-  position: FloatingPosition;
-  size: FloatingSize;
-  title: string;
-  className?: string;
-  pinned: boolean;
-  onTogglePinned: () => void;
-  onStartDrag: (event: PointerEvent<HTMLDivElement>) => void;
-  onStartResize: (event: PointerEvent<HTMLSpanElement>) => void;
-  children: ReactNode;
-}) {
-  return (
-    <aside className={`mb-preview-panel mb-preview-flyout ${className}`} aria-label={title} style={{ left: position.x, top: position.y, width: size.width, height: size.height }}>
-      <div className="mb-preview-flyout-head" onPointerDown={onStartDrag}>
-        <strong>{title}</strong>
-        <div className="mb-preview-flyout-controls">
-          <button type="button" className={`mb-preview-pin ${pinned ? "is-pinned" : ""}`} title={pinned ? "Unpin panel" : "Pin panel"} aria-pressed={pinned} onClick={(event) => { event.stopPropagation(); onTogglePinned(); }}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4l6 6M9 9l6 6M15 5l-6 6-4 1 1-4 6-6M5 19l5-5" /></svg>
-          </button>
-          <span aria-hidden="true">::</span>
-        </div>
-      </div>
-      <div className="mb-preview-flyout-body">{children}</div>
-      <span className="mb-preview-resize-handle" aria-hidden="true" onPointerDown={onStartResize} />
     </aside>
   );
 }
@@ -364,6 +266,7 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
   const [canvasState, setCanvasState] = useState<PreviewCanvasState>(() => readJson(LAYOUT_STORAGE_KEY, emptyCanvasState()));
   const [customTemplates, setCustomTemplates] = useState<PreviewComponentTemplate[]>(() => readJson(CUSTOM_COMPONENT_STORAGE_KEY, []));
   const [savedPresets, setSavedPresets] = useState<PreviewPreset[]>(() => readJson(PRESET_STORAGE_KEY, []));
+  const [flyoutLayouts, setFlyoutLayouts] = useState<FlyoutLayoutMap>(() => readJson(FLYOUT_LAYOUT_STORAGE_KEY, {}));
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [templatePreview, setTemplatePreview] = useState<PreviewComponentTemplate | null>(null);
   const [inspectorPosition, setInspectorPosition] = useState<FloatingPosition | null>(null);
@@ -407,6 +310,7 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
 
   useEffect(() => writeJson(CUSTOM_COMPONENT_STORAGE_KEY, customTemplates), [customTemplates]);
   useEffect(() => writeJson(PRESET_STORAGE_KEY, savedPresets), [savedPresets]);
+  useEffect(() => writeJson(FLYOUT_LAYOUT_STORAGE_KEY, flyoutLayouts), [flyoutLayouts]);
 
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
@@ -523,6 +427,15 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
     }
 
     function stopFlyoutEdit() {
+      setFlyout((prev) => {
+        if (prev) {
+          setFlyoutLayouts((layouts) => ({
+            ...layouts,
+            [prev.kind]: { position: prev.position, size: prev.size },
+          }));
+        }
+        return prev;
+      });
       flyoutDragRef.current = null;
       flyoutResizeRef.current = null;
     }
@@ -563,10 +476,17 @@ export function PreviewCanvas({ onCanvasStateChange, onGoToFitting, syntheticToo
     const rect = event.currentTarget.getBoundingClientRect();
     const width = kind === "examine" ? 560 : (kind === "synthetic" ? 520 : (kind === "components" ? 320 : 340));
     const height = kind === "examine" ? 640 : (kind === "synthetic" ? 640 : (kind === "components" ? 420 : 380));
+    const saved = flyoutLayouts[kind];
+    const nextSize = saved?.size ?? { width, height };
+    const nextPosition = saved?.position ?? clampPosition(
+      { x: rect.right - shellRect.left + 8, y: rect.top - shellRect.top },
+      nextSize,
+      shellRect,
+    );
     setFlyout({
       kind,
-      position: clampPosition({ x: rect.right - shellRect.left + 8, y: rect.top - shellRect.top }, { width, height }, shellRect),
-      size: { width, height },
+      position: clampPosition(nextPosition, nextSize, shellRect),
+      size: nextSize,
       pinned: false,
     });
   };
