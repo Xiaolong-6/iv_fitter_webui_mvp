@@ -94,11 +94,21 @@ function pathFromPoints(points: Mb3Point[], offsetX: number, offsetY: number): s
   return `M ${first.x + offsetX} ${first.y + offsetY} ${rest.map((point) => `L ${point.x + offsetX} ${point.y + offsetY}`).join(" ")}`;
 }
 
+function routeForWire(graph: Mb3Graph, wire: Mb3Graph["wires"][number], existingRoutes: Mb3Point[][]): Mb3Point[] {
+  const storedRoute = wire.routePoints
+    ?.filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y))
+    .map((point) => ({ x: point.x, y: point.y }));
+  if (storedRoute && storedRoute.length >= 2) {
+    return storedRoute;
+  }
+  return routeMb3Wire(graph, wire.from, wire.to, existingRoutes);
+}
+
 function renderGraphSvg(model: ModelSpec, graph: Mb3Graph): string {
   const activeIds = activeComponentIds(model);
   const existingRoutes: Mb3Point[][] = [];
   const routed = graph.wires.map((wire) => {
-    const route = routeMb3Wire(graph, wire.from, wire.to, existingRoutes);
+    const route = routeForWire(graph, wire, existingRoutes);
     if (route.length) existingRoutes.push(route);
     const inactive =
       (wire.from.kind === "component" && !activeIds.has(wire.from.id)) ||
