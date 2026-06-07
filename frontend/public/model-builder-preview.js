@@ -1185,6 +1185,10 @@
       const nx = p.x - S.drag.dx;
       const ny = p.y - S.drag.dy;
 
+      for (const c of S.conns) {
+        if (c.from === n.id || c.to === n.id) c.manual = null;
+      }
+
       // During dragging, allow temporary overlap so nodes can pass through
       // crowded areas. Final overlap is resolved on pointerup.
       if (Math.hypot(nx - S.drag.startX, ny - S.drag.startY) > 4) S.drag.moved = true;
